@@ -1,0 +1,42 @@
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787/api";
+
+export interface HealthResponse {
+  ok: boolean;
+  service: string;
+  version: string;
+}
+
+export interface StatusResponse {
+  app: string;
+  parent: string;
+  environment: string;
+  backend: string;
+  frontend: string;
+}
+
+export interface VaultSummaryResponse {
+  totalFiles: number;
+  totalSources: number;
+  totalModels: number;
+  totalNodes: number;
+  graphMode: string;
+  message: string;
+}
+
+async function get<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`);
+
+  if (!response.ok) {
+    throw new Error(`API request failed with status ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export const apiClient = {
+  getHealth: () => get<HealthResponse>("/health"),
+  getStatus: () => get<StatusResponse>("/status"),
+  getVaultSummary: () => get<VaultSummaryResponse>("/vault/summary"),
+};
+

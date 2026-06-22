@@ -1,0 +1,16 @@
+{
+  "name": "hivemind",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/frontend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm --workspace apps/frontend run dev",
+    "dev:backend": "python -m uvicorn app.main:app --app-dir apps/backend --host 0.0.0.0 --port 8787 --reload",
+    "check:frontend": "npm --workspace apps/frontend run build",
+    "check:backend": "python -m pytest apps/backend",
+    "check": "npm run check:frontend && npm run check:backend"
+  }
+}
+

@@ -1,0 +1,70 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #222;
+  background: #f4f4f4;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  width: min(720px, calc(100% - 2rem));
+  margin: 3rem auto;
+}
+
+header,
+section {
+  margin-bottom: 1rem;
+  padding: 1.25rem;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0.25rem;
+}
+
+h2 {
+  font-size: 1rem;
+}
+
+.parent-label {
+  margin-bottom: 0.25rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.success {
+  color: #176b37;
+}
+
+.error {
+  color: #a12622;
+}
+
+dl {
+  margin: 0 0 1rem;
+}
+
+dl div {
+  display: flex;
+  gap: 1rem;
+  padding: 0.25rem 0;
+}
+
+dt {
+  width: 7rem;
+  color: #666;
+}
+
+dd {
+  margin: 0;
+}
+
