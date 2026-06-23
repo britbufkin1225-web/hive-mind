@@ -1,3 +1,5 @@
+![Hive|Mind GitHub README banner](./docs/assets/branding/hivemind-readme-banner.png)
+
 # Hive|Mind
 
 Parent label: **devdevbuilds**
@@ -37,10 +39,10 @@ npm run dev:backend
 npm run dev:frontend
 ```
 
-- Frontend: http://localhost:5173
-- Backend: http://localhost:8787
-- API health: http://localhost:8787/api/health
-- Interactive API docs: http://localhost:8787/docs
+- Frontend: [http://localhost:5173](http://localhost:5173)
+- Backend: [http://localhost:8787](http://localhost:8787)
+- API health: [http://localhost:8787/api/health](http://localhost:8787/api/health)
+- Interactive API docs: [http://localhost:8787/docs](http://localhost:8787/docs)
 
 ## Verification checklist
 
