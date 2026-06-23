@@ -7,3 +7,14 @@ __pycache__/
 .pytest_cache/
 .vite/
 
+
+# Local editor/project state
+.vscode/
+.snapshots/
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Generated Vite config build artifacts
+apps/frontend/vite.config.js
+apps/frontend/vite.config.d.ts
