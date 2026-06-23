@@ -37,6 +37,7 @@ app.add_middleware(
 )
 
 
+@app.get("/health", response_model=HealthResponse)
 @app.get("/api/health", response_model=HealthResponse)
 def get_health() -> HealthResponse:
     return HealthResponse(ok=True, service="hivemind-backend", version="0.1.0")
