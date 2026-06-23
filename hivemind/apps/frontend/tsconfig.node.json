@@ -4,8 +4,8 @@
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "noEmit": true,
     "allowImportingTsExtensions": true
   },
   "include": ["vite.config.ts"]
 }
-
