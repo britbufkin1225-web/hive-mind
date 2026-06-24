@@ -51,6 +51,47 @@ def _node_id_for(relative_path: str) -> str:
     return f"{_NODE_ID_PREFIX}-{digest}"
 
 
+def _resolve_source(registry, root: Path, source_name: str | None):
+    """Reuse an existing Obsidian source for ``root`` or create a fresh one.
+
+    Re-importing the same vault must not leave a trail of duplicate source
+    records, so we key on (type, resolved root_path). The returned tuple is
+    ``(record, reused)`` where ``reused`` is True when an existing record was
+    found and refreshed rather than created.
+    """
+    name = (source_name or "").strip() or root.name or "Obsidian Vault"
+    root_str = str(root)
+    existing = next(
+        (
+            s
+            for s in registry.list_sources()
+            if s.type == RegistrySourceType.OBSIDIAN and s.root_path == root_str
+        ),
+        None,
+    )
+    if existing is not None:
+        # Refresh name (if explicitly provided) and mark the run as pending.
+        updated = registry.update_source(
+            existing.id,
+            SourceRecordUpdate(
+                name=name if (source_name or "").strip() else None,
+                status=RegistrySourceStatus.PENDING,
+            ),
+        )
+        return updated or existing, True
+
+    record = registry.create_source(
+        SourceRecordCreate(
+            name=name,
+            type=RegistrySourceType.OBSIDIAN,
+            root_path=root_str,
+            status=RegistrySourceStatus.PENDING,
+            metadata={"origin": "obsidian"},
+        )
+    )
+    return record, False
+
+
 def import_vault(
     vault_path: str,
     source_name: str | None = None,
@@ -63,24 +104,40 @@ def import_vault(
     Raises ``ValueError`` if ``vault_path`` is empty, missing, or not a
     directory (the caller maps this to an HTTP 400). Per-file read/parse
     failures are captured as warnings and counted, never raised.
+
+    Hardening guarantees:
+      * Re-importing the same vault reuses its source record and upserts the
+        same stable node ids — no duplicate sources or junk nodes accumulate.
+      * Empty-content notes are skipped (counted, never imported).
+      * A file resolving to an already-seen node id within one run is counted as
+        a duplicate and skipped rather than silently overwriting.
+      * One bad note never aborts the run.
     """
     root = resolve_vault_root(vault_path)  # raises ValueError on bad paths
 
-    name = (source_name or "").strip() or root.name or "Obsidian Vault"
-    record = registry.create_source(
-        SourceRecordCreate(
-            name=name,
-            type=RegistrySourceType.OBSIDIAN,
-            root_path=str(root),
-            status=RegistrySourceStatus.PENDING,
-            metadata={"origin": "obsidian"},
-        )
-    )
+    record, reused = _resolve_source(registry, root, source_name)
 
-    summary = ObsidianImportSummary(source_id=record.id, vault_path=str(root))
+    summary = ObsidianImportSummary(
+        source_id=record.id,
+        source_name=record.name,
+        vault_path=str(root),
+    )
+    if reused:
+        summary.notes.append(f"Reused existing source '{record.name}' for this vault.")
+
+    seen_node_ids: set[str] = set()
 
     for full_path in scan_markdown_files(root):
         rel = relative_vault_path(full_path, root)
+        node_id = _node_id_for(rel)
+
+        if node_id in seen_node_ids:
+            # Two files mapping to the same node id within one scan is not
+            # expected (paths are unique), but guard against silent overwrites.
+            summary.duplicate_count += 1
+            summary.warnings.append(f"Skipped duplicate note id for '{rel}'.")
+            continue
+
         try:
             text = full_path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as exc:
@@ -88,17 +145,38 @@ def import_vault(
             summary.warnings.append(f"Could not read '{rel}': {exc}")
             continue
 
+        if not text.strip():
+            summary.skipped_count += 1
+            summary.warnings.append(f"Skipped empty note '{rel}'.")
+            continue
+
         try:
             parsed = parse_markdown(text, fallback_title=full_path.stem)
-            node = _to_node(parsed, full_path=full_path, rel=rel, source_id=record.id)
+            node = _to_node(
+                parsed,
+                full_path=full_path,
+                rel=rel,
+                node_id=node_id,
+                source_id=record.id,
+            )
+            is_update = store.get_node(node.id) is not None
             store.upsert_node(node)
         except Exception as exc:  # defensive: one bad note must not abort the run
             summary.error_count += 1
             summary.warnings.append(f"Could not import '{rel}': {exc}")
             continue
 
-        summary.imported_count += 1
+        seen_node_ids.add(node.id)
         summary.imported_node_ids.append(node.id)
+        if is_update:
+            summary.updated_count += 1
+        else:
+            summary.imported_count += 1
+
+    summary.notes.append(
+        f"Imported {summary.imported_count}, updated {summary.updated_count}, "
+        f"skipped {summary.skipped_count}, errors {summary.error_count}."
+    )
 
     registry.update_source(
         record.id,
@@ -108,6 +186,8 @@ def import_vault(
             metadata={
                 "origin": "obsidian",
                 "imported_count": summary.imported_count,
+                "updated_count": summary.updated_count,
+                "skipped_count": summary.skipped_count,
                 "error_count": summary.error_count,
             },
         ),
@@ -115,15 +195,18 @@ def import_vault(
     return summary
 
 
-def _to_node(parsed, *, full_path: Path, rel: str, source_id: str) -> HiveGraphNode:
+def _to_node(
+    parsed, *, full_path: Path, rel: str, node_id: str, source_id: str
+) -> HiveGraphNode:
     now = _now()
     try:
         last_modified = datetime.fromtimestamp(full_path.stat().st_mtime, tz=timezone.utc)
     except OSError:
         last_modified = None
+    label = (parsed.title or "").strip() or "Untitled"
     return HiveGraphNode(
-        id=_node_id_for(rel),
-        label=parsed.title,
+        id=node_id,
+        label=label,
         type=GraphNodeType.NOTE,
         source_id=source_id,
         tags=parsed.tags,
