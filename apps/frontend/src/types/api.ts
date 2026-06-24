@@ -41,6 +41,24 @@ export interface HiveGraphPosition {
   y: number;
 }
 
+/**
+ * Obsidian/vault forward-compatibility block carried on a graph node. Mirrors
+ * the backend VaultFileMeta wire shape; every field is optional.
+ */
+export interface HiveVaultFileMeta {
+  file_path: string | null;
+  vault_path: string | null;
+  file_name: string | null;
+  extension: string | null;
+  frontmatter: HiveMetadata;
+  tags: string[];
+  backlinks: string[];
+  outlinks: string[];
+  last_modified: string | null;
+  content_hash: string | null;
+  origin: string | null;
+}
+
 export interface HiveSource {
   id: string;
   name: string;
@@ -64,6 +82,8 @@ export interface HiveGraphNode {
   metadata: HiveMetadata;
   created_at: string;
   updated_at: string;
+  // Obsidian forward-compatibility (may be null when not vault-backed).
+  file_meta?: HiveVaultFileMeta | null;
 }
 
 export interface HiveGraphEdge {
@@ -103,6 +123,20 @@ export interface HiveGraphResponse {
   nodes: HiveGraphNode[];
   edges: HiveGraphEdge[];
   metadata: HiveMetadata;
+}
+
+// Phase 8A/8B — knowledge graph projection. Mirrors the backend
+// KnowledgeGraphResponse wire shape (GET /api/knowledge-graph): the existing
+// node/edge record shapes plus a lightweight, deterministic summary block.
+export interface KnowledgeGraphSummary {
+  node_count: number;
+  edge_count: number;
+}
+
+export interface KnowledgeGraphResponse {
+  nodes: HiveGraphNode[];
+  edges: HiveGraphEdge[];
+  summary: KnowledgeGraphSummary;
 }
 
 // Phase 5A/5B — Source Registry (future import connectors). Separate from the
