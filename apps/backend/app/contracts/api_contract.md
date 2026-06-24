@@ -38,6 +38,49 @@ Obsidian vault scanning, markdown parsing, frontmatter extraction, filesystem
 watching, or vault import in this phase — the Obsidian-mappable fields below
 remain placeholders.
 
+## Source Registry (Phase 5A)
+
+An **additive** registry of future import connectors (Obsidian, local files,
+GitHub, PDF, web, API), persisted independently of the graph store. It is
+separate from the graph's `/api/sources` (`HiveSource`) resource and does **not**
+implement any vault scanning, markdown parsing, filesystem watching, or import
+logic — it only registers source *records*.
+
+`SourceRecord` shape (snake_case, matching the rest of the API):
+
+```json
+{
+  "id": "reg-...",
+  "name": "My Vault",
+  "type": "obsidian",
+  "root_path": "/path/to/vault",
+  "status": "pending",
+  "last_imported_at": null,
+  "created_at": "ISO-8601",
+  "updated_at": "ISO-8601",
+  "metadata": {}
+}
+```
+
+- `type`: `obsidian` | `local_files` | `github` | `pdf` | `web` | `api`
+- `status`: `active` | `inactive` | `error` | `pending` (defaults to `pending`)
+
+### Endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/registry/sources` | List source records → `{ "sources": [...] }` |
+| `POST` | `/api/registry/sources` | Create a record (201). Requires `name` + `type`; rejects blank name / invalid enum with 422 |
+| `GET` | `/api/registry/sources/{id}` | Get one record (404 if unknown) |
+| `PATCH` | `/api/registry/sources/{id}` | Partial update (404 if unknown, 422 on invalid). Refreshes `updated_at` |
+
+### Persistence
+
+- **Default path:** `apps/backend/data/source-registry.json` (gitignored).
+- **Override:** `HIVEMIND_REGISTRY_PATH` env var (tests use throwaway temp files).
+- Starts empty; missing/empty/corrupt file falls back to an empty registry
+  without crashing. Writes are atomic (temp file + `os.replace`).
+
 ## Search & Query Helpers (Phase 3C)
 
 The store exposes deterministic, read-only helpers that operate against the

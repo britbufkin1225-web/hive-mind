@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.routers.api import router
+from app.routers.registry import router as registry_router
 
 
 class HealthResponse(BaseModel):
@@ -31,6 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(registry_router)
 
 
 @app.get("/health", response_model=HealthResponse)

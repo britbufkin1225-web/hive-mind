@@ -10,3 +10,9 @@ os.environ.setdefault(
     "HIVEMIND_STORE_PATH",
     os.path.join(tempfile.mkdtemp(prefix="hivemind-test-"), "hivemind-store.json"),
 )
+
+# Same isolation for the Phase 5A source registry persistence file.
+os.environ.setdefault(
+    "HIVEMIND_REGISTRY_PATH",
+    os.path.join(tempfile.mkdtemp(prefix="hivemind-registry-test-"), "source-registry.json"),
+)
