@@ -4,6 +4,7 @@ import {
   type HealthResponse,
   type VaultSummaryResponse,
 } from "./api/client";
+import ConsolePanel from "./components/ConsolePanel";
 
 function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
@@ -74,6 +75,8 @@ function App() {
           <p>Vault summary unavailable.</p>
         )}
       </section>
+
+      <ConsolePanel />
     </main>
   );
 }

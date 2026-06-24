@@ -68,3 +68,54 @@ dd {
   margin: 0;
 }
 
+/* Phase 4A — Hive Console panel */
+.console-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.console-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.console-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.console-actions button {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.console-actions button:disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+
+.console-hint {
+  color: #666;
+}
+
+.console-result {
+  margin: 0.5rem 0 0;
+  padding: 0.75rem;
+  border: 1px solid #d4d4d4;
+  background: #f4f4f4;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8125rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
