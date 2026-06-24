@@ -6,6 +6,7 @@ import {
 } from "./api/client";
 import ConsolePanel from "./components/ConsolePanel";
 import SourceRegistryPanel from "./components/SourceRegistryPanel";
+import KnowledgeGraphPanel from "./components/KnowledgeGraphPanel";
 
 function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
@@ -78,6 +79,8 @@ function App() {
       </section>
 
       <SourceRegistryPanel />
+
+      <KnowledgeGraphPanel />
 
       <ConsolePanel />
     </main>

@@ -105,6 +105,20 @@ export interface HiveGraphResponse {
   metadata: HiveMetadata;
 }
 
+// Phase 8A/8B/8C — knowledge graph projection. Mirrors the backend
+// KnowledgeGraphResponse wire shape (GET /api/knowledge-graph): the existing
+// node/edge record shapes plus a lightweight, deterministic summary block.
+export interface KnowledgeGraphSummary {
+  node_count: number;
+  edge_count: number;
+}
+
+export interface KnowledgeGraphResponse {
+  nodes: HiveGraphNode[];
+  edges: HiveGraphEdge[];
+  summary: KnowledgeGraphSummary;
+}
+
 // Phase 5A/5B — Source Registry (future import connectors). Separate from the
 // graph's HiveSource resource; mirrors the backend SourceRecord wire shape.
 export type RegistrySourceType =
