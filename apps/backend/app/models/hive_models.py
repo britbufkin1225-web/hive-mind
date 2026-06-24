@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class SourceType(StrEnum):
@@ -241,3 +241,73 @@ class ConsoleExecuteResponse(BaseModel):
     command: str
     result: dict[str, Any] | None = None
     error: str | None = None
+
+
+# --------------------------------------------------------------------------- #
+# Phase 5A — Source Registry
+#
+# A registry of future *import connectors* (Obsidian, local files, GitHub, PDF,
+# web, API). This is intentionally separate from the graph's `HiveSource`/
+# `/api/sources` resource and does NOT implement any import/scanning logic.
+# --------------------------------------------------------------------------- #
+class RegistrySourceType(StrEnum):
+    OBSIDIAN = "obsidian"
+    LOCAL_FILES = "local_files"
+    GITHUB = "github"
+    PDF = "pdf"
+    WEB = "web"
+    API = "api"
+
+
+class RegistrySourceStatus(StrEnum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    ERROR = "error"
+    PENDING = "pending"
+
+
+class SourceRecord(BaseModel):
+    id: str
+    name: str
+    type: RegistrySourceType
+    root_path: str | None = None
+    status: RegistrySourceStatus = RegistrySourceStatus.PENDING
+    last_imported_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class SourceRecordCreate(BaseModel):
+    name: str
+    type: RegistrySourceType
+    root_path: str | None = None
+    status: RegistrySourceStatus = RegistrySourceStatus.PENDING
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("name")
+    @classmethod
+    def _name_not_blank(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("name must not be empty")
+        return value.strip()
+
+
+class SourceRecordUpdate(BaseModel):
+    name: str | None = None
+    type: RegistrySourceType | None = None
+    root_path: str | None = None
+    status: RegistrySourceStatus | None = None
+    last_imported_at: datetime | None = None
+    metadata: dict[str, Any] | None = None
+
+    @field_validator("name")
+    @classmethod
+    def _name_not_blank(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("name must not be empty")
+        return value.strip() if value is not None else None
+
+
+class SourceRegistryListResponse(BaseModel):
+    sources: list[SourceRecord]
