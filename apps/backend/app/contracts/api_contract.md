@@ -81,6 +81,77 @@ logic — it only registers source *records*.
 - Starts empty; missing/empty/corrupt file falls back to an empty registry
   without crashing. Writes are atomic (temp file + `os.replace`).
 
+## Obsidian Adapter Contract
+
+Phase 6A defines the contract for future Obsidian vault integration.
+
+Current phase supports:
+- Obsidian source configuration shape
+- Pure validation
+- Adapter interface placeholder
+- Source registry compatibility
+
+Current phase does not support:
+- Live vault import
+- Markdown parsing
+- Filesystem scanning
+- Filesystem watching
+- Frontend source-management UI
+
+### Shapes
+
+`ObsidianVaultConfig` (snake_case, matching the rest of the API):
+
+```json
+{
+  "vault_id": "vault-1",
+  "name": "My Vault",
+  "root_path": "/vaults/my-vault",
+  "include_patterns": ["**/*.md"],
+  "exclude_patterns": [".obsidian/**"],
+  "tag_prefix": "#",
+  "link_strategy": "both",
+  "metadata": {}
+}
+```
+
+- `vault_id`, `name`, `root_path`: required, non-empty strings.
+- `include_patterns` / `exclude_patterns`: optional lists of strings (default `[]`).
+- `tag_prefix`: optional string.
+- `link_strategy`: one of `wikilink` | `markdown` | `both` (defaults to `both`).
+- `metadata`: optional object (default `{}`).
+
+`ObsidianDocumentCandidate` — the normalized shape an adapter *would* emit in a
+future phase (not produced by any Phase 6A code):
+
+```json
+{
+  "source_id": "reg-...",
+  "source_path": "notes/a.md",
+  "title": "A",
+  "content_preview": null,
+  "tags": [],
+  "links": [],
+  "metadata": {}
+}
+```
+
+### Validation
+
+`app.adapters.obsidian.validate_obsidian_config(data)` is a **pure** helper that
+returns a list of human-readable error strings (empty = valid). It checks field
+presence and types only. It does **not** check whether `root_path` exists on the
+host machine — verifying a real location is a future import-phase concern.
+
+### Adapter interface
+
+`app.adapters.base.SourceAdapter` is an abstract base describing the future
+contract: *config in → normalized document candidates out* via `discover()`.
+`app.adapters.obsidian.ObsidianVaultAdapter` is a placeholder that holds a
+validated config and raises `NotImplementedError` from `discover()`; it performs
+no filesystem traversal or parsing in this phase. The `obsidian` source type is
+already recognized by the source registry (`RegistrySourceType.OBSIDIAN`).
+
 ## Search & Query Helpers (Phase 3C)
 
 The store exposes deterministic, read-only helpers that operate against the

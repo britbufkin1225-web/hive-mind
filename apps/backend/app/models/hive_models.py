@@ -311,3 +311,49 @@ class SourceRecordUpdate(BaseModel):
 
 class SourceRegistryListResponse(BaseModel):
     sources: list[SourceRecord]
+
+
+# --------------------------------------------------------------------------- #
+# Phase 6A — Obsidian Adapter Contract
+#
+# Contract/planning shapes for a *future* Obsidian vault adapter. Nothing in
+# this phase reads a vault, scans the filesystem, parses markdown, or watches
+# files. These models define the wire/contract shapes only so a later import
+# phase can be built without destabilizing the backend.
+# --------------------------------------------------------------------------- #
+class ObsidianLinkStrategy(StrEnum):
+    WIKILINK = "wikilink"
+    MARKDOWN = "markdown"
+    BOTH = "both"
+
+
+class ObsidianVaultConfig(BaseModel):
+    """Configuration shape for a future Obsidian vault adapter.
+
+    Contract only: `root_path` is a declared value, not a verified location on
+    disk. No code in this phase opens, scans, or watches the path.
+    """
+
+    vault_id: str
+    name: str
+    root_path: str
+    include_patterns: list[str] = Field(default_factory=list)
+    exclude_patterns: list[str] = Field(default_factory=list)
+    tag_prefix: str | None = None
+    link_strategy: ObsidianLinkStrategy = ObsidianLinkStrategy.BOTH
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ObsidianDocumentCandidate(BaseModel):
+    """Normalized document an Obsidian adapter *would* emit in a future phase.
+
+    Defined now for forward-compatibility. No code in Phase 6A produces these.
+    """
+
+    source_id: str
+    source_path: str
+    title: str
+    content_preview: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    links: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
