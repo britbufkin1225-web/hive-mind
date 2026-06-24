@@ -38,6 +38,90 @@ Obsidian vault scanning, markdown parsing, frontmatter extraction, filesystem
 watching, or vault import in this phase — the Obsidian-mappable fields below
 remain placeholders.
 
+## Search & Query Helpers (Phase 3C)
+
+The store exposes deterministic, read-only helpers that operate against the
+persisted data. They back the console commands but are independently usable:
+
+- `stats()` — counts per collection (`sources`, `nodes`, `edges`, `models`, `activity`).
+- `list_records(type)` — records of a type; accepts singular/plural/alias forms;
+  raises `ValueError` on an unknown type.
+- `get_record(id)` — finds a record by id across all collections, returning
+  `(type, record)` or `None`.
+- `search(query)` — case-insensitive match across source/model names, node labels
+  and tags, activity messages, and ids; an empty query returns empty lists.
+- `filter_nodes(tag=, node_type=)`, `filter_sources(status=, source_type=)` — schema-compatible filters.
+
+Safe mutation helpers (validate, dedupe, persist atomically):
+
+- `add_tag(node_id, tag)` — adds a tag to a node, deduplicating; validates the node id.
+- `link_nodes(source_id, target_id)` — creates a `linked_to` edge between two
+  existing nodes, deduplicating identical links; validates both ids.
+- `create_note(text)` — creates a `note` graph node from text.
+
+## Hive Console (Phase 3D)
+
+The Hive Console is an **app-controlled command interface**, not a shell. It
+parses a fixed whitelist of commands and executes them against the store. It
+never spawns processes, never touches the filesystem directly, and never
+evaluates arbitrary code. `shlex` is used only to split quoted arguments.
+
+### `POST /api/console/execute`
+
+Request:
+
+```json
+{ "command": "add note \"Phase 3B persistence completed\"" }
+```
+
+Response (success):
+
+```json
+{
+  "ok": true,
+  "command": "add note",
+  "result": { "type": "note", "id": "note-...", "message": "Note created" },
+  "error": null
+}
+```
+
+Response (controlled error — unknown/malformed/unsafe/not-found):
+
+```json
+{ "ok": false, "command": "blocked", "result": null, "error": "Unsafe command 'rm' is not permitted. ..." }
+```
+
+Command-level problems return HTTP 200 with `ok: false` and an `error` message
+(they are valid console interactions). A missing `command` field in the request
+body returns HTTP 422 from request validation.
+
+### Supported commands (first version)
+
+| Command | Effect |
+| --- | --- |
+| `help` | List available commands |
+| `status` | Backend status + store stats |
+| `list <type>` | List records (`sources`/`nodes`/`edges`/`models`/`activity`) |
+| `find <query>` | Text search across records |
+| `show <id>` | Show one record by id |
+| `tag <id> <tag>` | Add a tag to a node (deduped) |
+| `link <sourceId> <targetId>` | Link two nodes (deduped) |
+| `add note "<text>"` | Create a note node |
+
+### Security boundary
+
+- The console **never** executes OS/system commands. There is no shell,
+  PowerShell, bash, cmd, git, npm, package install, file deletion, or arbitrary
+  command execution.
+- Commands whose first token is a known system/shell keyword (e.g. `rm`,
+  `powershell`, `bash`, `git`, `npm`, `del`, `Remove-Item`, `sudo`, `curl`, ...)
+  are rejected with a controlled `blocked` error and are **not** executed.
+- Unknown commands return an `unknown` error; malformed commands return a
+  `malformed` error or a `Usage:` hint. Nothing falls through to the OS.
+
+**Current limitation:** there is no frontend console panel yet — this phase adds
+the backend command API only. There is still no Obsidian import/scanning.
+
 ## Obsidian Forward-Compatibility (placeholders only)
 
 The data shapes reserve optional fields so a future phase can map cleanly to an

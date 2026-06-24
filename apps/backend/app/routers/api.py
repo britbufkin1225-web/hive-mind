@@ -1,7 +1,10 @@
 from fastapi import APIRouter, HTTPException
 
+from app.console.console import HiveConsole
 from app.models.hive_models import (
     ActivityResponse,
+    ConsoleExecuteRequest,
+    ConsoleExecuteResponse,
     GraphEdgesResponse,
     GraphNodesResponse,
     HiveExportSnapshot,
@@ -101,3 +104,15 @@ def post_import(payload: HiveImportRequest) -> ImportResponse:
         activity=len(payload.activity),
         models=len(payload.models),
     )
+
+
+@router.post("/console/execute", response_model=ConsoleExecuteResponse)
+def post_console_execute(payload: ConsoleExecuteRequest) -> ConsoleExecuteResponse:
+    """Execute a safe, app-controlled Hive Console command.
+
+    Command-level problems (unknown, malformed, unsafe, not-found) return HTTP
+    200 with ``ok: false`` and an ``error`` message — they are valid console
+    interactions, not transport errors. The console never executes OS commands.
+    """
+    console = HiveConsole(store)
+    return ConsoleExecuteResponse(**console.execute(payload.command))
