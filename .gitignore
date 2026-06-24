@@ -19,5 +19,5 @@ __pycache__/
 apps/frontend/vite.config.js
 apps/frontend/vite.config.d.ts
 
-# Backend runtime data (not committed — seeded at startup)
-apps/backend/data/runtime/
+# Backend runtime/persisted data (not committed — seeded at startup)
+apps/backend/data/
