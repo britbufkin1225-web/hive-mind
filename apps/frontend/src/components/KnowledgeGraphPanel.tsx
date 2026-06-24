@@ -143,7 +143,7 @@ function KnowledgeGraphPanel() {
         </button>
       </div>
 
-      <div aria-live="polite" aria-busy={state === "loading"}>
+      <div aria-live="polite">
         {state === "loading" && (
           <p className="console-hint">Loading knowledge graph…</p>
         )}

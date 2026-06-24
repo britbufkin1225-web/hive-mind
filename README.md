@@ -1,8 +1,10 @@
+<!-- markdownlint-disable MD041 -->
+
 ![Hive|Mind GitHub README banner](./docs/assets/branding/hivemind-readme-banner.png)
 
 # Hive|Mind
 
-Parent label: **devdevbuilds**
+Parent label: **devdevbuilds***
 
 ## Overview
 
@@ -52,7 +54,7 @@ without yet adding a graph canvas.
 ## Completed phase summary
 
 | Phase | Status | Summary |
-|---|---:|---|
+| --- | ---: | --- |
 | Phase 0 | Complete | Project initialization and planning foundation. |
 | Phase 1 | Complete | Clean React/FastAPI app foundation with health/status endpoints. |
 | Phase 2 | Complete | API contract and data model planning. |
@@ -109,7 +111,7 @@ current capability.
 ## Roadmap
 
 | Planned Phase | Focus |
-|---|---|
+| --- | --- |
 | Phase 8D | First read-only visual graph canvas. |
 | Phase 8E | Node inspector and edge detail UX. |
 | Phase 8F | Graph filters, search, and highlighting. |

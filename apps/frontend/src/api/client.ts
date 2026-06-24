@@ -94,9 +94,10 @@ export const apiClient = {
     post<ConsoleExecuteResponse>("/console/execute", { command }),
   getRegistrySources: () =>
     get<SourceRegistryListResponse>("/registry/sources"),
-  importObsidianVault: (request: ObsidianImportRequest) =>
-    post<ObsidianImportSummary>("/obsidian/import", request),
   getKnowledgeGraph: () =>
     get<KnowledgeGraphResponse>("/knowledge-graph"),
+  importObsidianVault: (request: ObsidianImportRequest) =>
+    post<ObsidianImportSummary>("/obsidian/import", request),
+  
 };
 
