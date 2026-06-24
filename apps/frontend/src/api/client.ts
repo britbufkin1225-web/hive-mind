@@ -1,3 +1,5 @@
+import type { SourceRegistryListResponse } from "../types/api";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787/api";
 
@@ -61,5 +63,7 @@ export const apiClient = {
   getVaultSummary: () => get<VaultSummaryResponse>("/vault/summary"),
   executeConsole: (command: string) =>
     post<ConsoleExecuteResponse>("/console/execute", { command }),
+  getRegistrySources: () =>
+    get<SourceRegistryListResponse>("/registry/sources"),
 };
 
