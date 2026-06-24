@@ -53,6 +53,44 @@ function formatMetaValue(value: unknown): string {
   return typeof value === "string" ? value : JSON.stringify(value);
 }
 
+/** True when a source originated from an Obsidian vault import. */
+function isObsidianSource(source: SourceRecord): boolean {
+  return source.type === "obsidian" || source.metadata?.origin === "obsidian";
+}
+
+/**
+ * Read a metadata value as a display string, or null when absent/blank.
+ * Handles the string/number/boolean shapes the backend emits; anything else
+ * (objects, arrays, null/undefined) is treated as not present so nothing
+ * renders as "undefined".
+ */
+function metaText(metadata: HiveMetadata, key: string): string | null {
+  const value = metadata?.[key];
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (typeof value === "string") {
+    return value.trim() === "" ? null : value;
+  }
+  return null;
+}
+
+// Phase 6D import metadata surfaced in the dedicated Obsidian section below, so
+// it is excluded from the generic metadata dump to avoid showing it twice.
+const OBSIDIAN_META_KEYS = new Set([
+  "origin",
+  "vault_path",
+  "import_status",
+  "imported_count",
+  "updated_count",
+  "skipped_count",
+  "duplicate_count",
+  "error_count",
+  "node_count",
+  "link_count",
+  "last_import_summary",
+]);
+
 function SourceCard({
   source,
   selected,
@@ -71,7 +109,14 @@ function SourceCard({
         aria-pressed={selected}
       >
         <span className="source-card-head">
-          <span className="source-name">{source.name}</span>
+          <span className="source-name">
+            {isObsidianSource(source) && (
+              <span className="source-badge source-badge-obsidian">
+                Obsidian
+              </span>
+            )}
+            {source.name}
+          </span>
           <span className={`source-status source-status-${source.status}`}>
             {statusLabel(source.status)}
           </span>
@@ -82,6 +127,55 @@ function SourceCard({
         </span>
       </button>
     </li>
+  );
+}
+
+/**
+ * Obsidian-specific import details, rendered only for Obsidian sources. Every
+ * row is optional: a field that is missing from metadata is simply omitted, so
+ * partially-populated records never render blank or "undefined" rows.
+ */
+function ObsidianImportDetails({ source }: { source: SourceRecord }) {
+  const metadata = source.metadata ?? {};
+  const vaultPath = metaText(metadata, "vault_path") ?? source.root_path;
+  const importedNotes =
+    metaText(metadata, "node_count") ?? metaText(metadata, "imported_count");
+
+  const rows: Array<[string, string]> = [];
+  if (vaultPath) {
+    rows.push(["Vault path", vaultPath]);
+  }
+  if (importedNotes !== null) {
+    rows.push(["Imported notes", importedNotes]);
+  }
+  const linkCount = metaText(metadata, "link_count");
+  if (linkCount !== null) {
+    rows.push(["Link count", linkCount]);
+  }
+  const errorCount = metaText(metadata, "error_count");
+  if (errorCount !== null && errorCount !== "0") {
+    rows.push(["Import errors", errorCount]);
+  }
+  const importStatus = metaText(metadata, "import_status");
+  if (importStatus !== null) {
+    rows.push(["Import status", importStatus]);
+  }
+  rows.push(["Last import", formatDate(source.last_imported_at)]);
+  const summary = metaText(metadata, "last_import_summary");
+
+  return (
+    <div className="source-obsidian-section">
+      <span className="result-key">Obsidian import</span>
+      <dl className="source-meta">
+        {rows.map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {summary && <p className="source-obsidian-summary">{summary}</p>}
+    </div>
   );
 }
 
@@ -96,16 +190,25 @@ function SourceInspector({ source }: { source: SourceRecord | null }) {
     );
   }
 
+  const obsidian = isObsidianSource(source);
   const desc = description(source.metadata ?? {});
-  // Show every metadata key except the description we already surface above.
+  // Show every metadata key except the description we already surface above and
+  // (for Obsidian sources) the import fields shown in the dedicated section.
   const metadataEntries = Object.entries(source.metadata ?? {}).filter(
-    ([key]) => !(key === "description" && desc !== null),
+    ([key]) =>
+      !(key === "description" && desc !== null) &&
+      !(obsidian && OBSIDIAN_META_KEYS.has(key)),
   );
 
   return (
     <div className="source-inspector">
       <div className="source-inspector-head">
-        <h3>{source.name}</h3>
+        <h3>
+          {obsidian && (
+            <span className="source-badge source-badge-obsidian">Obsidian</span>
+          )}
+          {source.name}
+        </h3>
         <span className={`source-status source-status-${source.status}`}>
           {statusLabel(source.status)}
         </span>
@@ -145,6 +248,8 @@ function SourceInspector({ source }: { source: SourceRecord | null }) {
           <dd>{formatDate(source.updated_at)}</dd>
         </div>
       </dl>
+
+      {obsidian && <ObsidianImportDetails source={source} />}
 
       <div className="source-inspector-metadata">
         <span className="result-key">Metadata</span>
