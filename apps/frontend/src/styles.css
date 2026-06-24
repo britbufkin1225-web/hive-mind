@@ -325,3 +325,33 @@ dd {
   border-top: 1px solid #eee;
 }
 
+/* Phase 6E — Obsidian source visibility */
+.source-badge {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  margin-right: 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
+.source-badge-obsidian {
+  background: #6b4fbb;
+  color: #fff;
+}
+
+.source-obsidian-section {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
+}
+
+.source-obsidian-summary {
+  margin: 0.4rem 0 0;
+  color: #555;
+  font-size: 0.8125rem;
+}
+
