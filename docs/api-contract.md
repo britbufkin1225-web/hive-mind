@@ -24,6 +24,7 @@ Current Phase 1 frontend calls use the `/api` prefix, such as `GET /api/health`.
 | `GET /api/graph` | Read graph nodes and edges together | Contracted, not fully implemented |
 | `GET /api/graph/nodes` | Read graph nodes only | Contracted, not fully implemented |
 | `GET /api/graph/edges` | Read graph edges only | Contracted, not fully implemented |
+| `GET /api/knowledge-graph` | Read deterministic graph projection (nodes, edges, summary) | Implemented (Phase 8A) |
 | `GET /api/activity` | Read dashboard activity events | Contracted, not fully implemented |
 | `GET /api/models` | Read local model metadata | Contracted, not fully implemented |
 | `GET /api/vault/summary` | Existing Phase 1 empty vault summary | Implemented placeholder |
@@ -38,6 +39,7 @@ Phase 2 defines these shared data shapes:
 - `HiveActivityEvent`
 - `HiveSystemStatus`
 - `HiveGraphResponse`
+- `KnowledgeGraphResponse` / `KnowledgeGraphSummary` (Phase 8A)
 
 The matching backend Pydantic models are in `apps/backend/app/models/hive_models.py`.
 
