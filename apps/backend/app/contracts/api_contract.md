@@ -8,6 +8,37 @@ Local API base URL: `http://localhost:8787`
 
 Existing Phase 1 routes remain available. New Phase 2 routes are documented for future implementation and may be backed by development-only mock data while persistent storage is not present.
 
+## Obsidian Forward-Compatibility (placeholders only)
+
+The data shapes reserve optional fields so a future phase can map cleanly to an
+Obsidian vault without changing the wire contract. Phase 3A does **not** scan a
+filesystem, parse markdown/frontmatter, watch files, or run a vault import —
+these fields exist for forward compatibility and default to `null`/empty.
+
+- `Source.origin` — provider the source came from, e.g. `"obsidian"`.
+- `Source.vault_path` — vault root or relative path for vault-backed sources.
+- `Graph Node.file_meta` — a `VaultFileMeta` placeholder (see below), or `null`.
+- `Activity Event.origin` — provider that emitted the event.
+- `Vault.vault_path`, `Vault.last_indexed` — linked vault root and last index time.
+
+`VaultFileMeta` placeholder shape:
+
+```json
+{
+  "file_path": "/vault/Note.md",
+  "vault_path": "Note.md",
+  "file_name": "Note.md",
+  "extension": ".md",
+  "frontmatter": {},
+  "tags": [],
+  "backlinks": [],
+  "outlinks": [],
+  "last_modified": "2026-06-23T12:00:00Z",
+  "content_hash": null,
+  "origin": "obsidian"
+}
+```
+
 ## Shared Models
 
 ### Source
