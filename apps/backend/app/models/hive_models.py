@@ -357,3 +357,29 @@ class ObsidianDocumentCandidate(BaseModel):
     tags: list[str] = Field(default_factory=list)
     links: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+# --------------------------------------------------------------------------- #
+# Phase 6B — Obsidian Import MVP
+#
+# Request/response shapes for a one-shot, backend-only import of markdown files
+# from an explicitly provided Obsidian vault path into the graph store. The
+# import never mutates the user's vault files; it only reads them.
+# --------------------------------------------------------------------------- #
+class ObsidianImportRequest(BaseModel):
+    """Request to import an explicit local Obsidian vault path (one-shot)."""
+
+    vault_path: str
+    source_name: str | None = None
+
+
+class ObsidianImportSummary(BaseModel):
+    """Deterministic summary of a single Obsidian import run."""
+
+    source_id: str | None = None
+    vault_path: str
+    imported_count: int = 0
+    skipped_count: int = 0
+    error_count: int = 0
+    imported_node_ids: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
