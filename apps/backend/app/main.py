@@ -2,19 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from app.routers.api import router
+
 
 class HealthResponse(BaseModel):
     ok: bool
     service: str
     version: str
-
-
-class StatusResponse(BaseModel):
-    app: str
-    parent: str
-    environment: str
-    backend: str
-    frontend: str
 
 
 class VaultSummaryResponse(BaseModel):
@@ -36,22 +30,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(router)
+
 
 @app.get("/health", response_model=HealthResponse)
 @app.get("/api/health", response_model=HealthResponse)
 def get_health() -> HealthResponse:
     return HealthResponse(ok=True, service="hivemind-backend", version="0.1.0")
-
-
-@app.get("/api/status", response_model=StatusResponse)
-def get_status() -> StatusResponse:
-    return StatusResponse(
-        app="Hive|Mind",
-        parent="devdevbuilds",
-        environment="development",
-        backend="online",
-        frontend="connected",
-    )
 
 
 @app.get("/api/vault/summary", response_model=VaultSummaryResponse)
@@ -64,4 +49,3 @@ def get_vault_summary() -> VaultSummaryResponse:
         graphMode="not_initialized",
         message="Vault foundation ready. Graph logic not implemented in Phase 1.",
     )
-
