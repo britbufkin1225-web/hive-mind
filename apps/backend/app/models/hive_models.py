@@ -230,3 +230,14 @@ class ImportResponse(BaseModel):
     edges: int
     activity: int
     models: int
+
+
+class ConsoleExecuteRequest(BaseModel):
+    command: str
+
+
+class ConsoleExecuteResponse(BaseModel):
+    ok: bool
+    command: str
+    result: dict[str, Any] | None = None
+    error: str | None = None

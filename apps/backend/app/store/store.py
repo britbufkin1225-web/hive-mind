@@ -4,6 +4,9 @@ import os
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
+
+from pydantic import BaseModel
 
 from app.mock.mock_data import (
     MOCK_ACTIVITY_EVENTS,
@@ -14,6 +17,8 @@ from app.mock.mock_data import (
 from app.models.hive_models import (
     ActivityEventType,
     ActivitySeverity,
+    GraphNodeType,
+    GraphRelationship,
     HiveActivityEvent,
     HiveExportSnapshot,
     HiveGraphEdge,
@@ -23,6 +28,8 @@ from app.models.hive_models import (
     HiveSource,
     HiveSystemStatus,
     ModelStatus,
+    SourceStatus,
+    SourceType,
     SystemStatusValue,
 )
 
@@ -261,6 +268,180 @@ class HiveStore:
             )
         )
         self._persist()
+
+    # ------------------------------------------------------------------ #
+    # Search / query helpers (read-only, deterministic)
+    # ------------------------------------------------------------------ #
+    def stats(self) -> dict[str, int]:
+        """Return counts of each record collection."""
+        return {
+            "sources": len(self._sources),
+            "nodes": len(self._nodes),
+            "edges": len(self._edges),
+            "models": len(self._models),
+            "activity": len(self._activity),
+        }
+
+    def list_records(self, record_type: str) -> list[BaseModel]:
+        """List records of a given type. Raises ValueError on unknown type."""
+        getters = {
+            "sources": self.get_sources,
+            "source": self.get_sources,
+            "nodes": self.get_nodes,
+            "node": self.get_nodes,
+            "edges": self.get_edges,
+            "edge": self.get_edges,
+            "models": self.get_models,
+            "model": self.get_models,
+            "activity": self.get_activity,
+            "events": self.get_activity,
+            "event": self.get_activity,
+        }
+        getter = getters.get(record_type.lower())
+        if getter is None:
+            raise ValueError(
+                f"Unknown record type '{record_type}'. "
+                "Valid types: sources, nodes, edges, models, activity."
+            )
+        return list(getter())
+
+    def get_record(self, record_id: str) -> tuple[str, BaseModel] | None:
+        """Find a record by id across all collections. Returns (type, record)."""
+        if record_id in self._sources:
+            return ("source", self._sources[record_id])
+        if record_id in self._nodes:
+            return ("node", self._nodes[record_id])
+        if record_id in self._edges:
+            return ("edge", self._edges[record_id])
+        if record_id in self._models:
+            return ("model", self._models[record_id])
+        for event in self._activity:
+            if event.id == record_id:
+                return ("activity", event)
+        return None
+
+    def search(self, query: str) -> dict[str, list[BaseModel]]:
+        """Case-insensitive text search across persisted records.
+
+        Matches source/model names, node labels and tags, activity messages,
+        and ids. An empty query returns empty result lists.
+        """
+        q = query.lower().strip()
+        if not q:
+            return {"sources": [], "nodes": [], "models": [], "activity": []}
+        return {
+            "sources": [
+                s for s in self._sources.values()
+                if q in s.name.lower() or q in s.id.lower()
+            ],
+            "nodes": [
+                n for n in self._nodes.values()
+                if q in n.label.lower()
+                or q in n.id.lower()
+                or any(q in tag.lower() for tag in n.tags)
+            ],
+            "models": [
+                m for m in self._models.values()
+                if q in m.name.lower() or q in m.id.lower()
+            ],
+            "activity": [
+                e for e in self._activity
+                if q in e.message.lower() or q in e.id.lower()
+            ],
+        }
+
+    def filter_nodes(
+        self,
+        *,
+        tag: str | None = None,
+        node_type: GraphNodeType | None = None,
+    ) -> list[HiveGraphNode]:
+        nodes = self.get_nodes()
+        if tag is not None:
+            nodes = [n for n in nodes if tag in n.tags]
+        if node_type is not None:
+            nodes = [n for n in nodes if n.type == node_type]
+        return nodes
+
+    def filter_sources(
+        self,
+        *,
+        status: SourceStatus | None = None,
+        source_type: SourceType | None = None,
+    ) -> list[HiveSource]:
+        sources = self.get_sources()
+        if status is not None:
+            sources = [s for s in sources if s.status == status]
+        if source_type is not None:
+            sources = [s for s in sources if s.type == source_type]
+        return sources
+
+    # ------------------------------------------------------------------ #
+    # Safe mutation helpers (validate, dedupe, persist)
+    # ------------------------------------------------------------------ #
+    def add_tag(self, node_id: str, tag: str) -> HiveGraphNode:
+        """Add a tag to a node, deduplicating. Raises ValueError on bad input."""
+        node = self._nodes.get(node_id)
+        if node is None:
+            raise ValueError(f"Node '{node_id}' not found")
+        tag = tag.strip()
+        if not tag:
+            raise ValueError("Tag must not be empty")
+        if tag not in node.tags:
+            node.tags.append(tag)
+            node.updated_at = datetime.now(tz=timezone.utc)
+            self._persist()
+        return node
+
+    def link_nodes(
+        self,
+        source_node_id: str,
+        target_node_id: str,
+        relationship: GraphRelationship = GraphRelationship.LINKED_TO,
+    ) -> HiveGraphEdge:
+        """Create an edge between two existing nodes, deduplicating identical links."""
+        if source_node_id not in self._nodes:
+            raise ValueError(f"Source node '{source_node_id}' not found")
+        if target_node_id not in self._nodes:
+            raise ValueError(f"Target node '{target_node_id}' not found")
+        for edge in self._edges.values():
+            if (
+                edge.source_node_id == source_node_id
+                and edge.target_node_id == target_node_id
+                and edge.relationship == relationship
+            ):
+                return edge  # link already exists; do not duplicate
+        edge = HiveGraphEdge(
+            id=f"edge-{uuid4().hex[:12]}",
+            source_node_id=source_node_id,
+            target_node_id=target_node_id,
+            relationship=relationship,
+            metadata={"origin": "console"},
+            created_at=datetime.now(tz=timezone.utc),
+        )
+        self._edges[edge.id] = edge
+        self._persist()
+        return edge
+
+    def create_note(self, text: str, *, source_id: str | None = None) -> HiveGraphNode:
+        """Create a simple note node from text. Raises ValueError on empty text."""
+        text = text.strip()
+        if not text:
+            raise ValueError("Note text must not be empty")
+        now = datetime.now(tz=timezone.utc)
+        node = HiveGraphNode(
+            id=f"note-{uuid4().hex[:12]}",
+            label=text,
+            type=GraphNodeType.NOTE,
+            source_id=source_id,
+            tags=[],
+            metadata={"origin": "console"},
+            created_at=now,
+            updated_at=now,
+        )
+        self._nodes[node.id] = node
+        self._persist()
+        return node
 
 
 store = HiveStore()
