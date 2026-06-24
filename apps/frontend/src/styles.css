@@ -355,3 +355,79 @@ dd {
   font-size: 0.8125rem;
 }
 
+/* Phase 7A — Obsidian import action panel */
+.obsidian-import-panel {
+  margin: 0.75rem 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid #d4d4d4;
+  background: #faf9fd;
+}
+
+.obsidian-import-title {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+}
+
+.obsidian-import-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.obsidian-import-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.obsidian-import-field label {
+  font-size: 0.8125rem;
+  color: #444;
+}
+
+.obsidian-import-field input {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  font: inherit;
+}
+
+.obsidian-import-field input:disabled {
+  background: #f0f0f0;
+  color: #999;
+}
+
+.obsidian-import-field input[aria-invalid="true"] {
+  border-color: #a12622;
+}
+
+.obsidian-import-submit {
+  padding: 0.4rem 1.1rem;
+  border: 1px solid #6b4fbb;
+  background: #6b4fbb;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.obsidian-import-submit:disabled {
+  border-color: #b3a6d6;
+  background: #b3a6d6;
+  cursor: not-allowed;
+}
+
+.obsidian-import-summary {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
+}
+
+.obsidian-import-message {
+  margin: 0.4rem 0 0;
+  color: #555;
+  font-size: 0.8125rem;
+}
+
