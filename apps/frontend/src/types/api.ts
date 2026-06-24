@@ -104,3 +104,35 @@ export interface HiveGraphResponse {
   edges: HiveGraphEdge[];
   metadata: HiveMetadata;
 }
+
+// Phase 5A/5B — Source Registry (future import connectors). Separate from the
+// graph's HiveSource resource; mirrors the backend SourceRecord wire shape.
+export type RegistrySourceType =
+  | "obsidian"
+  | "local_files"
+  | "github"
+  | "pdf"
+  | "web"
+  | "api";
+
+export type RegistrySourceStatus =
+  | "active"
+  | "inactive"
+  | "error"
+  | "pending";
+
+export interface SourceRecord {
+  id: string;
+  name: string;
+  type: RegistrySourceType;
+  root_path: string | null;
+  status: RegistrySourceStatus;
+  last_imported_at: string | null;
+  created_at: string;
+  updated_at: string;
+  metadata: HiveMetadata;
+}
+
+export interface SourceRegistryListResponse {
+  sources: SourceRecord[];
+}

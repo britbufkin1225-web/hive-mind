@@ -168,3 +168,85 @@ dd {
   display: block;
 }
 
+/* Phase 5B — Source Registry panel */
+.source-registry-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.source-refresh {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.source-refresh:disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+
+.source-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.source-card {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d4d4d4;
+  background: #f4f4f4;
+}
+
+.source-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.source-name {
+  font-weight: 600;
+  color: #222;
+}
+
+.source-status {
+  padding: 0.1rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.source-status-active {
+  color: #176b37;
+}
+
+.source-status-error {
+  color: #a12622;
+}
+
+.source-status-pending {
+  color: #8a6d00;
+}
+
+.source-status-inactive {
+  color: #666;
+}
+
+.source-meta {
+  margin: 0;
+}
+
+.source-meta dt {
+  width: 7rem;
+}
+
