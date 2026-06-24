@@ -431,3 +431,195 @@ dd {
   font-size: 0.8125rem;
 }
 
+/* Phase 8B — Knowledge Graph read-only panel */
+.graph-subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.graph-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin: 0.75rem 0 1rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #d4d4d4;
+  background: #f4f4f4;
+}
+
+.graph-summary div {
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0;
+}
+
+.graph-summary dt {
+  width: auto;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.graph-summary dd {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.graph-section {
+  margin-top: 1rem;
+}
+
+.graph-section-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.graph-node-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.graph-node-card {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #d4d4d4;
+  background: #f4f4f4;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.graph-node-card:hover {
+  border-color: #999;
+}
+
+.graph-node-card-selected {
+  border-color: #444;
+  background: #fff;
+  box-shadow: inset 3px 0 0 #444;
+}
+
+.graph-node-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.graph-node-name {
+  font-weight: 600;
+  color: #222;
+}
+
+.graph-node-type {
+  padding: 0.1rem 0.5rem;
+  border: 1px solid #b3a6d6;
+  border-radius: 999px;
+  color: #6b4fbb;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.graph-node-card-sub {
+  display: block;
+  margin-top: 0.2rem;
+  color: #666;
+  font-size: 0.8125rem;
+  word-break: break-word;
+}
+
+.graph-inspector {
+  padding: 0.85rem 1rem;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+}
+
+.graph-inspector-empty {
+  background: #f4f4f4;
+}
+
+.graph-inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.graph-inspector-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.graph-inspector-metadata {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
+}
+
+.graph-edge-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.graph-edge-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d4d4d4;
+  background: #f4f4f4;
+}
+
+.graph-edge-endpoints {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.graph-edge-node {
+  font-weight: 600;
+  color: #222;
+  word-break: break-word;
+}
+
+.graph-edge-arrow {
+  color: #6b4fbb;
+}
+
+.graph-edge-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.graph-edge-relationship {
+  padding: 0.1rem 0.5rem;
+  border: 1px solid #d4d4d4;
+  border-radius: 999px;
+  color: #444;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.graph-edge-confidence {
+  color: #666;
+  font-size: 0.75rem;
+}
+
