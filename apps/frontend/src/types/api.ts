@@ -136,3 +136,36 @@ export interface SourceRecord {
 export interface SourceRegistryListResponse {
   sources: SourceRecord[];
 }
+
+// Phase 6B/7A — Obsidian import. Mirrors the backend ObsidianImportRequest and
+// ObsidianImportSummary wire shapes (POST /api/obsidian/import).
+export interface ObsidianImportRequest {
+  vault_path: string;
+  source_name?: string | null;
+}
+
+/** Compact linkage from an import run back to its Source Registry record. */
+export interface ImportedSourceRef {
+  id: string;
+  name: string;
+  type: RegistrySourceType;
+  status: RegistrySourceStatus;
+  root_path: string | null;
+  last_imported_at: string | null;
+}
+
+export interface ObsidianImportSummary {
+  source_id: string | null;
+  source_name: string | null;
+  source: ImportedSourceRef | null;
+  vault_path: string;
+  imported_count: number;
+  updated_count: number;
+  skipped_count: number;
+  duplicate_count: number;
+  error_count: number;
+  link_count: number;
+  imported_node_ids: string[];
+  warnings: string[];
+  notes: string[];
+}

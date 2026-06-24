@@ -1,13 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { apiClient } from "../api/client";
 import type {
   HiveMetadata,
+  ObsidianImportSummary,
   RegistrySourceStatus,
   RegistrySourceType,
   SourceRecord,
 } from "../types/api";
 
 type PanelState = "loading" | "success" | "error";
+
+type ImportState = "idle" | "importing" | "success" | "error";
 
 const TYPE_LABELS: Record<RegistrySourceType, string> = {
   obsidian: "Obsidian",
@@ -51,6 +55,15 @@ function description(metadata: HiveMetadata): string | null {
 /** Render a metadata value as a readable string. */
 function formatMetaValue(value: unknown): string {
   return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+/**
+ * Coerce a value to a finite count, or null when it is missing/not a number.
+ * Guards the import summary against unexpected response shapes so a malformed
+ * field renders as an omitted row rather than "undefined"/"NaN".
+ */
+function toCount(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 /** True when a source originated from an Obsidian vault import. */
@@ -270,13 +283,202 @@ function SourceInspector({ source }: { source: SourceRecord | null }) {
   );
 }
 
+/**
+ * Demo-readable summary of a completed import run. Every field is optional:
+ * source linkage, vault path, counts, status, and the trailing message are each
+ * omitted when the backend does not return them (or returns an unexpected
+ * shape), so partial responses never render blank/"undefined"/"NaN".
+ */
+function ImportSummaryView({ summary }: { summary: ObsidianImportSummary }) {
+  const sourceName = summary.source?.name ?? summary.source_name ?? null;
+  const sourceId = summary.source?.id ?? summary.source_id ?? null;
+  const vaultPath = summary.vault_path ?? summary.source?.root_path ?? null;
+  const status = summary.source?.status ?? null;
+
+  const imported = toCount(summary.imported_count);
+  const updated = toCount(summary.updated_count);
+  const importedNotes =
+    imported === null && updated === null
+      ? null
+      : (imported ?? 0) + (updated ?? 0);
+  const links = toCount(summary.link_count);
+  const errors = toCount(summary.error_count);
+
+  // The backend emits one human-readable status line as the last note.
+  const notes = Array.isArray(summary.notes) ? summary.notes : [];
+  const message =
+    notes.length > 0 && typeof notes[notes.length - 1] === "string"
+      ? notes[notes.length - 1]
+      : null;
+
+  const rows: Array<[string, string]> = [];
+  if (sourceName) {
+    rows.push(["Source", sourceName]);
+  }
+  if (status) {
+    rows.push(["Status", statusLabel(status)]);
+  }
+  if (vaultPath) {
+    rows.push(["Vault path", vaultPath]);
+  }
+  if (importedNotes !== null) {
+    rows.push(["Imported notes", String(importedNotes)]);
+  }
+  if (links !== null) {
+    rows.push(["Links", String(links)]);
+  }
+  if (errors !== null) {
+    rows.push(["Errors", String(errors)]);
+  }
+
+  return (
+    <div className="obsidian-import-summary" role="status">
+      <span className="result-key">Import complete</span>
+      <dl className="source-meta">
+        {rows.map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+        {sourceId && (
+          <div>
+            <dt>Source ID</dt>
+            <dd>
+              <code>{sourceId}</code>
+            </dd>
+          </div>
+        )}
+      </dl>
+      {message && <p className="obsidian-import-message">{message}</p>}
+    </div>
+  );
+}
+
+/**
+ * Controlled action panel that triggers the existing backend Obsidian import
+ * endpoint. On success it invokes `onImported` so the parent can refresh the
+ * registry list, then surfaces a compact summary of the run.
+ */
+function ObsidianImportPanel({
+  onImported,
+}: {
+  onImported: (summary: ObsidianImportSummary) => Promise<void> | void;
+}) {
+  const [vaultPath, setVaultPath] = useState("");
+  const [sourceName, setSourceName] = useState("");
+  const [state, setState] = useState<ImportState>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<ObsidianImportSummary | null>(null);
+
+  const vaultPathId = useId();
+  const sourceNameId = useId();
+
+  const handleSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const trimmedPath = vaultPath.trim();
+      if (trimmedPath === "") {
+        setState("error");
+        setError("Enter a vault path to import.");
+        setSummary(null);
+        return;
+      }
+
+      // Clear any prior result so a stale summary/error from an earlier run
+      // can't bleed into this submission.
+      setState("importing");
+      setError(null);
+      setSummary(null);
+      try {
+        const trimmedName = sourceName.trim();
+        const result = await apiClient.importObsidianVault({
+          vault_path: trimmedPath,
+          source_name: trimmedName === "" ? null : trimmedName,
+        });
+        setSummary(result);
+        setState("success");
+        // Refresh the registry (and select the imported source when known) so
+        // the new source becomes visible.
+        await onImported(result);
+      } catch (requestError: unknown) {
+        setSummary(null);
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Import failed. Is the backend running?",
+        );
+        setState("error");
+      }
+    },
+    [vaultPath, sourceName, onImported],
+  );
+
+  const importing = state === "importing";
+
+  return (
+    <section className="obsidian-import-panel">
+      <h3 className="obsidian-import-title">Import Obsidian vault</h3>
+      <form className="obsidian-import-form" onSubmit={handleSubmit}>
+        <div className="obsidian-import-field">
+          <label htmlFor={vaultPathId}>Vault path</label>
+          <input
+            id={vaultPathId}
+            type="text"
+            value={vaultPath}
+            onChange={(event) => {
+              setVaultPath(event.target.value);
+              // Drop a stale error once the user starts correcting the path.
+              if (state === "error") {
+                setState("idle");
+                setError(null);
+              }
+            }}
+            placeholder="/abs/path/to/vault"
+            disabled={importing}
+            aria-invalid={state === "error" && vaultPath.trim() === ""}
+          />
+        </div>
+        <div className="obsidian-import-field">
+          <label htmlFor={sourceNameId}>Source name (optional)</label>
+          <input
+            id={sourceNameId}
+            type="text"
+            value={sourceName}
+            onChange={(event) => setSourceName(event.target.value)}
+            placeholder="Defaults to the vault folder name"
+            disabled={importing}
+          />
+        </div>
+        <button type="submit" className="obsidian-import-submit" disabled={importing}>
+          {importing ? "Importing…" : "Import"}
+        </button>
+      </form>
+
+      <div aria-live="polite" aria-busy={importing}>
+        {importing && (
+          <p className="console-hint">Importing vault — scanning notes…</p>
+        )}
+        {state === "error" && error && (
+          <p className="error" role="alert">
+            Import failed — {error}
+          </p>
+        )}
+        {state === "success" && summary && (
+          <ImportSummaryView summary={summary} />
+        )}
+      </div>
+    </section>
+  );
+}
+
 function SourceRegistryPanel() {
   const [state, setState] = useState<PanelState>("loading");
   const [sources, setSources] = useState<SourceRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<SourceRecord[]> => {
     setState("loading");
     setError(null);
     try {
@@ -289,6 +491,7 @@ function SourceRegistryPanel() {
           : null,
       );
       setState("success");
+      return response.sources;
     } catch (requestError: unknown) {
       setError(
         requestError instanceof Error
@@ -296,12 +499,28 @@ function SourceRegistryPanel() {
           : "Network request failed. Is the backend running?",
       );
       setState("error");
+      return [];
     }
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // After an import, refresh the registry and — when the run identifies its
+  // Source Registry record — auto-select it so the new source is front and
+  // center. If the source cannot be identified (or did not land in the list),
+  // the current selection is left untouched by `load`.
+  const handleImported = useCallback(
+    async (summary: ObsidianImportSummary) => {
+      const importedId = summary.source?.id ?? summary.source_id ?? null;
+      const refreshed = await load();
+      if (importedId && refreshed.some((source) => source.id === importedId)) {
+        setSelectedId(importedId);
+      }
+    },
+    [load],
+  );
 
   const selectedSource = useMemo(
     () => sources.find((source) => source.id === selectedId) ?? null,
@@ -321,6 +540,8 @@ function SourceRegistryPanel() {
           {state === "loading" ? "Refreshing…" : "Refresh"}
         </button>
       </div>
+
+      <ObsidianImportPanel onImported={handleImported} />
 
       <div aria-live="polite" aria-busy={state === "loading"}>
         {state === "loading" && (
