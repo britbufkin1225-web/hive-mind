@@ -119,3 +119,52 @@ dd {
   word-break: break-word;
 }
 
+/* Phase 4B — console result formatting */
+.console-label {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.console-status {
+  color: #666;
+}
+
+.console-echo {
+  margin-bottom: 0.5rem;
+}
+
+.console-echo code {
+  font-family: ui-monospace, monospace;
+}
+
+.result-fields {
+  margin-top: 0.5rem;
+}
+
+.result-field {
+  margin-bottom: 0.6rem;
+}
+
+.result-key {
+  font-weight: 600;
+  color: #444;
+}
+
+.result-count {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.result-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.result-list li {
+  margin-bottom: 0.35rem;
+}
+
+.result-summary {
+  display: block;
+}
+
