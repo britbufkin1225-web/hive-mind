@@ -2,11 +2,41 @@
 
 This backend-local reference expands the project-facing contract in `docs/api-contract.md` with model examples, endpoint response shapes, and future implementation notes.
 
-It is a planning and shape contract only: persistence, source ingestion, graph algorithms, authentication, file watching, and dashboard complexity are intentionally deferred.
+It is a planning and shape contract only: source ingestion, graph algorithms, authentication, file watching, and dashboard complexity are intentionally deferred.
 
 Local API base URL: `http://localhost:8787`
 
 Existing Phase 1 routes remain available. New Phase 2 routes are documented for future implementation and may be backed by development-only mock data while persistent storage is not present.
+
+## Local Persistence (Phase 3B)
+
+The backend store (`app/store/store.py`) keeps state in memory and persists it to
+a local JSON document so data survives a backend/store restart. The API response
+shapes are unchanged by persistence.
+
+- **Format:** a `HiveExportSnapshot` JSON document (the same shape returned by
+  `GET /api/export`).
+- **Default path:** `apps/backend/data/hivemind-store.json`.
+- **Override:** set the `HIVEMIND_STORE_PATH` environment variable to relocate the
+  file (used by tests to point at throwaway temp files).
+- **Seeding:** on first construction, if no valid file exists, the store seeds
+  development data from `app/mock/mock_data.py` and writes the file.
+- **Durability:** every mutating operation (`upsert_source`, `delete_source`,
+  `upsert_node`, `delete_node`, `import_snapshot`) writes atomically — a temp file
+  in the same directory is written, fsynced, then `os.replace`d into place.
+- **Resilience:** a missing directory is created on demand; a missing, empty, or
+  corrupt/malformed file never crashes the API — the store logs a warning, falls
+  back to seed data, and rewrites a valid file.
+- **Validation:** imports reject duplicate ids (source/node/edge/model) and edges
+  that reference unknown nodes; loaded files are validated against the Pydantic
+  models before use.
+- **Git:** runtime data is ignored via `apps/backend/data/` in `.gitignore`.
+  Generated store files must not be committed.
+
+**Current limitation:** persistence is local-JSON only. There is still no
+Obsidian vault scanning, markdown parsing, frontmatter extraction, filesystem
+watching, or vault import in this phase — the Obsidian-mappable fields below
+remain placeholders.
 
 ## Obsidian Forward-Compatibility (placeholders only)
 
