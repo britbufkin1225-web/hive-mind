@@ -183,12 +183,21 @@ Response (`ObsidianImportSummary`):
 {
   "source_id": "reg-...",
   "source_name": "My Vault",
+  "source": {
+    "id": "reg-...",
+    "name": "My Vault",
+    "type": "obsidian",
+    "status": "active",
+    "root_path": "/abs/path/to/vault",
+    "last_imported_at": "2026-06-24T12:00:00Z"
+  },
   "vault_path": "/abs/path/to/vault",
   "imported_count": 3,
   "updated_count": 0,
   "skipped_count": 0,
   "duplicate_count": 0,
   "error_count": 0,
+  "link_count": 4,
   "imported_node_ids": ["obsidian-abc123def456"],
   "warnings": [],
   "notes": ["Imported 3, updated 0, skipped 0, errors 0."]
@@ -200,8 +209,28 @@ exactly one of: `imported_count` (new node), `updated_count` (existing node
 refreshed on re-import), `skipped_count` (e.g. empty content), `duplicate_count`
 (a file resolving to an already-seen node id within one run), or `error_count`
 (read/parse failure, with a `warnings` entry). `imported_node_ids` lists every
-node written (new + updated). `notes` are human-readable, deterministic summary
-lines; `warnings` carry per-file problems.
+node written (new + updated). `link_count` totals the wiki/markdown references
+captured across imported notes (not yet materialized as edges in this phase).
+`notes` are human-readable, deterministic summary lines; `warnings` carry
+per-file problems.
+
+### Source Registry linkage (Phase 6D)
+
+Every successful import is wired into the **Source Registry** (`/api/registry/sources`):
+
+- The run upserts a single Obsidian `SourceRecord`, keyed on the resolved
+  `root_path` so **re-importing the same vault updates the existing record
+  instead of duplicating it**. The `source` block in the response is the stable
+  linkage back to that record (`id` matches `source_id`).
+- `source.status` reflects the run outcome: `active` when at least one node was
+  written (or the vault scanned cleanly), `error` when the run wrote nothing but
+  hit per-file errors. An **invalid/rejected vault path raises before any record
+  is created**, so a failed import never leaves a misleading registry entry.
+- The record's `metadata` carries useful, bounded import detail:
+  `origin`, `vault_path`, `import_status`, `imported_count`, `updated_count`,
+  `skipped_count`, `duplicate_count`, `error_count`, `node_count`, `link_count`,
+  and `last_import_summary` (the human-readable summary line). `last_imported_at`
+  is refreshed on every run.
 
 ### Hardening guarantees (Phase 6C)
 

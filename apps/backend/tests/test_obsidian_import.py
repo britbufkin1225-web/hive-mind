@@ -434,3 +434,102 @@ def test_api_summary_exposes_new_fields(vault) -> None:
     ):
         assert key in data
     assert data["source_name"] == "Fields Vault"
+
+
+# --------------------------------------------------------------------------- #
+# Phase 6D — API polish + source registry linkage
+# --------------------------------------------------------------------------- #
+def test_summary_exposes_source_linkage(tmp_path, vault) -> None:
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+    summary = import_vault(str(vault), "Linked Vault", store=store, registry=registry)
+
+    assert summary.source is not None
+    # The linkage points at the same registry record as the flat fields.
+    assert summary.source.id == summary.source_id
+    assert summary.source.name == "Linked Vault"
+    assert summary.source.type.value == "obsidian"
+    assert summary.source.status.value == "active"
+    assert summary.source.root_path == str(vault.resolve())
+    assert summary.source.last_imported_at is not None
+
+
+def test_link_count_tallies_wiki_and_markdown_links(tmp_path, vault) -> None:
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+    summary = import_vault(str(vault), store=store, registry=registry)
+    # Welcome.md: 2 wiki + 1 markdown; Daily.md: 1 wiki; Project Alpha.md: 0.
+    assert summary.link_count == 4
+
+
+def test_import_enriches_registry_metadata(tmp_path, vault) -> None:
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+    summary = import_vault(str(vault), "Meta Vault", store=store, registry=registry)
+
+    record = registry.get_source(summary.source_id)
+    meta = record.metadata
+    assert meta["origin"] == "obsidian"
+    assert meta["vault_path"] == str(vault.resolve())
+    assert meta["import_status"] == "active"
+    assert meta["imported_count"] == 3
+    assert meta["node_count"] == 3
+    assert meta["link_count"] == 4
+    assert "last_import_summary" in meta and "Imported 3" in meta["last_import_summary"]
+
+
+def test_reimport_updates_metadata_in_place(tmp_path, vault) -> None:
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+    import_vault(str(vault), "Vault", store=store, registry=registry)
+    second = import_vault(str(vault), "Vault", store=store, registry=registry)
+
+    record = registry.get_source(second.source_id)
+    # Re-import refreshed counts: nothing newly imported, all three updated.
+    assert record.metadata["imported_count"] == 0
+    assert record.metadata["updated_count"] == 3
+    assert record.metadata["node_count"] == 3
+    # Still exactly one Obsidian source registered.
+    obsidian = [s for s in registry.list_sources() if s.type.value == "obsidian"]
+    assert len(obsidian) == 1
+
+
+def test_invalid_import_creates_no_source_record(tmp_path) -> None:
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+    with pytest.raises(ValueError):
+        import_vault(str(tmp_path / "ghost"), store=store, registry=registry)
+    # A rejected vault path must not leave a misleading registry record behind.
+    assert registry.list_sources() == []
+
+
+def test_error_only_import_marks_source_error(tmp_path) -> None:
+    root = tmp_path / "vault"
+    root.mkdir()
+    # The only note is unreadable, so the run writes nothing but hits an error.
+    (root / "Broken.md").write_bytes(b"\xff\xfe\x00bad bytes")
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+
+    summary = import_vault(str(root), store=store, registry=registry)
+    assert summary.imported_count == 0
+    assert summary.error_count == 1
+    assert summary.source is not None
+    assert summary.source.status.value == "error"
+    assert registry.get_source(summary.source_id).status.value == "error"
+
+
+def test_api_response_includes_source_block(vault) -> None:
+    response = client.post(
+        "/api/obsidian/import",
+        json={"vault_path": str(vault), "source_name": "API Linked"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "source" in data and data["source"] is not None
+    source = data["source"]
+    assert source["id"] == data["source_id"]
+    assert source["type"] == "obsidian"
+    assert source["status"] == "active"
+    assert source["name"] == "API Linked"
+    assert data["link_count"] == 4
