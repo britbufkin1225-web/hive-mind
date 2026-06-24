@@ -27,6 +27,7 @@ from app.adapters.vault_scanner import (
 from app.models.hive_models import (
     GraphNodeType,
     HiveGraphNode,
+    ImportedSourceRef,
     ObsidianImportSummary,
     RegistrySourceStatus,
     RegistrySourceType,
@@ -70,14 +71,12 @@ def _resolve_source(registry, root: Path, source_name: str | None):
         None,
     )
     if existing is not None:
-        # Refresh name (if explicitly provided) and mark the run as pending.
-        updated = registry.update_source(
-            existing.id,
-            SourceRecordUpdate(
-                name=name if (source_name or "").strip() else None,
-                status=RegistrySourceStatus.PENDING,
-            ),
-        )
+        # Mark the run as pending; only refresh the name when one was explicitly
+        # provided (passing name=None would otherwise blank the stored name).
+        update = SourceRecordUpdate(status=RegistrySourceStatus.PENDING)
+        if (source_name or "").strip():
+            update.name = name
+        updated = registry.update_source(existing.id, update)
         return updated or existing, True
 
     record = registry.create_source(
@@ -168,29 +167,58 @@ def import_vault(
 
         seen_node_ids.add(node.id)
         summary.imported_node_ids.append(node.id)
+        summary.link_count += len(parsed.wiki_links) + len(parsed.markdown_links)
         if is_update:
             summary.updated_count += 1
         else:
             summary.imported_count += 1
 
-    summary.notes.append(
+    summary_line = (
         f"Imported {summary.imported_count}, updated {summary.updated_count}, "
         f"skipped {summary.skipped_count}, errors {summary.error_count}."
     )
+    summary.notes.append(summary_line)
 
-    registry.update_source(
+    # Final registry status reflects the run outcome: a run that scanned files
+    # but wrote nothing while hitting errors is marked ERROR rather than a
+    # misleading ACTIVE; anything that wrote at least one node (or scanned
+    # cleanly) is ACTIVE.
+    wrote_nodes = (summary.imported_count + summary.updated_count) > 0
+    final_status = (
+        RegistrySourceStatus.ERROR
+        if summary.error_count > 0 and not wrote_nodes
+        else RegistrySourceStatus.ACTIVE
+    )
+    imported_at = _now()
+
+    updated_record = registry.update_source(
         record.id,
         SourceRecordUpdate(
-            status=RegistrySourceStatus.ACTIVE,
-            last_imported_at=_now(),
+            status=final_status,
+            last_imported_at=imported_at,
             metadata={
                 "origin": "obsidian",
+                "vault_path": str(root),
+                "import_status": final_status.value,
                 "imported_count": summary.imported_count,
                 "updated_count": summary.updated_count,
                 "skipped_count": summary.skipped_count,
+                "duplicate_count": summary.duplicate_count,
                 "error_count": summary.error_count,
+                "node_count": len(summary.imported_node_ids),
+                "link_count": summary.link_count,
+                "last_import_summary": summary_line,
             },
         ),
+    )
+    final_record = updated_record or record
+    summary.source = ImportedSourceRef(
+        id=final_record.id,
+        name=final_record.name,
+        type=final_record.type,
+        status=final_record.status,
+        root_path=final_record.root_path,
+        last_imported_at=final_record.last_imported_at,
     )
     return summary
 

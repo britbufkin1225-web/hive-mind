@@ -373,6 +373,22 @@ class ObsidianImportRequest(BaseModel):
     source_name: str | None = None
 
 
+class ImportedSourceRef(BaseModel):
+    """Stable linkage from an import run back to its Source Registry record.
+
+    A compact, frontend-friendly slice of the registered ``SourceRecord`` so a
+    caller can show the imported source without a second registry lookup. The
+    ``status`` mirrors the registry record's status after the run completes.
+    """
+
+    id: str
+    name: str
+    type: RegistrySourceType = RegistrySourceType.OBSIDIAN
+    status: RegistrySourceStatus
+    root_path: str | None = None
+    last_imported_at: datetime | None = None
+
+
 class ObsidianImportSummary(BaseModel):
     """Deterministic summary of a single Obsidian import run.
 
@@ -382,16 +398,23 @@ class ObsidianImportSummary(BaseModel):
     (a second file resolving to an already-seen node id within this run), or
     ``error_count`` (read/parse failure). ``imported_node_ids`` lists every node
     written to the store (new + updated) so re-imports stay deterministic.
+
+    ``source`` is the Source Registry linkage for this run (the registered
+    Obsidian source), or ``None`` if registry wiring was unavailable.
+    ``link_count`` is the total number of wiki/markdown references captured
+    across imported notes (not yet materialized as edges in this phase).
     """
 
     source_id: str | None = None
     source_name: str | None = None
+    source: ImportedSourceRef | None = None
     vault_path: str
     imported_count: int = 0
     updated_count: int = 0
     skipped_count: int = 0
     duplicate_count: int = 0
     error_count: int = 0
+    link_count: int = 0
     imported_node_ids: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
