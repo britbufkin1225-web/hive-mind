@@ -152,6 +152,70 @@ validated config and raises `NotImplementedError` from `discover()`; it performs
 no filesystem traversal or parsing in this phase. The `obsidian` source type is
 already recognized by the source registry (`RegistrySourceType.OBSIDIAN`).
 
+## Obsidian Import (Phase 6B / 6C)
+
+A single one-shot, backend-only import endpoint. It scans an explicit local
+vault path and imports markdown notes into the graph store. The import is
+**read-only over the vault** — it never creates, modifies, or deletes vault
+files. There is no watcher, background sync, or edge generation in this phase.
+
+### `POST /api/obsidian/import`
+
+Request (`ObsidianImportRequest`, snake_case):
+
+```json
+{
+  "vault_path": "/abs/path/to/vault",
+  "source_name": "My Vault"
+}
+```
+
+- `vault_path` (required) — local directory of the vault.
+- `source_name` (optional) — defaults to the vault folder name.
+
+A bad `vault_path` (empty/blank, missing, or not a directory) is a client error
+→ **HTTP 400**. A missing `vault_path` field is **HTTP 422** (schema). Per-file
+read/parse failures never fail the request; they are reported in the summary.
+
+Response (`ObsidianImportSummary`):
+
+```json
+{
+  "source_id": "reg-...",
+  "source_name": "My Vault",
+  "vault_path": "/abs/path/to/vault",
+  "imported_count": 3,
+  "updated_count": 0,
+  "skipped_count": 0,
+  "duplicate_count": 0,
+  "error_count": 0,
+  "imported_node_ids": ["obsidian-abc123def456"],
+  "warnings": [],
+  "notes": ["Imported 3, updated 0, skipped 0, errors 0."]
+}
+```
+
+Counts are **mutually exclusive** per scanned `.md` file — each note lands in
+exactly one of: `imported_count` (new node), `updated_count` (existing node
+refreshed on re-import), `skipped_count` (e.g. empty content), `duplicate_count`
+(a file resolving to an already-seen node id within one run), or `error_count`
+(read/parse failure, with a `warnings` entry). `imported_node_ids` lists every
+node written (new + updated). `notes` are human-readable, deterministic summary
+lines; `warnings` carry per-file problems.
+
+### Hardening guarantees (Phase 6C)
+
+- **Stable node ids** — derived from the relative vault path
+  (`obsidian-<sha1[:12]>`), so re-importing upserts the same nodes across runs
+  and OSes rather than creating duplicates.
+- **Stable source handling** — re-importing the same resolved `root_path` reuses
+  its existing Obsidian source record (refreshing name/status) instead of
+  registering a duplicate source.
+- **Defensive parsing** — frontmatter/markdown parsing never raises; tags and
+  links are order-preserving de-duplicated; notes with no tags/links still
+  import; empty-content notes are skipped; a blank title falls back to
+  `"Untitled"`. One bad note never aborts the run.
+
 ## Search & Query Helpers (Phase 3C)
 
 The store exposes deterministic, read-only helpers that operate against the

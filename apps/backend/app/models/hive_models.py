@@ -374,12 +374,24 @@ class ObsidianImportRequest(BaseModel):
 
 
 class ObsidianImportSummary(BaseModel):
-    """Deterministic summary of a single Obsidian import run."""
+    """Deterministic summary of a single Obsidian import run.
+
+    Counts are mutually exclusive per note: a scanned ``.md`` file lands in
+    exactly one of ``imported_count`` (new node), ``updated_count`` (existing
+    node refreshed), ``skipped_count`` (e.g. empty content), ``duplicate_count``
+    (a second file resolving to an already-seen node id within this run), or
+    ``error_count`` (read/parse failure). ``imported_node_ids`` lists every node
+    written to the store (new + updated) so re-imports stay deterministic.
+    """
 
     source_id: str | None = None
+    source_name: str | None = None
     vault_path: str
     imported_count: int = 0
+    updated_count: int = 0
     skipped_count: int = 0
+    duplicate_count: int = 0
     error_count: int = 0
     imported_node_ids: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)

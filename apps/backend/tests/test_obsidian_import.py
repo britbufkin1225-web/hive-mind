@@ -282,3 +282,155 @@ def test_api_import_file_path_is_400(vault) -> None:
 
 def test_api_import_missing_vault_path_field_is_422() -> None:
     assert client.post("/api/obsidian/import", json={}).status_code == 422
+
+
+# --------------------------------------------------------------------------- #
+# Phase 6C — import hardening + summary
+# --------------------------------------------------------------------------- #
+def test_summary_includes_name_and_notes(tmp_path, vault) -> None:
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+    summary = import_vault(str(vault), "My Vault", store=store, registry=registry)
+
+    assert summary.source_name == "My Vault"
+    assert summary.imported_count == 3
+    assert summary.updated_count == 0
+    assert summary.duplicate_count == 0
+    assert summary.notes  # human-readable line(s) present
+    assert any("Imported 3" in note for note in summary.notes)
+
+
+def test_empty_string_vault_path_is_rejected(tmp_path) -> None:
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+    with pytest.raises(ValueError):
+        import_vault("", store=store, registry=registry)
+    with pytest.raises(ValueError):
+        import_vault("   ", store=store, registry=registry)
+
+
+def test_api_empty_string_vault_path_is_400() -> None:
+    response = client.post("/api/obsidian/import", json={"vault_path": "   "})
+    assert response.status_code == 400
+
+
+def test_reimport_updates_without_duplicating_nodes_or_sources(tmp_path, vault) -> None:
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+
+    first = import_vault(str(vault), "Vault", store=store, registry=registry)
+    assert first.imported_count == 3 and first.updated_count == 0
+
+    second = import_vault(str(vault), "Vault", store=store, registry=registry)
+    # Re-import refreshes existing nodes instead of creating new ones.
+    assert second.imported_count == 0
+    assert second.updated_count == 3
+    assert second.imported_node_ids == first.imported_node_ids
+    assert any("Reused existing source" in note for note in second.notes)
+
+    # No duplicate node records, and exactly one Obsidian source registered.
+    note_nodes = [n for n in store.get_nodes() if n.id.startswith("obsidian-")]
+    assert len(note_nodes) == 3
+    obsidian_sources = [s for s in registry.list_sources() if s.type.value == "obsidian"]
+    assert len(obsidian_sources) == 1
+    assert second.source_id == first.source_id
+
+
+def test_notes_without_tags_or_links_still_import(tmp_path) -> None:
+    root = tmp_path / "vault"
+    root.mkdir()
+    (root / "Plain.md").write_text("Just plain prose, nothing else.\n", encoding="utf-8")
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+
+    summary = import_vault(str(root), store=store, registry=registry)
+    assert summary.imported_count == 1
+    plain = next(n for n in store.get_nodes() if n.label == "Plain")
+    assert plain.tags == []
+    assert plain.metadata["wiki_links"] == []
+    assert plain.metadata["markdown_links"] == []
+
+
+def test_repeated_tags_and_links_are_normalized(tmp_path) -> None:
+    root = tmp_path / "vault"
+    root.mkdir()
+    (root / "Dupes.md").write_text(
+        "---\ntags: [alpha, alpha, beta]\n---\n"
+        "#alpha #alpha body [[Target]] and [[Target]] again "
+        "plus [d](http://x) and [d2](http://x)\n",
+        encoding="utf-8",
+    )
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+
+    import_vault(str(root), store=store, registry=registry)
+    node = next(n for n in store.get_nodes() if n.label == "Dupes")
+    assert node.tags == ["alpha", "beta"]
+    assert node.metadata["wiki_links"] == ["Target"]
+    assert node.metadata["markdown_links"] == ["http://x"]
+
+
+def test_empty_note_is_skipped(tmp_path) -> None:
+    root = tmp_path / "vault"
+    root.mkdir()
+    (root / "Real.md").write_text("# Real\n\nbody\n", encoding="utf-8")
+    (root / "Empty.md").write_text("   \n\n", encoding="utf-8")
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+
+    summary = import_vault(str(root), store=store, registry=registry)
+    assert summary.imported_count == 1
+    assert summary.skipped_count == 1
+    assert any("Empty.md" in w for w in summary.warnings)
+    assert not any(n.label == "Empty" for n in store.get_nodes())
+
+
+def test_bad_frontmatter_like_input_does_not_crash(tmp_path) -> None:
+    root = tmp_path / "vault"
+    root.mkdir()
+    # Unterminated frontmatter, odd brackets, control-ish chars — must not raise.
+    (root / "Weird.md").write_text(
+        "---\ntags: [unclosed\nweird: : :\n"
+        "body with [[ ]] and [](  ) and ![x](y) — émojis 🐝 and ünïcode\n",
+        encoding="utf-8",
+    )
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+
+    summary = import_vault(str(root), store=store, registry=registry)
+    assert summary.error_count == 0
+    assert summary.imported_count == 1
+
+
+def test_unusual_filename_imports_with_stable_id(tmp_path) -> None:
+    root = tmp_path / "vault"
+    root.mkdir()
+    (root / "Wëird & Náme (v2).md").write_text("content\n", encoding="utf-8")
+    store = fresh_store(tmp_path)
+    registry = fresh_registry(tmp_path)
+
+    first = import_vault(str(root), store=store, registry=registry)
+    second = import_vault(str(root), store=store, registry=registry)
+    assert first.imported_count == 1
+    assert second.updated_count == 1
+    assert first.imported_node_ids == second.imported_node_ids
+
+
+def test_api_summary_exposes_new_fields(vault) -> None:
+    response = client.post(
+        "/api/obsidian/import",
+        json={"vault_path": str(vault), "source_name": "Fields Vault"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    for key in (
+        "source_name",
+        "imported_count",
+        "updated_count",
+        "skipped_count",
+        "duplicate_count",
+        "error_count",
+        "notes",
+    ):
+        assert key in data
+    assert data["source_name"] == "Fields Vault"
