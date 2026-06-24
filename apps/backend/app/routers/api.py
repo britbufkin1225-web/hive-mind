@@ -15,10 +15,12 @@ from app.models.hive_models import (
     HiveSystemStatus,
     HiveVault,
     ImportResponse,
+    KnowledgeGraphResponse,
     ModelsResponse,
     SourcesResponse,
     GraphNodeType,
 )
+from app.services.knowledge_graph import build_knowledge_graph
 from app.store.store import store
 
 router = APIRouter(prefix="/api")
@@ -73,6 +75,17 @@ def get_graph_nodes() -> GraphNodesResponse:
 @router.get("/graph/edges", response_model=GraphEdgesResponse)
 def get_graph_edges() -> GraphEdgesResponse:
     return GraphEdgesResponse(edges=store.get_edges())
+
+
+@router.get("/knowledge-graph", response_model=KnowledgeGraphResponse)
+def get_knowledge_graph() -> KnowledgeGraphResponse:
+    """Return the deterministic knowledge graph projection (nodes, edges, summary).
+
+    Nodes come from stored/imported records; edges are existing stored edges plus
+    link edges derived from imported Obsidian notes. The shape is stable even when
+    there is no graph data (empty lists, zeroed summary).
+    """
+    return build_knowledge_graph(store=store)
 
 
 @router.get("/activity", response_model=ActivityResponse)

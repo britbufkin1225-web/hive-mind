@@ -245,6 +245,56 @@ Every successful import is wired into the **Source Registry** (`/api/registry/so
   import; empty-content notes are skipped; a blank title falls back to
   `"Untitled"`. One bad note never aborts the run.
 
+## Knowledge Graph API (Phase 8A)
+
+The backend foundation for graph-shaped reads. A deterministic builder
+(`app/services/knowledge_graph.py`) projects the existing stored/imported
+records into nodes, edges, and summary counts. This is **read-only**: it scans
+no filesystem, runs no import, writes nothing back to the store, and produces no
+speculative/AI ("dreaming") connections.
+
+### `GET /api/knowledge-graph`
+
+Returns a stable `KnowledgeGraphResponse`:
+
+```json
+{
+  "nodes": [],
+  "edges": [],
+  "summary": { "node_count": 0, "edge_count": 0 }
+}
+```
+
+The shape is stable even when there is no graph data — `nodes`/`edges` are empty
+lists and `summary` is zeroed.
+
+- **Nodes** are the stored graph nodes (`HiveGraphNode`), de-duplicated by stable
+  id with insertion order preserved. Imported Obsidian notes are included as
+  nodes; repeated imports reuse stable ids, so no duplicate nodes appear.
+- **Edges** are the union of (a) edges already persisted in the store
+  (`HiveGraphEdge`) whose endpoints are present, and (b) link edges **derived**
+  from imported Obsidian notes whose captured `wiki_links` resolve to another
+  node. Derived edges:
+  - use `relationship: "references"`,
+  - carry a deterministic id (`kg-edge-<sha1[:12]>`) and
+    `metadata.origin = "knowledge_graph_builder"` (with the originating `link`),
+  - are never duplicated against an existing stored edge (or each other) with the
+    same `(source, target, relationship)`,
+  - skip unresolved links and self-links.
+- **summary** mirrors the returned collections: `node_count == len(nodes)` and
+  `edge_count == len(edges)`.
+
+Wiki links resolve case-insensitively against a node's vault-relative path
+(with/without `.md`), file name (with/without `.md`), and label; on a key
+collision the first node wins, keeping resolution deterministic. The builder is
+pure for a given store state — calling it repeatedly yields identical output and
+never mutates the store.
+
+**Current limitation:** edges are derived only from already-captured Obsidian
+wiki links and pre-existing stored edges. There is no markdown-link resolution,
+backlink inference, AI-suggested edges, or graph layout/positioning in this
+phase — those remain future work. No frontend graph visualization exists yet.
+
 ## Search & Query Helpers (Phase 3C)
 
 The store exposes deterministic, read-only helpers that operate against the

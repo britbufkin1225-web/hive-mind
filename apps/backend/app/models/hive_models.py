@@ -418,3 +418,33 @@ class ObsidianImportSummary(BaseModel):
     imported_node_ids: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------- #
+# Phase 8A — Knowledge Graph API foundation
+#
+# Graph-shaped contracts derived deterministically from the existing stored /
+# imported knowledge records. These are read/projection shapes built by the
+# graph builder (``app/services/knowledge_graph.py``) and served from
+# ``GET /api/knowledge-graph``. They reuse the established ``HiveGraphNode`` /
+# ``HiveGraphEdge`` record shapes and add a lightweight summary block. No AI /
+# "dreaming" connections are produced in this phase.
+# --------------------------------------------------------------------------- #
+class KnowledgeGraphSummary(BaseModel):
+    """Deterministic counts for a built knowledge graph."""
+
+    node_count: int = 0
+    edge_count: int = 0
+
+
+class KnowledgeGraphResponse(BaseModel):
+    """Stable graph-shaped response: nodes, edges, and summary counts.
+
+    The shape is stable even when there is no graph data — ``nodes`` and
+    ``edges`` default to empty lists and ``summary`` to zeroed counts so a
+    future frontend graph view can consume it unconditionally.
+    """
+
+    nodes: list[HiveGraphNode] = Field(default_factory=list)
+    edges: list[HiveGraphEdge] = Field(default_factory=list)
+    summary: KnowledgeGraphSummary = Field(default_factory=KnowledgeGraphSummary)
