@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api/client";
 import type {
+  HiveMetadata,
   RegistrySourceStatus,
   RegistrySourceType,
   SourceRecord,
@@ -41,21 +42,91 @@ function formatDate(iso: string | null): string {
   return Number.isNaN(parsed.getTime()) ? iso : parsed.toLocaleString();
 }
 
-function SourceCard({ source }: { source: SourceRecord }) {
-  const metadataEntries = Object.entries(source.metadata ?? {});
+/** Pull a human-readable description out of metadata if one is present. */
+function description(metadata: HiveMetadata): string | null {
+  const value = metadata?.description;
+  return typeof value === "string" && value.trim() !== "" ? value : null;
+}
+
+/** Render a metadata value as a readable string. */
+function formatMetaValue(value: unknown): string {
+  return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function SourceCard({
+  source,
+  selected,
+  onSelect,
+}: {
+  source: SourceRecord;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        className={`source-card${selected ? " source-card-selected" : ""}`}
+        onClick={onSelect}
+        aria-pressed={selected}
+      >
+        <span className="source-card-head">
+          <span className="source-name">{source.name}</span>
+          <span className={`source-status source-status-${source.status}`}>
+            {statusLabel(source.status)}
+          </span>
+        </span>
+        <span className="source-card-sub">
+          {typeLabel(source.type)}
+          {source.root_path ? ` · ${source.root_path}` : ""}
+        </span>
+      </button>
+    </li>
+  );
+}
+
+function SourceInspector({ source }: { source: SourceRecord | null }) {
+  if (source === null) {
+    return (
+      <div className="source-inspector source-inspector-empty">
+        <p className="console-hint">
+          Select a source to view its details.
+        </p>
+      </div>
+    );
+  }
+
+  const desc = description(source.metadata ?? {});
+  // Show every metadata key except the description we already surface above.
+  const metadataEntries = Object.entries(source.metadata ?? {}).filter(
+    ([key]) => !(key === "description" && desc !== null),
+  );
 
   return (
-    <li className="source-card">
-      <div className="source-card-head">
-        <span className="source-name">{source.name}</span>
+    <div className="source-inspector">
+      <div className="source-inspector-head">
+        <h3>{source.name}</h3>
         <span className={`source-status source-status-${source.status}`}>
           {statusLabel(source.status)}
         </span>
       </div>
+
+      {desc && <p className="source-description">{desc}</p>}
+
       <dl className="source-meta">
+        <div>
+          <dt>ID</dt>
+          <dd>
+            <code>{source.id}</code>
+          </dd>
+        </div>
         <div>
           <dt>Type</dt>
           <dd>{typeLabel(source.type)}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>{statusLabel(source.status)}</dd>
         </div>
         <div>
           <dt>Path</dt>
@@ -69,23 +140,35 @@ function SourceCard({ source }: { source: SourceRecord }) {
           <dt>Created</dt>
           <dd>{formatDate(source.created_at)}</dd>
         </div>
-        {metadataEntries.length > 0 &&
-          metadataEntries.map(([key, value]) => (
-            <div key={key}>
-              <dt>{key}</dt>
-              <dd>
-                {typeof value === "string" ? value : JSON.stringify(value)}
-              </dd>
-            </div>
-          ))}
+        <div>
+          <dt>Updated</dt>
+          <dd>{formatDate(source.updated_at)}</dd>
+        </div>
       </dl>
-    </li>
+
+      <div className="source-inspector-metadata">
+        <span className="result-key">Metadata</span>
+        {metadataEntries.length === 0 ? (
+          <span className="console-hint"> (none)</span>
+        ) : (
+          <dl className="source-meta">
+            {metadataEntries.map(([key, value]) => (
+              <div key={key}>
+                <dt>{key}</dt>
+                <dd>{formatMetaValue(value)}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </div>
+    </div>
   );
 }
 
 function SourceRegistryPanel() {
   const [state, setState] = useState<PanelState>("loading");
   const [sources, setSources] = useState<SourceRecord[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -94,6 +177,12 @@ function SourceRegistryPanel() {
     try {
       const response = await apiClient.getRegistrySources();
       setSources(response.sources);
+      // Keep the current selection if it still exists; otherwise clear it.
+      setSelectedId((current) =>
+        current && response.sources.some((s) => s.id === current)
+          ? current
+          : null,
+      );
       setState("success");
     } catch (requestError: unknown) {
       setError(
@@ -108,6 +197,11 @@ function SourceRegistryPanel() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const selectedSource = useMemo(
+    () => sources.find((source) => source.id === selectedId) ?? null,
+    [sources, selectedId],
+  );
 
   return (
     <section className="source-registry-panel">
@@ -141,11 +235,19 @@ function SourceRegistryPanel() {
               registered.
             </p>
           ) : (
-            <ul className="source-list">
-              {sources.map((source) => (
-                <SourceCard key={source.id} source={source} />
-              ))}
-            </ul>
+            <div className="source-registry-layout">
+              <ul className="source-list">
+                {sources.map((source) => (
+                  <SourceCard
+                    key={source.id}
+                    source={source}
+                    selected={source.id === selectedId}
+                    onSelect={() => setSelectedId(source.id)}
+                  />
+                ))}
+              </ul>
+              <SourceInspector source={selectedSource} />
+            </div>
           ))}
       </div>
     </section>

@@ -189,19 +189,48 @@ dd {
   cursor: not-allowed;
 }
 
+.source-registry-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 1rem;
+  margin-top: 0.5rem;
+  align-items: start;
+}
+
+@media (max-width: 600px) {
+  .source-registry-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 .source-list {
   list-style: none;
-  margin: 0.5rem 0 0;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .source-card {
-  padding: 0.75rem 1rem;
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
   border: 1px solid #d4d4d4;
   background: #f4f4f4;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.source-card:hover {
+  border-color: #999;
+}
+
+.source-card-selected {
+  border-color: #444;
+  background: #fff;
+  box-shadow: inset 3px 0 0 #444;
 }
 
 .source-card-head {
@@ -209,7 +238,14 @@ dd {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.5rem;
+}
+
+.source-card-sub {
+  display: block;
+  margin-top: 0.2rem;
+  color: #666;
+  font-size: 0.8125rem;
+  word-break: break-word;
 }
 
 .source-name {
@@ -248,5 +284,44 @@ dd {
 
 .source-meta dt {
   width: 7rem;
+}
+
+.source-meta dd {
+  word-break: break-word;
+}
+
+/* Phase 5C — Source Registry inspector */
+.source-inspector {
+  padding: 0.85rem 1rem;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+}
+
+.source-inspector-empty {
+  background: #f4f4f4;
+}
+
+.source-inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.source-inspector-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.source-description {
+  margin: 0 0 0.75rem;
+  color: #444;
+}
+
+.source-inspector-metadata {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
 }
 
