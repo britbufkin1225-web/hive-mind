@@ -1,0 +1,92 @@
+# Source links — machine-readable official-source registry for candidate agents.
+# Documentation/data only.
+#
+# DO NOT INVENT URLs. Where an official URL is not yet verified from source text, set the field
+# to verify-required and verification_status: pending. A human verifies before promotion
+# (see workflow-rules.yml: source-links-verify-required).
+#
+# Fields:
+#   id                   matches agents.yml id
+#   official_source_url  product homepage / official source
+#   docs_url             official documentation
+#   pricing_url          official pricing / plans
+#   verification_status  pending | verified
+#   notes                free text
+
+sources:
+  - id: claude-code
+    official_source_url: verify-required
+    docs_url: verify-required
+    pricing_url: verify-required
+    verification_status: pending
+    notes: Anthropic agentic coding tool. Verify official URLs before promotion.
+
+  - id: codex
+    official_source_url: verify-required
+    docs_url: verify-required
+    pricing_url: verify-required
+    verification_status: pending
+    notes: Reviewer/finalizer agent. Confirm exact product and official URLs.
+
+  - id: github-copilot
+    official_source_url: verify-required
+    docs_url: verify-required
+    pricing_url: verify-required
+    verification_status: pending
+    notes: Verify Copilot Free / Student plan references and code-review docs.
+
+  - id: cline
+    official_source_url: verify-required
+    docs_url: verify-required
+    pricing_url: verify-required
+    verification_status: pending
+    notes: Open-source coding agent with Plan/Act workflows.
+
+  - id: roo-code
+    official_source_url: verify-required
+    docs_url: verify-required
+    pricing_url: verify-required
+    verification_status: pending
+    notes: GitHub repository for Roo Code agent modes.
+
+  - id: aider
+    official_source_url: verify-required
+    docs_url: verify-required
+    pricing_url: verify-required
+    verification_status: pending
+    notes: Terminal-based AI pair programmer.
+
+  - id: continue
+    official_source_url: verify-required
+    docs_url: verify-required
+    pricing_url: verify-required
+    verification_status: pending
+    notes: Open-source coding agent (CLI / IDE extension).
+
+  - id: qodo
+    official_source_url: verify-required
+    docs_url: verify-required
+    pricing_url: verify-required
+    verification_status: pending
+    notes: AI code review / governance. Verify pricing and product reference.
+
+  - id: openhands
+    official_source_url: verify-required
+    docs_url: verify-required
+    pricing_url: verify-required
+    verification_status: pending
+    notes: Open-source model-agnostic cloud coding agent platform.
+
+  - id: replit-agent
+    official_source_url: verify-required
+    docs_url: verify-required
+    pricing_url: verify-required
+    verification_status: pending
+    notes: Verify Starter plan, daily Agent credits, and effort-based billing notes.
+
+  - id: amazon-q-developer
+    official_source_url: verify-required
+    docs_url: verify-required
+    pricing_url: verify-required
+    verification_status: pending
+    notes: Verify free-tier and agentic coding assistant references.

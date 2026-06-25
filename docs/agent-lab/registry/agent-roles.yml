@@ -1,0 +1,107 @@
+# Agent roles — machine-readable role definitions. Agents in agents.yml reference these by id.
+# Documentation/data only.
+#
+# Fields:
+#   id                  stable slug
+#   description         what the role does
+#   allowed_tasks       what an agent in this role may do
+#   forbidden_tasks     what it must not do
+#   preferred_agents    agent ids best suited to this role
+#   validation_required whether a validation/build/test pass is required
+
+roles:
+  - id: ui-builder
+    description: Builds and polishes frontend UI on a scoped branch.
+    allowed_tasks:
+      - Implement scoped UI components and styles.
+      - Fix layout, responsive, and visual-hierarchy issues.
+      - Apply screenshot-driven fixes within scope.
+    forbidden_tasks:
+      - No backend changes unless the phase allows it.
+      - No broad redesign beyond the active task.
+      - No new dependencies without approval.
+    preferred_agents: [claude-code, cline]
+    validation_required: true
+
+  - id: backend-builder
+    description: Implements scoped backend/API/storage changes.
+    allowed_tasks:
+      - Implement scoped API endpoints and storage logic.
+      - Add or update backend tests.
+    forbidden_tasks:
+      - No frontend redesign.
+      - No schema mutation outside the phase scope.
+      - No new dependencies without approval.
+    preferred_agents: [claude-code, aider]
+    validation_required: true
+
+  - id: reviewer-finalizer
+    description: Verifies a branch is safe to merge.
+    allowed_tasks:
+      - Verify branch state, changed files, and tests.
+      - Confirm guardrail obedience and scope.
+      - Recommend merge / reject / retry.
+    forbidden_tasks:
+      - Does not broaden scope or add features.
+      - Does not merge without a human decision.
+    preferred_agents: [codex, qodo, github-copilot]
+    validation_required: true
+
+  - id: pr-auditor
+    description: Audits a pull request for scope creep and policy violations.
+    allowed_tasks:
+      - Audit diff for scope creep, dependency drift, boundary violations, missing tests.
+    forbidden_tasks:
+      - Does not implement fixes; reports findings only.
+    preferred_agents: [codex, qodo]
+    validation_required: false
+
+  - id: planning-agent
+    description: Produces scope, risks, and allowed-file lists. No code changes.
+    allowed_tasks:
+      - Define scope, risks, allowed files, and validation plan.
+    forbidden_tasks:
+      - No code changes.
+    preferred_agents: [roo-code, claude-code]
+    validation_required: false
+
+  - id: docs-agent
+    description: Writes and maintains documentation and source data.
+    allowed_tasks:
+      - Create and update docs and registry/source data.
+    forbidden_tasks:
+      - No app code, dependencies, or package changes.
+    preferred_agents: [claude-code, aider]
+    validation_required: false
+
+  - id: experiment-agent
+    description: Tests ideas on isolated branches; output becomes source data.
+    allowed_tasks:
+      - Prototype ideas on an isolated branch.
+      - Produce findings and session notes.
+    forbidden_tasks:
+      - Cannot touch main.
+      - Output does not become product code automatically.
+    preferred_agents: [cline, roo-code, openhands, replit-agent, continue]
+    validation_required: true
+
+  - id: source-research-agent
+    description: Collects official docs/links for the source registry.
+    allowed_tasks:
+      - Collect candidate official source URLs and notes.
+      - Mark verification_status pending until a human verifies.
+    forbidden_tasks:
+      - Must not invent URLs.
+      - Must not mark links verified without human confirmation.
+    preferred_agents: [claude-code, github-copilot]
+    validation_required: false
+
+  - id: patch-agent
+    description: Makes small, targeted, Git-native fixes.
+    allowed_tasks:
+      - Small scoped commits, docs fixes, targeted refactors.
+    forbidden_tasks:
+      - No broad refactors or redesign.
+      - No new dependencies without approval.
+    preferred_agents: [aider, github-copilot, claude-code]
+    validation_required: true
