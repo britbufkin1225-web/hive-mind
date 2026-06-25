@@ -7,6 +7,7 @@ import {
 import ConsolePanel from "./components/ConsolePanel";
 import SourceRegistryPanel from "./components/SourceRegistryPanel";
 import KnowledgeGraphPanel from "./components/KnowledgeGraphPanel";
+import IntelligenceReportPanel from "./components/IntelligenceReportPanel";
 
 function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
@@ -81,6 +82,8 @@ function App() {
       <SourceRegistryPanel />
 
       <KnowledgeGraphPanel />
+
+      <IntelligenceReportPanel />
 
       <ConsolePanel />
     </main>

@@ -1,4 +1,5 @@
 import type {
+  IntelligenceReport,
   KnowledgeGraphResponse,
   ObsidianImportRequest,
   ObsidianImportSummary,
@@ -96,6 +97,8 @@ export const apiClient = {
     get<SourceRegistryListResponse>("/registry/sources"),
   getKnowledgeGraph: () =>
     get<KnowledgeGraphResponse>("/knowledge-graph"),
+  getIntelligenceReport: () =>
+    get<IntelligenceReport>("/intelligence/report"),
   importObsidianVault: (request: ObsidianImportRequest) =>
     post<ObsidianImportSummary>("/obsidian/import", request),
   
