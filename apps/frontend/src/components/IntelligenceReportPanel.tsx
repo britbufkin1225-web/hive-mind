@@ -69,14 +69,17 @@ function SummaryMetrics({ report }: { report: IntelligenceReport }) {
   );
 }
 
-/** Section wrapper: a titled block with a count and a graceful empty state. */
+/** Section wrapper: a titled block with a one-line summary of what the section
+ *  surfaces, a count badge, and a graceful, intentional-feeling empty state. */
 function ReportSection({
   title,
+  description,
   count,
   emptyText,
   children,
 }: {
   title: string;
+  description: string;
   count: number;
   emptyText: string;
   children: ReactNode;
@@ -87,7 +90,12 @@ function ReportSection({
         {title}
         <span className="intel-section-count">{count}</span>
       </h3>
-      {count === 0 ? <p className="console-hint">{emptyText}</p> : children}
+      <p className="intel-section-desc">{description}</p>
+      {count === 0 ? (
+        <p className="intel-empty">{emptyText}</p>
+      ) : (
+        children
+      )}
     </div>
   );
 }
@@ -245,9 +253,16 @@ function IntelligenceReportPanel() {
         )}
 
         {state === "error" && (
-          <p className="error" role="alert">
-            Error: could not load the intelligence report — {error}
-          </p>
+          <div className="intel-error" role="alert">
+            <p className="error">
+              Could not load the intelligence report.
+            </p>
+            <p className="console-hint">
+              The backend may be unavailable. Check that the API is running,
+              then use Refresh to try again.
+            </p>
+            <p className="intel-error-detail">{error}</p>
+          </div>
         )}
 
         {state === "success" && report && (
@@ -270,66 +285,69 @@ function IntelligenceReportPanel() {
               </dl>
             </div>
 
-            {isEmpty ? (
-              <p className="console-hint">
-                No intelligence data yet. Suggestions, decay statuses,
-                provenance chains, and query trails will appear here as the
-                intelligence layer is populated.
+            {isEmpty && (
+              <p className="intel-empty intel-empty-global">
+                The intelligence layer is wired up and reporting cleanly — it
+                just has nothing to surface yet. Suggestions, decay statuses,
+                provenance chains, and query trails will populate the sections
+                below as the graph grows.
               </p>
-            ) : (
-              <>
-                <ReportSection
-                  title="Dreaming Suggestions"
-                  count={report.summary.dreaming_suggestion_count}
-                  emptyText="No suggestions yet."
-                >
-                  <ul className="intel-list">
-                    {report.dreaming_suggestions.map((suggestion) => (
-                      <SuggestionRow
-                        key={suggestion.id}
-                        suggestion={suggestion}
-                      />
-                    ))}
-                  </ul>
-                </ReportSection>
-
-                <ReportSection
-                  title="Temporal Decay"
-                  count={report.summary.decay_status_count}
-                  emptyText="No decay statuses yet."
-                >
-                  <ul className="intel-list">
-                    {report.decay_statuses.map((decay) => (
-                      <DecayRow key={decay.node_id} decay={decay} />
-                    ))}
-                  </ul>
-                </ReportSection>
-
-                <ReportSection
-                  title="Provenance Chains"
-                  count={report.summary.provenance_chain_count}
-                  emptyText="No provenance chains yet."
-                >
-                  <ul className="intel-list">
-                    {report.provenance_chains.map((chain) => (
-                      <ProvenanceRow key={chain.node_id} chain={chain} />
-                    ))}
-                  </ul>
-                </ReportSection>
-
-                <ReportSection
-                  title="Query Trails"
-                  count={report.summary.query_trail_entry_count}
-                  emptyText="No query trails yet."
-                >
-                  <ul className="intel-list">
-                    {report.query_trail_entries.map((entry) => (
-                      <QueryTrailRow key={entry.id} entry={entry} />
-                    ))}
-                  </ul>
-                </ReportSection>
-              </>
             )}
+
+            <ReportSection
+              title="Dreaming Suggestions"
+              description="Advisory ideas the system would propose during idle “dreaming” — likely related nodes, duplicates, stale notes, and missing backlinks. Suggestions only; nothing is applied automatically."
+              count={report.summary.dreaming_suggestion_count}
+              emptyText="No suggestions yet — these appear once the graph has enough connected notes to reason about."
+            >
+              <ul className="intel-list">
+                {report.dreaming_suggestions.map((suggestion) => (
+                  <SuggestionRow
+                    key={suggestion.id}
+                    suggestion={suggestion}
+                  />
+                ))}
+              </ul>
+            </ReportSection>
+
+            <ReportSection
+              title="Temporal Knowledge Decay"
+              description="How fresh each node is, based on when it was last referenced or updated. Flags aging and stale knowledge that may be worth reviewing — purely informational."
+              count={report.summary.decay_status_count}
+              emptyText="No decay statuses yet — these appear once nodes accumulate reference and update history."
+            >
+              <ul className="intel-list">
+                {report.decay_statuses.map((decay) => (
+                  <DecayRow key={decay.node_id} decay={decay} />
+                ))}
+              </ul>
+            </ReportSection>
+
+            <ReportSection
+              title="Provenance Chains"
+              description="Where each node came from — its originating source, import run, and linked nodes. A read-only audit trail tracing knowledge back to its origin."
+              count={report.summary.provenance_chain_count}
+              emptyText="No provenance chains yet — these appear once sources are imported into the graph."
+            >
+              <ul className="intel-list">
+                {report.provenance_chains.map((chain) => (
+                  <ProvenanceRow key={chain.node_id} chain={chain} />
+                ))}
+              </ul>
+            </ReportSection>
+
+            <ReportSection
+              title="Query Trails"
+              description="A history of console and search queries, showing which resolved to results and which went unanswered. Highlights recurring and unresolved questions over time."
+              count={report.summary.query_trail_entry_count}
+              emptyText="No query trails yet — these appear as queries are run against the graph."
+            >
+              <ul className="intel-list">
+                {report.query_trail_entries.map((entry) => (
+                  <QueryTrailRow key={entry.id} entry={entry} />
+                ))}
+              </ul>
+            </ReportSection>
           </>
         )}
       </div>

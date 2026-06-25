@@ -129,6 +129,7 @@ scoring/stub → frontend surface. See the
 | Phase 10B | Intelligence contract types / read-only schemas. |
 | Phase 10C | Dreaming suggestions backend stub. |
 | Phase 10D | Dreaming suggestions frontend read-only panel. |
+| Phase 10E | Intelligence report UX hardening / demo readiness. |
 | Phase 11A–11C | Temporal Knowledge Decay (contract, scoring, indicators). |
 | Phase 12A–12B | Provenance chain contract and inspector surface. |
 | Phase 13A–13B | Query memory / knowledge trails (contract, surface). |
