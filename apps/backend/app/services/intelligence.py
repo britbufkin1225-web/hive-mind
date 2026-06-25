@@ -1,15 +1,17 @@
-"""Phase 10C — intelligence report builder.
+"""Phase 10C — intelligence report builder (Phase 11A demo fixtures).
 
 Assembles a read-only :class:`IntelligenceReport` from the existing store state.
 This is the backend foundation a future intelligence dashboard will consume; it
 reuses the Phase 10B contract shapes (Dreaming suggestions, decay statuses,
 provenance chains, query trails) and exposes them through one stable report.
 
-The builder is intentionally inert for this phase: it runs NO Dreaming
-heuristics, NO temporal decay calculation, NO provenance engine, and NO query
-persistence — none of those produce stored data yet, so every section is an
-empty list and the summary counts are all zero. The shape is what is contracted
-here; the logic arrives in later, dedicated phases.
+The builder still runs NO real intelligence: NO Dreaming heuristics, NO temporal
+decay calculation, NO provenance engine, and NO query persistence. Phase 11A
+simply populates the report with deterministic **demo/seed fixtures** (see
+:mod:`app.services.intelligence_fixtures`) so the frontend panel shows
+meaningful sample content for demos and screenshots. Every fixture is tagged as
+demo data in its ``metadata``; none of it is derived from store state. The real
+logic still arrives in later, dedicated phases.
 
 The builder is pure and read-only: it never writes to the store, so calling it
 repeatedly never accumulates or mutates state. ``generated_at`` is the only
@@ -22,12 +24,14 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from app.models.hive_models import (
-    DecayStatus,
-    DreamingSuggestion,
     IntelligenceReport,
     IntelligenceReportSummary,
-    ProvenanceChain,
-    QueryTrailEntry,
+)
+from app.services.intelligence_fixtures import (
+    demo_decay_statuses,
+    demo_dreaming_suggestions,
+    demo_provenance_chains,
+    demo_query_trail_entries,
 )
 from app.store.store import store as default_store
 
@@ -36,17 +40,19 @@ def build_intelligence_report(*, store=default_store) -> IntelligenceReport:
     """Build a deterministic, read-only :class:`IntelligenceReport`.
 
     ``store`` is accepted for forward compatibility (later phases will derive
-    intelligence from it) but is only read, never mutated. In this foundation
-    phase no derived intelligence exists, so each section is empty.
+    intelligence from it) but is only read, never mutated. In this phase the
+    sections are filled with deterministic demo fixtures rather than store-
+    derived intelligence.
     """
     # Reading is enough to confirm this builder stays a pure projection; it does
-    # not mutate the store. No derived intelligence is produced in this phase.
+    # not mutate the store. No store-derived intelligence is produced yet — the
+    # populated sections below are static demo fixtures only.
     _ = store
 
-    dreaming_suggestions: list[DreamingSuggestion] = []
-    decay_statuses: list[DecayStatus] = []
-    provenance_chains: list[ProvenanceChain] = []
-    query_trail_entries: list[QueryTrailEntry] = []
+    dreaming_suggestions = demo_dreaming_suggestions()
+    decay_statuses = demo_decay_statuses()
+    provenance_chains = demo_provenance_chains()
+    query_trail_entries = demo_query_trail_entries()
 
     return IntelligenceReport(
         generated_at=datetime.now(tz=timezone.utc),
