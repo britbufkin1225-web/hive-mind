@@ -183,3 +183,89 @@ export interface ObsidianImportSummary {
   warnings: string[];
   notes: string[];
 }
+
+// Phase 10B — Intelligence contract types / read-only schemas. Mirrors the
+// backend Phase 10B shapes in hive_models.py (DreamingSuggestion, DecayStatus,
+// ProvenanceChain, QueryTrailEntry). Contract-only: no endpoint, logic, or
+// persistence exists yet. Every shape is read-only/advisory and additive.
+export type DreamingSuggestionType =
+  | "related_nodes"
+  | "duplicate"
+  | "stale"
+  | "missing_backlink"
+  | "unresolved_query"
+  | "orphan"
+  | "source_conflict";
+
+export type DreamingSuggestionStatus =
+  | "open"
+  | "acknowledged"
+  | "dismissed";
+
+export interface DreamingSuggestion {
+  id: string;
+  type: DreamingSuggestionType;
+  status: DreamingSuggestionStatus;
+  rationale: string;
+  node_ids: string[];
+  edge_ids: string[];
+  confidence_hint: string | null;
+  origin: string;
+  metadata: HiveMetadata;
+  created_at: string;
+}
+
+export type DecayStatusBucket = "fresh" | "aging" | "stale" | "unknown";
+
+export interface DecayStatus {
+  node_id: string;
+  status: DecayStatusBucket;
+  last_imported_at: string | null;
+  last_referenced_at: string | null;
+  last_updated_at: string | null;
+  source_reliability_hint: string | null;
+  review_needed: boolean;
+  metadata: HiveMetadata;
+}
+
+export type ProvenanceLinkKind = "source" | "import" | "node" | "edge";
+
+export interface ProvenanceLink {
+  kind: ProvenanceLinkKind;
+  ref_id: string;
+  label: string | null;
+  origin: string | null;
+  metadata: HiveMetadata;
+}
+
+export interface ProvenanceChain {
+  node_id: string;
+  source_id: string | null;
+  source_type: RegistrySourceType | null;
+  origin_path: string | null;
+  links: ProvenanceLink[];
+  linked_node_ids: string[];
+  derived_edge_ids: string[];
+  stored_edge_ids: string[];
+  created_at: string | null;
+  updated_at: string | null;
+  last_imported_at: string | null;
+  metadata: HiveMetadata;
+}
+
+export type QueryTrailKind = "console" | "search";
+
+export type QueryTrailStatus = "resolved" | "unresolved";
+
+export interface QueryTrailEntry {
+  id: string;
+  query: string;
+  kind: QueryTrailKind;
+  status: QueryTrailStatus;
+  result_node_ids: string[];
+  result_count: number;
+  occurrence_count: number;
+  pinned: boolean;
+  last_executed_at: string;
+  metadata: HiveMetadata;
+}

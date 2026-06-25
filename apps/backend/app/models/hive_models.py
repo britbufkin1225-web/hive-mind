@@ -448,3 +448,165 @@ class KnowledgeGraphResponse(BaseModel):
     nodes: list[HiveGraphNode] = Field(default_factory=list)
     edges: list[HiveGraphEdge] = Field(default_factory=list)
     summary: KnowledgeGraphSummary = Field(default_factory=KnowledgeGraphSummary)
+
+
+# --------------------------------------------------------------------------- #
+# Phase 10B — Intelligence Contract Types / Read-Only Schemas
+#
+# Contract-only shapes for the first Tier-1 intelligence surfaces planned in
+# docs/intelligence-surface-plan.md (Phase 10A): Dreaming suggestions, temporal
+# decay status, provenance chains, and query trails. These define the agreed
+# wire shapes ONLY — exactly as Phase 2 defined the API contract before any
+# logic. This phase adds:
+#   * NO endpoints or router wiring
+#   * NO scoring/heuristics, decay calculation, or provenance engine
+#   * NO persistence or store changes
+#
+# Per the intelligence-layer principles, every shape here is read-only and
+# additive: it describes *derived, advisory* output that is shown for review and
+# never mutates graph/source/import data. Derived output carries an explicit
+# ``origin`` marker, mirroring how the graph builder tags derived edges.
+# --------------------------------------------------------------------------- #
+class DreamingSuggestionType(StrEnum):
+    RELATED_NODES = "related_nodes"
+    DUPLICATE = "duplicate"
+    STALE = "stale"
+    MISSING_BACKLINK = "missing_backlink"
+    UNRESOLVED_QUERY = "unresolved_query"
+    ORPHAN = "orphan"
+    SOURCE_CONFLICT = "source_conflict"
+
+
+class DreamingSuggestionStatus(StrEnum):
+    OPEN = "open"
+    ACKNOWLEDGED = "acknowledged"
+    DISMISSED = "dismissed"
+
+
+class DreamingSuggestion(BaseModel):
+    """A single read-only Dreaming suggestion (advisory, never applied).
+
+    Derived per-request from current store/graph state and shown for review. It
+    references existing nodes/edges by id but never mutates them. ``status``
+    captures the review-only lifecycle (``open`` -> ``acknowledged``/
+    ``dismissed``); an "apply" action that would create real graph data is
+    explicitly out of scope for this phase. ``confidence_hint`` is a lightweight
+    human-readable label only — a numeric confidence model is deferred (Tier 2).
+    """
+
+    id: str
+    type: DreamingSuggestionType
+    status: DreamingSuggestionStatus = DreamingSuggestionStatus.OPEN
+    rationale: str
+    node_ids: list[str] = Field(default_factory=list)
+    edge_ids: list[str] = Field(default_factory=list)
+    confidence_hint: str | None = None
+    origin: str = "dreaming"
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+
+
+class DecayStatusBucket(StrEnum):
+    FRESH = "fresh"
+    AGING = "aging"
+    STALE = "stale"
+    UNKNOWN = "unknown"
+
+
+class DecayStatus(BaseModel):
+    """Read-only freshness view derived over an existing node's timestamps.
+
+    Phase 10B defines the representation only; no decay calculation runs here.
+    ``status`` defaults to ``unknown`` (e.g. when timestamps are missing) and
+    ``review_needed`` is a derived boolean that feeds the dashboard rollup.
+    ``source_reliability_hint`` is a lightweight label derived from source
+    type/status, not a trust engine. This adds no new authoritative state.
+    """
+
+    node_id: str
+    status: DecayStatusBucket = DecayStatusBucket.UNKNOWN
+    last_imported_at: datetime | None = None
+    last_referenced_at: datetime | None = None
+    last_updated_at: datetime | None = None
+    source_reliability_hint: str | None = None
+    review_needed: bool = False
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ProvenanceLinkKind(StrEnum):
+    SOURCE = "source"
+    IMPORT = "import"
+    NODE = "node"
+    EDGE = "edge"
+
+
+class ProvenanceLink(BaseModel):
+    """One step in a provenance chain (registry source -> import run -> node).
+
+    ``origin`` mirrors the existing ``metadata.origin`` marker so a consumer can
+    tell derived links (e.g. graph-builder ``references`` edges) from stored
+    ones. Contract only: this references existing records by id; it does not
+    resolve or verify them.
+    """
+
+    kind: ProvenanceLinkKind
+    ref_id: str
+    label: str | None = None
+    origin: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ProvenanceChain(BaseModel):
+    """Read-only "where did this come from?" view for a selected node/edge.
+
+    Presents already-captured fields together: the source chain, origin path,
+    immediate neighbors, derived vs. stored edges, and update history. Phase 10B
+    makes no provenance-engine changes and adds no new authoritative state.
+    Relationship confidence is reserved for Tier 2 and intentionally omitted.
+    """
+
+    node_id: str
+    source_id: str | None = None
+    source_type: RegistrySourceType | None = None
+    origin_path: str | None = None
+    links: list[ProvenanceLink] = Field(default_factory=list)
+    linked_node_ids: list[str] = Field(default_factory=list)
+    derived_edge_ids: list[str] = Field(default_factory=list)
+    stored_edge_ids: list[str] = Field(default_factory=list)
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    last_imported_at: datetime | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class QueryTrailKind(StrEnum):
+    CONSOLE = "console"
+    SEARCH = "search"
+
+
+class QueryTrailStatus(StrEnum):
+    RESOLVED = "resolved"
+    UNRESOLVED = "unresolved"
+
+
+class QueryTrailEntry(BaseModel):
+    """A single read-only entry in the query memory / knowledge trail.
+
+    Describes a past console/search interaction and where it led. Phase 10B
+    introduces NO query persistence (deferred to its dedicated phase); this is
+    the target shape only. ``status`` marks whether the query surfaced anything
+    (``unresolved`` feeds Dreaming's "unresolved query patterns"),
+    ``occurrence_count`` supports repeated-question detection, and ``pinned``
+    marks a user-saved useful query.
+    """
+
+    id: str
+    query: str
+    kind: QueryTrailKind = QueryTrailKind.SEARCH
+    status: QueryTrailStatus = QueryTrailStatus.RESOLVED
+    result_node_ids: list[str] = Field(default_factory=list)
+    result_count: int = 0
+    occurrence_count: int = 1
+    pinned: bool = False
+    last_executed_at: datetime
+    metadata: dict[str, Any] = Field(default_factory=dict)
