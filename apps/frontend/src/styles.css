@@ -431,7 +431,7 @@ dd {
   font-size: 0.8125rem;
 }
 
-/* Phase 8B — Knowledge Graph read-only panel */
+/* Phase 8C — Knowledge Graph visualization-prep panel */
 .graph-subtitle {
   margin: 0.15rem 0 0;
   font-size: 0.8125rem;
@@ -475,6 +475,31 @@ dd {
   font-size: 0.95rem;
 }
 
+.graph-group-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.graph-group-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid #d4d4d4;
+  border-radius: 999px;
+  background: #f4f4f4;
+  font-size: 0.8125rem;
+}
+
+.graph-group-count {
+  font-weight: 600;
+  color: #6b4fbb;
+}
+
 .graph-node-list {
   list-style: none;
   margin: 0;
@@ -484,28 +509,16 @@ dd {
   gap: 0.5rem;
 }
 
-.graph-node-card {
-  display: block;
-  width: 100%;
+.graph-node-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
   padding: 0.6rem 0.85rem;
   border: 1px solid #d4d4d4;
   background: #f4f4f4;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
 }
 
-.graph-node-card:hover {
-  border-color: #999;
-}
-
-.graph-node-card-selected {
-  border-color: #444;
-  background: #fff;
-  box-shadow: inset 3px 0 0 #444;
-}
-
-.graph-node-card-head {
+.graph-node-row-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -515,6 +528,7 @@ dd {
 .graph-node-name {
   font-weight: 600;
   color: #222;
+  word-break: break-word;
 }
 
 .graph-node-type {
@@ -528,41 +542,19 @@ dd {
   white-space: nowrap;
 }
 
-.graph-node-card-sub {
-  display: block;
-  margin-top: 0.2rem;
+.graph-node-row-sub {
   color: #666;
   font-size: 0.8125rem;
   word-break: break-word;
 }
 
-.graph-inspector {
-  padding: 0.85rem 1rem;
-  border: 1px solid #d4d4d4;
-  background: #fff;
+.graph-node-degree {
+  font-variant-numeric: tabular-nums;
 }
 
-.graph-inspector-empty {
-  background: #f4f4f4;
-}
-
-.graph-inspector-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.graph-inspector-head h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.graph-inspector-metadata {
-  margin-top: 0.75rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #eee;
+.graph-node-preview {
+  color: #555;
+  font-size: 0.8125rem;
 }
 
 .graph-edge-list {
@@ -603,12 +595,6 @@ dd {
   color: #6b4fbb;
 }
 
-.graph-edge-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .graph-edge-relationship {
   padding: 0.1rem 0.5rem;
   border: 1px solid #d4d4d4;
@@ -616,10 +602,5 @@ dd {
   color: #444;
   font-size: 0.75rem;
   white-space: nowrap;
-}
-
-.graph-edge-confidence {
-  color: #666;
-  font-size: 0.75rem;
 }
 

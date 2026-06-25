@@ -98,5 +98,6 @@ export const apiClient = {
     get<KnowledgeGraphResponse>("/knowledge-graph"),
   importObsidianVault: (request: ObsidianImportRequest) =>
     post<ObsidianImportSummary>("/obsidian/import", request),
+  
 };
 
