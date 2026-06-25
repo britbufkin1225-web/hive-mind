@@ -513,9 +513,30 @@ dd {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  width: 100%;
   padding: 0.6rem 0.85rem;
   border: 1px solid #d4d4d4;
   background: #f4f4f4;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.graph-node-row:hover {
+  border-color: #999;
+}
+
+/* Selected node/edge rows echo the Sources panel selected-card treatment. */
+.graph-row-selected {
+  border-color: #444;
+  background: #fff;
+  box-shadow: inset 3px 0 0 #444;
+}
+
+.graph-node-row:focus-visible,
+.graph-edge-row:focus-visible {
+  outline: 2px solid #6b4fbb;
+  outline-offset: 1px;
 }
 
 .graph-node-row-head {
@@ -572,9 +593,17 @@ dd {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  width: 100%;
   padding: 0.5rem 0.75rem;
   border: 1px solid #d4d4d4;
   background: #f4f4f4;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.graph-edge-row:hover {
+  border-color: #999;
 }
 
 .graph-edge-endpoints {
@@ -602,5 +631,82 @@ dd {
   color: #444;
   font-size: 0.75rem;
   white-space: nowrap;
+}
+
+/* Phase 8D — Knowledge Graph explorer layout + inspector */
+.graph-explorer-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+  align-items: start;
+}
+
+.graph-lists {
+  min-width: 0;
+}
+
+.graph-lists .graph-section:first-child {
+  margin-top: 0;
+}
+
+.graph-inspector-aside {
+  position: sticky;
+  top: 1rem;
+  min-width: 0;
+}
+
+.graph-inspector {
+  padding: 0.85rem 1rem;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+}
+
+.graph-inspector-empty {
+  background: #f4f4f4;
+}
+
+.graph-inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.graph-inspector-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  word-break: break-word;
+}
+
+.graph-inspector-edge-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.graph-inspector-metadata {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
+}
+
+.graph-inspector-metadata code,
+.graph-inspector .source-meta code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8125rem;
+  word-break: break-all;
+}
+
+@media (max-width: 600px) {
+  .graph-explorer-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-inspector-aside {
+    position: static;
+  }
 }
 

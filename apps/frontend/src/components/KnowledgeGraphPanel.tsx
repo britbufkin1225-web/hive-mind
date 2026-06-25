@@ -1,6 +1,7 @@
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api/client";
-import type { KnowledgeGraphResponse } from "../types/api";
+import type { HiveMetadata, KnowledgeGraphResponse } from "../types/api";
 import {
   buildGraphViewModel,
   nodeTypeLabel,
@@ -9,6 +10,22 @@ import {
 } from "../lib/graphViewModel";
 
 type PanelState = "loading" | "success" | "error";
+
+/**
+ * The panel holds a single selection that is either a node or an edge (or
+ * nothing). Keeping it as one discriminated value means selecting a node
+ * naturally deselects any edge and vice versa, so the inspector always shows
+ * exactly one record.
+ */
+type Selection =
+  | { kind: "node"; id: string }
+  | { kind: "edge"; id: string }
+  | null;
+
+/** Render a metadata value as a readable string (mirrors the Sources panel). */
+function formatMetaValue(value: unknown): string {
+  return typeof value === "string" ? value : JSON.stringify(value);
+}
 
 function SummaryMetrics({
   nodeCount,
@@ -39,22 +56,37 @@ function SummaryMetrics({
   );
 }
 
-function NodeRow({ node }: { node: GraphViewNode }) {
+function NodeRow({
+  node,
+  selected,
+  onSelect,
+}: {
+  node: GraphViewNode;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   return (
-    <li className="graph-node-row">
-      <span className="graph-node-row-head">
-        <span className="graph-node-name">{node.label}</span>
-        <span className="graph-node-type">{nodeTypeLabel(node.type)}</span>
-      </span>
-      <span className="graph-node-row-sub">
-        <span className="graph-node-degree" title="incoming / outgoing">
-          {node.incomingCount} in · {node.outgoingCount} out
+    <li>
+      <button
+        type="button"
+        className={`graph-node-row${selected ? " graph-row-selected" : ""}`}
+        onClick={onSelect}
+        aria-pressed={selected}
+      >
+        <span className="graph-node-row-head">
+          <span className="graph-node-name">{node.label}</span>
+          <span className="graph-node-type">{nodeTypeLabel(node.type)}</span>
         </span>
-        {node.sourceName ? ` · ${node.sourceName}` : ""}
-      </span>
-      {node.previewText && (
-        <span className="graph-node-preview">{node.previewText}</span>
-      )}
+        <span className="graph-node-row-sub">
+          <span className="graph-node-degree" title="incoming / outgoing">
+            {node.incomingCount} in · {node.outgoingCount} out
+          </span>
+          {node.sourceName ? ` · ${node.sourceName}` : ""}
+        </span>
+        {node.previewText && (
+          <span className="graph-node-preview">{node.previewText}</span>
+        )}
+      </button>
     </li>
   );
 }
@@ -62,23 +94,157 @@ function NodeRow({ node }: { node: GraphViewNode }) {
 function EdgeRow({
   edge,
   labelFor,
+  selected,
+  onSelect,
+}: {
+  edge: GraphViewEdge;
+  labelFor: (nodeId: string) => string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        className={`graph-edge-row${selected ? " graph-row-selected" : ""}`}
+        onClick={onSelect}
+        aria-pressed={selected}
+      >
+        <span className="graph-edge-endpoints">
+          <span className="graph-edge-node">{labelFor(edge.source)}</span>
+          <span className="graph-edge-arrow" aria-hidden="true">
+            →
+          </span>
+          <span className="graph-edge-node">{labelFor(edge.target)}</span>
+        </span>
+        {edge.label && (
+          <span className="graph-edge-relationship">{edge.label}</span>
+        )}
+      </button>
+    </li>
+  );
+}
+
+/** Key/value detail list shared by the node and edge inspector views. */
+function DetailList({ rows }: { rows: Array<[string, ReactNode]> }) {
+  return (
+    <dl className="source-meta">
+      {rows.map(([label, value]) => (
+        <div key={label}>
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/** Generic metadata block, omitted entirely when there is nothing to show. */
+function MetadataBlock({ metadata }: { metadata: HiveMetadata }) {
+  const entries = Object.entries(metadata ?? {});
+  return (
+    <div className="graph-inspector-metadata">
+      <span className="result-key">Metadata</span>
+      {entries.length === 0 ? (
+        <span className="console-hint"> (none)</span>
+      ) : (
+        <dl className="source-meta">
+          {entries.map(([key, value]) => (
+            <div key={key}>
+              <dt>{key}</dt>
+              <dd>{formatMetaValue(value)}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
+}
+
+function NodeInspector({ node }: { node: GraphViewNode }) {
+  const rows: Array<[string, ReactNode]> = [
+    ["ID", <code key="id">{node.id}</code>],
+    ["Type", nodeTypeLabel(node.type)],
+    ["Group", node.displayGroup],
+    [
+      "Connections",
+      `${node.incomingCount} in · ${node.outgoingCount} out (${node.degree} total)`,
+    ],
+  ];
+  if (node.sourceName) {
+    rows.push(["Source", node.sourceName]);
+  }
+
+  return (
+    <div className="graph-inspector">
+      <div className="graph-inspector-head">
+        <h3>{node.label}</h3>
+        <span className="graph-node-type">{nodeTypeLabel(node.type)}</span>
+      </div>
+      {node.previewText && (
+        <p className="source-description">{node.previewText}</p>
+      )}
+      <DetailList rows={rows} />
+      <MetadataBlock metadata={node.metadata} />
+    </div>
+  );
+}
+
+function EdgeInspector({
+  edge,
+  labelFor,
 }: {
   edge: GraphViewEdge;
   labelFor: (nodeId: string) => string;
 }) {
+  const rows: Array<[string, ReactNode]> = [
+    ["ID", <code key="id">{edge.id}</code>],
+    ["Relationship", edge.label ?? "—"],
+    ["From", labelFor(edge.source)],
+    ["To", labelFor(edge.target)],
+  ];
+
   return (
-    <li className="graph-edge-row">
-      <span className="graph-edge-endpoints">
-        <span className="graph-edge-node">{labelFor(edge.source)}</span>
-        <span className="graph-edge-arrow" aria-hidden="true">
-          →
-        </span>
-        <span className="graph-edge-node">{labelFor(edge.target)}</span>
-      </span>
-      {edge.label && (
-        <span className="graph-edge-relationship">{edge.label}</span>
-      )}
-    </li>
+    <div className="graph-inspector">
+      <div className="graph-inspector-head">
+        <h3 className="graph-inspector-edge-title">
+          <span className="graph-edge-node">{labelFor(edge.source)}</span>
+          <span className="graph-edge-arrow" aria-hidden="true">
+            →
+          </span>
+          <span className="graph-edge-node">{labelFor(edge.target)}</span>
+        </h3>
+        {edge.label && (
+          <span className="graph-edge-relationship">{edge.label}</span>
+        )}
+      </div>
+      <DetailList rows={rows} />
+      <MetadataBlock metadata={edge.metadata} />
+    </div>
+  );
+}
+
+function GraphInspector({
+  node,
+  edge,
+  labelFor,
+}: {
+  node: GraphViewNode | null;
+  edge: GraphViewEdge | null;
+  labelFor: (nodeId: string) => string;
+}) {
+  if (node) {
+    return <NodeInspector node={node} />;
+  }
+  if (edge) {
+    return <EdgeInspector edge={edge} labelFor={labelFor} />;
+  }
+  return (
+    <div className="graph-inspector graph-inspector-empty">
+      <p className="console-hint">
+        Select a node or edge to inspect graph details.
+      </p>
+    </div>
   );
 }
 
@@ -86,6 +252,7 @@ function KnowledgeGraphPanel() {
   const [state, setState] = useState<PanelState>("loading");
   const [graph, setGraph] = useState<KnowledgeGraphResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selection, setSelection] = useState<Selection>(null);
 
   const load = useCallback(async (): Promise<void> => {
     setState("loading");
@@ -93,6 +260,9 @@ function KnowledgeGraphPanel() {
     try {
       const response = await apiClient.getKnowledgeGraph();
       setGraph(response);
+      // A fresh payload may not contain the previously selected record, so
+      // reset the inspector rather than leave a dangling selection.
+      setSelection(null);
       setState("success");
     } catch (requestError: unknown) {
       setError(
@@ -120,8 +290,34 @@ function KnowledgeGraphPanel() {
     [model.nodes],
   );
 
+  const selectedNode = useMemo(
+    () =>
+      selection?.kind === "node"
+        ? (model.nodes.find((node) => node.id === selection.id) ?? null)
+        : null,
+    [selection, model.nodes],
+  );
+
+  const selectedEdge = useMemo(
+    () =>
+      selection?.kind === "edge"
+        ? (model.edges.find((edge) => edge.id === selection.id) ?? null)
+        : null,
+    [selection, model.edges],
+  );
+
+  const selectNode = useCallback(
+    (id: string) => setSelection({ kind: "node", id }),
+    [],
+  );
+  const selectEdge = useCallback(
+    (id: string) => setSelection({ kind: "edge", id }),
+    [],
+  );
+
   const hasNodes = model.nodes.length > 0;
   const hasEdges = model.edges.length > 0;
+  const isEmptyGraph = state === "success" && !hasNodes && !hasEdges;
 
   return (
     <section className="knowledge-graph-panel">
@@ -143,7 +339,7 @@ function KnowledgeGraphPanel() {
         </button>
       </div>
 
-      <div aria-live="polite">
+      <div aria-live="polite" aria-busy={state === "loading"}>
         {state === "loading" && (
           <p className="console-hint">Loading knowledge graph…</p>
         )}
@@ -163,63 +359,103 @@ function KnowledgeGraphPanel() {
               isolatedNodeCount={model.isolatedNodeCount}
             />
 
-            <div className="graph-section">
-              <h3 className="graph-section-title">Groups</h3>
-              {model.groups.length === 0 ? (
-                <p className="console-hint">No nodes to group yet.</p>
-              ) : (
-                <ul className="graph-group-list">
-                  {model.groups.map((group) => (
-                    <li key={group.name} className="graph-group-chip">
-                      <span className="graph-group-name">{group.name}</span>
-                      <span className="graph-group-count">{group.count}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            {isEmptyGraph ? (
+              <p className="console-hint">
+                The graph is empty. Import or register a source to populate
+                nodes and relationships.
+              </p>
+            ) : (
+              <>
+                <div className="graph-section">
+                  <h3 className="graph-section-title">Groups</h3>
+                  {model.groups.length === 0 ? (
+                    <p className="console-hint">No nodes to group yet.</p>
+                  ) : (
+                    <ul className="graph-group-list">
+                      {model.groups.map((group) => (
+                        <li key={group.name} className="graph-group-chip">
+                          <span className="graph-group-name">{group.name}</span>
+                          <span className="graph-group-count">
+                            {group.count}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
 
-            {model.topConnectedNodes.length > 0 && (
-              <div className="graph-section">
-                <h3 className="graph-section-title">Top connected nodes</h3>
-                <ul className="graph-node-list">
-                  {model.topConnectedNodes.map((node) => (
-                    <NodeRow key={node.id} node={node} />
-                  ))}
-                </ul>
-              </div>
+                {model.topConnectedNodes.length > 0 && (
+                  <div className="graph-section">
+                    <h3 className="graph-section-title">Top connected nodes</h3>
+                    <ul className="graph-node-list">
+                      {model.topConnectedNodes.map((node) => (
+                        <NodeRow
+                          key={node.id}
+                          node={node}
+                          selected={selectedNode?.id === node.id}
+                          onSelect={() => selectNode(node.id)}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="graph-explorer-layout">
+                  <div className="graph-lists">
+                    <div className="graph-section">
+                      <h3 className="graph-section-title">Nodes</h3>
+                      {hasNodes ? (
+                        <ul className="graph-node-list">
+                          {model.nodes.map((node) => (
+                            <NodeRow
+                              key={node.id}
+                              node={node}
+                              selected={selectedNode?.id === node.id}
+                              onSelect={() => selectNode(node.id)}
+                            />
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="console-hint">
+                          No nodes yet. Import or register a source to populate
+                          the graph.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="graph-section">
+                      <h3 className="graph-section-title">Relationships</h3>
+                      {hasEdges ? (
+                        <ul className="graph-edge-list">
+                          {model.edges.map((edge) => (
+                            <EdgeRow
+                              key={edge.id}
+                              edge={edge}
+                              labelFor={labelFor}
+                              selected={selectedEdge?.id === edge.id}
+                              onSelect={() => selectEdge(edge.id)}
+                            />
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="console-hint">
+                          No relationships yet. Edges appear once nodes are
+                          linked.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <aside className="graph-inspector-aside" aria-label="Inspector">
+                    <GraphInspector
+                      node={selectedNode}
+                      edge={selectedEdge}
+                      labelFor={labelFor}
+                    />
+                  </aside>
+                </div>
+              </>
             )}
-
-            <div className="graph-section">
-              <h3 className="graph-section-title">Nodes</h3>
-              {hasNodes ? (
-                <ul className="graph-node-list">
-                  {model.nodes.map((node) => (
-                    <NodeRow key={node.id} node={node} />
-                  ))}
-                </ul>
-              ) : (
-                <p className="console-hint">
-                  No nodes yet. Import or register a source to populate the
-                  graph.
-                </p>
-              )}
-            </div>
-
-            <div className="graph-section">
-              <h3 className="graph-section-title">Relationships</h3>
-              {hasEdges ? (
-                <ul className="graph-edge-list">
-                  {model.edges.map((edge) => (
-                    <EdgeRow key={edge.id} edge={edge} labelFor={labelFor} />
-                  ))}
-                </ul>
-              ) : (
-                <p className="console-hint">
-                  No relationships yet. Edges appear once nodes are linked.
-                </p>
-              )}
-            </div>
           </>
         )}
       </div>
