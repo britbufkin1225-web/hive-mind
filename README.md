@@ -28,19 +28,22 @@ can inspect and, over time, reason about.
 
 The project has moved well beyond its initial foundation. The original Phase 1
 app shell is complete and has been built on through backend storage, the Hive
-Console, the Source Registry, the Obsidian import pipeline, and the Knowledge
-Graph API and read-only panel.
+Console, the Source Registry, the Obsidian import pipeline, the Knowledge Graph
+API, and the read-only Knowledge Graph panel with its custom SVG visualization.
 
-- **Active phase:** `Phase 8C — Knowledge Graph Read-Only Visualization Prep`.
+- **Active phase:** `Phase 10A — Intelligence Surface Planning`.
 - **Completed foundation:** React/FastAPI app shell, in-memory store, Hive
   Console (API + panel), Source Registry (backend + frontend + inspector),
   Obsidian adapter and import pipeline with frontend import panel, the Knowledge
-  Graph API, and the read-only Knowledge Graph panel.
+  Graph API, the read-only Knowledge Graph panel, and the custom read-only SVG
+  graph visualization with inspector sync and UX hardening.
 
-Phase 8C adds a typed, deterministic graph **view model** that normalizes the
-graph API response into a render-ready shape, and updates the Knowledge Graph
-panel to consume it — preparing the data for a future visual graph renderer
-without yet adding a graph canvas.
+Phase 10A is **documentation and architecture planning only**. It defines how the
+future intelligence layer — Dreaming, temporal knowledge decay, provenance
+chains, query memory, and later-tier ideas — will surface in the product, without
+implementing any intelligence logic. See the
+[Intelligence Surface Plan](docs/intelligence-surface-plan.md) and
+[roadmap](docs/roadmap.md).
 
 ## Stack
 
@@ -74,7 +77,11 @@ without yet adding a graph canvas.
 | Phase 7B | Complete | Obsidian import UX hardening. |
 | Phase 8A | Complete | Knowledge Graph API foundation. |
 | Phase 8B | Complete | Frontend read-only Knowledge Graph panel. |
-| Phase 8C | Active | Knowledge Graph visualization-prep view model and README revamp. |
+| Phase 8C | Complete | Knowledge Graph visualization-prep view model and README revamp. |
+| Phase 9A | Complete | First read-only SVG graph visualization. |
+| Phase 9B | Complete | Knowledge graph panel UX hardening and inspector sync. |
+| Phase 9C | Complete | Knowledge graph viz QA, demo polish, and link safety. |
+| Phase 10A | Active | Intelligence surface planning (documentation only). |
 
 ## Planned logic
 
@@ -111,15 +118,20 @@ current capability.
 
 ## Roadmap
 
+The next wave of work builds the read-only **intelligence layer** on top of the
+existing foundations. Each step stays small and read-only: contract → backend
+scoring/stub → frontend surface. See the
+[full roadmap](docs/roadmap.md) and the
+[Intelligence Surface Plan](docs/intelligence-surface-plan.md) for detail.
+
 | Planned Phase | Focus |
 | --- | --- |
-| Phase 8D | First read-only visual graph canvas. |
-| Phase 8E | Node inspector and edge detail UX. |
-| Phase 8F | Graph filters, search, and highlighting. |
-| Phase 9A | Knowledge provenance chains. |
-| Phase 9B | Query memory and knowledge trails. |
-| Phase 10A | Dreaming reports as read-only suggestions. |
-| Phase 10B | Temporal Knowledge Decay indicators. |
+| Phase 10B | Intelligence contract types / read-only schemas. |
+| Phase 10C | Dreaming suggestions backend stub. |
+| Phase 10D | Dreaming suggestions frontend read-only panel. |
+| Phase 11A–11C | Temporal Knowledge Decay (contract, scoring, indicators). |
+| Phase 12A–12B | Provenance chain contract and inspector surface. |
+| Phase 13A–13B | Query memory / knowledge trails (contract, surface). |
 
 ## Setup
 
@@ -166,3 +178,5 @@ npm run dev:frontend
 
 - [Phase 1 foundation](docs/phase-1-foundation.md)
 - [API contract](docs/api-contract.md)
+- [Intelligence Surface Plan](docs/intelligence-surface-plan.md)
+- [Roadmap](docs/roadmap.md)
