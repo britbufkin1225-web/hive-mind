@@ -1,0 +1,54 @@
+# Workflow rules — machine-readable governance rules for agent work.
+# Documentation/data only. These encode the branch governance from the source registry playbook.
+#
+# Fields:
+#   id           stable slug
+#   rule         the rule statement
+#   rationale    why it exists
+#   enforcement  how it is checked (manual now; automatable later)
+
+rules:
+  - id: no-agent-on-main
+    rule: No agent works directly on main.
+    rationale: Protects the canonical branch from unreviewed agent edits.
+    enforcement: Context pack names a non-main branch; reviewer confirms branch before merge.
+
+  - id: one-implementation-agent-per-branch
+    rule: Only one implementation agent edits a given branch at a time.
+    rationale: Prevents branch collisions and conflicting edits.
+    enforcement: Session note records the single owning agent per branch.
+
+  - id: reviewer-does-not-broaden-scope
+    rule: A reviewer/finalizer agent verifies; it does not add features or broaden scope.
+    rationale: Keeps review honest and separate from implementation.
+    enforcement: Reviewer prompt forbids scope expansion; audit flags new features in review diffs.
+
+  - id: human-merge-decision-required
+    rule: Agents propose; a human makes the merge/reject/retry/escalate decision.
+    rationale: Humans own the final gate (see decision-log-strategy.md).
+    enforcement: Every merge has a decision record.
+
+  - id: session-note-required
+    rule: Every agent run produces a session note.
+    rationale: Makes all AI-assisted changes auditable.
+    enforcement: A run without a session note is not considered complete.
+
+  - id: validation-result-required
+    rule: Every run runs the defined validation and reports the result.
+    rationale: No merge on unvalidated work.
+    enforcement: Session note records validation_result (pass/fail/partial).
+
+  - id: source-links-verify-required
+    rule: Source links stay verify-required until a human verifies them; never invent URLs.
+    rationale: Keeps the source registry trustworthy.
+    enforcement: source-links.yml verification_status stays pending until human confirmation.
+
+  - id: documentation-before-implementation
+    rule: Document the workflow and source shapes before implementing app code.
+    rationale: Stable shapes prevent rework (see future-implementation-plan.md).
+    enforcement: Implementation phases (E–G) start only after docs/data phases (A–C).
+
+  - id: read-only-before-mutation
+    rule: Expose registry/session/source data read-only before any mutation path.
+    rationale: Avoids premature write surfaces on unstable shapes.
+    enforcement: API phase ships GET endpoints only; writes deferred until shapes are stable.

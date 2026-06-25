@@ -1,0 +1,36 @@
+# Evaluation rubric — machine-readable scoring categories for agent sessions.
+# Documentation/data only. Each category is scored 1-5 when reviewing an agent run.
+# Mirrors templates/agent-review-rubric.md in machine-readable form.
+#
+# Scale:
+#   1  poor / failed the category
+#   2  below expectations
+#   3  acceptable
+#   4  strong
+#   5  excellent / exemplary
+
+scale:
+  min: 1
+  max: 5
+
+categories:
+  - id: scope_control
+    description: Stayed inside allowed files and features; no scope creep.
+  - id: build_correctness
+    description: The change builds and behaves as intended.
+  - id: code_quality
+    description: Readable, maintainable, idiomatic change set.
+  - id: ui_quality
+    description: For UI tasks — visual hierarchy, responsive quality, accessibility, polish.
+  - id: backend_quality
+    description: For API/storage tasks — contract adherence, edge cases, data integrity.
+  - id: test_validation
+    description: Ran the right build/test commands and reported results clearly.
+  - id: guardrail_obedience
+    description: Honored branch rules, dependency limits, and forbidden scope.
+  - id: report_clarity
+    description: Clear, accurate summary and validation report.
+  - id: merge_readiness
+    description: Diff is small, reviewable, and safe to merge.
+  - id: source_quality
+    description: For research tasks — source links accurate and verification status honest.

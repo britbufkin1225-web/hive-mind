@@ -1,0 +1,125 @@
+# Agent registry — machine-readable catalog of candidate coding/planning/review agents.
+# Documentation/data only. source_status: verify-required means the official URL is not yet
+# verified — see source-links.yml. Do not invent URLs or pricing.
+#
+# Fields:
+#   id                  stable slug
+#   name                display name
+#   category            primary classification
+#   primary_roles       roles from agent-roles.yml this agent is suited to
+#   best_for            where this agent is strongest
+#   risks               known cautions
+#   branch_permissions  what branches this agent may touch (never main directly)
+#   review_required     whether a reviewer/finalizer pass is required before merge
+#   source_status       verified | verify-required
+
+agents:
+  - id: claude-code
+    name: Claude Code
+    category: agentic-coding
+    primary_roles: [ui-builder, docs-agent, patch-agent]
+    best_for: Frontend polish, component/CSS work, screenshot-driven fixes, scoped implementation.
+    risks: High visual judgment but can over-edit if scope is loose; guard against redesign churn.
+    branch_permissions: scoped-implementation-branch
+    review_required: true
+    source_status: verify-required
+
+  - id: codex
+    name: Codex
+    category: review-finalizer
+    primary_roles: [reviewer-finalizer, pr-auditor]
+    best_for: Branch verification, test gates, PR review, merge safety, guardrail enforcement.
+    risks: Best as engineering governor; do not let it become the only UI craft pass.
+    branch_permissions: review-only
+    review_required: false
+    source_status: verify-required
+
+  - id: github-copilot
+    name: GitHub Copilot
+    category: ide-assistant
+    primary_roles: [patch-agent, reviewer-finalizer]
+    best_for: Inline suggestions, PR help, quick explanations, second-opinion edits.
+    risks: Verify current student/free entitlement; suggestions need human judgment.
+    branch_permissions: scoped-implementation-branch
+    review_required: true
+    source_status: verify-required
+
+  - id: cline
+    name: Cline
+    category: agentic-coding
+    primary_roles: [experiment-agent, ui-builder]
+    best_for: Local VS Code agent experiments, Plan/Act workflows, component updates.
+    risks: Useful as Claude comparison; keep on isolated branches; model/API cost depends on provider.
+    branch_permissions: isolated-experiment-branch
+    review_required: true
+    source_status: verify-required
+
+  - id: roo-code
+    name: Roo Code
+    category: agentic-coding
+    primary_roles: [experiment-agent, planning-agent]
+    best_for: Mode-based planning, debugging, and implementation comparison.
+    risks: Keep task scope tight; alternate to Claude Code, not a replacement governor.
+    branch_permissions: isolated-experiment-branch
+    review_required: true
+    source_status: verify-required
+
+  - id: aider
+    name: Aider
+    category: terminal-pair-programmer
+    primary_roles: [patch-agent, docs-agent]
+    best_for: Git-native patches, small commits, docs fixes, targeted refactors.
+    risks: Good Git discipline; less visual-design oriented.
+    branch_permissions: scoped-implementation-branch
+    review_required: true
+    source_status: verify-required
+
+  - id: continue
+    name: Continue
+    category: open-source-coding-agent
+    primary_roles: [experiment-agent, patch-agent]
+    best_for: Local / BYOK experimentation in IDE or CLI.
+    risks: Verify current ecosystem status before deep setup.
+    branch_permissions: isolated-experiment-branch
+    review_required: true
+    source_status: verify-required
+
+  - id: qodo
+    name: Qodo
+    category: review-governance
+    primary_roles: [pr-auditor, reviewer-finalizer]
+    best_for: Automated PR review, test-gap detection, consistency checks.
+    risks: Reviewer layer only; do not let a review tool drive product scope.
+    branch_permissions: review-only
+    review_required: false
+    source_status: verify-required
+
+  - id: openhands
+    name: OpenHands
+    category: cloud-sandbox-agent
+    primary_roles: [experiment-agent]
+    best_for: Larger autonomous agent experiments in a sandbox.
+    risks: Heavier setup; research-platform more than quick UI pass; keep off main.
+    branch_permissions: isolated-experiment-branch
+    review_required: true
+    source_status: verify-required
+
+  - id: replit-agent
+    name: Replit Agent
+    category: prototype-sandbox
+    primary_roles: [experiment-agent]
+    best_for: Throwaway prototypes and UI idea tests outside the source-of-truth repo.
+    risks: Effort-based billable credits; keep prototypes out of the canonical repo.
+    branch_permissions: external-sandbox
+    review_required: true
+    source_status: verify-required
+
+  - id: amazon-q-developer
+    name: Amazon Q Developer
+    category: ide-assistant
+    primary_roles: [patch-agent, reviewer-finalizer]
+    best_for: Free-tier review/coding experiments and second-opinion edits.
+    risks: Useful but not primary for Hive|Mind UI craft.
+    branch_permissions: scoped-implementation-branch
+    review_required: true
+    source_status: verify-required
