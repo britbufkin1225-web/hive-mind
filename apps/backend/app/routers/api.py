@@ -15,11 +15,13 @@ from app.models.hive_models import (
     HiveSystemStatus,
     HiveVault,
     ImportResponse,
+    IntelligenceReport,
     KnowledgeGraphResponse,
     ModelsResponse,
     SourcesResponse,
     GraphNodeType,
 )
+from app.services.intelligence import build_intelligence_report
 from app.services.knowledge_graph import build_knowledge_graph
 from app.store.store import store
 
@@ -86,6 +88,19 @@ def get_knowledge_graph() -> KnowledgeGraphResponse:
     there is no graph data (empty lists, zeroed summary).
     """
     return build_knowledge_graph(store=store)
+
+
+@router.get("/intelligence/report", response_model=IntelligenceReport)
+def get_intelligence_report() -> IntelligenceReport:
+    """Return the read-only intelligence report (Phase 10C foundation).
+
+    Surfaces the Phase 10B intelligence contracts — Dreaming suggestions, decay
+    statuses, provenance chains, and query trail entries — under one stable
+    shape. No real intelligence heuristics run yet: the report is deterministic
+    and returns a valid empty state (empty sections, zeroed counts) while never
+    mutating store state.
+    """
+    return build_intelligence_report(store=store)
 
 
 @router.get("/activity", response_model=ActivityResponse)

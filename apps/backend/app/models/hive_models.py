@@ -610,3 +610,46 @@ class QueryTrailEntry(BaseModel):
     pinned: bool = False
     last_executed_at: datetime
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+# --------------------------------------------------------------------------- #
+# Phase 10C — Intelligence Report API foundation
+#
+# A read-only report shape that surfaces the Phase 10B intelligence contracts
+# (Dreaming suggestions, decay statuses, provenance chains, query trails)
+# through a single stable endpoint (``GET /api/intelligence/report``). This is
+# the contract/foundation only — exactly like Phase 8A wrapped the existing
+# record shapes in ``KnowledgeGraphResponse`` before any algorithm ran. This
+# phase adds NO scoring/heuristics, decay calculation, provenance engine, query
+# persistence, or AI ("dreaming") logic; the report is deterministic and, in the
+# absence of any derived intelligence data, returns a valid empty state (empty
+# lists + zeroed counts) so a future frontend can consume it unconditionally.
+# --------------------------------------------------------------------------- #
+class IntelligenceReportSummary(BaseModel):
+    """Deterministic per-section counts for an intelligence report."""
+
+    dreaming_suggestion_count: int = 0
+    decay_status_count: int = 0
+    provenance_chain_count: int = 0
+    query_trail_entry_count: int = 0
+
+
+class IntelligenceReport(BaseModel):
+    """Stable, read-only roll-up of the Phase 10B intelligence contracts.
+
+    The shape is stable even when there is no derived intelligence data — every
+    section defaults to an empty list and ``summary`` to zeroed counts. No real
+    Dreaming / Temporal Decay / provenance heuristics run in this phase, so the
+    report content is deterministic; only ``generated_at`` reflects request time
+    (mirroring ``HiveSystemStatus.last_updated`` / ``HiveExportSnapshot``).
+    ``read_only`` advertises that this endpoint never mutates store state.
+    """
+
+    generated_at: datetime
+    report_version: str = "0.1.0"
+    read_only: bool = True
+    dreaming_suggestions: list[DreamingSuggestion] = Field(default_factory=list)
+    decay_statuses: list[DecayStatus] = Field(default_factory=list)
+    provenance_chains: list[ProvenanceChain] = Field(default_factory=list)
+    query_trail_entries: list[QueryTrailEntry] = Field(default_factory=list)
+    summary: IntelligenceReportSummary = Field(default_factory=IntelligenceReportSummary)
