@@ -1,4 +1,4 @@
-export type HiveSourceType =
+﻿export type HiveSourceType =
   | "markdown"
   | "text"
   | "json"
@@ -105,7 +105,7 @@ export interface HiveGraphResponse {
   metadata: HiveMetadata;
 }
 
-// Phase 8A/8B/8C — knowledge graph projection. Mirrors the backend
+// Phase 8A/8B/8C "” knowledge graph projection. Mirrors the backend
 // KnowledgeGraphResponse wire shape (GET /api/knowledge-graph): the existing
 // node/edge record shapes plus a lightweight, deterministic summary block.
 export interface KnowledgeGraphSummary {
@@ -119,7 +119,7 @@ export interface KnowledgeGraphResponse {
   summary: KnowledgeGraphSummary;
 }
 
-// Phase 5A/5B — Source Registry (future import connectors). Separate from the
+// Phase 5A/5B "” Source Registry (future import connectors). Separate from the
 // graph's HiveSource resource; mirrors the backend SourceRecord wire shape.
 export type RegistrySourceType =
   | "obsidian"
@@ -151,7 +151,7 @@ export interface SourceRegistryListResponse {
   sources: SourceRecord[];
 }
 
-// Phase 6B/7A — Obsidian import. Mirrors the backend ObsidianImportRequest and
+// Phase 6B/7A "” Obsidian import. Mirrors the backend ObsidianImportRequest and
 // ObsidianImportSummary wire shapes (POST /api/obsidian/import).
 export interface ObsidianImportRequest {
   vault_path: string;
@@ -184,7 +184,7 @@ export interface ObsidianImportSummary {
   notes: string[];
 }
 
-// Phase 10B — Intelligence contract types / read-only schemas. Mirrors the
+// Phase 10B "” Intelligence contract types / read-only schemas. Mirrors the
 // backend Phase 10B shapes in hive_models.py (DreamingSuggestion, DecayStatus,
 // ProvenanceChain, QueryTrailEntry). Contract-only: no endpoint, logic, or
 // persistence exists yet. Every shape is read-only/advisory and additive.
@@ -270,10 +270,10 @@ export interface QueryTrailEntry {
   metadata: HiveMetadata;
 }
 
-// Phase 10C/10D — intelligence report roll-up. Mirrors the backend
+// Phase 10C/10D "” intelligence report roll-up. Mirrors the backend
 // IntelligenceReport / IntelligenceReportSummary wire shapes
 // (GET /api/intelligence/report): a stable, read-only projection of the Phase
-// 10B contracts above. Deterministic and advisory — no heuristics run yet.
+// 10B contracts above. Deterministic and advisory "” no heuristics run yet.
 export interface IntelligenceReportSummary {
   dreaming_suggestion_count: number;
   decay_status_count: number;
@@ -291,3 +291,4 @@ export interface IntelligenceReport {
   query_trail_entries: QueryTrailEntry[];
   summary: IntelligenceReportSummary;
 }
+
