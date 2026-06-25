@@ -50,6 +50,13 @@ export interface GraphViewGroup {
   count: number;
 }
 
+/** A node/relationship type paired with its label and how often it occurs. */
+export interface GraphTypeSummary {
+  type: string;
+  label: string;
+  count: number;
+}
+
 export interface GraphViewModel {
   nodes: GraphViewNode[];
   edges: GraphViewEdge[];
@@ -59,6 +66,16 @@ export interface GraphViewModel {
   connectedNodeCount: number;
   groups: GraphViewGroup[];
   topConnectedNodes: GraphViewNode[];
+  /** Distinct node types present, most common first — powers the legend. */
+  nodeTypes: GraphTypeSummary[];
+  /** Distinct relationship types present, most common first. */
+  relationshipTypes: GraphTypeSummary[];
+}
+
+/** Elements related to a current selection, for the "focus + dim" hierarchy. */
+export interface GraphRelated {
+  nodeIds: Set<string>;
+  edgeIds: Set<string>;
 }
 
 const RELATIONSHIP_LABELS: Record<string, string> = {
@@ -79,6 +96,23 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   source: "Source",
 };
 
+/**
+ * Stable accent colors per node type, used by the legend and as the swatch on
+ * node chips so the same type reads consistently across the panel. Deterministic
+ * and purely presentational — no layout or rendering happens here.
+ */
+const NODE_TYPE_COLORS: Record<string, string> = {
+  root: "#6b4fbb",
+  folder: "#3b7dd8",
+  file: "#2f9e6f",
+  concept: "#c2792f",
+  note: "#c44f8f",
+  model: "#7a7a2f",
+  source: "#4f8fbb",
+};
+
+const NODE_TYPE_FALLBACK_COLOR = "#6b6b6b";
+
 /** How many top-degree nodes to surface for a future "most connected" view. */
 const TOP_CONNECTED_LIMIT = 5;
 
@@ -88,6 +122,48 @@ export function relationshipLabel(relationship: string): string {
 
 export function nodeTypeLabel(type: string): string {
   return NODE_TYPE_LABELS[type] ?? type;
+}
+
+/** Accent color for a node type; falls back to a neutral gray for unknowns. */
+export function nodeTypeColor(type: string): string {
+  return NODE_TYPE_COLORS[type] ?? NODE_TYPE_FALLBACK_COLOR;
+}
+
+/**
+ * Collect the edges touching a node and the nodes on the other end of them.
+ * Read-only; the selected node id itself is excluded from the related node set
+ * so callers can style "self", "related", and "inactive" distinctly.
+ */
+export function relatedToNode(
+  model: GraphViewModel,
+  nodeId: string,
+): GraphRelated {
+  const nodeIds = new Set<string>();
+  const edgeIds = new Set<string>();
+  for (const edge of model.edges) {
+    if (edge.source === nodeId || edge.target === nodeId) {
+      edgeIds.add(edge.id);
+      nodeIds.add(edge.source);
+      nodeIds.add(edge.target);
+    }
+  }
+  nodeIds.delete(nodeId);
+  return { nodeIds, edgeIds };
+}
+
+/** Build a {@link GraphTypeSummary} list ordered by count desc, then label. */
+function summarizeTypes(
+  counts: Map<string, number>,
+  labelFor: (type: string) => string,
+): GraphTypeSummary[] {
+  return [...counts.entries()]
+    .map(([type, count]) => ({ type, label: labelFor(type), count }))
+    .sort((a, b) => {
+      if (b.count !== a.count) {
+        return b.count - a.count;
+      }
+      return a.label.localeCompare(b.label);
+    });
 }
 
 /** Read a metadata value as a non-empty trimmed string, else null. */
@@ -253,6 +329,25 @@ export function buildGraphViewModel(
     .filter((node) => node.degree > 0)
     .slice(0, TOP_CONNECTED_LIMIT);
 
+  // Distinct node/relationship types present, for the legend. Tallying from the
+  // projected nodes/edges keeps the legend honest: it only lists what's drawn.
+  const nodeTypeCounts = new Map<string, number>();
+  for (const node of nodes) {
+    if (node.type) {
+      nodeTypeCounts.set(node.type, (nodeTypeCounts.get(node.type) ?? 0) + 1);
+    }
+  }
+  const relationshipTypeCounts = new Map<string, number>();
+  for (const edge of edges) {
+    const type = typeof edge.type === "string" ? edge.type : null;
+    if (type) {
+      relationshipTypeCounts.set(
+        type,
+        (relationshipTypeCounts.get(type) ?? 0) + 1,
+      );
+    }
+  }
+
   return {
     nodes: orderedNodes,
     edges: orderedEdges,
@@ -262,5 +357,7 @@ export function buildGraphViewModel(
     connectedNodeCount,
     groups,
     topConnectedNodes,
+    nodeTypes: summarizeTypes(nodeTypeCounts, nodeTypeLabel),
+    relationshipTypes: summarizeTypes(relationshipTypeCounts, relationshipLabel),
   };
 }

@@ -92,10 +92,11 @@ are implemented today and some are planned (and labeled as such).
   into a deterministic graph of nodes and relationships.
 - **Console / query layer** *(implemented, foundational)* — run read-only
   queries against the store from the frontend console.
-- **Graph visualization** *(planned)* — a read-only visual graph canvas built on
-  top of the Phase 8C view model.
-- **Node inspector** *(planned)* — focused, read-only detail view for a selected
-  node and its immediate relationships.
+- **Graph visualization** *(implemented, read-only)* — a deterministic SVG graph
+  canvas built on the Phase 8C view model, with a legend, summary stats, and
+  selection-driven highlighting/dimming. No physics, mutation, or editing.
+- **Node inspector** *(implemented, read-only)* — focused detail view for the
+  selected node or edge and its immediate relationships.
 - **Provenance chains** *(planned)* — trace where a piece of knowledge came from
   and how it connects back to its source.
 - **Query memory / knowledge trails** *(planned)* — remember past queries and the
