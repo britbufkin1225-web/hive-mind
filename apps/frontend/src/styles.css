@@ -700,6 +700,109 @@ dd {
   word-break: break-all;
 }
 
+/* Phase 9A — Knowledge Graph read-only SVG visualization */
+.graph-canvas-wrap {
+  border: 1px solid #d4d4d4;
+  background: #f4f4f4;
+}
+
+.graph-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background:
+    radial-gradient(circle at 50% 45%, #fff 0%, #f4f4f4 70%);
+}
+
+.graph-canvas-hint {
+  margin: 0;
+  padding: 0.4rem 0.85rem 0.6rem;
+  border-top: 1px solid #e4e4e4;
+}
+
+/* Edges */
+.graph-canvas-edge {
+  stroke: #c2c2c2;
+  stroke-width: 1.5;
+  transition: stroke 0.1s ease;
+}
+
+.graph-canvas-arrow {
+  fill: #c2c2c2;
+}
+
+.graph-canvas-edge-incident {
+  stroke: #6b4fbb;
+  stroke-width: 2;
+}
+
+.graph-canvas-edge-selected {
+  stroke: #444;
+  stroke-width: 2.5;
+}
+
+/* Transparent, generous hit target layered over each thin edge line. */
+.graph-canvas-edge-hit {
+  stroke: transparent;
+  stroke-width: 12;
+  cursor: pointer;
+}
+
+/* Hovering the hit target highlights the visible edge drawn just before it. */
+.graph-canvas-edge-hit:hover {
+  stroke: rgba(107, 79, 187, 0.15);
+}
+
+.graph-canvas-edge-hit:focus-visible {
+  outline: 2px solid #6b4fbb;
+}
+
+/* Nodes */
+.graph-canvas-node {
+  cursor: pointer;
+}
+
+.graph-canvas-node-circle {
+  fill: #fff;
+  stroke: #8a78c4;
+  stroke-width: 2;
+  transition:
+    stroke 0.1s ease,
+    fill 0.1s ease;
+}
+
+.graph-canvas-node:hover .graph-canvas-node-circle {
+  fill: #efeaf9;
+  stroke: #6b4fbb;
+}
+
+.graph-canvas-node-selected .graph-canvas-node-circle {
+  fill: #6b4fbb;
+  stroke: #444;
+  stroke-width: 2.5;
+}
+
+.graph-canvas-node-label {
+  fill: #444;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+}
+
+.graph-canvas-node-selected .graph-canvas-node-label {
+  fill: #222;
+}
+
+.graph-canvas-node:focus-visible {
+  outline: none;
+}
+
+.graph-canvas-node:focus-visible .graph-canvas-node-circle {
+  stroke: #6b4fbb;
+  stroke-width: 3;
+}
+
 @media (max-width: 600px) {
   .graph-explorer-layout {
     grid-template-columns: 1fr;
