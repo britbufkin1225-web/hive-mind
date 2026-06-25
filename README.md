@@ -133,6 +133,15 @@ scoring/stub → frontend surface. See the
 | Phase 12A–12B | Provenance chain contract and inspector surface. |
 | Phase 13A–13B | Query memory / knowledge trails (contract, surface). |
 
+> **Phase 11A (demo fixtures):** the read-only intelligence report endpoint
+> (`GET /api/intelligence/report`) now returns deterministic **demo/seed
+> fixtures** for every section (Dreaming suggestions, temporal decay, provenance
+> chains, query trails) so the Intelligence Report panel shows meaningful sample
+> content for demos and screenshots. This is illustrative data only — every entry
+> is tagged `metadata.fixture: true`. No Dreaming engine, decay calculation,
+> provenance engine, query persistence, or AI/LLM logic runs, and the endpoint
+> remains read-only.
+
 ## Setup
 
 Prerequisites: Node.js 20+ and Python 3.11+.

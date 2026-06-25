@@ -1,9 +1,10 @@
-"""Phase 10C — Intelligence Report API foundation tests.
+"""Intelligence Report API tests (Phase 10C shape + Phase 11A demo fixtures).
 
 Covers the read-only ``GET /api/intelligence/report`` endpoint: status,
-top-level shape, empty-state defaults, contract-model validation, and the
-guarantee that calling it never mutates store state. No real intelligence
-heuristics run yet, so the report is deterministic and empty.
+top-level shape, contract-model validation, the guarantee that calling it never
+mutates store state, and — for Phase 11A — that each section is populated with
+stable, deterministic, clearly-tagged demo fixtures. No real intelligence
+heuristics run yet; the populated content is static seed data only.
 """
 
 from fastapi.testclient import TestClient
@@ -38,16 +39,36 @@ def test_intelligence_report_top_level_shape() -> None:
     assert "summary" in data
 
 
-def test_intelligence_report_empty_state() -> None:
+def test_intelligence_report_sections_are_populated_with_fixtures() -> None:
     data = client.get("/api/intelligence/report").json()
-    # Foundation phase: no derived intelligence -> empty sections, zeroed counts.
-    for section in _SECTIONS:
-        assert data[section] == []
+    # Phase 11A: every section returns demo fixtures (non-empty), and the
+    # summary counts match the section lengths exactly.
     summary = data["summary"]
-    assert summary["dreaming_suggestion_count"] == 0
-    assert summary["decay_status_count"] == 0
-    assert summary["provenance_chain_count"] == 0
-    assert summary["query_trail_entry_count"] == 0
+    assert summary["dreaming_suggestion_count"] == len(data["dreaming_suggestions"]) > 0
+    assert summary["decay_status_count"] == len(data["decay_statuses"]) > 0
+    assert summary["provenance_chain_count"] == len(data["provenance_chains"]) > 0
+    assert summary["query_trail_entry_count"] == len(data["query_trail_entries"]) > 0
+
+
+def test_intelligence_report_fixtures_are_tagged_as_demo_data() -> None:
+    data = client.get("/api/intelligence/report").json()
+    # Demo origin must be unambiguous in the payload itself: every fixture entry
+    # carries metadata.fixture == True so consumers never mistake it for real
+    # production intelligence.
+    for section in _SECTIONS:
+        assert data[section], f"expected demo fixtures in {section}"
+        for entry in data[section]:
+            assert entry["metadata"].get("fixture") is True
+
+
+def test_intelligence_report_is_deterministic_apart_from_generated_at() -> None:
+    first = client.get("/api/intelligence/report").json()
+    second = client.get("/api/intelligence/report").json()
+    # Only generated_at may differ between requests; all fixture content is
+    # byte-for-byte stable (safe for screenshots).
+    del first["generated_at"]
+    del second["generated_at"]
+    assert first == second
 
 
 def test_intelligence_report_validates_against_contract_model() -> None:
