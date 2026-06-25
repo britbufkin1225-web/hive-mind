@@ -269,3 +269,25 @@ export interface QueryTrailEntry {
   last_executed_at: string;
   metadata: HiveMetadata;
 }
+
+// Phase 10C/10D — intelligence report roll-up. Mirrors the backend
+// IntelligenceReport / IntelligenceReportSummary wire shapes
+// (GET /api/intelligence/report): a stable, read-only projection of the Phase
+// 10B contracts above. Deterministic and advisory — no heuristics run yet.
+export interface IntelligenceReportSummary {
+  dreaming_suggestion_count: number;
+  decay_status_count: number;
+  provenance_chain_count: number;
+  query_trail_entry_count: number;
+}
+
+export interface IntelligenceReport {
+  generated_at: string;
+  report_version: string;
+  read_only: boolean;
+  dreaming_suggestions: DreamingSuggestion[];
+  decay_statuses: DecayStatus[];
+  provenance_chains: ProvenanceChain[];
+  query_trail_entries: QueryTrailEntry[];
+  summary: IntelligenceReportSummary;
+}
