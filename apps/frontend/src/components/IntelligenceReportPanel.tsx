@@ -49,6 +49,24 @@ function decayBucketLabel(bucket: DecayStatusBucket): string {
   return DECAY_BUCKET_LABELS[bucket] ?? bucket;
 }
 
+/** True when a record carries the seed/demo fixture marker stamped by the
+ *  backend fixtures (`metadata.fixture === true`). Used only to label the
+ *  surface honestly as demo data — it changes no behavior. */
+function isFixtureRecord(record: { metadata?: Record<string, unknown> }): boolean {
+  return record.metadata?.fixture === true;
+}
+
+/** Whether the report is built entirely from seed/demo fixtures, so the panel
+ *  can say so plainly for demos and screenshots. */
+function isDemoReport(report: IntelligenceReport): boolean {
+  return [
+    ...report.dreaming_suggestions,
+    ...report.decay_statuses,
+    ...report.provenance_chains,
+    ...report.query_trail_entries,
+  ].some(isFixtureRecord);
+}
+
 /** Per-section count strip mirroring the graph panel's summary metrics. */
 function SummaryMetrics({ report }: { report: IntelligenceReport }) {
   const metrics: Array<[string, number]> = [
@@ -219,6 +237,8 @@ function IntelligenceReportPanel() {
     void load();
   }, [load]);
 
+  const isDemo = report !== null && isDemoReport(report);
+
   const isEmpty =
     state === "success" &&
     report !== null &&
@@ -231,7 +251,12 @@ function IntelligenceReportPanel() {
     <section className="intelligence-report-panel">
       <div className="source-registry-head">
         <div>
-          <h2>Intelligence Report</h2>
+          <h2 className="intel-title">
+            Intelligence Report
+            {state === "success" && isDemo && (
+              <span className="intel-demo-badge">Demo data</span>
+            )}
+          </h2>
           <p className="console-hint graph-subtitle">
             A read-only roll-up of the intelligence layer — Dreaming, decay,
             provenance, and query trails. Advisory only; nothing is mutated.
@@ -284,6 +309,15 @@ function IntelligenceReportPanel() {
                 </div>
               </dl>
             </div>
+
+            {isDemo && (
+              <p className="intel-demo-note">
+                These sections are populated with deterministic seed/demo
+                fixtures so the surface shows meaningful content. No Dreaming,
+                decay, provenance, or query-trail logic runs yet — real
+                intelligence arrives in a later phase.
+              </p>
+            )}
 
             {isEmpty && (
               <p className="intel-empty intel-empty-global">

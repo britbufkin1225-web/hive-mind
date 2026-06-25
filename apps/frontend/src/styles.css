@@ -1142,113 +1142,48 @@ dd {
   color: #b91c1c;
 }
 
-/* Phase 10D — Intelligence Report panel (read-only). Reuses the shared panel
-   chrome (source-registry-head, graph-summary, source-meta, graph-section) and
-   adds only the scoped row/tag/status styling specific to this surface. */
-.intel-overview {
-  margin-bottom: 0.5rem;
-}
-
-.intel-meta {
-  margin-top: 0;
-}
-
-.intel-section-count {
-  display: inline-block;
-  margin-left: 0.5rem;
-  padding: 0.05rem 0.45rem;
-  border-radius: 999px;
-  background: #f4f4f4;
-  border: 1px solid #d4d4d4;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #555;
-}
-
-.intel-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.intel-row {
-  padding: 0.6rem 0.75rem;
-  border: 1px solid #d4d4d4;
-  background: #fff;
-}
-
-.intel-row-head {
+/* Phase 11B — fixture/demo signalling + status-pill polish for screenshot
+   readiness. Additive only; scoped to the Intelligence Report surface. */
+.intel-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
-.intel-row-id {
-  font-size: 0.85rem;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.intel-row-body {
-  margin: 0.15rem 0;
-  font-size: 0.875rem;
-}
-
-.intel-row-sub {
-  margin: 0.15rem 0 0;
-  font-size: 0.75rem;
-  color: #666;
-}
-
-.intel-tag {
+.intel-demo-badge {
   display: inline-block;
-  padding: 0.1rem 0.45rem;
-  border-radius: 4px;
-  background: #eef2ff;
-  border: 1px solid #c7d2fe;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #3730a3;
-}
-
-.intel-status {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
   font-size: 0.7rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #92400e;
   white-space: nowrap;
-  color: #555;
 }
 
-.intel-status-open {
-  color: #1d4ed8;
+.intel-demo-note {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  max-width: 64ch;
+  border: 1px solid #fcd34d;
+  border-left-width: 3px;
+  border-radius: 4px;
+  background: #fffbeb;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #6b4e16;
 }
 
-.intel-status-ack {
-  color: #047857;
-}
-
-.intel-status-dismissed,
-.intel-decay-unknown {
-  color: #888;
-}
-
-.intel-decay-fresh,
-.intel-trail-resolved {
-  color: #047857;
-}
-
-.intel-decay-aging {
-  color: #b45309;
-}
-
-.intel-decay-stale,
-.intel-trail-unresolved {
-  color: #b91c1c;
+/* Status indicators read as compact pills so state is scannable in a
+   screenshot. Color comes from the per-status classes below. */
+.intel-status {
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: #fff;
 }
 
