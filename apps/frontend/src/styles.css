@@ -1142,3 +1142,113 @@ dd {
   color: #b91c1c;
 }
 
+/* Phase 10D — Intelligence Report panel (read-only). Reuses the shared panel
+   chrome (source-registry-head, graph-summary, source-meta, graph-section) and
+   adds only the scoped row/tag/status styling specific to this surface. */
+.intel-overview {
+  margin-bottom: 0.5rem;
+}
+
+.intel-meta {
+  margin-top: 0;
+}
+
+.intel-section-count {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: #f4f4f4;
+  border: 1px solid #d4d4d4;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.intel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.intel-row {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+}
+
+.intel-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.intel-row-id {
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.intel-row-body {
+  margin: 0.15rem 0;
+  font-size: 0.875rem;
+}
+
+.intel-row-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.intel-tag {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #3730a3;
+}
+
+.intel-status {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #555;
+}
+
+.intel-status-open {
+  color: #1d4ed8;
+}
+
+.intel-status-ack {
+  color: #047857;
+}
+
+.intel-status-dismissed,
+.intel-decay-unknown {
+  color: #888;
+}
+
+.intel-decay-fresh,
+.intel-trail-resolved {
+  color: #047857;
+}
+
+.intel-decay-aging {
+  color: #b45309;
+}
+
+.intel-decay-stale,
+.intel-trail-unresolved {
+  color: #b91c1c;
+}
+
