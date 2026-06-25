@@ -803,6 +803,14 @@ dd {
   stroke-width: 3;
 }
 
+/* Suppress the browser's default focus ring on click/programmatic focus of the
+   interactive SVG targets (focusable <g>/<line> elements show a UA outline on
+   plain :focus). Keyboard focus still gets its dedicated indicators above. */
+.graph-canvas-node:focus:not(:focus-visible),
+.graph-canvas-edge-hit:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* Phase 9B — header actions, legend, focus hierarchy, truncation */
 .graph-head-actions {
   display: flex;
