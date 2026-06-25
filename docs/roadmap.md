@@ -35,6 +35,7 @@ add read-only surfaces.
 | 10B | Intelligence Contract Types / read-only schemas | Contract | 10A |
 | 10C | Dreaming suggestions backend stub | Backend | 10B |
 | 10D | Dreaming suggestions frontend read-only panel | Frontend | 10C |
+| 10E | Intelligence report UX hardening / demo readiness | Frontend | 10D |
 | 11A | Temporal Knowledge Decay contract | Contract | 10B |
 | 11B | Temporal decay backend scoring | Backend | 11A |
 | 11C | Temporal decay frontend indicators | Frontend | 11B |
