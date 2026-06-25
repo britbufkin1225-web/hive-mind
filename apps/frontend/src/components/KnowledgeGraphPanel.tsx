@@ -11,6 +11,7 @@ import {
   type GraphViewEdge,
   type GraphViewNode,
 } from "../lib/graphViewModel";
+import { computeGraphLayout } from "../lib/graphLayout";
 
 /**
  * Roving keyboard navigation within a node/edge list: Up/Down move focus
@@ -405,6 +406,159 @@ function GraphInspector({
   );
 }
 
+/** Trim a node label so it stays legible beside its circle on the canvas. */
+function truncateLabel(label: string, max = 22): string {
+  return label.length > max ? `${label.slice(0, max - 1)}…` : label;
+}
+
+/**
+ * Read-only SVG visualization of the graph. Renders nodes and relationships in
+ * the deterministic ring layout and reports node/edge clicks back up so the
+ * existing inspector stays the single source of selection truth. Purely
+ * presentational: it draws from the prepared view model and mutates nothing.
+ */
+function GraphCanvas({
+  nodes,
+  edges,
+  selectedNodeId,
+  selectedEdgeId,
+  onSelectNode,
+  onSelectEdge,
+}: {
+  nodes: GraphViewNode[];
+  edges: GraphViewEdge[];
+  selectedNodeId: string | null;
+  selectedEdgeId: string | null;
+  onSelectNode: (id: string) => void;
+  onSelectEdge: (id: string) => void;
+}) {
+  const layout = useMemo(
+    () => computeGraphLayout(nodes, edges),
+    [nodes, edges],
+  );
+
+  if (layout.nodes.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="graph-section">
+      <h3 className="graph-section-title">Graph map</h3>
+      <div className="graph-canvas-wrap">
+        <svg
+          className="graph-canvas"
+          viewBox={`0 0 ${layout.width} ${layout.height}`}
+          role="group"
+          aria-label="Knowledge graph visualization"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <defs>
+            <marker
+              id="graph-arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="7"
+              markerHeight="7"
+              orient="auto-start-reverse"
+            >
+              <path d="M0,0 L10,5 L0,10 z" className="graph-canvas-arrow" />
+            </marker>
+          </defs>
+
+          <g className="graph-canvas-edges">
+            {layout.edges.map((edge) => {
+              const selected = edge.id === selectedEdgeId;
+              const incident =
+                selectedNodeId !== null &&
+                (edge.source === selectedNodeId ||
+                  edge.target === selectedNodeId);
+              const className = [
+                "graph-canvas-edge",
+                selected ? "graph-canvas-edge-selected" : "",
+                incident ? "graph-canvas-edge-incident" : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
+              return (
+                <g key={edge.id}>
+                  <line
+                    className={className}
+                    x1={edge.x1}
+                    y1={edge.y1}
+                    x2={edge.x2}
+                    y2={edge.y2}
+                    markerEnd="url(#graph-arrow)"
+                  />
+                  {/* Wider transparent line so thin edges are easy to click. */}
+                  <line
+                    className="graph-canvas-edge-hit"
+                    x1={edge.x1}
+                    y1={edge.y1}
+                    x2={edge.x2}
+                    y2={edge.y2}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Relationship ${edge.label ?? "edge"}`}
+                    aria-pressed={selected}
+                    onClick={() => onSelectEdge(edge.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onSelectEdge(edge.id);
+                      }
+                    }}
+                  />
+                </g>
+              );
+            })}
+          </g>
+
+          <g className="graph-canvas-nodes">
+            {layout.nodes.map((node) => {
+              const selected = node.id === selectedNodeId;
+              return (
+                <g
+                  key={node.id}
+                  className={`graph-canvas-node${
+                    selected ? " graph-canvas-node-selected" : ""
+                  }`}
+                  transform={`translate(${node.x}, ${node.y})`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${node.label}, ${nodeTypeLabel(node.type)}, ${
+                    node.degree
+                  } connections`}
+                  aria-pressed={selected}
+                  onClick={() => onSelectNode(node.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onSelectNode(node.id);
+                    }
+                  }}
+                >
+                  <circle className="graph-canvas-node-circle" r={node.radius} />
+                  <text
+                    className="graph-canvas-node-label"
+                    y={node.radius + 14}
+                    textAnchor="middle"
+                  >
+                    {truncateLabel(node.label)}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        </svg>
+        <p className="console-hint graph-canvas-hint">
+          Read-only map · select a node or relationship to inspect it.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function KnowledgeGraphPanel() {
   const [state, setState] = useState<PanelState>("loading");
   const [graph, setGraph] = useState<KnowledgeGraphResponse | null>(null);
@@ -587,6 +741,15 @@ function KnowledgeGraphPanel() {
               </p>
             ) : (
               <>
+                <GraphCanvas
+                  nodes={model.nodes}
+                  edges={model.edges}
+                  selectedNodeId={selectedNode?.id ?? null}
+                  selectedEdgeId={selectedEdge?.id ?? null}
+                  onSelectNode={selectNode}
+                  onSelectEdge={selectEdge}
+                />
+
                 <div className="graph-section">
                   <h3 className="graph-section-title">Groups</h3>
                   {model.groups.length === 0 ? (
