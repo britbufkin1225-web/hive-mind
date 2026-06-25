@@ -1,13 +1,55 @@
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api/client";
 import type { HiveMetadata, KnowledgeGraphResponse } from "../types/api";
 import {
   buildGraphViewModel,
+  nodeTypeColor,
   nodeTypeLabel,
+  relatedToNode,
+  type GraphTypeSummary,
   type GraphViewEdge,
   type GraphViewNode,
 } from "../lib/graphViewModel";
+
+/**
+ * Roving keyboard navigation within a node/edge list: Up/Down move focus
+ * between rows, Home/End jump to the ends. Mouse/Tab behavior is untouched, so
+ * this is purely additive for keyboard users.
+ */
+function handleListArrowKeys(event: KeyboardEvent<HTMLUListElement>): void {
+  const keys = ["ArrowDown", "ArrowUp", "Home", "End"];
+  if (!keys.includes(event.key)) {
+    return;
+  }
+  const list = event.currentTarget;
+  const buttons = Array.from(
+    list.querySelectorAll<HTMLButtonElement>(":scope > li > button"),
+  );
+  if (buttons.length === 0) {
+    return;
+  }
+  const currentIndex = buttons.findIndex(
+    (button) => button === document.activeElement,
+  );
+  let nextIndex: number;
+  switch (event.key) {
+    case "ArrowDown":
+      nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % buttons.length;
+      break;
+    case "ArrowUp":
+      nextIndex =
+        currentIndex <= 0 ? buttons.length - 1 : currentIndex - 1;
+      break;
+    case "Home":
+      nextIndex = 0;
+      break;
+    default:
+      nextIndex = buttons.length - 1;
+  }
+  event.preventDefault();
+  buttons[nextIndex]?.focus();
+}
 
 type PanelState = "loading" | "success" | "error";
 
@@ -56,31 +98,134 @@ function SummaryMetrics({
   );
 }
 
+/**
+ * Legend mapping the panel's visual vocabulary — node-type swatches,
+ * relationship-type labels, and connectivity status — so colors and badges are
+ * self-explaining. Only types actually present in the graph are listed.
+ */
+function GraphLegend({
+  nodeTypes,
+  relationshipTypes,
+  connectedNodeCount,
+  isolatedNodeCount,
+}: {
+  nodeTypes: GraphTypeSummary[];
+  relationshipTypes: GraphTypeSummary[];
+  connectedNodeCount: number;
+  isolatedNodeCount: number;
+}) {
+  return (
+    <div className="graph-legend" aria-label="Graph legend">
+      {nodeTypes.length > 0 && (
+        <div className="graph-legend-group">
+          <span className="graph-legend-title">Node types</span>
+          <ul className="graph-legend-items">
+            {nodeTypes.map((entry) => (
+              <li key={entry.type} className="graph-legend-item">
+                <span
+                  className="graph-legend-swatch"
+                  style={{ background: nodeTypeColor(entry.type) }}
+                  aria-hidden="true"
+                />
+                <span className="graph-legend-label">{entry.label}</span>
+                <span className="graph-legend-count">{entry.count}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {relationshipTypes.length > 0 && (
+        <div className="graph-legend-group">
+          <span className="graph-legend-title">Relationships</span>
+          <ul className="graph-legend-items">
+            {relationshipTypes.map((entry) => (
+              <li key={entry.type} className="graph-legend-item">
+                <span className="graph-legend-edge" aria-hidden="true" />
+                <span className="graph-legend-label">{entry.label}</span>
+                <span className="graph-legend-count">{entry.count}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="graph-legend-group">
+        <span className="graph-legend-title">Status</span>
+        <ul className="graph-legend-items">
+          <li className="graph-legend-item">
+            <span
+              className="graph-legend-badge graph-badge-connected"
+              aria-hidden="true"
+            />
+            <span className="graph-legend-label">Connected</span>
+            <span className="graph-legend-count">{connectedNodeCount}</span>
+          </li>
+          <li className="graph-legend-item">
+            <span
+              className="graph-legend-badge graph-badge-isolated"
+              aria-hidden="true"
+            />
+            <span className="graph-legend-label">Isolated</span>
+            <span className="graph-legend-count">{isolatedNodeCount}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 function NodeRow({
   node,
   selected,
+  related,
+  dimmed,
   onSelect,
 }: {
   node: GraphViewNode;
   selected: boolean;
+  related?: boolean;
+  dimmed?: boolean;
   onSelect: () => void;
 }) {
+  const className = [
+    "graph-node-row",
+    selected && "graph-row-selected",
+    related && "graph-row-related",
+    dimmed && "graph-row-dimmed",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const isolated = node.degree === 0;
   return (
     <li>
       <button
         type="button"
-        className={`graph-node-row${selected ? " graph-row-selected" : ""}`}
+        className={className}
         onClick={onSelect}
         aria-pressed={selected}
       >
         <span className="graph-node-row-head">
-          <span className="graph-node-name">{node.label}</span>
+          <span className="graph-node-name" title={node.label}>
+            <span
+              className="graph-node-swatch"
+              style={{ background: nodeTypeColor(node.type) }}
+              aria-hidden="true"
+            />
+            {node.label}
+          </span>
           <span className="graph-node-type">{nodeTypeLabel(node.type)}</span>
         </span>
         <span className="graph-node-row-sub">
           <span className="graph-node-degree" title="incoming / outgoing">
             {node.incomingCount} in · {node.outgoingCount} out
           </span>
+          {isolated && (
+            <span className="graph-node-flag" title="No relationships">
+              {" "}
+              · isolated
+            </span>
+          )}
           {node.sourceName ? ` · ${node.sourceName}` : ""}
         </span>
         {node.previewText && (
@@ -95,18 +240,30 @@ function EdgeRow({
   edge,
   labelFor,
   selected,
+  related,
+  dimmed,
   onSelect,
 }: {
   edge: GraphViewEdge;
   labelFor: (nodeId: string) => string;
   selected: boolean;
+  related?: boolean;
+  dimmed?: boolean;
   onSelect: () => void;
 }) {
+  const className = [
+    "graph-edge-row",
+    selected && "graph-row-selected",
+    related && "graph-row-related",
+    dimmed && "graph-row-dimmed",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     <li>
       <button
         type="button"
-        className={`graph-edge-row${selected ? " graph-row-selected" : ""}`}
+        className={className}
         onClick={onSelect}
         aria-pressed={selected}
       >
@@ -314,13 +471,57 @@ function KnowledgeGraphPanel() {
     (id: string) => setSelection({ kind: "edge", id }),
     [],
   );
+  const clearSelection = useCallback(() => setSelection(null), []);
+
+  // Related elements drive the "focus + dim" hierarchy: with a selection
+  // active, the selected record and anything connected to it stay prominent
+  // while everything else is dimmed. Empty sets mean "nothing is related".
+  const related = useMemo(() => {
+    if (selectedNode) {
+      return relatedToNode(model, selectedNode.id);
+    }
+    if (selectedEdge) {
+      return {
+        nodeIds: new Set([selectedEdge.source, selectedEdge.target]),
+        edgeIds: new Set<string>(),
+      };
+    }
+    return { nodeIds: new Set<string>(), edgeIds: new Set<string>() };
+  }, [model, selectedNode, selectedEdge]);
+
+  const hasSelection = selectedNode !== null || selectedEdge !== null;
+
+  // Escape clears the selection, so keyboard users can reset focus state
+  // without reaching for the mouse. Scoped to the panel via onKeyDown.
+  const handlePanelKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLElement>) => {
+      if (event.key === "Escape" && hasSelection) {
+        clearSelection();
+      }
+    },
+    [hasSelection, clearSelection],
+  );
 
   const hasNodes = model.nodes.length > 0;
   const hasEdges = model.edges.length > 0;
   const isEmptyGraph = state === "success" && !hasNodes && !hasEdges;
 
+  /** Class helpers: a row is "related" when connected to the selection, and
+   * "dimmed" when a selection exists but this row is neither selected nor
+   * related — giving inactive elements clearly lower visual weight. */
+  const nodeStateFor = (id: string) => {
+    const selected = selectedNode?.id === id;
+    const isRelated = related.nodeIds.has(id);
+    return { selected, related: isRelated, dimmed: hasSelection && !selected && !isRelated };
+  };
+  const edgeStateFor = (id: string) => {
+    const selected = selectedEdge?.id === id;
+    const isRelated = related.edgeIds.has(id);
+    return { selected, related: isRelated, dimmed: hasSelection && !selected && !isRelated };
+  };
+
   return (
-    <section className="knowledge-graph-panel">
+    <section className="knowledge-graph-panel" onKeyDown={handlePanelKeyDown}>
       <div className="source-registry-head">
         <div>
           <h2>Knowledge Graph</h2>
@@ -329,14 +530,25 @@ function KnowledgeGraphPanel() {
             sources.
           </p>
         </div>
-        <button
-          type="button"
-          className="source-refresh"
-          onClick={() => void load()}
-          disabled={state === "loading"}
-        >
-          {state === "loading" ? "Refreshing…" : "Refresh"}
-        </button>
+        <div className="graph-head-actions">
+          <button
+            type="button"
+            className="source-refresh graph-reset"
+            onClick={clearSelection}
+            disabled={!hasSelection}
+            title="Clear the current selection and dimming (Esc)"
+          >
+            Reset view
+          </button>
+          <button
+            type="button"
+            className="source-refresh"
+            onClick={() => void load()}
+            disabled={state === "loading"}
+          >
+            {state === "loading" ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
       </div>
 
       <div aria-live="polite" aria-busy={state === "loading"}>
@@ -358,6 +570,15 @@ function KnowledgeGraphPanel() {
               connectedNodeCount={model.connectedNodeCount}
               isolatedNodeCount={model.isolatedNodeCount}
             />
+
+            {!isEmptyGraph && (
+              <GraphLegend
+                nodeTypes={model.nodeTypes}
+                relationshipTypes={model.relationshipTypes}
+                connectedNodeCount={model.connectedNodeCount}
+                isolatedNodeCount={model.isolatedNodeCount}
+              />
+            )}
 
             {isEmptyGraph ? (
               <p className="console-hint">
@@ -387,12 +608,12 @@ function KnowledgeGraphPanel() {
                 {model.topConnectedNodes.length > 0 && (
                   <div className="graph-section">
                     <h3 className="graph-section-title">Top connected nodes</h3>
-                    <ul className="graph-node-list">
+                    <ul className="graph-node-list" onKeyDown={handleListArrowKeys}>
                       {model.topConnectedNodes.map((node) => (
                         <NodeRow
                           key={node.id}
                           node={node}
-                          selected={selectedNode?.id === node.id}
+                          {...nodeStateFor(node.id)}
                           onSelect={() => selectNode(node.id)}
                         />
                       ))}
@@ -405,12 +626,12 @@ function KnowledgeGraphPanel() {
                     <div className="graph-section">
                       <h3 className="graph-section-title">Nodes</h3>
                       {hasNodes ? (
-                        <ul className="graph-node-list">
+                        <ul className="graph-node-list" onKeyDown={handleListArrowKeys}>
                           {model.nodes.map((node) => (
                             <NodeRow
                               key={node.id}
                               node={node}
-                              selected={selectedNode?.id === node.id}
+                              {...nodeStateFor(node.id)}
                               onSelect={() => selectNode(node.id)}
                             />
                           ))}
@@ -426,13 +647,13 @@ function KnowledgeGraphPanel() {
                     <div className="graph-section">
                       <h3 className="graph-section-title">Relationships</h3>
                       {hasEdges ? (
-                        <ul className="graph-edge-list">
+                        <ul className="graph-edge-list" onKeyDown={handleListArrowKeys}>
                           {model.edges.map((edge) => (
                             <EdgeRow
                               key={edge.id}
                               edge={edge}
                               labelFor={labelFor}
-                              selected={selectedEdge?.id === edge.id}
+                              {...edgeStateFor(edge.id)}
                               onSelect={() => selectEdge(edge.id)}
                             />
                           ))}
