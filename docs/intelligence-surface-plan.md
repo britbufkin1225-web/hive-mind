@@ -248,9 +248,9 @@ Knowledge Graph API and Console.
 
 ## Suggested next work
 
-Phase 11C is the current documentation cohesion pass. After it, future
-implementation should replace fixture sections with real deterministic read-only
-derivation one surface at a time. Start with a narrow contract/validation update,
+Phase 11C completed the documentation cohesion pass, and Phase 12A froze the
+demo-ready snapshot. After that, future implementation should replace fixture
+sections with real deterministic read-only derivation one surface at a time. Start with a narrow contract/validation update,
 then backend derivation, then frontend presentation.
 
 See [roadmap.md](roadmap.md) for the current phased plan.

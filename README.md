@@ -145,7 +145,7 @@ third. See the [full roadmap](docs/roadmap.md) and the
 
 | Planned / Active Phase | Focus |
 | --- | --- |
-| Phase 11C | Repo cohesion, demo docs, screenshot checklist, and API/docs consistency. |
+| Phase 12A | Demo freeze + release snapshot; demo script, screenshot checklist, and README/API/docs consistency. |
 | Future intelligence phases | Replace fixture sections with real deterministic read-only derivation. |
 | Future provenance/query phases | Add real provenance and query-trail logic only after dedicated contracts and validation. |
 
