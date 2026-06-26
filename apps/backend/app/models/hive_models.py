@@ -468,11 +468,31 @@ class KnowledgeGraphResponse(BaseModel):
 # ``origin`` marker, mirroring how the graph builder tags derived edges.
 # --------------------------------------------------------------------------- #
 class DreamingSuggestionType(StrEnum):
+    """Canonical Dreaming suggestion types.
+
+    Members follow the project convention: an ``UPPER_SNAKE`` member name whose
+    serialized value is the ``snake_case`` string. Because this is a ``StrEnum``,
+    the serialized API value is the string literal below — that is the value the
+    frontend ``DreamingSuggestionType`` union and the panel label map key on, so
+    the literals here are the stable wire contract.
+
+    Notes:
+
+    * The source-related type is ``source_conflict`` ("notes from different
+      sources that disagree"). There is intentionally no ``source_coverage_gap``
+      value — no derivation exists for one and adding it would duplicate the same
+      concept space without a producer.
+    * ``unresolved_query`` is reserved but **blocked/planned**: it depends on
+      persisted query history, which does not exist yet. No derivation or fixture
+      produces it, and no ``unresolved_query_pattern`` variant is added until that
+      persistence lands.
+    """
+
     RELATED_NODES = "related_nodes"
     DUPLICATE = "duplicate"
     STALE = "stale"
     MISSING_BACKLINK = "missing_backlink"
-    UNRESOLVED_QUERY = "unresolved_query"
+    UNRESOLVED_QUERY = "unresolved_query"  # planned/blocked: needs query history
     ORPHAN = "orphan"
     SOURCE_CONFLICT = "source_conflict"
 
@@ -491,7 +511,13 @@ class DreamingSuggestion(BaseModel):
     captures the review-only lifecycle (``open`` -> ``acknowledged``/
     ``dismissed``); an "apply" action that would create real graph data is
     explicitly out of scope for this phase. ``confidence_hint`` is a lightweight
-    human-readable label only — a numeric confidence model is deferred (Tier 2).
+    human-readable label only — a numeric confidence model is deferred (Tier 2),
+    so the field name stays ``confidence_hint`` (never ``confidence``).
+
+    Supporting evidence (referenced records, matched snippets, scores) attaches
+    under ``metadata.evidence`` rather than a dedicated top-level field, keeping
+    the contract additive — ``metadata`` is the free-form, forward-compatible bag
+    used across the API.
     """
 
     id: str

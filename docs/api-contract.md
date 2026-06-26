@@ -82,6 +82,29 @@ deterministic sample entries tagged `metadata.fixture = true` so the frontend
 can show meaningful portfolio/demo content, and those fixture entries must not be
 described as store-derived intelligence. The endpoint never mutates store state.
 
+### Dreaming suggestion contract
+
+`DreamingSuggestion.type` is one of a fixed set of serialized (snake_case) values
+that the backend enum, the frontend `DreamingSuggestionType` union, and the panel
+label map all share:
+
+- `related_nodes`, `duplicate`, `stale`, `missing_backlink`, `orphan`,
+  `source_conflict` — and `unresolved_query` (see below).
+
+Conventions:
+
+- The source-related type is **`source_conflict`** ("notes from different sources
+  that disagree"). There is intentionally no `source_coverage_gap` value — no
+  derivation produces one, so adding it would duplicate the concept space.
+- The confidence field is **`confidence_hint`** (a lightweight human-readable
+  label). A numeric `confidence` model is deferred to Tier 2; do not rename the
+  field to `confidence`.
+- Supporting evidence attaches under **`metadata.evidence`**, not a top-level
+  `evidence` field, keeping the contract additive.
+- **`unresolved_query` is planned/blocked.** It depends on persisted query
+  history, which is not implemented yet, so no derivation or fixture produces it
+  and no `unresolved_query_pattern` variant is added until that persistence lands.
+
 ## Compatibility Notes
 
 Existing Phase 1 routes and response shapes remain valid. New work should keep
