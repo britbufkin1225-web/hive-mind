@@ -1,80 +1,98 @@
 # Hive|Mind Roadmap
 
-This is the forward-looking roadmap for Hive|Mind, focused on the **intelligence
-layer** planned in Phase 10A. It complements the per-phase summary table in the
-[README](../README.md) and the [Intelligence Surface Plan](intelligence-surface-plan.md).
+This roadmap explains what Hive|Mind can do now, what is demo-only, and what
+should remain future work. It complements the per-phase summary table in the
+[README](../README.md), the [Intelligence Surface Plan](intelligence-surface-plan.md),
+and the portfolio-facing [Demo Guide](demo-guide.md).
 
-The intelligence layer is built in small, safe, mostly paired phases:
-**contract → backend stub/scoring → frontend read-only surface.** This keeps each
-phase reviewable and preserves the read-only, suggestion-only guarantees.
+## Current status
 
-## Completed foundation
+**Active phase:** Phase 11C — Repo Cohesion + Demo Documentation Pass.
 
-The app shell, in-memory store, Hive Console (API + panel), Source Registry
-(backend + frontend + inspector), Obsidian adapter and import pipeline, the
-Knowledge Graph API, and the read-only Knowledge Graph panel (with its custom SVG
-visualization, view model, and inspector sync) are complete. See the README phase
-table for the detailed history through the knowledge graph visualization QA and
-polish work.
+Phase 11C is documentation-only. It updates project status, demo guidance,
+screenshot guidance, API/docs consistency, and agent coordination docs after the
+Phase 11B Intelligence Report fixture UX work landed on `main`.
 
-## Phase 10A — Intelligence Surface Planning (current)
+No backend logic, frontend component changes, new endpoints, persistence changes,
+intelligence heuristics, AI/LLM integration, graph mutation, Obsidian importer
+changes, dependencies, or branding changes are part of Phase 11C.
 
-Documentation and architecture only. Defines the intelligence surfaces, Tier 1
-vs. Tier 2 features, guardrails, and the phase order below. No intelligence
-logic, endpoints, models, or panels are added. Deliverables:
-[intelligence-surface-plan.md](intelligence-surface-plan.md) and this roadmap.
+## Implemented foundation
 
-## Intelligence implementation phases
+- React/Vite frontend and FastAPI backend app shell.
+- Local JSON-backed `HiveStore` and Pydantic API models.
+- Safe Hive Console API and frontend panel.
+- Source Registry backend, frontend panel, and inspector.
+- Obsidian adapter/import pipeline and frontend import action surface.
+- Knowledge Graph API and read-only Knowledge Graph panel.
+- Deterministic SVG graph visualization with inspector sync and demo polish.
+- Intelligence report contracts and `GET /api/intelligence/report`.
+- Read-only Intelligence Report panel with deterministic demo fixtures.
 
-Each phase is intentionally small. Contract phases add only shared shapes (no
-logic); backend phases add deterministic, read-only computation; frontend phases
-add read-only surfaces.
+## Demo-only intelligence surface
 
-| Phase | Focus | Type | Builds on |
-| --- | --- | --- | --- |
-| 10B | Intelligence Contract Types / read-only schemas | Contract | 10A |
-| 10C | Dreaming suggestions backend stub | Backend | 10B |
-| 10D | Dreaming suggestions frontend read-only panel | Frontend | 10C |
-| 10E | Intelligence report UX hardening / demo readiness | Frontend | 10D |
-| 11A | Temporal Knowledge Decay contract | Contract | 10B |
-| 11B | Temporal decay backend scoring | Backend | 11A |
-| 11C | Temporal decay frontend indicators | Frontend | 11B |
-| 12A | Provenance chain contract | Contract | 10B |
-| 12B | Provenance inspector surface | Frontend | 12A |
-| 13A | Query Memory / Knowledge Trails contract | Contract | 10B |
-| 13B | Query trail frontend surface | Frontend | 13A |
+The Intelligence Report is currently a **fixture-backed demo surface**. It is
+useful for explaining planned product direction and producing portfolio
+screenshots, but the content is static sample data.
 
-### Why this order
+Current fixture sections:
 
-1. **10B first** establishes every shared shape so the backend and frontend
-   phases agree before any logic is written — the same discipline Phase 2 used
-   for the API contract.
-2. **Dreaming (10C/10D) leads** because it is the most visible intelligence
-   surface and exercises the read-only suggestion pattern that the other
-   surfaces reuse.
-3. **Temporal Decay (11A–11C)** follows as a full contract → scoring → indicator
-   vertical slice, and feeds Dreaming's "stale knowledge" suggestions.
-4. **Provenance (12A/12B)** mostly *presents* fields that already exist at import
-   time, so it needs a contract and a frontend surface but little new backend
-   logic.
-5. **Query Memory (13A/13B)** comes last in Tier 1 because it is the only surface
-   that implies new persistence, so it should land after the read-only patterns
-   are proven.
+- Dreaming-style suggestions.
+- Temporal decay-style statuses.
+- Provenance-style chains.
+- Query trail-style entries.
 
-## Tier 2 (future, unscheduled)
+Current non-capabilities:
 
-Documented in the [Intelligence Surface Plan](intelligence-surface-plan.md) but
-deliberately **not** scheduled yet. None should be built before Tier 1 is
-complete.
+- No real Dreaming engine.
+- No temporal decay calculation.
+- No provenance inference engine.
+- No query persistence or query-memory logic.
+- No AI/LLM calls.
+- No automatic graph mutation.
 
-- Uncertainty Tagging
-- Session Snapshots
-- Intent-Driven Graph Layouts
-- CLI-only Ambient Capture
+## Phase history
+
+| Phase | Status | Notes |
+| --- | ---: | --- |
+| 0 | Complete | Project initialization and planning foundation. |
+| 1 | Complete | React/FastAPI foundation with health/status routes. |
+| 2 | Complete | API contract and shared data model planning. |
+| 3A-3D | Complete | Store, persistence, search helpers, and backend console. |
+| 4A-4B | Complete | Frontend console panel and UX polish. |
+| 5A-5C | Complete | Source Registry backend, frontend, inspector, and UX polish. |
+| 6A-6E | Complete | Obsidian adapter/import pipeline and registry wiring. |
+| 7A-7B | Complete | Frontend Obsidian import action panel and UX hardening. |
+| 8A-8C | Complete | Knowledge Graph API, panel, and view-model prep. |
+| 9A-9C | Complete | Read-only SVG graph visualization and QA polish. |
+| 10A | Complete | Intelligence surface planning. |
+| 10B | Complete | Intelligence contract types / read-only schemas. |
+| 10C | Complete | Intelligence report endpoint foundation. |
+| 10D | Complete | Intelligence Report frontend read-only panel. |
+| 10E | Complete | Intelligence Report UX hardening / demo readiness. |
+| 11A | Complete | Deterministic intelligence demo/seed fixtures. |
+| 11B | Complete | Intelligence fixture UX review and screenshot readiness. |
+| 11C | Active | Repo cohesion, API/docs consistency, and demo documentation. |
+
+## Future roadmap
+
+Future implementation should replace fixture content with real deterministic,
+read-only derivation in narrow phases. Keep the order conservative:
+
+| Future track | Goal | Guardrail |
+| --- | --- | --- |
+| Intelligence derivation | Generate Dreaming-style suggestions from actual graph/store state. | Read-only; no AI/LLM until separately planned. |
+| Temporal decay | Calculate freshness/staleness from timestamps and source context. | No graph mutation; indicators remain advisory. |
+| Provenance | Build source/import/node chains from real imported records. | Present existing evidence; do not invent lineage. |
+| Query trails | Persist and present useful console/search history. | Requires explicit persistence design before implementation. |
+| Agent Ops | Expose governed agent/source registry data in the app. | Start read-only from `docs/agent-lab/` shapes. |
 
 ## Standing guardrails
 
-All phases above inherit the intelligence-layer guardrails: read-only by default,
-suggestions never silently applied, deterministic before AI/LLM, additive
-contracts only, and no dashboard/branding/large-CSS churn. The full list lives in
-the [Intelligence Surface Plan](intelligence-surface-plan.md#guardrails-for-future-agents).
+- Read-only surfaces first.
+- Suggestions are advisory and never silently applied.
+- Deterministic logic before any AI/LLM integration.
+- Additive contracts only.
+- No dashboard redesign or branding churn inside backend/API phases.
+- Demo fixtures must stay labeled as demo data.
+- Human merge gate remains with devdevbuilds.

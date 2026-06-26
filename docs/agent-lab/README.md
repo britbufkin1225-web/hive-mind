@@ -55,6 +55,18 @@ to a read-only Agent Registry API and, eventually, an Agent Lab frontend panel. 
 implement the future app phases yet** — they are documented so future phases can build them
 cleanly against stable source shapes.
 
+## Current coordination model
+
+- **devdevbuilds** is the creator, main developer, and merge gate.
+- **ChatGPT** is project manager/coordinator/scope guard.
+- **Claude Code** owns UI Dynamics and frontend visual QA on scoped branches.
+- **Codex** owns repo organization, documentation cohesion, API/app consistency,
+  branch hygiene, and demo documentation.
+- Other agents experiment only on isolated branches with explicit scope.
+
+Agent Lab is documentation/source data for this coordination model. It is not an
+implemented app feature yet.
+
 ## Start here
 
 - New to the registry? Read [`agent-model-source-registry.md`](agent-model-source-registry.md).
@@ -65,5 +77,6 @@ cleanly against stable source shapes.
 
 ## One-line operating rule
 
-> **Claude builds the UI. Codex audits the UI. Other agents experiment on isolated branches.
-> Nobody touches main directly.**
+> **devdevbuilds owns the merge gate. ChatGPT guards scope. Claude Code handles
+> UI Dynamics. Codex keeps repo/docs/API/demo cohesion. Nobody touches main
+> directly.**

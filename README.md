@@ -4,21 +4,21 @@
 
 # Hive|Mind
 
-Parent label: **devdevbuilds***
+Parent label: **devdevbuilds**
 
 ## Overview
 
-Hive|Mind is a full-stack knowledge graph dashboard. It connects knowledge
-sources — starting with Obsidian vault content — into a normalized backend data
-model and presents that model through a focused web interface: a source
-registry, an import workflow, a query console, and a read-only knowledge graph
-view.
+Hive|Mind is a full-stack knowledge graph dashboard and backend/cybersecurity
+portfolio project. It connects knowledge sources, starting with Obsidian vault
+content, into a normalized backend data model and presents that model through a
+focused web interface: a source registry, an import workflow, a query console, a
+read-only knowledge graph view, and a fixture-backed intelligence report demo.
 
 The conceptual model is deliberately simple:
 
-- **Obsidian** is the human writing and thinking layer — where notes, links, and
+- **Obsidian** is the human writing and thinking layer, where notes, links, and
   ideas are authored.
-- **Hive|Mind** is the layer above it — the registry, normalization, graph, and
+- **Hive|Mind** is the layer above it: the registry, normalization, graph, and
   analysis surface that turns that writing into structured, queryable knowledge.
 
 Obsidian is where you think; Hive|Mind is where that thinking becomes a graph you
@@ -26,32 +26,35 @@ can inspect and, over time, reason about.
 
 ## Current status
 
-The project has moved well beyond its initial foundation. The original Phase 1
-app shell is complete and has been built on through backend storage, the Hive
-Console, the Source Registry, the Obsidian import pipeline, the Knowledge Graph
-API, and the read-only Knowledge Graph panel with its custom SVG visualization.
+The project has moved beyond the initial foundation. The original Phase 1 app
+shell is complete and has been built on through local JSON-backed backend
+storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
+the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
+SVG visualization.
 
-- **Active phase:** `Phase 10A — Intelligence Surface Planning`.
-- **Completed foundation:** React/FastAPI app shell, in-memory store, Hive
-  Console (API + panel), Source Registry (backend + frontend + inspector),
-  Obsidian adapter and import pipeline with frontend import panel, the Knowledge
-  Graph API, the read-only Knowledge Graph panel, and the custom read-only SVG
-  graph visualization with inspector sync and UX hardening.
+- **Active phase:** `Phase 11C - Repo Cohesion + Demo Documentation Pass`.
+- **Completed foundation:** React/FastAPI app shell, local JSON-backed
+  `HiveStore`, Hive Console (API + panel), Source Registry (backend + frontend +
+  inspector), Obsidian adapter and import pipeline with frontend import panel,
+  the Knowledge Graph API, the read-only Knowledge Graph panel, the custom
+  read-only SVG graph visualization, and the read-only Intelligence Report panel
+  backed by deterministic demo fixtures.
 
-Phase 10A is **documentation and architecture planning only**. It defines how the
-future intelligence layer — Dreaming, temporal knowledge decay, provenance
-chains, query memory, and later-tier ideas — will surface in the product, without
-implementing any intelligence logic. See the
-[Intelligence Surface Plan](docs/intelligence-surface-plan.md) and
-[roadmap](docs/roadmap.md).
+The current Intelligence Report is **demo/fixture-only**. It shows stable sample
+Dreaming, temporal decay, provenance, and query-trail entries for portfolio demos
+and screenshots. It does **not** run real Dreaming logic, temporal decay
+calculation, provenance-chain inference, query persistence, AI/LLM calls, or graph
+mutation. See the [Intelligence Surface Plan](docs/intelligence-surface-plan.md),
+[Roadmap](docs/roadmap.md), [Demo Guide](docs/demo-guide.md), and
+[Screenshot Checklist](docs/screenshot-checklist.md).
 
 ## Stack
 
 - **Frontend:** Vite, React, TypeScript, plain CSS.
 - **Backend:** Python, FastAPI, Pydantic.
 - **Tests:** pytest.
-- **Storage / model foundation:** in-memory `HiveStore` with explicit Pydantic
-  contracts (the current repo implementation).
+- **Storage / model foundation:** local JSON-backed `HiveStore` with explicit
+  Pydantic contracts.
 - **Source integration:** Obsidian adapter and import foundation.
 
 ## Completed phase summary
@@ -61,7 +64,7 @@ implementing any intelligence logic. See the
 | Phase 0 | Complete | Project initialization and planning foundation. |
 | Phase 1 | Complete | Clean React/FastAPI app foundation with health/status endpoints. |
 | Phase 2 | Complete | API contract and data model planning. |
-| Phase 3A | Complete | Backend storage foundation and in-memory HiveStore. |
+| Phase 3A | Complete | Backend storage foundation and local JSON-backed HiveStore. |
 | Phase 3C/3D | Complete | Store search helpers and Hive Console API. |
 | Phase 4A | Complete | Frontend console panel wired to backend console execution. |
 | Phase 4B | Complete | Console UX and result formatting improvements. |
@@ -81,7 +84,14 @@ implementing any intelligence logic. See the
 | Phase 9A | Complete | First read-only SVG graph visualization. |
 | Phase 9B | Complete | Knowledge graph panel UX hardening and inspector sync. |
 | Phase 9C | Complete | Knowledge graph viz QA, demo polish, and link safety. |
-| Phase 10A | Active | Intelligence surface planning (documentation only). |
+| Phase 10A | Complete | Intelligence surface planning (documentation only). |
+| Phase 10B | Complete | Intelligence contract types / read-only schemas. |
+| Phase 10C | Complete | Intelligence report endpoint foundation. |
+| Phase 10D | Complete | Intelligence Report frontend read-only panel. |
+| Phase 10E | Complete | Intelligence Report UX hardening and demo readiness. |
+| Phase 11A | Complete | Deterministic intelligence demo/seed fixtures. |
+| Phase 11B | Complete | Intelligence fixture UX review and screenshot readiness. |
+| Phase 11C | Active | Repo cohesion and demo documentation pass. |
 
 ## Planned logic
 
@@ -89,66 +99,66 @@ Hive|Mind is built as a pipeline from raw source material to inspectable,
 queryable knowledge. The stages below describe the intended architecture; some
 are implemented today and some are planned (and labeled as such).
 
-- **Source intake** *(implemented for Obsidian)* — read content from a
+- **Source intake** *(implemented for Obsidian)* - read content from a
   connected source such as an Obsidian vault.
-- **Normalization** *(implemented)* — map source content into the shared
+- **Normalization** *(implemented)* - map source content into the shared
   node/edge data model rather than storing raw, source-specific shapes.
-- **Source Registry** *(implemented)* — track each connected source, its status,
+- **Source Registry** *(implemented)* - track each connected source, its status,
   and its import metadata.
-- **Knowledge Graph** *(implemented, read-only)* — project normalized records
+- **Knowledge Graph** *(implemented, read-only)* - project normalized records
   into a deterministic graph of nodes and relationships.
-- **Console / query layer** *(implemented, foundational)* — run read-only
+- **Console / query layer** *(implemented, foundational)* - run read-only
   queries against the store from the frontend console.
-- **Graph visualization** *(implemented, read-only)* — a deterministic SVG graph
+- **Graph visualization** *(implemented, read-only)* - a deterministic SVG graph
   canvas built on the Phase 8C view model, with a legend, summary stats, and
   selection-driven highlighting/dimming. No physics, mutation, or editing.
-- **Node inspector** *(implemented, read-only)* — focused detail view for the
+- **Node inspector** *(implemented, read-only)* - focused detail view for the
   selected node or edge and its immediate relationships.
-- **Provenance chains** *(planned)* — trace where a piece of knowledge came from
-  and how it connects back to its source.
-- **Query memory / knowledge trails** *(planned)* — remember past queries and the
-  paths taken through the graph.
-- **Temporal Knowledge Decay** *(planned)* — surface read-only indicators of
-  stale or aging knowledge over time.
-- **Dreaming reports** *(planned)* — read-only, suggested connections generated
-  for review; never applied automatically.
+- **Intelligence report contracts** *(implemented)* - shared backend/frontend
+  shapes for Dreaming suggestions, decay statuses, provenance chains, query
+  trails, and a summary rollup.
+- **Intelligence Report panel** *(implemented, read-only demo)* - renders stable
+  fixture data for the planned intelligence surfaces. Every fixture is marked as
+  demo/seed data through metadata.
+- **Real Dreaming logic** *(planned)* - future read-only suggestions generated
+  from actual store/graph state.
+- **Real Temporal Knowledge Decay** *(planned)* - future freshness/staleness
+  calculations derived from timestamps and source context.
+- **Real provenance chain inference** *(planned)* - future source/import/node
+  chain construction from actual imported data.
+- **Query memory / knowledge trails** *(planned)* - future persistence and review
+  surfaces for past console/search activity.
 
-None of the planned items above are built yet; they describe direction, not
-current capability.
+The intelligence fixtures are illustrative. They are useful for explaining the
+planned product direction, but they are not evidence that the real intelligence
+engines exist.
 
 ## Roadmap
 
-The next wave of work builds the read-only **intelligence layer** on top of the
-existing foundations. Each step stays small and read-only: contract → backend
-scoring/stub → frontend surface. See the
-[full roadmap](docs/roadmap.md) and the
+The next wave of work should keep the intelligence layer honest and reviewable:
+contracts first, deterministic read-only derivation second, frontend surfaces
+third. See the [full roadmap](docs/roadmap.md) and the
 [Intelligence Surface Plan](docs/intelligence-surface-plan.md) for detail.
 
-| Planned Phase | Focus |
+| Planned / Active Phase | Focus |
 | --- | --- |
-| Phase 10B | Intelligence contract types / read-only schemas. |
-| Phase 10C | Dreaming suggestions backend stub. |
-| Phase 10D | Dreaming suggestions frontend read-only panel. |
-| Phase 10E | Intelligence report UX hardening / demo readiness. |
-| Phase 11A–11C | Temporal Knowledge Decay (contract, scoring, indicators). |
-| Phase 12A–12B | Provenance chain contract and inspector surface. |
-| Phase 13A–13B | Query memory / knowledge trails (contract, surface). |
+| Phase 11C | Repo cohesion, demo docs, screenshot checklist, and API/docs consistency. |
+| Future intelligence phases | Replace fixture sections with real deterministic read-only derivation. |
+| Future provenance/query phases | Add real provenance and query-trail logic only after dedicated contracts and validation. |
 
-> **Phase 11A (demo fixtures):** the read-only intelligence report endpoint
-> (`GET /api/intelligence/report`) now returns deterministic **demo/seed
-> fixtures** for every section (Dreaming suggestions, temporal decay, provenance
-> chains, query trails) so the Intelligence Report panel shows meaningful sample
-> content for demos and screenshots. This is illustrative data only — every entry
-> is tagged `metadata.fixture: true`. No Dreaming engine, decay calculation,
-> provenance engine, query persistence, or AI/LLM logic runs, and the endpoint
-> remains read-only.
+> **Demo fixture note:** `GET /api/intelligence/report` currently returns
+> deterministic **demo/seed fixtures** for every section so the Intelligence
+> Report panel shows meaningful sample content for demos and screenshots. This is
+> illustrative data only. No Dreaming engine, decay calculation, provenance
+> engine, query persistence, or AI/LLM logic runs, and the endpoint remains
+> read-only.
 
 ## Setup
 
 Prerequisites: Node.js 20+ and Python 3.11+.
 
 ```bash
-cd hivemind
+# from the repository root
 npm install
 python -m venv .venv
 python -m pip install -r apps/backend/requirements-dev.txt
@@ -183,10 +193,14 @@ npm run dev:frontend
 - [ ] Obsidian import action panel renders.
 - [ ] Knowledge Graph read-only panel renders.
 - [ ] Graph view-model/prep data renders without runtime errors.
+- [ ] Intelligence Report panel renders demo fixtures and labels them honestly.
 
 ## Documentation
 
 - [Phase 1 foundation](docs/phase-1-foundation.md)
 - [API contract](docs/api-contract.md)
 - [Intelligence Surface Plan](docs/intelligence-surface-plan.md)
+- [Demo Guide](docs/demo-guide.md)
+- [Screenshot Checklist](docs/screenshot-checklist.md)
+- [Phase 11 Demo Readiness](docs/phase-11-demo-readiness.md)
 - [Roadmap](docs/roadmap.md)

@@ -2,6 +2,10 @@
 
 > **Status:** Planning source document — documentation only.
 > **Purpose:** Capture future Hive|Mind development directions across all major product areas so later implementation phases can draw from a single, governed source of intent.
+> **Phase 11C note:** This is now a historical planning source, not the active
+> phase roadmap. Use [`../roadmap.md`](../roadmap.md) for current Phase 11C
+> status and future sequencing. Older phase-number suggestions below may differ
+> from the implemented Phase 10A-11C history.
 
 ---
 
@@ -403,6 +407,10 @@ UI phases.
 ---
 
 ## Recommended Phase Order
+
+> **Superseded in Phase 11C:** The phase numbers in this section were an early
+> proposal. They are preserved as historical planning context only. Current
+> status and sequencing live in [`../roadmap.md`](../roadmap.md).
 
 ### Immediate docs / data
 

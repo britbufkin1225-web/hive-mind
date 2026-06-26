@@ -1,16 +1,18 @@
-# Intelligence Surface Plan (Phase 10A)
+# Intelligence Surface Plan
 
-This document plans the first **intelligence-facing surfaces** for Hive|Mind. It
-is a planning and architecture document only. **No intelligence logic, backend
-endpoint, database model, or frontend panel is implemented as part of Phase
-10A.** The goal is to define *how* future intelligence features will appear in
-the product so that later phases can build them safely on top of the existing
-foundations.
+This document began as the Phase 10A plan for the first
+**intelligence-facing surfaces** in Hive|Mind. It now serves as the standing
+design guardrail for those surfaces.
+
+Current status: the contract shapes, `GET /api/intelligence/report`, and the
+frontend Intelligence Report panel exist. The report is populated with
+deterministic **demo/seed fixtures** only. No real Dreaming logic, temporal decay
+calculation, provenance engine, query persistence, AI/LLM integration, or graph
+mutation exists yet.
 
 ## What already exists (do not rewrite)
 
-These systems are the foundation the intelligence layer builds on. Phase 10A
-does not change any of them.
+These systems are the foundation the intelligence layer builds on.
 
 - FastAPI backend foundation and in-memory `HiveStore`
   (`apps/backend/app/store/store.py`).
@@ -29,6 +31,11 @@ does not change any of them.
   (`apps/frontend/src/components/KnowledgeGraphPanel.tsx`,
   `apps/frontend/src/lib/graphLayout.ts`,
   `apps/frontend/src/lib/graphViewModel.ts`).
+- Intelligence report contracts, read-only endpoint, deterministic fixtures, and
+  frontend panel
+  (`apps/backend/app/services/intelligence.py`,
+  `apps/backend/app/services/intelligence_fixtures.py`,
+  `apps/frontend/src/components/IntelligenceReportPanel.tsx`).
 
 ## Core principles for the intelligence layer
 
@@ -54,17 +61,17 @@ non-negotiable contract for the whole layer.
 
 The current app (`apps/frontend/src/App.tsx`) renders a vertical stack of
 sections: backend connection, API health, vault summary, Source Registry,
-Knowledge Graph, Console. The intelligence layer adds **read-only surfaces** to
-this stack and to the existing graph/inspector — it does not redesign the
-dashboard.
+Knowledge Graph, Intelligence Report, Console. The intelligence layer adds
+**read-only surfaces** to this stack and to the existing graph/inspector; it
+does not redesign the dashboard.
 
 | Surface | Planned location | Tier | First building phase |
 | --- | --- | --- | --- |
-| Intelligence summary panel | New top-level read-only section | Tier 1 | 10D |
-| Dreaming suggestions panel | New read-only section / drawer | Tier 1 | 10D |
-| Knowledge decay indicators | Overlay/badges on graph + inspector | Tier 1 | 11C |
-| Provenance chain inspector | Extension of node/edge inspector | Tier 1 | 12B |
-| Query trail / history surface | New read-only section near Console | Tier 1 | 13B |
+| Intelligence summary panel | Top-level read-only Intelligence Report section | Tier 1 | Implemented with fixtures |
+| Dreaming suggestions panel | Section inside Intelligence Report | Tier 1 | Implemented with fixtures |
+| Knowledge decay indicators | Section inside Intelligence Report; graph overlays still future | Tier 1 | Fixture-only |
+| Provenance chain inspector | Section inside Intelligence Report; selected-node inspector extension still future | Tier 1 | Fixture-only |
+| Query trail / history surface | Section inside Intelligence Report; persistence still future | Tier 1 | Fixture-only |
 | Confidence / uncertainty badges | Inline badges on nodes/edges | Tier 2 | TBD |
 | Session snapshots | Read-only history list | Tier 2 | TBD |
 | Intent-driven graph layouts | Layout mode selector on graph | Tier 2 | TBD |
@@ -101,10 +108,11 @@ own beyond aggregation.
 
 ### 2. Dreaming Surface
 
-Dreaming is a **read-only suggestion engine**. It inspects current store/graph
-state and proposes things a human might want to act on. It never mutates graph
-data automatically; every output is a suggestion requiring user review or
-confirmation.
+Dreaming is planned as a **read-only suggestion engine**. It will inspect current
+store/graph state and propose things a human might want to act on. It must never
+mutate graph data automatically; every output is a suggestion requiring user
+review or confirmation. The current report only contains static Dreaming-style
+fixtures.
 
 Dreaming should eventually be able to suggest:
 
@@ -132,9 +140,9 @@ never applied to the graph by the engine itself.
 
 ### 3. Temporal Knowledge Decay Surface
 
-A read-only representation of how *fresh* a piece of knowledge is. Phase 10A does
-**not** implement decay calculations — it only defines how staleness will be
-represented.
+A read-only representation of how *fresh* a piece of knowledge is. Current
+fixture entries demonstrate the intended shape; they are not calculated from
+real source timestamps.
 
 Planned representation:
 
@@ -147,7 +155,7 @@ Planned representation:
 - **Review-needed flag:** a boolean derived from status, feeding the dashboard
   rollup.
 - **Visual graph overlays:** later phases may tint or badge graph nodes by decay
-  status. Phase 10A reserves this as future work — no overlay is built now.
+  status. Graph overlays remain future work; no overlay is built now.
 
 Decay status is a *derived view* over existing timestamps; it adds no new
 authoritative state.
@@ -171,8 +179,9 @@ Planned contents (per selected node/edge):
 - **Last update history** — from existing `created_at` / `updated_at` /
   `last_imported_at` fields.
 
-Phase 10A makes **no provenance engine changes**. It documents how existing,
-already-captured fields will be presented together.
+No provenance engine exists yet. This section documents how existing,
+already-captured fields should eventually be presented together; the current
+fixtures are illustrative.
 
 ### 5. Query Memory / Knowledge Trails
 
@@ -190,9 +199,9 @@ Planned contents:
 - **Future "why did I ask this?" context view** — reconstructed context around a
   past query.
 
-Phase 10A introduces **no persistence changes**. Persistence of query history is
-deferred to its contract phase (13A). This section only documents the planned
-contract so later phases have a target shape.
+No query-history persistence exists yet. Persistence of query history is
+deferred to a dedicated future phase. The current query trail entries are static
+fixtures for demo and screenshot readiness.
 
 ---
 
@@ -224,8 +233,9 @@ narrowly authorizes it:
 
 - Mutate graph data automatically from any intelligence surface.
 - Apply Dreaming suggestions without explicit user action.
+- Present demo fixtures as real intelligence output.
 - Implement decay calculations, a provenance engine, or query persistence ahead
-  of their dedicated contract phase.
+  of their dedicated future phase.
 - Add AI/LLM integration (intelligence stays deterministic until a separately
   planned phase).
 - Add ambient capture to the web UI.
@@ -236,13 +246,11 @@ narrowly authorizes it:
 These extend, and do not replace, the existing read-only guarantees of the
 Knowledge Graph API and Console.
 
-## Suggested next phase after 10A
+## Suggested next work
 
-**Phase 10B — Intelligence Contract Types / Read-Only Schemas.** Define the
-shared TypeScript interfaces and Pydantic models for the intelligence surfaces
-(Dreaming suggestion, decay status, provenance chain, query trail) as
-*contract-only* shapes — mirroring how Phase 2 defined the API contract before
-any logic. No endpoints, no logic, no persistence; just the agreed shapes that
-10C+ will implement against.
+Phase 11C is the current documentation cohesion pass. After it, future
+implementation should replace fixture sections with real deterministic read-only
+derivation one surface at a time. Start with a narrow contract/validation update,
+then backend derivation, then frontend presentation.
 
-See [roadmap.md](roadmap.md) for the full phased plan.
+See [roadmap.md](roadmap.md) for the current phased plan.

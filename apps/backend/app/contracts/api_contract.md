@@ -1,8 +1,14 @@
 # Hive|Mind Backend API Contract Reference
 
-This backend-local reference expands the project-facing contract in `docs/api-contract.md` with model examples, endpoint response shapes, and future implementation notes.
+This backend-local reference expands the project-facing contract in
+`docs/api-contract.md` with model examples, endpoint response shapes, and
+implementation notes.
 
-It is a planning and shape contract only: source ingestion, graph algorithms, authentication, file watching, and dashboard complexity are intentionally deferred.
+It began as a planning and shape contract. Several routes are now implemented,
+including local JSON persistence, Source Registry persistence, one-shot Obsidian
+import, graph reads, knowledge graph projection, console execution, and the
+fixture-backed intelligence report. Authentication, file watching, background
+sync, AI/LLM logic, and dashboard mutation flows are still deferred.
 
 Local API base URL: `http://localhost:8787`
 
@@ -33,18 +39,19 @@ shapes are unchanged by persistence.
 - **Git:** runtime data is ignored via `apps/backend/data/` in `.gitignore`.
   Generated store files must not be committed.
 
-**Current limitation:** persistence is local-JSON only. There is still no
-Obsidian vault scanning, markdown parsing, frontmatter extraction, filesystem
-watching, or vault import in this phase — the Obsidian-mappable fields below
-remain placeholders.
+**Current limitation:** persistence is local-JSON only. One-shot Obsidian import
+exists through `POST /api/obsidian/import`, but there is still no filesystem
+watching, background sync, external database, auth boundary, or multi-user
+storage.
 
 ## Source Registry (Phase 5A)
 
 An **additive** registry of future import connectors (Obsidian, local files,
 GitHub, PDF, web, API), persisted independently of the graph store. It is
-separate from the graph's `/api/sources` (`HiveSource`) resource and does **not**
-implement any vault scanning, markdown parsing, filesystem watching, or import
-logic — it only registers source *records*.
+separate from the graph's `/api/sources` (`HiveSource`) resource. The registry
+itself only stores source *records*; the Obsidian import service writes/updates
+registry records as part of a one-shot import, but the registry API does not scan
+files or watch the filesystem on request.
 
 `SourceRecord` shape (snake_case, matching the rest of the API):
 
@@ -83,20 +90,18 @@ logic — it only registers source *records*.
 
 ## Obsidian Adapter Contract
 
-Phase 6A defines the contract for future Obsidian vault integration.
+Phase 6A defined the adapter contract for Obsidian vault integration. Later
+phases added a one-shot import service and API.
 
-Current phase supports:
+Adapter-layer support:
 - Obsidian source configuration shape
 - Pure validation
 - Adapter interface placeholder
 - Source registry compatibility
 
-Current phase does not support:
-- Live vault import
-- Markdown parsing
+Adapter-layer non-support:
 - Filesystem scanning
 - Filesystem watching
-- Frontend source-management UI
 
 ### Shapes
 
@@ -121,8 +126,7 @@ Current phase does not support:
 - `link_strategy`: one of `wikilink` | `markdown` | `both` (defaults to `both`).
 - `metadata`: optional object (default `{}`).
 
-`ObsidianDocumentCandidate` — the normalized shape an adapter *would* emit in a
-future phase (not produced by any Phase 6A code):
+`ObsidianDocumentCandidate` — the normalized shape an adapter can emit:
 
 ```json
 {
@@ -145,8 +149,8 @@ host machine — verifying a real location is a future import-phase concern.
 
 ### Adapter interface
 
-`app.adapters.base.SourceAdapter` is an abstract base describing the future
-contract: *config in → normalized document candidates out* via `discover()`.
+`app.adapters.base.SourceAdapter` is an abstract base describing the contract:
+*config in → normalized document candidates out* via `discover()`.
 `app.adapters.obsidian.ObsidianVaultAdapter` is a placeholder that holds a
 validated config and raises `NotImplementedError` from `discover()`; it performs
 no filesystem traversal or parsing in this phase. The `obsidian` source type is
@@ -292,8 +296,50 @@ never mutates the store.
 
 **Current limitation:** edges are derived only from already-captured Obsidian
 wiki links and pre-existing stored edges. There is no markdown-link resolution,
-backlink inference, AI-suggested edges, or graph layout/positioning in this
-phase — those remain future work. No frontend graph visualization exists yet.
+backlink inference, AI-suggested edges, graph mutation, or backend layout
+calculation. The frontend has a deterministic read-only SVG graph visualization;
+the backend only returns graph data.
+
+## Intelligence Report API
+
+The backend foundation for the read-only intelligence report. It rolls up the
+intelligence contract shapes into one stable response consumed by the frontend
+Intelligence Report panel.
+
+### `GET /api/intelligence/report`
+
+Returns an `IntelligenceReport`:
+
+```json
+{
+  "generated_at": "2026-06-25T12:00:00Z",
+  "report_version": "0.1.0",
+  "read_only": true,
+  "dreaming_suggestions": [],
+  "decay_statuses": [],
+  "provenance_chains": [],
+  "query_trail_entries": [],
+  "summary": {
+    "dreaming_suggestion_count": 0,
+    "decay_status_count": 0,
+    "provenance_chain_count": 0,
+    "query_trail_entry_count": 0
+  }
+}
+```
+
+Current behavior: the endpoint returns deterministic demo/seed fixtures for
+every section so the UI has meaningful sample content for demos and screenshots.
+The fixtures are static illustrative data, not store-derived intelligence.
+
+Guardrails:
+
+- No Dreaming heuristics.
+- No temporal decay calculation.
+- No provenance inference engine.
+- No query persistence or query-memory logic.
+- No AI/LLM calls.
+- No graph mutation.
 
 ## Search & Query Helpers (Phase 3C)
 
@@ -376,23 +422,24 @@ body returns HTTP 422 from request validation.
 - Unknown commands return an `unknown` error; malformed commands return a
   `malformed` error or a `Usage:` hint. Nothing falls through to the OS.
 
-**Current limitation:** there is no frontend console panel yet — this phase adds
-the backend command API only. There is still no Obsidian import/scanning.
+The frontend includes a read-only console panel wired to this endpoint. The
+console remains app-controlled and cannot execute system commands.
 
-## Obsidian Forward-Compatibility (placeholders only)
+## Obsidian Metadata Fields
 
-The data shapes reserve optional fields so a future phase can map cleanly to an
-Obsidian vault without changing the wire contract. Phase 3A does **not** scan a
-filesystem, parse markdown/frontmatter, watch files, or run a vault import —
-these fields exist for forward compatibility and default to `null`/empty.
+The data shapes reserve optional fields for Obsidian-backed records. They began
+as forward-compatible placeholders in Phase 3A and are now populated when the
+one-shot Obsidian import path has source/file metadata available. Records that do
+not come from Obsidian still default these fields to `null`/empty. There is still
+no filesystem watcher or background sync.
 
-- `Source.origin` — provider the source came from, e.g. `"obsidian"`.
-- `Source.vault_path` — vault root or relative path for vault-backed sources.
-- `Graph Node.file_meta` — a `VaultFileMeta` placeholder (see below), or `null`.
-- `Activity Event.origin` — provider that emitted the event.
-- `Vault.vault_path`, `Vault.last_indexed` — linked vault root and last index time.
+- `Source.origin` - provider the source came from, e.g. `"obsidian"`.
+- `Source.vault_path` - vault root or relative path for vault-backed sources.
+- `Graph Node.file_meta` - a `VaultFileMeta` object (see below), or `null`.
+- `Activity Event.origin` - provider that emitted the event.
+- `Vault.vault_path`, `Vault.last_indexed` - linked vault root and last index time.
 
-`VaultFileMeta` placeholder shape:
+`VaultFileMeta` shape:
 
 ```json
 {
