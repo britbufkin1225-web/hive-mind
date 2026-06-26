@@ -27,8 +27,6 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from app.models.hive_models import (
-    DecayStatus,
-    DecayStatusBucket,
     DreamingSuggestion,
     DreamingSuggestionStatus,
     DreamingSuggestionType,
@@ -44,7 +42,6 @@ from app.models.hive_models import (
 # Frozen reference timestamps — never `datetime.now()`. Keeping these as module
 # constants makes the fixtures fully deterministic and trivially reviewable.
 _T_IMPORTED = datetime(2026, 6, 20, 9, 0, 0, tzinfo=timezone.utc)
-_T_REFERENCED = datetime(2026, 6, 22, 14, 30, 0, tzinfo=timezone.utc)
 _T_UPDATED = datetime(2026, 6, 21, 11, 15, 0, tzinfo=timezone.utc)
 _T_CREATED = datetime(2026, 6, 19, 8, 0, 0, tzinfo=timezone.utc)
 _T_QUERY_RECENT = datetime(2026, 6, 24, 16, 45, 0, tzinfo=timezone.utc)
@@ -93,32 +90,6 @@ def demo_dreaming_suggestions() -> list[DreamingSuggestion]:
                 "Illustrative related-node suggestion; no link scoring ran."
             ),
             created_at=_T_UPDATED,
-        ),
-    ]
-
-
-def demo_decay_statuses() -> list[DecayStatus]:
-    """Static temporal-decay freshness rows (no decay calculation ran)."""
-    return [
-        DecayStatus(
-            node_id="demo-node-obsidian-1",
-            status=DecayStatusBucket.STALE,
-            last_imported_at=_T_IMPORTED,
-            last_referenced_at=_T_REFERENCED,
-            last_updated_at=_T_UPDATED,
-            source_reliability_hint="review",
-            review_needed=True,
-            metadata=_fixture_meta("Node has not been refreshed recently."),
-        ),
-        DecayStatus(
-            node_id="demo-node-registry-1",
-            status=DecayStatusBucket.AGING,
-            last_imported_at=_T_IMPORTED,
-            last_referenced_at=_T_REFERENCED,
-            last_updated_at=_T_UPDATED,
-            source_reliability_hint="moderate",
-            review_needed=True,
-            metadata=_fixture_meta("Source confidence should be reviewed."),
         ),
     ]
 

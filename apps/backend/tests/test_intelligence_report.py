@@ -22,6 +22,14 @@ _SECTIONS = (
     "query_trail_entries",
 )
 
+# Phase 13A: the Temporal Decay section is now backend-derived, not a fixture.
+# Every other section remains fixture-backed demo data.
+_FIXTURE_SECTIONS = (
+    "dreaming_suggestions",
+    "provenance_chains",
+    "query_trail_entries",
+)
+
 
 def test_intelligence_report_returns_200() -> None:
     response = client.get("/api/intelligence/report")
@@ -54,11 +62,27 @@ def test_intelligence_report_fixtures_are_tagged_as_demo_data() -> None:
     data = client.get("/api/intelligence/report").json()
     # Demo origin must be unambiguous in the payload itself: every fixture entry
     # carries metadata.fixture == True so consumers never mistake it for real
-    # production intelligence.
-    for section in _SECTIONS:
+    # production intelligence. The Temporal Decay section is exempt — it is now
+    # backend-derived (see test below), not fixture data.
+    for section in _FIXTURE_SECTIONS:
         assert data[section], f"expected demo fixtures in {section}"
         for entry in data[section]:
             assert entry["metadata"].get("fixture") is True
+
+
+def test_intelligence_report_decay_section_is_backend_derived() -> None:
+    data = client.get("/api/intelligence/report").json()
+    decay = data["decay_statuses"]
+    assert decay, "expected derived decay rows from store nodes"
+
+    # Decay rows reference real store nodes (not the demo-* fixture ids) and are
+    # tagged as derived rather than fixture.
+    real_node_ids = {n.id for n in store.get_nodes()}
+    for entry in decay:
+        assert entry["node_id"] in real_node_ids
+        assert entry["metadata"].get("derived") is True
+        assert entry["metadata"].get("fixture") is not True
+        assert entry["status"] in {"fresh", "aging", "stale", "unknown"}
 
 
 def test_intelligence_report_is_deterministic_apart_from_generated_at() -> None:

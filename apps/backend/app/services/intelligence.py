@@ -5,13 +5,15 @@ This is the backend foundation a future intelligence dashboard will consume; it
 reuses the Phase 10B contract shapes (Dreaming suggestions, decay statuses,
 provenance chains, query trails) and exposes them through one stable report.
 
-The builder still runs NO real intelligence: NO Dreaming heuristics, NO temporal
-decay calculation, NO provenance engine, and NO query persistence. Phase 11A
-simply populates the report with deterministic **demo/seed fixtures** (see
-:mod:`app.services.intelligence_fixtures`) so the frontend panel shows
-meaningful sample content for demos and screenshots. Every fixture is tagged as
-demo data in its ``metadata``; none of it is derived from store state. The real
-logic still arrives in later, dedicated phases.
+Phase 13A makes the **Temporal Decay** section real: it is now derived from the
+store's nodes/sources via deterministic timestamp thresholds (see
+:mod:`app.services.temporal_decay`). Those rows carry ``metadata["derived"] =
+True``. The remaining sections — Dreaming heuristics, provenance engine, query
+persistence — still run NO real intelligence; Phase 11A populates them with
+deterministic **demo/seed fixtures** (see
+:mod:`app.services.intelligence_fixtures`) tagged ``metadata["fixture"] = True``
+so the frontend panel shows meaningful sample content for demos and screenshots.
+Those real logics arrive in later, dedicated phases.
 
 The builder is pure and read-only: it never writes to the store, so calling it
 repeatedly never accumulates or mutates state. ``generated_at`` is the only
@@ -28,29 +30,26 @@ from app.models.hive_models import (
     IntelligenceReportSummary,
 )
 from app.services.intelligence_fixtures import (
-    demo_decay_statuses,
     demo_dreaming_suggestions,
     demo_provenance_chains,
     demo_query_trail_entries,
 )
+from app.services.temporal_decay import derive_decay_statuses
 from app.store.store import store as default_store
 
 
 def build_intelligence_report(*, store=default_store) -> IntelligenceReport:
     """Build a deterministic, read-only :class:`IntelligenceReport`.
 
-    ``store`` is accepted for forward compatibility (later phases will derive
-    intelligence from it) but is only read, never mutated. In this phase the
-    sections are filled with deterministic demo fixtures rather than store-
-    derived intelligence.
+    ``store`` is read, never mutated. The Temporal Decay section is derived from
+    it (Phase 13A); the remaining sections are still deterministic demo fixtures
+    pending their own phases.
     """
-    # Reading is enough to confirm this builder stays a pure projection; it does
-    # not mutate the store. No store-derived intelligence is produced yet — the
-    # populated sections below are static demo fixtures only.
-    _ = store
-
     dreaming_suggestions = demo_dreaming_suggestions()
-    decay_statuses = demo_decay_statuses()
+    # Phase 13A: the Temporal Decay section is now derived from real store state
+    # (deterministic timestamp thresholds), not a static fixture. The remaining
+    # sections stay fixture-backed pending their own phases.
+    decay_statuses = derive_decay_statuses(store=store)
     provenance_chains = demo_provenance_chains()
     query_trail_entries = demo_query_trail_entries()
 
