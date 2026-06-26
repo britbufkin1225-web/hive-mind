@@ -39,6 +39,62 @@ def test_dreaming_suggestion_defaults() -> None:
     assert suggestion.metadata == {}
 
 
+def test_dreaming_suggestion_type_serialized_values() -> None:
+    # Pins the wire contract: UPPER_SNAKE member -> snake_case serialized value.
+    # These literals are what the frontend `DreamingSuggestionType` union and the
+    # panel label map key on, so they must stay stable and frontend-compatible.
+    assert {member.name: member.value for member in DreamingSuggestionType} == {
+        "RELATED_NODES": "related_nodes",
+        "DUPLICATE": "duplicate",
+        "STALE": "stale",
+        "MISSING_BACKLINK": "missing_backlink",
+        "UNRESOLVED_QUERY": "unresolved_query",
+        "ORPHAN": "orphan",
+        "SOURCE_CONFLICT": "source_conflict",
+    }
+    # StrEnum: the serialized value is the snake_case string itself.
+    assert DreamingSuggestionType.SOURCE_CONFLICT == "source_conflict"
+    # The source-related type is `source_conflict`; no `source_coverage_gap`
+    # value exists (no derivation produces one).
+    assert "source_coverage_gap" not in {m.value for m in DreamingSuggestionType}
+
+
+def test_dreaming_suggestion_uses_confidence_hint_not_confidence() -> None:
+    # The lightweight label field is `confidence_hint`; a numeric `confidence`
+    # model is deferred and must not be introduced as a field rename.
+    fields = DreamingSuggestion.model_fields
+    assert "confidence_hint" in fields
+    assert "confidence" not in fields
+
+
+def test_dreaming_suggestion_evidence_lives_under_metadata() -> None:
+    # Evidence attaches under `metadata.evidence`, not a top-level field.
+    assert "evidence" not in DreamingSuggestion.model_fields
+    evidence = [{"node_id": "a"}, {"node_id": "b"}]
+    suggestion = DreamingSuggestion(
+        id="dream-ev",
+        type=DreamingSuggestionType.RELATED_NODES,
+        rationale="Two nodes share strong overlap.",
+        created_at=FIXED_TS,
+        metadata={"evidence": evidence},
+    )
+    dumped = suggestion.model_dump()
+    assert dumped["metadata"]["evidence"] == evidence
+    # Not promoted to a top-level key.
+    assert "evidence" not in dumped
+
+
+def test_unresolved_query_type_is_blocked_planned() -> None:
+    # Query-history persistence does not exist yet, so `unresolved_query` is a
+    # reserved/blocked type. The value is `unresolved_query`; no
+    # `unresolved_query_pattern` variant is added until persistence lands.
+    assert DreamingSuggestionType.UNRESOLVED_QUERY == "unresolved_query"
+    assert "UNRESOLVED_QUERY_PATTERN" not in DreamingSuggestionType.__members__
+    assert "unresolved_query_pattern" not in {
+        m.value for m in DreamingSuggestionType
+    }
+
+
 def test_decay_status_defaults() -> None:
     decay = DecayStatus(node_id="node-1")
     assert decay.status is DecayStatusBucket.UNKNOWN

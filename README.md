@@ -12,8 +12,8 @@ Hive|Mind is a full-stack knowledge graph dashboard and backend/cybersecurity
 portfolio project. It connects knowledge sources, starting with Obsidian vault
 content, into a normalized backend data model and presents that model through a
 focused web interface: a source registry, an import workflow, a query console, a
-read-only knowledge graph view, and an intelligence report (Temporal Decay
-backend-derived; other sections fixture-backed).
+read-only knowledge graph view, and an intelligence report (Temporal Decay and
+Dreaming Suggestions backend-derived; other sections fixture-backed).
 
 The conceptual model is deliberately simple:
 
@@ -43,12 +43,14 @@ SVG visualization.
   read-only SVG graph visualization, and the read-only Intelligence Report panel
   backed by deterministic demo fixtures.
 
-The current Intelligence Report is **mostly demo/fixture-only**. As of Phase 13A
+The current Intelligence Report is **partially backend-derived**. As of Phase 13A
 the **Temporal Decay** section is backend-derived (read-only) from real store
-timestamps using deterministic thresholds; Dreaming, provenance, and query-trail
-entries are still stable sample data for portfolio demos and screenshots. It does
-**not** run real Dreaming logic, provenance-chain inference, query persistence,
-AI/LLM calls, or graph mutation. See the
+timestamps using deterministic thresholds; as of Phase 14C the **Dreaming
+Suggestions** section is likewise backend-derived (read-only) from real store
+nodes/edges via deterministic rules (duplicate labels, orphaned nodes, stale
+links). Provenance and query-trail entries are still stable sample data for
+portfolio demos and screenshots. It does **not** run AI/LLM calls, provenance-
+chain inference, query persistence, or any graph/source/store mutation. See the
 [Intelligence Surface Plan](docs/intelligence-surface-plan.md),
 [Roadmap](docs/roadmap.md), [Demo Guide](docs/demo-guide.md), and
 [Screenshot Checklist](docs/screenshot-checklist.md).
@@ -126,8 +128,14 @@ are implemented today and some are planned (and labeled as such).
 - **Intelligence Report panel** *(implemented, read-only demo)* - renders stable
   fixture data for the planned intelligence surfaces. Every fixture is marked as
   demo/seed data through metadata.
-- **Real Dreaming logic** *(planned)* - future read-only suggestions generated
-  from actual store/graph state.
+- **Real Dreaming logic** *(implemented, read-only MVP — Phase 14C)* -
+  deterministic, read-only suggestions derived from actual store nodes/edges:
+  `duplicate` (shared normalized labels), `orphan` (no edges/source/parent), and
+  `stale` (old links whose endpoints changed since). Each carries a
+  `confidence_hint` and an explainable `metadata.evidence` trail; nothing is
+  applied automatically. `source_coverage_gap` stays deferred/blocked (Phase 14B
+  contract decision) and `unresolved_query` stays blocked until query history is
+  persisted. No AI/LLM.
 - **Temporal Knowledge Decay** *(implemented, read-only MVP — Phase 13A)* -
   freshness/staleness buckets derived from real store node/source timestamps via
   deterministic thresholds (fresh <= 30d, aging <= 90d, else stale). No graph
@@ -155,12 +163,13 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Future provenance/query phases | Add real provenance and query-trail logic only after dedicated contracts and validation. |
 
 > **Intelligence data note:** `GET /api/intelligence/report` derives its
-> **Temporal Decay** section from real store timestamps (Phase 13A,
-> deterministic thresholds, tagged `metadata.derived`). The remaining sections
-> still return deterministic **demo/seed fixtures** (tagged `metadata.fixture`)
-> so the panel shows meaningful sample content for demos and screenshots. No
-> Dreaming engine, provenance engine, query persistence, or AI/LLM logic runs,
-> and the endpoint remains read-only.
+> **Temporal Decay** (Phase 13A) and **Dreaming Suggestions** (Phase 14C)
+> sections from real store state — deterministic rules, tagged
+> `metadata.derived`, with a clean empty section when nothing is derivable. The
+> remaining sections (provenance, query trails) still return deterministic
+> **demo/seed fixtures** (tagged `metadata.fixture`) so the panel shows
+> meaningful sample content for demos and screenshots. No provenance engine,
+> query persistence, or AI/LLM logic runs, and the endpoint remains read-only.
 
 ## Setup
 

@@ -36,28 +36,33 @@ changes, dependencies, or branding changes are part of Phase 11C.
 
 ## Demo-only intelligence surface
 
-The Intelligence Report is currently a **mostly fixture-backed demo surface**.
-As of Phase 13A the **Temporal Decay** section is backend-derived (read-only)
-from real store timestamps; the remaining sections are still static sample data
-useful for explaining planned product direction and producing screenshots.
+The Intelligence Report is currently a **partially backend-derived surface**.
+As of Phase 13A the **Temporal Decay** section and as of Phase 14C the **Dreaming
+Suggestions** section are backend-derived (read-only) from real store state; the
+remaining sections are still static sample data useful for explaining planned
+product direction and producing screenshots.
 
 Backend-derived sections (read-only):
 
 - Temporal decay statuses (Phase 13A — deterministic timestamp thresholds).
+- Dreaming suggestions (Phase 14C — deterministic `duplicate`/`orphan`/`stale`
+  rules over store nodes/edges; conservative, with an explainable
+  `metadata.evidence` trail and a clean empty section when nothing is derivable).
 
 Current fixture sections:
 
-- Dreaming-style suggestions.
 - Provenance-style chains.
 - Query trail-style entries.
 
 Current non-capabilities:
 
-- No real Dreaming engine.
+- No `source_coverage_gap` derivation — deferred/blocked pending a future
+  contract-expansion phase (Phase 14B contract decision).
+- No `unresolved_query` derivation — blocked until query history is persisted.
 - No provenance inference engine.
 - No query persistence or query-memory logic.
 - No AI/LLM calls.
-- No automatic graph mutation.
+- No automatic graph/source/store mutation.
 
 ## Phase history
 
@@ -94,7 +99,7 @@ read-only derivation in narrow phases. Keep the order conservative:
 
 | Future track | Goal | Guardrail |
 | --- | --- | --- |
-| Intelligence derivation | Generate Dreaming-style suggestions from actual graph/store state. | Read-only; no AI/LLM until separately planned. |
+| Intelligence derivation | Dreaming `duplicate`/`orphan`/`stale` suggestions backend-derived in Phase 14C. Remaining: `source_coverage_gap` (needs a contract-expansion phase) and `unresolved_query` (needs query-history persistence). | Read-only; no AI/LLM until separately planned. |
 | Temporal decay | Backend-derived MVP shipped in Phase 13A (timestamp thresholds). Remaining: richer reference/last-seen signals. | No graph mutation; indicators remain advisory. |
 | Provenance | Build source/import/node chains from real imported records. | Present existing evidence; do not invent lineage. |
 | Query trails | Persist and present useful console/search history. | Requires explicit persistence design before implementation. |

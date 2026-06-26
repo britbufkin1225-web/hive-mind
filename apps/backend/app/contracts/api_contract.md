@@ -328,18 +328,55 @@ Returns an `IntelligenceReport`:
 }
 ```
 
-Current behavior: the endpoint returns deterministic demo/seed fixtures for
-every section so the UI has meaningful sample content for demos and screenshots.
-The fixtures are static illustrative data, not store-derived intelligence.
+Current behavior: the **Temporal Decay** (Phase 13A) and **Dreaming Suggestions**
+(Phase 14C) sections are now backend-derived from real store state and tagged
+`metadata.derived = true`; each returns a clean empty section when nothing is
+derivable. The remaining sections (provenance chains, query trails) still return
+deterministic demo/seed fixtures (`metadata.fixture = true`) so the UI has
+meaningful sample content for demos and screenshots until their own phases land.
+
+### Dreaming suggestion contract
+
+`DreamingSuggestion.type` serializes to one of a fixed snake_case value set
+shared by the backend `DreamingSuggestionType` enum (`UPPER_SNAKE` member →
+snake_case value), the frontend `DreamingSuggestionType` union, and the panel
+label map: `related_nodes`, `duplicate`, `stale`, `missing_backlink`, `orphan`,
+`source_conflict`, and `unresolved_query`.
+
+- The source-related type is `source_conflict`; there is no `source_coverage_gap`
+  value. It remains **deferred/blocked** pending a future contract-expansion
+  phase — Phase 14C intentionally honors the Phase 14B contract decision and does
+  not re-add it (nor overload `source_conflict`, which means "sources disagree",
+  not "source coverage is missing").
+- The confidence label field is `confidence_hint`, not `confidence` (a numeric
+  confidence model is deferred to Tier 2).
+- Supporting evidence attaches under `metadata.evidence`, not a top-level
+  `evidence` field.
+- `unresolved_query` is reserved but **blocked/planned**: it needs persisted
+  query history (not implemented), so no derivation/fixture emits it and no
+  `unresolved_query_pattern` variant exists yet.
+
+Phase 14C derivation (`app/services/dreaming.py`): the Dreaming section is now
+derived deterministically from store nodes/edges. Three contract-valid types are
+produced — `duplicate` (nodes sharing a whitespace-collapsed, casefolded label),
+`orphan` (a node with no incident edges, no `source_id`, and no `parent_id`), and
+`stale` (an edge older than 90 days whose endpoint node changed ≥ 30 days after
+the link was created). Every emitted suggestion carries `confidence_hint`, an
+explainable `metadata.evidence` trail (`node_ids`, `source_ids`, `edge_ids`,
+`reason`, `derivation`, `fields_used`), and `metadata.derived = true`. The rules
+are conservative to avoid false positives on incomplete data (blank labels and
+dangling edges are skipped). `stale` is intentionally a lightweight "review this
+relationship" hint and does **not** re-implement per-node Temporal Decay.
 
 Guardrails:
 
-- No Dreaming heuristics.
-- No temporal decay calculation.
+- Dreaming suggestions are derived by simple, deterministic label/edge/timestamp
+  rules only — no scoring engine, no ranking model.
+- No temporal decay re-implementation inside Dreaming.
 - No provenance inference engine.
 - No query persistence or query-memory logic.
 - No AI/LLM calls.
-- No graph mutation.
+- No graph, source, or store mutation (read-only projection).
 
 ## Search & Query Helpers (Phase 3C)
 
