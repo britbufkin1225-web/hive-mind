@@ -17,12 +17,21 @@ type PanelState = "loading" | "success" | "error";
 
 const SUGGESTION_TYPE_LABELS: Record<DreamingSuggestionType, string> = {
   related_nodes: "Related nodes",
-  duplicate: "Duplicate",
-  stale: "Stale",
+  duplicate: "Duplicate signal",
+  stale: "Stale knowledge link",
   missing_backlink: "Missing backlink",
   unresolved_query: "Unresolved query",
-  orphan: "Orphan",
+  orphan: "Orphaned node",
   source_conflict: "Source conflict",
+};
+
+/** Per-type accent class for the three Phase 14C backend-derived suggestion
+ *  types, so duplicate / orphan / stale rows are scannable at a glance. Other
+ *  (contract-only, not-yet-derived) types fall back to the neutral styling. */
+const SUGGESTION_TYPE_CLASS: Partial<Record<DreamingSuggestionType, string>> = {
+  duplicate: "intel-suggest-duplicate",
+  orphan: "intel-suggest-orphan",
+  stale: "intel-suggest-stale",
 };
 
 const DECAY_BUCKET_LABELS: Record<DecayStatusBucket, string> = {
@@ -83,6 +92,45 @@ function metaNumber(
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+/** Read a nested object field out of a record's `metadata`, or `null` when
+ *  absent or not a plain object. Used to surface `metadata.evidence`, the
+ *  backend's stable Dreaming evidence trail. */
+function metaObject(
+  record: { metadata?: Record<string, unknown> },
+  key: string,
+): Record<string, unknown> | null {
+  const value = record.metadata?.[key];
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+/** Coerce an arbitrary value to a non-empty string, or `null`. */
+function asString(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+/** Coerce an arbitrary value to a list of strings (drops non-string members). */
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((member): member is string => typeof member === "string")
+    : [];
+}
+
+/** Map the backend's `confidence_hint` string to a pill accent class. */
+function confidenceClass(hint: string | null): string {
+  switch ((hint ?? "").toLowerCase()) {
+    case "high":
+      return "intel-confidence-high";
+    case "medium":
+      return "intel-confidence-medium";
+    case "low":
+      return "intel-confidence-low";
+    default:
+      return "";
+  }
+}
+
 /** Whether the report is built entirely from seed/demo fixtures, so the panel
  *  can say so plainly for demos and screenshots. */
 function isDemoReport(report: IntelligenceReport): boolean {
@@ -123,6 +171,7 @@ function ReportSection({
   emptyText,
   badge,
   note,
+  footer,
   children,
 }: {
   title: string;
@@ -131,6 +180,7 @@ function ReportSection({
   emptyText: string;
   badge?: ReactNode;
   note?: ReactNode;
+  footer?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -149,6 +199,7 @@ function ReportSection({
           {children}
         </>
       )}
+      {footer}
     </div>
   );
 }
@@ -173,21 +224,102 @@ function SuggestionRow({ suggestion }: { suggestion: DreamingSuggestion }) {
     acknowledged: "intel-status-ack",
     dismissed: "intel-status-dismissed",
   };
+  const typeClass = SUGGESTION_TYPE_CLASS[suggestion.type] ?? "";
+
+  // Phase 14C stamps a stable `metadata.evidence` trail on every derived
+  // suggestion. Surface it read-only: the concise `reason` reads as the title,
+  // `rationale` as the summary, and the rest as a collapsible evidence trail.
+  const evidence = metaObject(suggestion, "evidence");
+  const reason = evidence ? asString(evidence.reason) : null;
+  const derivation = evidence ? asString(evidence.derivation) : null;
+  const fieldsUsed = evidence ? asStringArray(evidence.fields_used) : [];
+  const evidenceNodeIds = evidence ? asStringArray(evidence.node_ids) : [];
+  const evidenceEdgeIds = evidence ? asStringArray(evidence.edge_ids) : [];
+  const evidenceSourceIds = evidence ? asStringArray(evidence.source_ids) : [];
+  const hasEvidence =
+    derivation !== null ||
+    fieldsUsed.length > 0 ||
+    evidenceNodeIds.length > 0 ||
+    evidenceEdgeIds.length > 0 ||
+    evidenceSourceIds.length > 0;
+
   return (
-    <li className="intel-row">
+    <li className={`intel-row intel-suggest-row ${typeClass}`.trim()}>
       <div className="intel-row-head">
-        <span className="intel-tag">{suggestionTypeLabel(suggestion.type)}</span>
-        <span className={`intel-status ${statusClass[suggestion.status] ?? ""}`}>
-          {suggestion.status}
+        <span className={`intel-tag intel-suggest-tag ${typeClass}`.trim()}>
+          {suggestionTypeLabel(suggestion.type)}
+        </span>
+        <span className="intel-suggest-head-meta">
+          {suggestion.confidence_hint && (
+            <span
+              className={`intel-chip intel-confidence ${confidenceClass(
+                suggestion.confidence_hint,
+              )}`.trim()}
+            >
+              {suggestion.confidence_hint} confidence
+            </span>
+          )}
+          <span className={`intel-status ${statusClass[suggestion.status] ?? ""}`}>
+            {suggestion.status}
+          </span>
         </span>
       </div>
+      {reason && <p className="intel-suggest-title">{reason}</p>}
       <p className="intel-row-body">{suggestion.rationale}</p>
+      <div className="intel-chip-row">
+        <span className="intel-chip">
+          {suggestion.node_ids.length} node{suggestion.node_ids.length === 1 ? "" : "s"}
+        </span>
+        {suggestion.edge_ids.length > 0 && (
+          <span className="intel-chip">
+            {suggestion.edge_ids.length} edge
+            {suggestion.edge_ids.length === 1 ? "" : "s"}
+          </span>
+        )}
+        {fieldsUsed.length > 0 && (
+          <span className="intel-chip">Fields: {fieldsUsed.join(", ")}</span>
+        )}
+      </div>
+      {hasEvidence && (
+        <details className="intel-evidence">
+          <summary>Evidence trail</summary>
+          <dl>
+            {derivation && (
+              <>
+                <dt>Derivation</dt>
+                <dd>{derivation}</dd>
+              </>
+            )}
+            {evidenceNodeIds.length > 0 && (
+              <>
+                <dt>Nodes</dt>
+                <dd>
+                  <code>{evidenceNodeIds.join(", ")}</code>
+                </dd>
+              </>
+            )}
+            {evidenceEdgeIds.length > 0 && (
+              <>
+                <dt>Edges</dt>
+                <dd>
+                  <code>{evidenceEdgeIds.join(", ")}</code>
+                </dd>
+              </>
+            )}
+            {evidenceSourceIds.length > 0 && (
+              <>
+                <dt>Sources</dt>
+                <dd>
+                  <code>{evidenceSourceIds.join(", ")}</code>
+                </dd>
+              </>
+            )}
+          </dl>
+        </details>
+      )}
       <p className="intel-row-sub">
-        {suggestion.node_ids.length} node(s) · {suggestion.edge_ids.length} edge(s)
-        {suggestion.confidence_hint
-          ? ` · confidence: ${suggestion.confidence_hint}`
-          : ""}
-        {` · origin: ${suggestion.origin}`}
+        Origin: {suggestion.origin} · derived read-only on the backend · never
+        applied automatically
       </p>
     </li>
   );
@@ -377,11 +509,14 @@ function IntelligenceReportPanel() {
 
             {isDemo && (
               <p className="intel-demo-note">
-                <strong>Temporal Knowledge Decay is now backend-derived</strong>{" "}
-                — its rows are computed read-only from real store timestamps and
-                labelled “Backend-derived” below. Dreaming, provenance, and
-                query-trail sections remain deterministic demo fixtures (labelled
-                “Demo data”) until their real logic ships in a later phase.
+                <strong>
+                  Temporal Knowledge Decay and Dreaming Suggestions are now
+                  backend-derived
+                </strong>{" "}
+                — both are computed read-only from real store data and labelled
+                “Backend-derived” below. Provenance and query-trail sections
+                remain deterministic demo fixtures (labelled “Demo data”) until
+                their real logic ships in a later phase.
               </p>
             )}
 
@@ -396,9 +531,9 @@ function IntelligenceReportPanel() {
 
             <ReportSection
               title="Dreaming Suggestions"
-              description="Advisory ideas the system would propose during idle “dreaming” — likely related nodes, duplicates, stale notes, and missing backlinks. Suggestions only; nothing is applied automatically."
+              description="Read-only maintenance hints the backend derives during “dreaming” — duplicate signals, orphaned nodes, and stale knowledge links. Advisory only; nothing is ever applied automatically."
               count={report.summary.dreaming_suggestion_count}
-              emptyText="No suggestions yet — these appear once the graph has enough connected notes to reason about."
+              emptyText="No suggestions found — Dreaming ran but found no maintenance opportunities in the current graph (no duplicate labels, orphaned nodes, or stale links)."
               badge={
                 report.dreaming_suggestions.some(isDerivedRecord) ? (
                   <SectionBadge kind="derived" />
@@ -406,11 +541,24 @@ function IntelligenceReportPanel() {
               }
               note={
                 <p className="intel-derived-note">
-                  Read-only and deterministic: each suggestion is derived on the
-                  backend from real store nodes and edges — duplicate labels,
-                  orphaned nodes, and stale links. No scoring model and no AI; the
-                  evidence trail explains exactly why each was raised. Nothing is
-                  ever applied automatically.
+                  <strong>Backend-derived · Read-only · Non-mutating.</strong>{" "}
+                  This MVP suggestion surface is computed per request from real
+                  store nodes and edges — duplicate labels, orphaned nodes, and
+                  stale links. No scoring model and no AI; each row carries an
+                  evidence trail explaining exactly why it was raised. Dreaming
+                  never merges, repairs, deletes, or changes knowledge — these are
+                  review-only hints.
+                </p>
+              }
+              footer={
+                <p className="intel-deferred-note">
+                  <strong>Not yet surfaced.</strong> Two suggestion types are
+                  intentionally held back from this MVP:{" "}
+                  <code>source_coverage_gap</code> is <em>deferred</em> (no
+                  derivation is defined for it yet), and{" "}
+                  <code>unresolved_query_pattern</code> is{" "}
+                  <em>blocked until query history exists</em>. Neither is
+                  fabricated here.
                 </p>
               }
             >

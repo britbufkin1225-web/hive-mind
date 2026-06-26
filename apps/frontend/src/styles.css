@@ -1299,3 +1299,143 @@ dd {
   line-height: 1.45;
 }
 
+/* Phase 14D — Dreaming Suggestions: surface the Phase 14C backend-derived MVP.
+   Type-accented rows, confidence pills, a collapsible evidence trail, and a
+   restrained note for the deferred/blocked types. Additive and scoped to the
+   Intelligence Report surface only. */
+
+/* Left-edge accent makes the three derived types scannable in a list. */
+.intel-suggest-row {
+  border-left-width: 3px;
+}
+
+.intel-suggest-row.intel-suggest-duplicate {
+  border-left-color: #a78bfa;
+}
+
+.intel-suggest-row.intel-suggest-orphan {
+  border-left-color: #fdba74;
+}
+
+.intel-suggest-row.intel-suggest-stale {
+  border-left-color: #fca5a5;
+}
+
+/* Type pill tinting, echoing each row's accent color. */
+.intel-suggest-tag.intel-suggest-duplicate {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #6d28d9;
+}
+
+.intel-suggest-tag.intel-suggest-orphan {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #c2410c;
+}
+
+.intel-suggest-tag.intel-suggest-stale {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+/* Right-hand header cluster: confidence pill + review status, kept together. */
+.intel-suggest-head-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* The concise backend `reason` reads as the suggestion title. */
+.intel-suggest-title {
+  margin: 0.1rem 0 0.15rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #27272a;
+  line-height: 1.4;
+}
+
+/* Confidence pill (high/medium/low). Two-class selectors so the accent wins
+   over the base `.intel-chip` color regardless of source order. */
+.intel-confidence {
+  text-transform: capitalize;
+}
+
+.intel-chip.intel-confidence-high {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+.intel-chip.intel-confidence-medium {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #b45309;
+}
+
+.intel-chip.intel-confidence-low {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+  color: #52525b;
+}
+
+/* Collapsible evidence trail: hidden by default to keep rows scannable, opens
+   to the backend's derivation, referenced ids, and fields used. */
+.intel-evidence {
+  margin: 0.4rem 0 0.15rem;
+  font-size: 0.75rem;
+  color: #52525b;
+}
+
+.intel-evidence > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #3730a3;
+}
+
+.intel-evidence dl {
+  margin: 0.4rem 0 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.2rem 0.6rem;
+}
+
+.intel-evidence dt {
+  font-weight: 600;
+  color: #71717a;
+}
+
+.intel-evidence dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.intel-evidence code {
+  font-size: 0.7rem;
+}
+
+/* Restrained footnote for the deferred/blocked suggestion types. Dashed and
+   muted so it reads as a caveat, not a finding. */
+.intel-deferred-note {
+  margin: 0.6rem 0 0;
+  padding: 0.55rem 0.7rem;
+  max-width: 64ch;
+  border: 1px dashed #d4d4d8;
+  border-radius: 4px;
+  background: #fafafa;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #52525b;
+}
+
+.intel-deferred-note code {
+  font-size: 0.7rem;
+  background: #f4f4f5;
+  border: 1px solid #e4e4e7;
+  border-radius: 3px;
+  padding: 0 0.2rem;
+}
+
