@@ -83,6 +83,7 @@ Current non-capabilities:
 | 11C | Complete | Repo cohesion, API/docs consistency, and demo documentation. |
 | 12A | Active | Demo freeze and release snapshot (documentation only). |
 | 13A | Complete | Temporal Decay section backend-derived from store timestamps (read-only MVP). |
+| 13B | Complete | Intelligence Report frontend visibility for backend-derived Temporal Decay (bucket badges, reason/age/review surfacing, provenance labelling). |
 
 ## Future roadmap
 

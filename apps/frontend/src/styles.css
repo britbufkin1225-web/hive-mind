@@ -1187,3 +1187,115 @@ dd {
   background: #fff;
 }
 
+/* Phase 13B — surface the backend-derived Temporal Decay data. Filled bucket
+   pills, attribute chips, a bucket legend, and per-section provenance badges.
+   Additive and scoped to the Intelligence Report surface only. */
+
+/* Filled bucket pills make fresh/aging/stale/unknown scannable at a glance.
+   Scoped to decay status pills (two-class specificity) so the trail pills that
+   share these color classes keep their outline-only treatment. */
+.intel-status.intel-decay-fresh {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+.intel-status.intel-decay-aging {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #b45309;
+}
+
+.intel-status.intel-decay-stale {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.intel-status.intel-decay-unknown {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+  color: #71717a;
+}
+
+/* Section heading provenance badge: "Backend-derived" vs "Demo data". */
+.intel-section-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.intel-section-badge-derived {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.intel-section-badge-demo {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+/* Short read-only/derivation note shown under the Temporal Decay heading. */
+.intel-derived-note {
+  margin: 0 0 0.6rem;
+  padding: 0.6rem 0.75rem;
+  max-width: 64ch;
+  border: 1px solid #bfdbfe;
+  border-left-width: 3px;
+  border-radius: 4px;
+  background: #eff6ff;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #1e3a8a;
+}
+
+/* Bucket legend so a reader can map a color to a status without inspecting a
+   row. Horizontal, wraps on narrow panels. */
+.intel-decay-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.6rem;
+}
+
+/* Per-row attribute chips: age, review state, reliability. */
+.intel-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.4rem 0 0.15rem;
+}
+
+.intel-chip {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  background: #f4f4f5;
+  border: 1px solid #e4e4e7;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #52525b;
+  white-space: nowrap;
+}
+
+.intel-chip-review {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+/* The backend's human-readable reason string, given a touch more emphasis than
+   the timestamp sub-line since it explains the bucket assignment. */
+.intel-decay-reason {
+  color: #3f3f46;
+  line-height: 1.45;
+}
+

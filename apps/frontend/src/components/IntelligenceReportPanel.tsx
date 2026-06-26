@@ -56,6 +56,33 @@ function isFixtureRecord(record: { metadata?: Record<string, unknown> }): boolea
   return record.metadata?.fixture === true;
 }
 
+/** True when a record carries the backend-derived marker (`metadata.derived
+ *  === true`). Phase 13A stamps every Temporal Decay row with this so the
+ *  surface can honestly distinguish computed data from demo fixtures. */
+function isDerivedRecord(record: { metadata?: Record<string, unknown> }): boolean {
+  return record.metadata?.derived === true;
+}
+
+/** Read a string field out of a record's `metadata`, or `null` when absent or
+ *  the wrong type. Used to surface the backend's human-readable `reason`. */
+function metaString(
+  record: { metadata?: Record<string, unknown> },
+  key: string,
+): string | null {
+  const value = record.metadata?.[key];
+  return typeof value === "string" ? value : null;
+}
+
+/** Read a numeric field out of a record's `metadata`, or `null` when absent or
+ *  the wrong type. Used to surface the backend's computed `age_days`. */
+function metaNumber(
+  record: { metadata?: Record<string, unknown> },
+  key: string,
+): number | null {
+  const value = record.metadata?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 /** Whether the report is built entirely from seed/demo fixtures, so the panel
  *  can say so plainly for demos and screenshots. */
 function isDemoReport(report: IntelligenceReport): boolean {
@@ -94,12 +121,16 @@ function ReportSection({
   description,
   count,
   emptyText,
+  badge,
+  note,
   children,
 }: {
   title: string;
   description: string;
   count: number;
   emptyText: string;
+  badge?: ReactNode;
+  note?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -107,14 +138,32 @@ function ReportSection({
       <h3 className="graph-section-title">
         {title}
         <span className="intel-section-count">{count}</span>
+        {badge}
       </h3>
       <p className="intel-section-desc">{description}</p>
       {count === 0 ? (
         <p className="intel-empty">{emptyText}</p>
       ) : (
-        children
+        <>
+          {note}
+          {children}
+        </>
       )}
     </div>
+  );
+}
+
+/** Honest provenance pill shown on a section heading: "Backend-derived" for
+ *  real computed data, "Demo data" for fixture-backed sections. */
+function SectionBadge({ kind }: { kind: "derived" | "demo" }) {
+  return kind === "derived" ? (
+    <span className="intel-section-badge intel-section-badge-derived">
+      Backend-derived
+    </span>
+  ) : (
+    <span className="intel-section-badge intel-section-badge-demo">
+      Demo data
+    </span>
   );
 }
 
@@ -145,8 +194,10 @@ function SuggestionRow({ suggestion }: { suggestion: DreamingSuggestion }) {
 }
 
 function DecayRow({ decay }: { decay: DecayStatus }) {
+  const reason = metaString(decay, "reason");
+  const ageDays = metaNumber(decay, "age_days");
   return (
-    <li className="intel-row">
+    <li className="intel-row intel-decay-row">
       <div className="intel-row-head">
         <span className="intel-row-id">
           <code>{decay.node_id}</code>
@@ -155,12 +206,26 @@ function DecayRow({ decay }: { decay: DecayStatus }) {
           {decayBucketLabel(decay.status)}
         </span>
       </div>
+      {reason && <p className="intel-row-body intel-decay-reason">{reason}</p>}
+      <div className="intel-chip-row">
+        {ageDays !== null && (
+          <span className="intel-chip">
+            Age: {ageDays} day{ageDays === 1 ? "" : "s"}
+          </span>
+        )}
+        {decay.review_needed && (
+          <span className="intel-chip intel-chip-review">Review needed</span>
+        )}
+        {decay.source_reliability_hint && (
+          <span className="intel-chip">
+            Reliability: {decay.source_reliability_hint}
+          </span>
+        )}
+      </div>
       <p className="intel-row-sub">
-        Last referenced: {formatDate(decay.last_referenced_at)} · Last updated:{" "}
-        {formatDate(decay.last_updated_at)}
-        {decay.review_needed ? " · review needed" : ""}
-        {decay.source_reliability_hint
-          ? ` · reliability: ${decay.source_reliability_hint}`
+        Last updated: {formatDate(decay.last_updated_at)}
+        {decay.last_imported_at
+          ? ` · last imported: ${formatDate(decay.last_imported_at)}`
           : ""}
       </p>
     </li>
@@ -312,10 +377,11 @@ function IntelligenceReportPanel() {
 
             {isDemo && (
               <p className="intel-demo-note">
-                These sections are populated with deterministic seed/demo
-                fixtures so the surface shows meaningful content. No Dreaming,
-                decay, provenance, or query-trail logic runs yet — real
-                intelligence arrives in a later phase.
+                <strong>Temporal Knowledge Decay is now backend-derived</strong>{" "}
+                — its rows are computed read-only from real store timestamps and
+                labelled “Backend-derived” below. Dreaming, provenance, and
+                query-trail sections remain deterministic demo fixtures (labelled
+                “Demo data”) until their real logic ships in a later phase.
               </p>
             )}
 
@@ -333,6 +399,11 @@ function IntelligenceReportPanel() {
               description="Advisory ideas the system would propose during idle “dreaming” — likely related nodes, duplicates, stale notes, and missing backlinks. Suggestions only; nothing is applied automatically."
               count={report.summary.dreaming_suggestion_count}
               emptyText="No suggestions yet — these appear once the graph has enough connected notes to reason about."
+              badge={
+                report.dreaming_suggestions.some(isFixtureRecord) ? (
+                  <SectionBadge kind="demo" />
+                ) : undefined
+              }
             >
               <ul className="intel-list">
                 {report.dreaming_suggestions.map((suggestion) => (
@@ -346,10 +417,30 @@ function IntelligenceReportPanel() {
 
             <ReportSection
               title="Temporal Knowledge Decay"
-              description="How fresh each node is, based on when it was last referenced or updated. Flags aging and stale knowledge that may be worth reviewing — purely informational."
+              description="How fresh each node is, computed from its most recent activity timestamp. Buckets every node as fresh, aging, stale, or unknown and flags rows worth reviewing — purely informational."
               count={report.summary.decay_status_count}
-              emptyText="No decay statuses yet — these appear once nodes accumulate reference and update history."
+              emptyText="No decay statuses yet — these appear once nodes accumulate update and import history."
+              badge={
+                report.decay_statuses.some(isDerivedRecord) ? (
+                  <SectionBadge kind="derived" />
+                ) : undefined
+              }
+              note={
+                <p className="intel-derived-note">
+                  Read-only and deterministic: each row is derived on the backend
+                  from real store timestamps using fixed thresholds
+                  (fresh&nbsp;≤&nbsp;30 days, aging&nbsp;≤&nbsp;90 days). No
+                  scoring model and no AI — the “reason” explains exactly how each
+                  status was assigned.
+                </p>
+              }
             >
+              <div className="intel-decay-legend" aria-hidden="true">
+                <span className="intel-status intel-decay-fresh">Fresh</span>
+                <span className="intel-status intel-decay-aging">Aging</span>
+                <span className="intel-status intel-decay-stale">Stale</span>
+                <span className="intel-status intel-decay-unknown">Unknown</span>
+              </div>
               <ul className="intel-list">
                 {report.decay_statuses.map((decay) => (
                   <DecayRow key={decay.node_id} decay={decay} />
@@ -362,6 +453,11 @@ function IntelligenceReportPanel() {
               description="Where each node came from — its originating source, import run, and linked nodes. A read-only audit trail tracing knowledge back to its origin."
               count={report.summary.provenance_chain_count}
               emptyText="No provenance chains yet — these appear once sources are imported into the graph."
+              badge={
+                report.provenance_chains.some(isFixtureRecord) ? (
+                  <SectionBadge kind="demo" />
+                ) : undefined
+              }
             >
               <ul className="intel-list">
                 {report.provenance_chains.map((chain) => (
@@ -375,6 +471,11 @@ function IntelligenceReportPanel() {
               description="A history of console and search queries, showing which resolved to results and which went unanswered. Highlights recurring and unresolved questions over time."
               count={report.summary.query_trail_entry_count}
               emptyText="No query trails yet — these appear as queries are run against the graph."
+              badge={
+                report.query_trail_entries.some(isFixtureRecord) ? (
+                  <SectionBadge kind="demo" />
+                ) : undefined
+              }
             >
               <ul className="intel-list">
                 {report.query_trail_entries.map((entry) => (
