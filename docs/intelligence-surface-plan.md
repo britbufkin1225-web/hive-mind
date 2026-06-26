@@ -7,10 +7,12 @@ design guardrail for those surfaces.
 Current status: the contract shapes, `GET /api/intelligence/report`, and the
 frontend Intelligence Report panel exist. The **Temporal Decay** section is
 backend-derived from real store timestamps (Phase 13A — deterministic thresholds,
-read-only, no AI). The Dreaming, provenance, and query-trail sections are still
-populated with deterministic **demo/seed fixtures** only. No real Dreaming logic,
-provenance engine, query persistence, AI/LLM integration, or graph mutation
-exists yet.
+read-only, no AI). The **Dreaming Suggestions** section is backend-derived from
+real store nodes/edges (Phase 14C — deterministic `duplicate`/`orphan`/`stale`
+rules, read-only, no AI; `source_coverage_gap` deferred and `unresolved_query`
+blocked). The provenance and query-trail sections are still populated with
+deterministic **demo/seed fixtures** only. No provenance engine, query
+persistence, AI/LLM integration, or graph mutation exists yet.
 
 ## What already exists (do not rewrite)
 
@@ -71,7 +73,7 @@ does not redesign the dashboard.
 | Surface | Planned location | Tier | First building phase |
 | --- | --- | --- | --- |
 | Intelligence summary panel | Top-level read-only Intelligence Report section | Tier 1 | Implemented with fixtures |
-| Dreaming suggestions panel | Section inside Intelligence Report | Tier 1 | Implemented with fixtures |
+| Dreaming suggestions panel | Section inside Intelligence Report | Tier 1 | Backend-derived (Phase 14C) |
 | Knowledge decay indicators | Section inside Intelligence Report; graph overlays still future | Tier 1 | Fixture-only |
 | Provenance chain inspector | Section inside Intelligence Report; selected-node inspector extension still future | Tier 1 | Fixture-only |
 | Query trail / history surface | Section inside Intelligence Report; persistence still future | Tier 1 | Fixture-only |
@@ -111,20 +113,36 @@ own beyond aggregation.
 
 ### 2. Dreaming Surface
 
-Dreaming is planned as a **read-only suggestion engine**. It will inspect current
-store/graph state and propose things a human might want to act on. It must never
-mutate graph data automatically; every output is a suggestion requiring user
-review or confirmation. The current report only contains static Dreaming-style
-fixtures.
+Dreaming is a **read-only suggestion engine**. It inspects current store/graph
+state and proposes things a human might want to act on. It never mutates graph
+data automatically; every output is a suggestion requiring user review or
+confirmation. As of Phase 14C the report is **backend-derived** for three
+deterministic suggestion types (no AI/LLM).
 
-Dreaming should eventually be able to suggest:
+Backend-derived today (Phase 14C — `app/services/dreaming.py`):
+
+- **Potential duplicate knowledge** (`duplicate`) — nodes sharing a
+  whitespace-collapsed, casefolded label.
+- **Orphaned ideas** (`orphan`) — a node with no incident edges, no `source_id`,
+  and no `parent_id`.
+- **Stale links** (`stale`) — an edge older than 90 days whose endpoint node
+  changed ≥ 30 days after the link was created (a lightweight "review this
+  relationship" hint, not a re-implementation of Temporal Decay).
+
+Each derived suggestion carries a `confidence_hint` and an explainable
+`metadata.evidence` trail (`node_ids`, `source_ids`, `edge_ids`, `reason`,
+`derivation`, `fields_used`), and the section returns cleanly empty when nothing
+is derivable.
+
+Still planned (not derived yet):
 
 - Possible related nodes (nodes that look connected but are not linked).
-- Potential duplicate knowledge (near-identical notes/labels).
-- Stale or aging knowledge (overlaps with the Temporal Decay surface).
 - Missing backlinks (one-directional links that could be reciprocal).
-- Unresolved query patterns (repeated searches with no matching node).
-- Orphaned ideas (nodes with no edges).
+- Source coverage gap (`source_coverage_gap`) — **deferred/blocked** pending a
+  future contract-expansion phase (the Phase 14B contract intentionally omits the
+  enum value; not re-added in 14C, and not folded into `source_conflict`).
+- Unresolved query patterns (`unresolved_query`) — **blocked** until query
+  history is persisted.
 - Possible source conflicts (notes from different sources that disagree).
 
 UI behavior:

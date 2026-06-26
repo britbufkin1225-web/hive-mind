@@ -1,13 +1,17 @@
 """Phase 11A — deterministic intelligence demo / seed fixtures.
 
-This module supplies **read-only demo data** for the Phase 10C intelligence
-report so the Phase 10D/10E frontend panel shows meaningful, stable content for
-demos, screenshots, and README presentation.
+This module supplies **read-only demo data** for the remaining fixture-backed
+sections of the Phase 10C intelligence report (provenance chains and query
+trails) so the frontend panel shows meaningful, stable content for demos,
+screenshots, and README presentation. The Temporal Decay (Phase 13A) and
+Dreaming Suggestions (Phase 14C) sections are now backend-derived and no longer
+sourced here.
 
 It is explicitly *not* real intelligence:
 
-  * NO Dreaming engine, heuristics, or scoring runs here.
-  * NO temporal decay calculation runs here.
+  * NO temporal decay calculation runs here (now derived: ``temporal_decay``).
+  * NO Dreaming engine, heuristics, or scoring runs here (now derived:
+    ``dreaming``).
   * NO provenance engine or query persistence runs here.
   * NO AI/LLM integration.
 
@@ -27,9 +31,6 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from app.models.hive_models import (
-    DreamingSuggestion,
-    DreamingSuggestionStatus,
-    DreamingSuggestionType,
     ProvenanceChain,
     ProvenanceLink,
     ProvenanceLinkKind,
@@ -54,44 +55,6 @@ _FIXTURE = "fixture"
 def _fixture_meta(note: str) -> dict[str, object]:
     """Build the shared ``metadata`` marker stamped on every demo fixture."""
     return {_FIXTURE: True, "demo": True, "note": note}
-
-
-def demo_dreaming_suggestions() -> list[DreamingSuggestion]:
-    """Static Dreaming-style suggestions (advisory demo data only)."""
-    return [
-        DreamingSuggestion(
-            id="demo-dream-1",
-            type=DreamingSuggestionType.DUPLICATE,
-            status=DreamingSuggestionStatus.OPEN,
-            rationale=(
-                "Potential duplicate concept between Obsidian import notes and "
-                "source registry entries."
-            ),
-            node_ids=["demo-node-obsidian-1", "demo-node-registry-1"],
-            edge_ids=[],
-            confidence_hint="medium",
-            metadata=_fixture_meta(
-                "Illustrative duplicate suggestion; no dedup heuristic ran."
-            ),
-            created_at=_T_CREATED,
-        ),
-        DreamingSuggestion(
-            id="demo-dream-2",
-            type=DreamingSuggestionType.RELATED_NODES,
-            status=DreamingSuggestionStatus.ACKNOWLEDGED,
-            rationale=(
-                "Soft link candidate between knowledge graph node and prior "
-                "query trail."
-            ),
-            node_ids=["demo-node-graph-7"],
-            edge_ids=["demo-edge-references-3"],
-            confidence_hint="low",
-            metadata=_fixture_meta(
-                "Illustrative related-node suggestion; no link scoring ran."
-            ),
-            created_at=_T_UPDATED,
-        ),
-    ]
 
 
 def demo_provenance_chains() -> list[ProvenanceChain]:

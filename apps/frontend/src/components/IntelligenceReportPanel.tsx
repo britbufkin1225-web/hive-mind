@@ -400,9 +400,18 @@ function IntelligenceReportPanel() {
               count={report.summary.dreaming_suggestion_count}
               emptyText="No suggestions yet — these appear once the graph has enough connected notes to reason about."
               badge={
-                report.dreaming_suggestions.some(isFixtureRecord) ? (
-                  <SectionBadge kind="demo" />
+                report.dreaming_suggestions.some(isDerivedRecord) ? (
+                  <SectionBadge kind="derived" />
                 ) : undefined
+              }
+              note={
+                <p className="intel-derived-note">
+                  Read-only and deterministic: each suggestion is derived on the
+                  backend from real store nodes and edges — duplicate labels,
+                  orphaned nodes, and stale links. No scoring model and no AI; the
+                  evidence trail explains exactly why each was raised. Nothing is
+                  ever applied automatically.
+                </p>
               }
             >
               <ul className="intel-list">
