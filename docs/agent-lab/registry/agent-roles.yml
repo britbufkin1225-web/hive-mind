@@ -69,9 +69,10 @@ roles:
     description: Writes and maintains documentation and source data.
     allowed_tasks:
       - Create and update docs and registry/source data.
+      - Keep API docs, roadmap, demo guides, and branch hygiene notes aligned.
     forbidden_tasks:
       - No app code, dependencies, or package changes.
-    preferred_agents: [claude-code, aider]
+    preferred_agents: [codex, claude-code, aider]
     validation_required: false
 
   - id: experiment-agent

@@ -18,6 +18,11 @@ rules:
     rationale: Prevents branch collisions and conflicting edits.
     enforcement: Session note records the single owning agent per branch.
 
+  - id: role-boundary-check
+    rule: Agents stay inside their assigned lane for the phase.
+    rationale: Keeps ChatGPT coordination, Claude UI work, Codex repo/docs/API cohesion, and devdevbuilds merge ownership from overlapping.
+    enforcement: Phase brief names role ownership; final report confirms guardrails preserved.
+
   - id: reviewer-does-not-broaden-scope
     rule: A reviewer/finalizer agent verifies; it does not add features or broaden scope.
     rationale: Keeps review honest and separate from implementation.
