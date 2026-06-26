@@ -230,6 +230,8 @@ export interface DecayStatus {
 
 export type ProvenanceLinkKind = "source" | "import" | "node" | "edge";
 
+export type ProvenanceChainStatus = "complete" | "partial" | "unknown";
+
 export interface ProvenanceLink {
   kind: ProvenanceLinkKind;
   ref_id: string;
@@ -240,7 +242,13 @@ export interface ProvenanceLink {
 
 export interface ProvenanceChain {
   node_id: string;
+  id: string | null;
+  title: string | null;
+  summary: string | null;
+  status: ProvenanceChainStatus;
+  read_only: boolean;
   source_id: string | null;
+  source_name: string | null;
   source_type: RegistrySourceType | null;
   origin_path: string | null;
   links: ProvenanceLink[];

@@ -32,6 +32,7 @@ from datetime import datetime, timezone
 
 from app.models.hive_models import (
     ProvenanceChain,
+    ProvenanceChainStatus,
     ProvenanceLink,
     ProvenanceLinkKind,
     QueryTrailEntry,
@@ -62,7 +63,16 @@ def demo_provenance_chains() -> list[ProvenanceChain]:
     return [
         ProvenanceChain(
             node_id="demo-node-obsidian-1",
+            id="demo-provenance-demo-node-obsidian-1",
+            title="Obsidian note lineage",
+            summary=(
+                "Demo chain linking an Obsidian source to a normalized node "
+                "and illustrative edge evidence."
+            ),
+            status=ProvenanceChainStatus.PARTIAL,
+            read_only=True,
             source_id="demo-source-obsidian-vault",
+            source_name="Demo Obsidian Vault",
             source_type=RegistrySourceType.OBSIDIAN,
             origin_path="vault/notes/graph-import-behavior.md",
             links=[

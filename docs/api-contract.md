@@ -73,37 +73,21 @@ Development-only mock data is in `apps/backend/app/mock/mock_data.py`. Mock data
 - `dreaming_suggestions`, `decay_statuses`, `provenance_chains`, `query_trail_entries` - one section per Phase 10B contract area.
 - `summary` - deterministic per-section counts (`IntelligenceReportSummary`).
 
-This is a **partly derived, partly fixture-backed surface**, and no LLM/AI calls
-are made. The `decay_statuses` section is **backend-derived** from real store
-timestamps (Phase 13A — deterministic thresholds; each row carries
-`metadata.derived = true` and a human-readable `reason`). The Dreaming,
-provenance, and query-trail sections still run no real logic: they return
-deterministic sample entries tagged `metadata.fixture = true` so the frontend
-can show meaningful portfolio/demo content, and those fixture entries must not be
-described as store-derived intelligence. The endpoint never mutates store state.
+Phase 15B aligns `ProvenanceChain` for later backend-derived chains while
+preserving the existing response section. A chain may now carry additive
+display and audit fields: `id`, `title`, `summary`, `status`
+(`complete` | `partial` | `unknown`), `read_only`, and `source_name`, alongside
+the existing `node_id`, `source_id`, `source_type`, `origin_path`, ordered
+`links`, linked node ids, edge ids, timestamps, and metadata. These fields are
+contract-only readiness for future deterministic provenance derivation; fixture
+content remains illustrative.
 
-### Dreaming suggestion contract
-
-`DreamingSuggestion.type` is one of a fixed set of serialized (snake_case) values
-that the backend enum, the frontend `DreamingSuggestionType` union, and the panel
-label map all share:
-
-- `related_nodes`, `duplicate`, `stale`, `missing_backlink`, `orphan`,
-  `source_conflict` — and `unresolved_query` (see below).
-
-Conventions:
-
-- The source-related type is **`source_conflict`** ("notes from different sources
-  that disagree"). There is intentionally no `source_coverage_gap` value — no
-  derivation produces one, so adding it would duplicate the concept space.
-- The confidence field is **`confidence_hint`** (a lightweight human-readable
-  label). A numeric `confidence` model is deferred to Tier 2; do not rename the
-  field to `confidence`.
-- Supporting evidence attaches under **`metadata.evidence`**, not a top-level
-  `evidence` field, keeping the contract additive.
-- **`unresolved_query` is planned/blocked.** It depends on persisted query
-  history, which is not implemented yet, so no derivation or fixture produces it
-  and no `unresolved_query_pattern` variant is added until that persistence lands.
+This is a **fixture-backed demo surface**: no real Dreaming, Temporal Knowledge
+Decay, provenance-engine, or query-persistence logic runs yet, and no LLM/AI
+calls are made. The endpoint returns deterministic sample entries for each
+section so the frontend can show meaningful portfolio/demo content. The sample
+entries are illustrative only and must not be described as store-derived
+intelligence. The endpoint never mutates store state.
 
 ## Compatibility Notes
 
