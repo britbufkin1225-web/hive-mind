@@ -141,6 +141,12 @@ UI behavior:
 Guardrail: **Dreaming output is advisory.** It is generated for review and is
 never applied to the graph by the engine itself.
 
+The deterministic backend-derivation plan for these suggestions (data inputs,
+per-type derivation rules, scoring buckets, evidence requirements, and the
+14B–14F phase sequence) is documented in the
+[Dreaming Suggestion Derivation Plan](dreaming-suggestion-derivation-plan.md)
+(Phase 14A, documentation only).
+
 ### 3. Temporal Knowledge Decay Surface
 
 A read-only representation of how *fresh* a piece of knowledge is. Current

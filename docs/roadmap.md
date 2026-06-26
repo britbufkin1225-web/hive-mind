@@ -85,6 +85,7 @@ Current non-capabilities:
 | 13A | Complete | Temporal Decay section backend-derived from store timestamps (read-only MVP). |
 | 13B | Complete | Intelligence Report frontend visibility for backend-derived Temporal Decay (bucket badges, reason/age/review surfacing, provenance labelling). |
 | 13C | Complete | Temporal Decay end-to-end QA + demo-evidence and status-language pass (see [Phase 13C QA note](releases/phase-13c-temporal-decay-qa.md)). |
+| 14A | Complete | Dreaming suggestion backend-derivation plan (documentation only; see [Dreaming Suggestion Derivation Plan](dreaming-suggestion-derivation-plan.md)). |
 
 ## Future roadmap
 
