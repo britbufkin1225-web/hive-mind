@@ -34,7 +34,7 @@ function App() {
       <header>
         <p className="parent-label">devdevbuilds</p>
         <h1>Hive|Mind</h1>
-        <p>Phase 1 application foundation</p>
+        <p>Local-first knowledge graph over your sources · read-only demo build</p>
       </header>
 
       <section>
