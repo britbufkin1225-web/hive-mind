@@ -36,21 +36,24 @@ changes, dependencies, or branding changes are part of Phase 11C.
 
 ## Demo-only intelligence surface
 
-The Intelligence Report is currently a **fixture-backed demo surface**. It is
-useful for explaining planned product direction and producing portfolio
-screenshots, but the content is static sample data.
+The Intelligence Report is currently a **mostly fixture-backed demo surface**.
+As of Phase 13A the **Temporal Decay** section is backend-derived (read-only)
+from real store timestamps; the remaining sections are still static sample data
+useful for explaining planned product direction and producing screenshots.
+
+Backend-derived sections (read-only):
+
+- Temporal decay statuses (Phase 13A — deterministic timestamp thresholds).
 
 Current fixture sections:
 
 - Dreaming-style suggestions.
-- Temporal decay-style statuses.
 - Provenance-style chains.
 - Query trail-style entries.
 
 Current non-capabilities:
 
 - No real Dreaming engine.
-- No temporal decay calculation.
 - No provenance inference engine.
 - No query persistence or query-memory logic.
 - No AI/LLM calls.
@@ -79,6 +82,7 @@ Current non-capabilities:
 | 11B | Complete | Intelligence fixture UX review and screenshot readiness. |
 | 11C | Complete | Repo cohesion, API/docs consistency, and demo documentation. |
 | 12A | Active | Demo freeze and release snapshot (documentation only). |
+| 13A | Complete | Temporal Decay section backend-derived from store timestamps (read-only MVP). |
 
 ## Future roadmap
 
@@ -88,7 +92,7 @@ read-only derivation in narrow phases. Keep the order conservative:
 | Future track | Goal | Guardrail |
 | --- | --- | --- |
 | Intelligence derivation | Generate Dreaming-style suggestions from actual graph/store state. | Read-only; no AI/LLM until separately planned. |
-| Temporal decay | Calculate freshness/staleness from timestamps and source context. | No graph mutation; indicators remain advisory. |
+| Temporal decay | Backend-derived MVP shipped in Phase 13A (timestamp thresholds). Remaining: richer reference/last-seen signals. | No graph mutation; indicators remain advisory. |
 | Provenance | Build source/import/node chains from real imported records. | Present existing evidence; do not invent lineage. |
 | Query trails | Persist and present useful console/search history. | Requires explicit persistence design before implementation. |
 | Agent Ops | Expose governed agent/source registry data in the app. | Start read-only from `docs/agent-lab/` shapes. |

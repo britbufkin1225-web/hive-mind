@@ -12,7 +12,8 @@ Hive|Mind is a full-stack knowledge graph dashboard and backend/cybersecurity
 portfolio project. It connects knowledge sources, starting with Obsidian vault
 content, into a normalized backend data model and presents that model through a
 focused web interface: a source registry, an import workflow, a query console, a
-read-only knowledge graph view, and a fixture-backed intelligence report demo.
+read-only knowledge graph view, and an intelligence report (Temporal Decay
+backend-derived; other sections fixture-backed).
 
 The conceptual model is deliberately simple:
 
@@ -42,11 +43,13 @@ SVG visualization.
   read-only SVG graph visualization, and the read-only Intelligence Report panel
   backed by deterministic demo fixtures.
 
-The current Intelligence Report is **demo/fixture-only**. It shows stable sample
-Dreaming, temporal decay, provenance, and query-trail entries for portfolio demos
-and screenshots. It does **not** run real Dreaming logic, temporal decay
-calculation, provenance-chain inference, query persistence, AI/LLM calls, or graph
-mutation. See the [Intelligence Surface Plan](docs/intelligence-surface-plan.md),
+The current Intelligence Report is **mostly demo/fixture-only**. As of Phase 13A
+the **Temporal Decay** section is backend-derived (read-only) from real store
+timestamps using deterministic thresholds; Dreaming, provenance, and query-trail
+entries are still stable sample data for portfolio demos and screenshots. It does
+**not** run real Dreaming logic, provenance-chain inference, query persistence,
+AI/LLM calls, or graph mutation. See the
+[Intelligence Surface Plan](docs/intelligence-surface-plan.md),
 [Roadmap](docs/roadmap.md), [Demo Guide](docs/demo-guide.md), and
 [Screenshot Checklist](docs/screenshot-checklist.md).
 
@@ -125,8 +128,10 @@ are implemented today and some are planned (and labeled as such).
   demo/seed data through metadata.
 - **Real Dreaming logic** *(planned)* - future read-only suggestions generated
   from actual store/graph state.
-- **Real Temporal Knowledge Decay** *(planned)* - future freshness/staleness
-  calculations derived from timestamps and source context.
+- **Temporal Knowledge Decay** *(implemented, read-only MVP — Phase 13A)* -
+  freshness/staleness buckets derived from real store node/source timestamps via
+  deterministic thresholds (fresh <= 30d, aging <= 90d, else stale). No graph
+  mutation; indicators are advisory.
 - **Real provenance chain inference** *(planned)* - future source/import/node
   chain construction from actual imported data.
 - **Query memory / knowledge trails** *(planned)* - future persistence and review
@@ -149,12 +154,13 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Future intelligence phases | Replace fixture sections with real deterministic read-only derivation. |
 | Future provenance/query phases | Add real provenance and query-trail logic only after dedicated contracts and validation. |
 
-> **Demo fixture note:** `GET /api/intelligence/report` currently returns
-> deterministic **demo/seed fixtures** for every section so the Intelligence
-> Report panel shows meaningful sample content for demos and screenshots. This is
-> illustrative data only. No Dreaming engine, decay calculation, provenance
-> engine, query persistence, or AI/LLM logic runs, and the endpoint remains
-> read-only.
+> **Intelligence data note:** `GET /api/intelligence/report` derives its
+> **Temporal Decay** section from real store timestamps (Phase 13A,
+> deterministic thresholds, tagged `metadata.derived`). The remaining sections
+> still return deterministic **demo/seed fixtures** (tagged `metadata.fixture`)
+> so the panel shows meaningful sample content for demos and screenshots. No
+> Dreaming engine, provenance engine, query persistence, or AI/LLM logic runs,
+> and the endpoint remains read-only.
 
 ## Setup
 
