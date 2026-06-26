@@ -33,15 +33,17 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 12A - Demo Freeze + Release Snapshot` (a
-  documentation-only freeze after Phase 11C; see the
-  [Phase 12A Demo Freeze + Release Snapshot](docs/releases/phase-12a-demo-freeze.md)).
+- **Active phase:** `Phase 14E - Dreaming Suggestions QA/demo evidence pass` (a
+  documentation-only evidence lock for the completed Phase 14C -> Phase 14D
+  backend-derived Dreaming Suggestions flow; see the
+  [Phase 14E Dreaming Suggestions E2E Evidence](docs/qa/phase-14e-dreaming-suggestions-e2e-evidence.md)).
 - **Completed foundation:** React/FastAPI app shell, local JSON-backed
   `HiveStore`, Hive Console (API + panel), Source Registry (backend + frontend +
   inspector), Obsidian adapter and import pipeline with frontend import panel,
   the Knowledge Graph API, the read-only Knowledge Graph panel, the custom
   read-only SVG graph visualization, and the read-only Intelligence Report panel
-  backed by deterministic demo fixtures.
+  with backend-derived Temporal Decay and Dreaming Suggestions plus remaining
+  labeled demo fixtures.
 
 The current Intelligence Report is **partially backend-derived**. As of Phase 13A
 the **Temporal Decay** section is backend-derived (read-only) from real store
@@ -99,7 +101,15 @@ chain inference, query persistence, or any graph/source/store mutation. See the
 | Phase 11A | Complete | Deterministic intelligence demo/seed fixtures. |
 | Phase 11B | Complete | Intelligence fixture UX review and screenshot readiness. |
 | Phase 11C | Complete | Repo cohesion and demo documentation pass. |
-| Phase 12A | Active | Demo freeze and release snapshot (documentation only). |
+| Phase 12A | Complete | Demo freeze and release snapshot (documentation only). |
+| Phase 13A | Complete | Temporal Decay backend-derived from store timestamps (read-only MVP). |
+| Phase 13B | Complete | Temporal Decay frontend visibility and demo polish. |
+| Phase 13C | Complete | Temporal Decay end-to-end QA and demo evidence pass. |
+| Phase 14A | Complete | Dreaming suggestion backend derivation planning. |
+| Phase 14B | Complete | Dreaming contract/schema alignment; `source_coverage_gap` remains deferred. |
+| Phase 14C | Complete | Backend-derived deterministic Dreaming Suggestions MVP. |
+| Phase 14D | Complete | Dreaming Suggestions frontend visibility in the Intelligence Report panel. |
+| Phase 14E | Active | Dreaming Suggestions QA/demo evidence lock pass (documentation only). |
 
 ## Planned logic
 
@@ -211,7 +221,7 @@ npm run dev:frontend
 - [ ] Obsidian import action panel renders.
 - [ ] Knowledge Graph read-only panel renders.
 - [ ] Graph view-model/prep data renders without runtime errors.
-- [ ] Intelligence Report panel renders demo fixtures and labels them honestly.
+- [ ] Intelligence Report panel renders backend-derived Temporal Decay and Dreaming Suggestions plus labeled remaining demo sections.
 
 ## Documentation
 
@@ -223,4 +233,6 @@ npm run dev:frontend
 - [Screenshot Checklist](docs/screenshot-checklist.md)
 - [Phase 11 Demo Readiness](docs/phase-11-demo-readiness.md)
 - [Phase 12A Demo Freeze + Release Snapshot](docs/releases/phase-12a-demo-freeze.md)
+- [Phase 14E Dreaming Suggestions E2E Evidence](docs/qa/phase-14e-dreaming-suggestions-e2e-evidence.md)
 - [Roadmap](docs/roadmap.md)
+

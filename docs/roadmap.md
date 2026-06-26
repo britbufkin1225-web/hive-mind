@@ -4,23 +4,22 @@ This roadmap explains what Hive|Mind can do now, what is demo-only, and what
 should remain future work. It complements the per-phase summary table in the
 [README](../README.md), the [Intelligence Surface Plan](intelligence-surface-plan.md),
 the portfolio-facing [Demo Guide](demo-guide.md), and the
-[Phase 12A Demo Freeze + Release Snapshot](releases/phase-12a-demo-freeze.md).
+[Phase 12A Demo Freeze + Release Snapshot](releases/phase-12a-demo-freeze.md),
+and the [Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-suggestions-e2e-evidence.md).
 
 ## Current status
 
-**Active phase:** Phase 12A — Demo Freeze + Release Snapshot.
+**Active phase:** Phase 14E - Dreaming Suggestions QA/demo evidence pass.
 
-Phase 12A is documentation-only. It freezes the demo-ready state after Phase 11C
-and records exactly what is implemented, read-only, fixture-backed, and
-intentionally deferred. See the
-[Phase 12A Demo Freeze + Release Snapshot](releases/phase-12a-demo-freeze.md).
-Phase 11C (the prior phase) updated project status, demo guidance, screenshot
-guidance, API/docs consistency, and agent coordination docs after the Phase 11B
-Intelligence Report fixture UX work landed on `main`.
+Phase 14E is documentation-only. It records QA evidence for the completed Phase
+14C -> Phase 14D Dreaming Suggestions flow: backend-derived deterministic
+suggestions, frontend Intelligence Report visibility, and the read-only /
+non-mutating guardrails. See the
+[Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-suggestions-e2e-evidence.md).
 
-No backend logic, frontend component changes, new endpoints, persistence changes,
-intelligence heuristics, AI/LLM integration, graph mutation, Obsidian importer
-changes, dependencies, or branding changes are part of Phase 11C.
+No backend logic, frontend feature changes, new endpoints, API contract changes,
+persistence changes, AI/LLM integration, graph/source mutation, dependency
+changes, `.gitignore` edits, or dashboard redesign are part of Phase 14E.
 
 ## Implemented foundation
 
@@ -32,7 +31,8 @@ changes, dependencies, or branding changes are part of Phase 11C.
 - Knowledge Graph API and read-only Knowledge Graph panel.
 - Deterministic SVG graph visualization with inspector sync and demo polish.
 - Intelligence report contracts and `GET /api/intelligence/report`.
-- Read-only Intelligence Report panel with deterministic demo fixtures.
+- Read-only Intelligence Report panel with backend-derived Temporal Decay and
+  Dreaming Suggestions plus remaining labeled demo fixtures.
 
 ## Demo-only intelligence surface
 
@@ -99,7 +99,7 @@ read-only derivation in narrow phases. Keep the order conservative:
 
 | Future track | Goal | Guardrail |
 | --- | --- | --- |
-| Intelligence derivation | Dreaming `duplicate`/`orphan`/`stale` suggestions backend-derived in Phase 14C. Remaining: `source_coverage_gap` (needs a contract-expansion phase) and `unresolved_query` (needs query-history persistence). | Read-only; no AI/LLM until separately planned. |
+| Intelligence derivation | Dreaming `duplicate_signal`/`orphaned_node`/`stale_knowledge_link` suggestions shipped backend-derived in Phase 14C and frontend-visible in Phase 14D. Remaining: `source_coverage_gap` (deferred by the pinned Phase 14B contract/schema state) and `unresolved_query_pattern` (blocked until query-history persistence exists). | Read-only; no AI/LLM until separately planned. |
 | Temporal decay | Backend-derived MVP shipped in Phase 13A (timestamp thresholds). Remaining: richer reference/last-seen signals. | No graph mutation; indicators remain advisory. |
 | Provenance | Build source/import/node chains from real imported records. | Present existing evidence; do not invent lineage. |
 | Query trails | Persist and present useful console/search history. | Requires explicit persistence design before implementation. |
@@ -114,3 +114,4 @@ read-only derivation in narrow phases. Keep the order conservative:
 - No dashboard redesign or branding churn inside backend/API phases.
 - Demo fixtures must stay labeled as demo data.
 - Human merge gate remains with devdevbuilds.
+
