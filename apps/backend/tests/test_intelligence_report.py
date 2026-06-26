@@ -82,6 +82,22 @@ def test_intelligence_report_validates_against_contract_model() -> None:
     assert report.summary.query_trail_entry_count == len(report.query_trail_entries)
 
 
+def test_intelligence_report_provenance_chains_expose_aligned_contract_fields() -> None:
+    data = client.get("/api/intelligence/report").json()
+    chain = data["provenance_chains"][0]
+
+    assert chain["id"]
+    assert chain["title"]
+    assert chain["summary"]
+    assert chain["status"] in {"complete", "partial", "unknown"}
+    assert chain["read_only"] is True
+    assert chain["source_name"]
+    assert chain["source_id"]
+    assert chain["source_type"]
+    assert isinstance(chain["links"], list)
+    assert {link["kind"] for link in chain["links"]} >= {"source", "node", "edge"}
+
+
 def test_intelligence_report_does_not_mutate_store() -> None:
     before = store.stats()
     client.get("/api/intelligence/report")

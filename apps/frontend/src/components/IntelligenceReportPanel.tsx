@@ -365,7 +365,7 @@ function IntelligenceReportPanel() {
             >
               <ul className="intel-list">
                 {report.provenance_chains.map((chain) => (
-                  <ProvenanceRow key={chain.node_id} chain={chain} />
+                  <ProvenanceRow key={chain.id ?? chain.node_id} chain={chain} />
                 ))}
               </ul>
             </ReportSection>

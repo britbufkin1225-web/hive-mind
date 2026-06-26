@@ -332,6 +332,42 @@ Current behavior: the endpoint returns deterministic demo/seed fixtures for
 every section so the UI has meaningful sample content for demos and screenshots.
 The fixtures are static illustrative data, not store-derived intelligence.
 
+### Provenance Chain contract alignment (Phase 15B)
+
+`provenance_chains` remains the existing Intelligence Report section; no new
+endpoint, persistence model, or derivation service is introduced in this phase.
+The contract is aligned for future read-only backend-derived chains such as
+source -> imported note -> knowledge node, source -> node -> related node,
+source -> node -> edge evidence, and import/source metadata -> derived
+knowledge record.
+
+Each `ProvenanceChain` can now include these additive fields in addition to the
+existing node/source/link/edge/timestamp/metadata fields:
+
+```json
+{
+  "id": "prov-node-1",
+  "node_id": "node-1",
+  "title": "Source to imported note to knowledge node",
+  "summary": "Explains how a source produced a knowledge node.",
+  "status": "partial",
+  "read_only": true,
+  "source_id": "source-1",
+  "source_name": "Research Vault"
+}
+```
+
+- `id` is a stable chain identifier when derivation can produce one; older or
+  sparse records may leave it `null`.
+- `title` and `summary` are optional display text for future frontend
+  presentation.
+- `status` is `complete`, `partial`, or `unknown`; sparse/untracked fallback
+  chains default to `unknown`.
+- `read_only` is always `true` for Intelligence Report provenance output.
+- `source_name` carries resolved source display text when available.
+- Existing `links` continue to carry ordered source/import/node/edge references
+  with labels, origin markers, and evidence metadata.
+
 Guardrails:
 
 - No Dreaming heuristics.

@@ -73,6 +73,15 @@ Development-only mock data is in `apps/backend/app/mock/mock_data.py`. Mock data
 - `dreaming_suggestions`, `decay_statuses`, `provenance_chains`, `query_trail_entries` - one section per Phase 10B contract area.
 - `summary` - deterministic per-section counts (`IntelligenceReportSummary`).
 
+Phase 15B aligns `ProvenanceChain` for later backend-derived chains while
+preserving the existing response section. A chain may now carry additive
+display and audit fields: `id`, `title`, `summary`, `status`
+(`complete` | `partial` | `unknown`), `read_only`, and `source_name`, alongside
+the existing `node_id`, `source_id`, `source_type`, `origin_path`, ordered
+`links`, linked node ids, edge ids, timestamps, and metadata. These fields are
+contract-only readiness for future deterministic provenance derivation; fixture
+content remains illustrative.
+
 This is a **fixture-backed demo surface**: no real Dreaming, Temporal Knowledge
 Decay, provenance-engine, or query-persistence logic runs yet, and no LLM/AI
 calls are made. The endpoint returns deterministic sample entries for each

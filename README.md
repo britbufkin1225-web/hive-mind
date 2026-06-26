@@ -33,6 +33,10 @@ the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
 - **Active phase:** `Phase 11C - Repo Cohesion + Demo Documentation Pass`.
+- **QA note:** a Phase 14E evidence pass was requested, but this checkout does
+  not contain the Phase 14C/14D backend-derived Dreaming Suggestions
+  implementation. See
+  [Phase 14E Dreaming Suggestions E2E Evidence](docs/qa/phase-14e-dreaming-suggestions-e2e-evidence.md).
 - **Completed foundation:** React/FastAPI app shell, local JSON-backed
   `HiveStore`, Hive Console (API + panel), Source Registry (backend + frontend +
   inspector), Obsidian adapter and import pipeline with frontend import panel,
@@ -92,6 +96,7 @@ mutation. See the [Intelligence Surface Plan](docs/intelligence-surface-plan.md)
 | Phase 11A | Complete | Deterministic intelligence demo/seed fixtures. |
 | Phase 11B | Complete | Intelligence fixture UX review and screenshot readiness. |
 | Phase 11C | Active | Repo cohesion and demo documentation pass. |
+| Phase 14E | QA finding | Evidence pass added; this checkout is not the Phase 14C/14D backend-derived Dreaming Suggestions implementation. |
 
 ## Planned logic
 
@@ -203,4 +208,5 @@ npm run dev:frontend
 - [Demo Guide](docs/demo-guide.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
 - [Phase 11 Demo Readiness](docs/phase-11-demo-readiness.md)
+- [Phase 14E Dreaming Suggestions E2E Evidence](docs/qa/phase-14e-dreaming-suggestions-e2e-evidence.md)
 - [Roadmap](docs/roadmap.md)

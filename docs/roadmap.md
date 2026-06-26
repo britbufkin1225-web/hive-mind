@@ -7,7 +7,12 @@ and the portfolio-facing [Demo Guide](demo-guide.md).
 
 ## Current status
 
-**Active phase:** Phase 11C — Repo Cohesion + Demo Documentation Pass.
+**Active phase:** Phase 15B — Provenance Chains Contract Types / Schema Alignment.
+
+Phase 14E QA/evidence note: a Dreaming Suggestions end-to-end evidence pass was
+requested, but this checkout does not contain the Phase 14C/14D backend-derived
+Dreaming Suggestions implementation. The evidence record is documented in
+[Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-suggestions-e2e-evidence.md).
 
 Phase 11C is documentation-only. It updates project status, demo guidance,
 screenshot guidance, API/docs consistency, and agent coordination docs after the
@@ -73,6 +78,9 @@ Current non-capabilities:
 | 11A | Complete | Deterministic intelligence demo/seed fixtures. |
 | 11B | Complete | Intelligence fixture UX review and screenshot readiness. |
 | 11C | Active | Repo cohesion, API/docs consistency, and demo documentation. |
+| 14E | QA finding | Evidence pass recorded; Phase 14C/14D backend-derived Dreaming Suggestions are not present in this checkout. |
+| 15A | Complete | Planning-only Provenance Chains backend derivation plan. |
+| 15B | Active | Provenance Chains contract types / schema alignment. |
 
 ## Future roadmap
 
@@ -83,7 +91,7 @@ read-only derivation in narrow phases. Keep the order conservative:
 | --- | --- | --- |
 | Intelligence derivation | Generate Dreaming-style suggestions from actual graph/store state. | Read-only; no AI/LLM until separately planned. |
 | Temporal decay | Calculate freshness/staleness from timestamps and source context. | No graph mutation; indicators remain advisory. |
-| Provenance | Build source/import/node chains from real imported records. | Present existing evidence; do not invent lineage. |
+| Provenance | Build source/import/node chains from real imported records. See [Phase 15A Provenance Chains Derivation Plan](intelligence/provenance-chains-derivation-plan.md). | Present existing evidence; do not invent lineage. |
 | Query trails | Persist and present useful console/search history. | Requires explicit persistence design before implementation. |
 | Agent Ops | Expose governed agent/source registry data in the app. | Start read-only from `docs/agent-lab/` shapes. |
 

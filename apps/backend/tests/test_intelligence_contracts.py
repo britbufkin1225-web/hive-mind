@@ -13,6 +13,7 @@ from app.models.hive_models import (
     DreamingSuggestionStatus,
     DreamingSuggestionType,
     ProvenanceChain,
+    ProvenanceChainStatus,
     ProvenanceLink,
     ProvenanceLinkKind,
     QueryTrailEntry,
@@ -52,7 +53,13 @@ def test_decay_status_defaults() -> None:
 
 def test_provenance_chain_defaults() -> None:
     chain = ProvenanceChain(node_id="node-1")
+    assert chain.id is None
+    assert chain.title is None
+    assert chain.summary is None
+    assert chain.status is ProvenanceChainStatus.UNKNOWN
+    assert chain.read_only is True
     assert chain.source_id is None
+    assert chain.source_name is None
     assert chain.source_type is None
     assert chain.origin_path is None
     assert chain.links == []
@@ -63,6 +70,66 @@ def test_provenance_chain_defaults() -> None:
     assert chain.updated_at is None
     assert chain.last_imported_at is None
     assert chain.metadata == {}
+
+
+def test_provenance_chain_contract_supports_future_derived_records() -> None:
+    chain = ProvenanceChain(
+        id="prov-node-1",
+        node_id="node-1",
+        title="Source to imported note to knowledge node",
+        summary="Explains how a source produced a knowledge node.",
+        status=ProvenanceChainStatus.PARTIAL,
+        source_id="source-1",
+        source_name="Research Vault",
+        links=[
+            ProvenanceLink(
+                kind=ProvenanceLinkKind.SOURCE,
+                ref_id="source-1",
+                label="Research Vault",
+                metadata={"source_resolution": "resolved"},
+            ),
+            ProvenanceLink(
+                kind=ProvenanceLinkKind.IMPORT,
+                ref_id="import-source-1",
+                label="Import metadata",
+                metadata={"import_status": "completed"},
+            ),
+            ProvenanceLink(
+                kind=ProvenanceLinkKind.NODE,
+                ref_id="node-1",
+                label="Knowledge Node",
+            ),
+            ProvenanceLink(
+                kind=ProvenanceLinkKind.EDGE,
+                ref_id="edge-1",
+                label="references",
+                origin="knowledge_graph_builder",
+                metadata={"relationship": "references", "reason": "wiki_link"},
+            ),
+        ],
+        linked_node_ids=["node-2"],
+        derived_edge_ids=["edge-1"],
+        metadata={
+            "derivation_origin": "provenance_derivation",
+            "chain_shape": "source_to_imported_note_to_knowledge_node",
+            "source_resolution": "resolved",
+            "warnings": [],
+        },
+    )
+
+    dumped = chain.model_dump(mode="json")
+
+    assert dumped["id"] == "prov-node-1"
+    assert dumped["status"] == "partial"
+    assert dumped["read_only"] is True
+    assert dumped["source_name"] == "Research Vault"
+    assert [link["kind"] for link in dumped["links"]] == [
+        "source",
+        "import",
+        "node",
+        "edge",
+    ]
+    assert dumped["metadata"]["derivation_origin"] == "provenance_derivation"
 
 
 def test_provenance_link_origin_marker() -> None:

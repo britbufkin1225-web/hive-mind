@@ -540,6 +540,12 @@ class ProvenanceLinkKind(StrEnum):
     EDGE = "edge"
 
 
+class ProvenanceChainStatus(StrEnum):
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    UNKNOWN = "unknown"
+
+
 class ProvenanceLink(BaseModel):
     """One step in a provenance chain (registry source -> import run -> node).
 
@@ -566,7 +572,13 @@ class ProvenanceChain(BaseModel):
     """
 
     node_id: str
+    id: str | None = None
+    title: str | None = None
+    summary: str | None = None
+    status: ProvenanceChainStatus = ProvenanceChainStatus.UNKNOWN
+    read_only: bool = True
     source_id: str | None = None
+    source_name: str | None = None
     source_type: RegistrySourceType | None = None
     origin_path: str | None = None
     links: list[ProvenanceLink] = Field(default_factory=list)
