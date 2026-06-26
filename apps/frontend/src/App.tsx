@@ -38,7 +38,7 @@ function App() {
       </header>
 
       <section>
-        <h2>Backend connection test</h2>
+        <h2>Backend connection</h2>
         {error ? (
           <p className="error">Disconnected: {error}</p>
         ) : health ? (
@@ -62,7 +62,7 @@ function App() {
       </section>
 
       <section>
-        <h2>Vault summary placeholder</h2>
+        <h2>Vault summary</h2>
         {vault ? (
           <>
             <dl>

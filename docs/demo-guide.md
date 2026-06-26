@@ -2,7 +2,9 @@
 
 This guide is for portfolio reviewers, demo prep, and screenshots. It explains
 what Hive|Mind is, what is implemented now, and how to present the intelligence
-surfaces honestly.
+surfaces honestly. For a section-by-section spoken walkthrough, see the
+[Demo Script](demo-script.md); for what to capture, see the
+[Screenshot Checklist](screenshot-checklist.md).
 
 ## Demo framing
 

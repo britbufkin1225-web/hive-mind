@@ -2,7 +2,9 @@
 
 Use this checklist when preparing portfolio screenshots or demo review notes.
 Screenshots should show the implemented product clearly and avoid implying that
-fixture-only intelligence is real derived logic.
+fixture-only intelligence is real derived logic. To narrate each screenshot,
+follow the [Demo Script](demo-script.md), which walks the same surfaces in
+order.
 
 ## Primary screenshots
 

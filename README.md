@@ -32,7 +32,9 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 11C - Repo Cohesion + Demo Documentation Pass`.
+- **Active phase:** `Phase 12A - Demo Freeze + Release Snapshot` (a
+  documentation-only freeze after Phase 11C; see the
+  [Phase 12A Demo Freeze + Release Snapshot](docs/releases/phase-12a-demo-freeze.md)).
 - **Completed foundation:** React/FastAPI app shell, local JSON-backed
   `HiveStore`, Hive Console (API + panel), Source Registry (backend + frontend +
   inspector), Obsidian adapter and import pipeline with frontend import panel,
@@ -91,7 +93,8 @@ mutation. See the [Intelligence Surface Plan](docs/intelligence-surface-plan.md)
 | Phase 10E | Complete | Intelligence Report UX hardening and demo readiness. |
 | Phase 11A | Complete | Deterministic intelligence demo/seed fixtures. |
 | Phase 11B | Complete | Intelligence fixture UX review and screenshot readiness. |
-| Phase 11C | Active | Repo cohesion and demo documentation pass. |
+| Phase 11C | Complete | Repo cohesion and demo documentation pass. |
+| Phase 12A | Active | Demo freeze and release snapshot (documentation only). |
 
 ## Planned logic
 
@@ -201,6 +204,7 @@ npm run dev:frontend
 - [API contract](docs/api-contract.md)
 - [Intelligence Surface Plan](docs/intelligence-surface-plan.md)
 - [Demo Guide](docs/demo-guide.md)
+- [Demo Script](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
 - [Phase 11 Demo Readiness](docs/phase-11-demo-readiness.md)
 - [Phase 12A Demo Freeze + Release Snapshot](docs/releases/phase-12a-demo-freeze.md)
