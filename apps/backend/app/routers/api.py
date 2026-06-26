@@ -96,9 +96,10 @@ def get_intelligence_report() -> IntelligenceReport:
 
     Surfaces the Phase 10B intelligence contracts — Dreaming suggestions, decay
     statuses, provenance chains, and query trail entries — under one stable
-    shape. No real intelligence heuristics run yet: the report is deterministic
-    and returns a valid empty state (empty sections, zeroed counts) while never
-    mutating store state.
+    shape. The Temporal Decay section is backend-derived from real store
+    timestamps (Phase 13A, deterministic thresholds, no AI); the remaining
+    sections are still deterministic demo fixtures pending their own phases. The
+    report is read-only and never mutates store state.
     """
     return build_intelligence_report(store=store)
 

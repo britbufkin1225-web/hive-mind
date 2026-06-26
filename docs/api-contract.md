@@ -73,12 +73,14 @@ Development-only mock data is in `apps/backend/app/mock/mock_data.py`. Mock data
 - `dreaming_suggestions`, `decay_statuses`, `provenance_chains`, `query_trail_entries` - one section per Phase 10B contract area.
 - `summary` - deterministic per-section counts (`IntelligenceReportSummary`).
 
-This is a **fixture-backed demo surface**: no real Dreaming, Temporal Knowledge
-Decay, provenance-engine, or query-persistence logic runs yet, and no LLM/AI
-calls are made. The endpoint returns deterministic sample entries for each
-section so the frontend can show meaningful portfolio/demo content. The sample
-entries are illustrative only and must not be described as store-derived
-intelligence. The endpoint never mutates store state.
+This is a **partly derived, partly fixture-backed surface**, and no LLM/AI calls
+are made. The `decay_statuses` section is **backend-derived** from real store
+timestamps (Phase 13A — deterministic thresholds; each row carries
+`metadata.derived = true` and a human-readable `reason`). The Dreaming,
+provenance, and query-trail sections still run no real logic: they return
+deterministic sample entries tagged `metadata.fixture = true` so the frontend
+can show meaningful portfolio/demo content, and those fixture entries must not be
+described as store-derived intelligence. The endpoint never mutates store state.
 
 ## Compatibility Notes
 

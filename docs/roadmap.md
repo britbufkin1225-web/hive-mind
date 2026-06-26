@@ -84,6 +84,7 @@ Current non-capabilities:
 | 12A | Active | Demo freeze and release snapshot (documentation only). |
 | 13A | Complete | Temporal Decay section backend-derived from store timestamps (read-only MVP). |
 | 13B | Complete | Intelligence Report frontend visibility for backend-derived Temporal Decay (bucket badges, reason/age/review surfacing, provenance labelling). |
+| 13C | Complete | Temporal Decay end-to-end QA + demo-evidence and status-language pass (see [Phase 13C QA note](releases/phase-13c-temporal-decay-qa.md)). |
 
 ## Future roadmap
 

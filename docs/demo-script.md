@@ -9,10 +9,13 @@ recorded demo, or a live screen-share. It pairs with the
 here matches the frozen, read-only demo state recorded in the
 [Phase 12A Demo Freeze + Release Snapshot](releases/phase-12a-demo-freeze.md).
 
-> **Honesty rule:** Hive|Mind's intelligence surfaces are currently
-> **read-only and fixture-backed**. When the script says a section is "planned"
-> or "demo data," say that out loud. Never narrate fixtures as live derived
-> output. See [What to avoid saying](#what-to-avoid-saying).
+> **Honesty rule:** Hive|Mind's intelligence surfaces are read-only. **Temporal
+> Knowledge Decay is now backend-derived** from real store timestamps (Phase
+> 13A) and is labeled "Backend-derived." The other three sections — Dreaming,
+> Provenance, and Query Trails — are still **deterministic demo fixtures**
+> labeled "Demo data." When the script says a section is "planned" or "demo
+> data," say that out loud, and never narrate a fixture as live derived output.
+> See [What to avoid saying](#what-to-avoid-saying).
 
 Estimated length: ~4–6 minutes spoken, or ~8 screenshots for a written
 walkthrough.
@@ -90,15 +93,19 @@ Screenshot targets: the full graph with legend and summary, and a selected-node
 ## Intelligence Report walkthrough
 
 > "This is the Intelligence Report — and this is the part I'm most careful to
-> frame honestly. It shows four planned intelligence surfaces: Dreaming
-> suggestions, Temporal Knowledge Decay, Provenance Chains, and Query Trails.
-> Right now these are populated by **deterministic demo fixtures**, labeled with
-> a 'Demo data' badge. The contracts and the UI are real and read-only; the real
-> derivation engines are future work. This panel shows where the product is
-> headed, not logic that runs today."
+> frame honestly. It shows four intelligence surfaces. **Temporal Knowledge
+> Decay is real and backend-derived**: each row is computed read-only from a
+> node's actual store timestamps using fixed thresholds — fresh ≤ 30 days, aging
+> ≤ 90 days, then stale — with a plain-language 'reason' for every classification
+> and no AI or scoring model. It carries a 'Backend-derived' badge. The other
+> three — Dreaming suggestions, Provenance Chains, and Query Trails — are still
+> **deterministic demo fixtures** labeled 'Demo data'; their real derivation
+> engines are future work. So this panel is part real read-only logic today and
+> part a labeled preview of where the rest is headed."
 
-Screenshot target: the overview summary counts, the "Demo data" badge, and at
-least one fixture section with its read-only labeling visible.
+Screenshot target: the overview summary counts, the Temporal Decay section with
+its "Backend-derived" badge and per-row reason/age, and at least one fixture
+section with its "Demo data" labeling visible.
 
 ## Console walkthrough
 
@@ -118,7 +125,9 @@ Say plainly what is real today:
 - Obsidian one-shot import with source-metadata visibility.
 - Read-only Knowledge Graph API, panel, and custom SVG visualization with
   node/edge inspector.
-- Read-only Intelligence Report API and panel (fixture-backed).
+- Read-only Intelligence Report API and panel. The Temporal Decay section is
+  backend-derived from real store timestamps (Phase 13A); Dreaming, Provenance,
+  and Query Trails remain deterministic demo fixtures.
 - Safe Hive Console API and panel.
 
 ## Planned intelligence features
@@ -126,10 +135,13 @@ Say plainly what is real today:
 Say plainly what is *not* built yet:
 
 - Real Dreaming logic — suggestions derived from actual graph/store state.
-- Real Temporal Knowledge Decay — freshness/staleness from real timestamps.
 - Real Provenance inference — lineage built from real import records.
 - Query memory / knowledge trails — persisted, reviewable query history.
 - Any AI/LLM integration — only after a separate plan and guardrail review.
+
+> Temporal Knowledge Decay already shipped as a read-only MVP (Phase 13A) —
+> derived from real timestamps with fixed thresholds, no AI. Still ahead for it:
+> richer "last referenced / last seen" signals beyond import and update times.
 
 See the [Roadmap](roadmap.md) and
 [Intelligence Surface Plan](intelligence-surface-plan.md) for the intended order.
@@ -150,8 +162,10 @@ labeling, contracts before logic.
 
 > "So that's Hive|Mind: a local-first knowledge graph that normalizes Obsidian
 > notes into a governed, inspectable data model behind a clean FastAPI/React
-> stack. The foundation is real and read-only today, and the intelligence layer
-> has honest contracts and fixtures pointing at where it's headed next."
+> stack. The foundation is real and read-only today, the first intelligence
+> surface — Temporal Knowledge Decay — is now backend-derived from real
+> timestamps, and the remaining intelligence sections have honest contracts and
+> labeled fixtures pointing at where they're headed next."
 
 ---
 
@@ -160,16 +174,17 @@ labeling, contracts before logic.
 Pulled from the [Demo Guide](demo-guide.md) — do not say:
 
 - "The app uses AI to find connections."
-- "Temporal decay is implemented."
+- "Temporal decay uses AI / a scoring model." (It's plain timestamp thresholds.)
 - "The provenance engine traces every fact."
 - "Query trails are persisted."
 - "It watches my vault live."
 
 Instead, use:
 
-> "The Intelligence Report is a deterministic fixture demo that shows where
-> Hive|Mind is headed. The contracts and UI exist, but real Dreaming, temporal
-> decay, provenance inference, query memory, and AI/LLM logic are future work."
+> "The Intelligence Report is read-only. Temporal Knowledge Decay is real and
+> backend-derived from store timestamps using fixed thresholds — no AI. The
+> Dreaming, provenance, and query-trail sections are still deterministic fixtures
+> that show where Hive|Mind is headed; their real logic is future work."
 
 ## Pre-demo checklist
 
@@ -187,5 +202,7 @@ Then confirm:
 - Backend connection shows **Connected**.
 - Source Registry renders records and inspector details.
 - Knowledge Graph renders nodes/edges, the legend, and selected-item details.
-- Intelligence Report renders every fixture section with its **Demo data** badge.
+- Intelligence Report renders the Temporal Decay section with its
+  **Backend-derived** badge and per-row reason/age, and the Dreaming,
+  Provenance, and Query Trail sections with their **Demo data** badges.
 - Console accepts `help` / `status` and rejects unsafe commands.
