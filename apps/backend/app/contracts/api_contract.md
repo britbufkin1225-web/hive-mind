@@ -332,6 +332,24 @@ Current behavior: the endpoint returns deterministic demo/seed fixtures for
 every section so the UI has meaningful sample content for demos and screenshots.
 The fixtures are static illustrative data, not store-derived intelligence.
 
+### Dreaming suggestion contract
+
+`DreamingSuggestion.type` serializes to one of a fixed snake_case value set
+shared by the backend `DreamingSuggestionType` enum (`UPPER_SNAKE` member →
+snake_case value), the frontend `DreamingSuggestionType` union, and the panel
+label map: `related_nodes`, `duplicate`, `stale`, `missing_backlink`, `orphan`,
+`source_conflict`, and `unresolved_query`.
+
+- The source-related type is `source_conflict`; there is no `source_coverage_gap`
+  value (no derivation produces one — adding it would duplicate the concept).
+- The confidence label field is `confidence_hint`, not `confidence` (a numeric
+  confidence model is deferred to Tier 2).
+- Supporting evidence attaches under `metadata.evidence`, not a top-level
+  `evidence` field.
+- `unresolved_query` is reserved but **blocked/planned**: it needs persisted
+  query history (not implemented), so no derivation/fixture emits it and no
+  `unresolved_query_pattern` variant exists yet.
+
 Guardrails:
 
 - No Dreaming heuristics.
