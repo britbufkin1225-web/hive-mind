@@ -203,4 +203,5 @@ npm run dev:frontend
 - [Demo Guide](docs/demo-guide.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
 - [Phase 11 Demo Readiness](docs/phase-11-demo-readiness.md)
+- [Phase 12A Demo Freeze + Release Snapshot](docs/releases/phase-12a-demo-freeze.md)
 - [Roadmap](docs/roadmap.md)

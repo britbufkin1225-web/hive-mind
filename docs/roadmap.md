@@ -3,15 +3,20 @@
 This roadmap explains what Hive|Mind can do now, what is demo-only, and what
 should remain future work. It complements the per-phase summary table in the
 [README](../README.md), the [Intelligence Surface Plan](intelligence-surface-plan.md),
-and the portfolio-facing [Demo Guide](demo-guide.md).
+the portfolio-facing [Demo Guide](demo-guide.md), and the
+[Phase 12A Demo Freeze + Release Snapshot](releases/phase-12a-demo-freeze.md).
 
 ## Current status
 
-**Active phase:** Phase 11C — Repo Cohesion + Demo Documentation Pass.
+**Active phase:** Phase 12A — Demo Freeze + Release Snapshot.
 
-Phase 11C is documentation-only. It updates project status, demo guidance,
-screenshot guidance, API/docs consistency, and agent coordination docs after the
-Phase 11B Intelligence Report fixture UX work landed on `main`.
+Phase 12A is documentation-only. It freezes the demo-ready state after Phase 11C
+and records exactly what is implemented, read-only, fixture-backed, and
+intentionally deferred. See the
+[Phase 12A Demo Freeze + Release Snapshot](releases/phase-12a-demo-freeze.md).
+Phase 11C (the prior phase) updated project status, demo guidance, screenshot
+guidance, API/docs consistency, and agent coordination docs after the Phase 11B
+Intelligence Report fixture UX work landed on `main`.
 
 No backend logic, frontend component changes, new endpoints, persistence changes,
 intelligence heuristics, AI/LLM integration, graph mutation, Obsidian importer
@@ -72,7 +77,8 @@ Current non-capabilities:
 | 10E | Complete | Intelligence Report UX hardening / demo readiness. |
 | 11A | Complete | Deterministic intelligence demo/seed fixtures. |
 | 11B | Complete | Intelligence fixture UX review and screenshot readiness. |
-| 11C | Active | Repo cohesion, API/docs consistency, and demo documentation. |
+| 11C | Complete | Repo cohesion, API/docs consistency, and demo documentation. |
+| 12A | Active | Demo freeze and release snapshot (documentation only). |
 
 ## Future roadmap
 
