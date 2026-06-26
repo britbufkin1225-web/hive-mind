@@ -5,10 +5,12 @@ This document began as the Phase 10A plan for the first
 design guardrail for those surfaces.
 
 Current status: the contract shapes, `GET /api/intelligence/report`, and the
-frontend Intelligence Report panel exist. The report is populated with
-deterministic **demo/seed fixtures** only. No real Dreaming logic, temporal decay
-calculation, provenance engine, query persistence, AI/LLM integration, or graph
-mutation exists yet.
+frontend Intelligence Report panel exist. The **Temporal Decay** section is
+backend-derived from real store timestamps (Phase 13A — deterministic thresholds,
+read-only, no AI). The Dreaming, provenance, and query-trail sections are still
+populated with deterministic **demo/seed fixtures** only. No real Dreaming logic,
+provenance engine, query persistence, AI/LLM integration, or graph mutation
+exists yet.
 
 ## What already exists (do not rewrite)
 
@@ -31,9 +33,10 @@ These systems are the foundation the intelligence layer builds on.
   (`apps/frontend/src/components/KnowledgeGraphPanel.tsx`,
   `apps/frontend/src/lib/graphLayout.ts`,
   `apps/frontend/src/lib/graphViewModel.ts`).
-- Intelligence report contracts, read-only endpoint, deterministic fixtures, and
-  frontend panel
+- Intelligence report contracts, read-only endpoint, backend-derived Temporal
+  Decay, deterministic fixtures for the remaining sections, and frontend panel
   (`apps/backend/app/services/intelligence.py`,
+  `apps/backend/app/services/temporal_decay.py`,
   `apps/backend/app/services/intelligence_fixtures.py`,
   `apps/frontend/src/components/IntelligenceReportPanel.tsx`).
 
