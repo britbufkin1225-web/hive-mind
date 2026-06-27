@@ -9,8 +9,7 @@ and the [Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-sugg
 
 ## Current status
 
-**Active phase:** Phase 14E - Dreaming Suggestions QA/demo evidence pass.
-**Active phase:** Phase 15B — Provenance Chains Contract Types / Schema Alignment.
+**Active phase:** Phase 15C — Provenance Chains Backend Derivation MVP.
 
 Phase 14E QA/evidence note: a Dreaming Suggestions end-to-end evidence pass was
 requested, but this checkout does not contain the Phase 14C/14D backend-derived
@@ -37,15 +36,17 @@ changes, `.gitignore` edits, or dashboard redesign are part of Phase 14E.
 - Knowledge Graph API and read-only Knowledge Graph panel.
 - Deterministic SVG graph visualization with inspector sync and demo polish.
 - Intelligence report contracts and `GET /api/intelligence/report`.
-- Read-only Intelligence Report panel with backend-derived Temporal Decay and
-  Dreaming Suggestions plus remaining labeled demo fixtures.
+- Read-only Intelligence Report panel with backend-derived Temporal Decay,
+  Dreaming Suggestions, and Provenance Chains plus remaining labeled demo
+  fixtures.
 
 ## Demo-only intelligence surface
 
 The Intelligence Report is currently a **partially backend-derived surface**.
-As of Phase 13A the **Temporal Decay** section and as of Phase 14C the **Dreaming
-Suggestions** section are backend-derived (read-only) from real store state; the
-remaining sections are still static sample data useful for explaining planned
+As of Phase 13A the **Temporal Decay** section, as of Phase 14C the **Dreaming
+Suggestions** section, and as of Phase 15C the **Provenance Chains** section are
+backend-derived (read-only) from existing store/source state. The remaining
+Query Trails section is still static sample data useful for explaining planned
 product direction and producing screenshots.
 
 Backend-derived sections (read-only):
@@ -54,10 +55,12 @@ Backend-derived sections (read-only):
 - Dreaming suggestions (Phase 14C — deterministic `duplicate`/`orphan`/`stale`
   rules over store nodes/edges; conservative, with an explainable
   `metadata.evidence` trail and a clean empty section when nothing is derivable).
+- Provenance chains (Phase 15C — deterministic source/import/node/edge chains
+  from existing store and source registry data, with backend-owned evidence and a
+  clean empty section when no graph data exists).
 
 Current fixture sections:
 
-- Provenance-style chains.
 - Query trail-style entries.
 
 Current non-capabilities:
@@ -65,7 +68,8 @@ Current non-capabilities:
 - No `source_coverage_gap` derivation — deferred/blocked pending a future
   contract-expansion phase (Phase 14B contract decision).
 - No `unresolved_query` derivation — blocked until query history is persisted.
-- No provenance inference engine.
+- No semantic provenance inference engine beyond existing source/node/import/edge
+  records.
 - No query persistence or query-memory logic.
 - No AI/LLM calls.
 - No automatic graph/source/store mutation.
@@ -105,7 +109,8 @@ Current non-capabilities:
 | 14D | Complete | Dreaming Suggestions frontend visibility and demo polish. |
 | 14E | Complete | Dreaming Suggestions end-to-end QA and demo evidence pass. |
 | 15A | Complete | Provenance Chains backend derivation planning and frontend readiness notes. |
-| 15B | Active | Provenance Chains contract types / schema alignment. |
+| 15B | Complete | Provenance Chains contract types / schema alignment. |
+| 15C | Complete | Provenance Chains backend-derived MVP for existing source/import/node/edge records. |
 
 ## Future roadmap
 
@@ -113,7 +118,7 @@ Current non-capabilities:
 | --- | --- | --- |
 | Intelligence derivation | Dreaming `duplicate_signal` / `orphaned_node` / `stale_knowledge_link` suggestions shipped backend in Phase 14C and frontend-visible in Phase 14D. Remaining: `source_coverage_gap` deferred by the pinned Phase 14B contract/schema state and `unresolved_query_pattern` blocked until query-history persistence exists. | Read-only; no AI/LLM until separately planned. |
 | Temporal decay | Backend-derived MVP shipped in Phase 13A, frontend visibility/demo polish shipped in Phase 13B, and end-to-end QA shipped in Phase 13C. Remaining: richer reference/last-seen signals. | No graph mutation; indicators remain advisory. |
-| Provenance chains | Phase 15A planning/readiness complete. Phase 15B aligns source/import/node chain contracts for future backend-derived records. | Present existing evidence only; do not invent lineage; read-only. |
+| Provenance chains | Backend-derived MVP shipped in Phase 15C from existing source/import/node/edge records. Remaining: frontend visibility/demo polish and QA evidence. | Present existing evidence only; do not invent lineage; read-only. |
 | Query trails | Persist and present useful console/search history. | Requires explicit persistence design before implementation. |
 | Agent Ops | Expose governed agent/source registry data in the app. | Start read-only from `docs/agent-lab/` shapes. |
 

@@ -1,10 +1,9 @@
-"""Intelligence Report API tests (Phase 10C shape + Phase 11A demo fixtures).
+"""Intelligence Report API tests.
 
 Covers the read-only ``GET /api/intelligence/report`` endpoint: status,
 top-level shape, contract-model validation, the guarantee that calling it never
-mutates store state, and — for Phase 11A — that each section is populated with
-stable, deterministic, clearly-tagged demo fixtures. No real intelligence
-heuristics run yet; the populated content is static seed data only.
+mutates store state, backend-derived Temporal Decay/Dreaming/Provenance
+sections, and the remaining clearly tagged Query Trail demo fixture.
 """
 
 from datetime import datetime, timedelta, timezone
@@ -32,10 +31,9 @@ _SECTIONS = (
     "query_trail_entries",
 )
 
-# Phase 13A/14C: the Temporal Decay and Dreaming Suggestions sections are now
-# backend-derived, not fixtures. The remaining sections stay fixture-backed.
+# Phase 13A/14C/15C: Temporal Decay, Dreaming Suggestions, and Provenance Chains
+# are now backend-derived, not fixtures. Query Trails stay fixture-backed.
 _FIXTURE_SECTIONS = (
-    "provenance_chains",
     "query_trail_entries",
 )
 
@@ -86,7 +84,7 @@ def test_intelligence_report_dreaming_section_is_backend_derived() -> None:
         assert entry["type"] not in {"unresolved_query", "source_coverage_gap"}
 
 
-def test_intelligence_report_fixtures_are_tagged_as_demo_data() -> None:
+def test_intelligence_report_remaining_fixtures_are_tagged_as_demo_data() -> None:
     data = client.get("/api/intelligence/report").json()
     # Demo origin must be unambiguous in the payload itself: every fixture entry
     # carries metadata.fixture == True so consumers never mistake it for real
@@ -111,6 +109,22 @@ def test_intelligence_report_decay_section_is_backend_derived() -> None:
         assert entry["metadata"].get("derived") is True
         assert entry["metadata"].get("fixture") is not True
         assert entry["status"] in {"fresh", "aging", "stale", "unknown"}
+
+
+def test_intelligence_report_provenance_section_is_backend_derived() -> None:
+    data = client.get("/api/intelligence/report").json()
+    chains = data["provenance_chains"]
+    assert chains, "expected derived provenance rows from store nodes"
+
+    real_node_ids = {n.id for n in store.get_nodes()}
+    for chain in chains:
+        assert chain["node_id"] in real_node_ids
+        assert chain["metadata"].get("derived") is True
+        assert chain["metadata"].get("fixture") is not True
+        evidence = chain["metadata"]["evidence"]
+        assert evidence["reason"]
+        assert evidence["derivation"]
+        assert "fields_used" in evidence
 
 
 def test_intelligence_report_is_deterministic_apart_from_generated_at() -> None:
@@ -143,11 +157,13 @@ def test_intelligence_report_provenance_chains_expose_aligned_contract_fields() 
     assert chain["summary"]
     assert chain["status"] in {"complete", "partial", "unknown"}
     assert chain["read_only"] is True
-    assert chain["source_name"]
-    assert chain["source_id"]
-    assert chain["source_type"]
     assert isinstance(chain["links"], list)
-    assert {link["kind"] for link in chain["links"]} >= {"source", "node", "edge"}
+    assert {link["kind"] for link in chain["links"]} >= {"node"}
+    if chain["source_id"]:
+        assert "source" in {link["kind"] for link in chain["links"]}
+    if chain["stored_edge_ids"] or chain["derived_edge_ids"]:
+        assert "edge" in {link["kind"] for link in chain["links"]}
+    assert chain["metadata"]["evidence"]["reason"]
 
 
 def test_intelligence_report_does_not_mutate_store() -> None:

@@ -13,7 +13,8 @@ portfolio project. It connects knowledge sources, starting with Obsidian vault
 content, into a normalized backend data model and presents that model through a
 focused web interface: a source registry, an import workflow, a query console, a
 read-only knowledge graph view, and an intelligence report (Temporal Decay and
-Dreaming Suggestions backend-derived; other sections fixture-backed).
+Dreaming Suggestions and Provenance Chains backend-derived; Query Trails
+fixture-backed).
 
 The conceptual model is deliberately simple:
 
@@ -33,26 +34,27 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 14E - Dreaming Suggestions QA/demo evidence pass` (a
-  documentation-only evidence lock for the completed Phase 14C -> Phase 14D
-  backend-derived Dreaming Suggestions flow; see the
-  [Phase 14E Dreaming Suggestions E2E Evidence](docs/qa/phase-14e-dreaming-suggestions-e2e-evidence.md)).
+- **Active phase:** `Phase 15C - Provenance Chains Backend Derivation MVP`
+  (backend-derived, read-only provenance records for the existing Intelligence
+  Report API).
 - **Completed foundation:** React/FastAPI app shell, local JSON-backed
   `HiveStore`, Hive Console (API + panel), Source Registry (backend + frontend +
   inspector), Obsidian adapter and import pipeline with frontend import panel,
   the Knowledge Graph API, the read-only Knowledge Graph panel, the custom
   read-only SVG graph visualization, and the read-only Intelligence Report panel
-  with backend-derived Temporal Decay and Dreaming Suggestions plus remaining
-  labeled demo fixtures.
+  with backend-derived Temporal Decay, Dreaming Suggestions, and Provenance
+  Chains plus remaining labeled demo fixtures.
 
 The current Intelligence Report is **partially backend-derived**. As of Phase 13A
 the **Temporal Decay** section is backend-derived (read-only) from real store
 timestamps using deterministic thresholds; as of Phase 14C the **Dreaming
 Suggestions** section is likewise backend-derived (read-only) from real store
 nodes/edges via deterministic rules (duplicate labels, orphaned nodes, stale
-links). Provenance and query-trail entries are still stable sample data for
-portfolio demos and screenshots. It does **not** run AI/LLM calls, provenance-
-chain inference, query persistence, or any graph/source/store mutation. See the
+links); and as of Phase 15C **Provenance Chains** are backend-derived from
+existing source/import/node/edge records with explicit evidence metadata.
+Query-trail entries are still stable sample data for portfolio demos and
+screenshots. It does **not** run AI/LLM calls, semantic provenance inference,
+query persistence, or any graph/source/store mutation. See the
 [Intelligence Surface Plan](docs/intelligence-surface-plan.md),
 [Roadmap](docs/roadmap.md), [Demo Guide](docs/demo-guide.md), and
 [Screenshot Checklist](docs/screenshot-checklist.md).
@@ -109,7 +111,10 @@ chain inference, query persistence, or any graph/source/store mutation. See the
 | Phase 14B | Complete | Dreaming contract/schema alignment; `source_coverage_gap` remains deferred. |
 | Phase 14C | Complete | Backend-derived deterministic Dreaming Suggestions MVP. |
 | Phase 14D | Complete | Dreaming Suggestions frontend visibility in the Intelligence Report panel. |
-| Phase 14E | Active | Dreaming Suggestions QA/demo evidence lock pass (documentation only). |
+| Phase 14E | Complete | Dreaming Suggestions QA/demo evidence lock pass (documentation only). |
+| Phase 15A | Complete | Provenance Chains backend derivation planning and frontend readiness notes. |
+| Phase 15B | Complete | Provenance Chains contract types / schema alignment. |
+| Phase 15C | Complete | Backend-derived deterministic Provenance Chains MVP. |
 
 ## Planned logic
 
@@ -135,9 +140,9 @@ are implemented today and some are planned (and labeled as such).
 - **Intelligence report contracts** *(implemented)* - shared backend/frontend
   shapes for Dreaming suggestions, decay statuses, provenance chains, query
   trails, and a summary rollup.
-- **Intelligence Report panel** *(implemented, read-only demo)* - renders stable
-  fixture data for the planned intelligence surfaces. Every fixture is marked as
-  demo/seed data through metadata.
+- **Intelligence Report panel** *(implemented, read-only)* - renders
+  backend-derived Temporal Decay, Dreaming Suggestions, and Provenance Chains
+  plus labeled Query Trail demo data.
 - **Real Dreaming logic** *(implemented, read-only MVP — Phase 14C)* -
   deterministic, read-only suggestions derived from actual store nodes/edges:
   `duplicate` (shared normalized labels), `orphan` (no edges/source/parent), and
@@ -150,8 +155,11 @@ are implemented today and some are planned (and labeled as such).
   freshness/staleness buckets derived from real store node/source timestamps via
   deterministic thresholds (fresh <= 30d, aging <= 90d, else stale). No graph
   mutation; indicators are advisory.
-- **Real provenance chain inference** *(planned)* - future source/import/node
-  chain construction from actual imported data.
+- **Provenance Chains** *(implemented, read-only MVP — Phase 15C)* -
+  deterministic source/import/node/edge chains derived from existing store and
+  source registry data. Each carries backend-owned `metadata.evidence`; missing
+  source metadata is represented honestly as partial/unknown rather than
+  fabricated.
 - **Query memory / knowledge trails** *(planned)* - future persistence and review
   surfaces for past console/search activity.
 
@@ -173,13 +181,14 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Future provenance/query phases | Add real provenance and query-trail logic only after dedicated contracts and validation. |
 
 > **Intelligence data note:** `GET /api/intelligence/report` derives its
-> **Temporal Decay** (Phase 13A) and **Dreaming Suggestions** (Phase 14C)
-> sections from real store state — deterministic rules, tagged
-> `metadata.derived`, with a clean empty section when nothing is derivable. The
-> remaining sections (provenance, query trails) still return deterministic
+> **Temporal Decay** (Phase 13A), **Dreaming Suggestions** (Phase 14C), and
+> **Provenance Chains** (Phase 15C) sections from existing store/source state —
+> deterministic rules, tagged `metadata.derived`, with a clean empty section
+> when nothing is derivable. Query Trails still return deterministic
 > **demo/seed fixtures** (tagged `metadata.fixture`) so the panel shows
-> meaningful sample content for demos and screenshots. No provenance engine,
-> query persistence, or AI/LLM logic runs, and the endpoint remains read-only.
+> meaningful sample content for demos and screenshots. No query persistence,
+> AI/LLM logic, or graph/source/store mutation runs, and the endpoint remains
+> read-only.
 
 ## Setup
 
@@ -221,7 +230,7 @@ npm run dev:frontend
 - [ ] Obsidian import action panel renders.
 - [ ] Knowledge Graph read-only panel renders.
 - [ ] Graph view-model/prep data renders without runtime errors.
-- [ ] Intelligence Report panel renders backend-derived Temporal Decay and Dreaming Suggestions plus labeled remaining demo sections.
+- [ ] Intelligence Report panel renders backend-derived Temporal Decay, Dreaming Suggestions, and Provenance Chains plus labeled Query Trail demo data.
 
 ## Documentation
 

@@ -10,9 +10,11 @@ backend-derived from real store timestamps (Phase 13A — deterministic threshol
 read-only, no AI). The **Dreaming Suggestions** section is backend-derived from
 real store nodes/edges (Phase 14C — deterministic `duplicate`/`orphan`/`stale`
 rules, read-only, no AI; `source_coverage_gap` deferred and `unresolved_query`
-blocked). The provenance and query-trail sections are still populated with
-deterministic **demo/seed fixtures** only. No provenance engine, query
-persistence, AI/LLM integration, or graph mutation exists yet.
+blocked). The **Provenance Chains** section is backend-derived from existing
+source/import/node/edge records (Phase 15C — deterministic, read-only, no AI).
+The Query Trails section is still populated with deterministic **demo/seed
+fixtures** only. No query persistence, AI/LLM integration, or graph mutation
+exists yet.
 
 ## What already exists (do not rewrite)
 
@@ -36,7 +38,8 @@ These systems are the foundation the intelligence layer builds on.
   `apps/frontend/src/lib/graphLayout.ts`,
   `apps/frontend/src/lib/graphViewModel.ts`).
 - Intelligence report contracts, read-only endpoint, backend-derived Temporal
-  Decay, deterministic fixtures for the remaining sections, and frontend panel
+  Decay/Dreaming/Provenance sections, deterministic Query Trail fixtures, and
+  frontend panel
   (`apps/backend/app/services/intelligence.py`,
   `apps/backend/app/services/temporal_decay.py`,
   `apps/backend/app/services/intelligence_fixtures.py`,
@@ -72,10 +75,10 @@ does not redesign the dashboard.
 
 | Surface | Planned location | Tier | First building phase |
 | --- | --- | --- | --- |
-| Intelligence summary panel | Top-level read-only Intelligence Report section | Tier 1 | Implemented with fixtures |
+| Intelligence summary panel | Top-level read-only Intelligence Report section | Tier 1 | Implemented |
 | Dreaming suggestions panel | Section inside Intelligence Report | Tier 1 | Backend-derived (Phase 14C) |
-| Knowledge decay indicators | Section inside Intelligence Report; graph overlays still future | Tier 1 | Fixture-only |
-| Provenance chain inspector | Section inside Intelligence Report; selected-node inspector extension still future | Tier 1 | Fixture-only |
+| Knowledge decay indicators | Section inside Intelligence Report; graph overlays still future | Tier 1 | Backend-derived (Phase 13A) |
+| Provenance chain inspector | Section inside Intelligence Report; selected-node inspector extension still future | Tier 1 | Backend-derived (Phase 15C) |
 | Query trail / history surface | Section inside Intelligence Report; persistence still future | Tier 1 | Fixture-only |
 | Confidence / uncertainty badges | Inline badges on nodes/edges | Tier 2 | TBD |
 | Session snapshots | Read-only history list | Tier 2 | TBD |
@@ -167,11 +170,10 @@ per-type derivation rules, scoring buckets, evidence requirements, and the
 
 ### 3. Temporal Knowledge Decay Surface
 
-A read-only representation of how *fresh* a piece of knowledge is. Current
-fixture entries demonstrate the intended shape; they are not calculated from
-real source timestamps.
+A read-only representation of how *fresh* a piece of knowledge is. Current rows
+are derived from existing node/source timestamps using deterministic thresholds.
 
-Planned representation:
+Representation:
 
 - **Status buckets:** `fresh` / `aging` / `stale` (plus an implicit `unknown`
   when timestamps are missing).
@@ -206,9 +208,10 @@ Planned contents (per selected node/edge):
 - **Last update history** — from existing `created_at` / `updated_at` /
   `last_imported_at` fields.
 
-No provenance engine exists yet. This section documents how existing,
-already-captured fields should eventually be presented together; the current
-fixtures are illustrative.
+Phase 15C derives this section in the Intelligence Report from existing,
+already-captured fields. It presents source/import/node/edge evidence honestly:
+missing source metadata yields partial/unknown chains rather than fabricated
+lineage, and every derived chain carries backend-owned `metadata.evidence`.
 
 ### 5. Query Memory / Knowledge Trails
 
@@ -261,8 +264,7 @@ narrowly authorizes it:
 - Mutate graph data automatically from any intelligence surface.
 - Apply Dreaming suggestions without explicit user action.
 - Present demo fixtures as real intelligence output.
-- Implement decay calculations, a provenance engine, or query persistence ahead
-  of their dedicated future phase.
+- Implement query persistence ahead of its dedicated future phase.
 - Add AI/LLM integration (intelligence stays deterministic until a separately
   planned phase).
 - Add ambient capture to the web UI.

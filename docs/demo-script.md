@@ -11,10 +11,12 @@ here matches the frozen, read-only demo state recorded in the
 
 > **Honesty rule:** Hive|Mind's intelligence surfaces are read-only. **Temporal
 > Knowledge Decay is now backend-derived** from real store timestamps (Phase
-> 13A) and is labeled "Backend-derived." The other three sections — Dreaming,
-> Provenance, and Query Trails — are still **deterministic demo fixtures**
-> labeled "Demo data." When the script says a section is "planned" or "demo
-> data," say that out loud, and never narrate a fixture as live derived output.
+> 13A), **Dreaming Suggestions are backend-derived** from graph state (Phase
+> 14C), and **Provenance Chains are backend-derived** from existing
+> source/import/node/edge records (Phase 15C). Query Trails are still
+> **deterministic demo fixtures** labeled "Demo data." When the script says a
+> section is "planned" or "demo data," say that out loud, and never narrate a
+> fixture as live derived output.
 > See [What to avoid saying](#what-to-avoid-saying).
 
 Estimated length: ~4–6 minutes spoken, or ~8 screenshots for a written
@@ -97,11 +99,11 @@ Screenshot targets: the full graph with legend and summary, and a selected-node
 > Decay is real and backend-derived**: each row is computed read-only from a
 > node's actual store timestamps using fixed thresholds — fresh ≤ 30 days, aging
 > ≤ 90 days, then stale — with a plain-language 'reason' for every classification
-> and no AI or scoring model. It carries a 'Backend-derived' badge. The other
-> three — Dreaming suggestions, Provenance Chains, and Query Trails — are still
-> **deterministic demo fixtures** labeled 'Demo data'; their real derivation
-> engines are future work. So this panel is part real read-only logic today and
-> part a labeled preview of where the rest is headed."
+> and no AI or scoring model. Dreaming Suggestions are derived from graph
+> duplicate/orphan/stale-link signals, and Provenance Chains are derived from
+> existing source, import metadata, nodes, and edges. Query Trails are still
+> **deterministic demo fixtures** labeled 'Demo data'; query persistence is
+> future work."
 
 Screenshot target: the overview summary counts, the Temporal Decay section with
 its "Backend-derived" badge and per-row reason/age, and at least one fixture
@@ -126,16 +128,16 @@ Say plainly what is real today:
 - Read-only Knowledge Graph API, panel, and custom SVG visualization with
   node/edge inspector.
 - Read-only Intelligence Report API and panel. The Temporal Decay section is
-  backend-derived from real store timestamps (Phase 13A); Dreaming, Provenance,
-  and Query Trails remain deterministic demo fixtures.
+  backend-derived from real store timestamps (Phase 13A), Dreaming Suggestions
+  are backend-derived from graph state (Phase 14C), Provenance Chains are
+  backend-derived from existing source/import/node/edge records (Phase 15C), and
+  Query Trails remain deterministic demo fixtures.
 - Safe Hive Console API and panel.
 
 ## Planned intelligence features
 
 Say plainly what is *not* built yet:
 
-- Real Dreaming logic — suggestions derived from actual graph/store state.
-- Real Provenance inference — lineage built from real import records.
 - Query memory / knowledge trails — persisted, reviewable query history.
 - Any AI/LLM integration — only after a separate plan and guardrail review.
 
@@ -163,9 +165,9 @@ labeling, contracts before logic.
 > "So that's Hive|Mind: a local-first knowledge graph that normalizes Obsidian
 > notes into a governed, inspectable data model behind a clean FastAPI/React
 > stack. The foundation is real and read-only today, the first intelligence
-> surface — Temporal Knowledge Decay — is now backend-derived from real
-> timestamps, and the remaining intelligence sections have honest contracts and
-> labeled fixtures pointing at where they're headed next."
+> surfaces — Temporal Knowledge Decay, Dreaming Suggestions, and Provenance
+> Chains — are backend-derived from existing records, while Query Trails remain
+> an honest labeled fixture pointing at where that surface is headed next."
 
 ---
 
@@ -182,9 +184,10 @@ Pulled from the [Demo Guide](demo-guide.md) — do not say:
 Instead, use:
 
 > "The Intelligence Report is read-only. Temporal Knowledge Decay is real and
-> backend-derived from store timestamps using fixed thresholds — no AI. The
-> Dreaming, provenance, and query-trail sections are still deterministic fixtures
-> that show where Hive|Mind is headed; their real logic is future work."
+> backend-derived from store timestamps using fixed thresholds — no AI. Dreaming
+> Suggestions and Provenance Chains are also backend-derived from existing graph,
+> source, import, and edge records. Query Trails are still deterministic fixtures
+> that show where Hive|Mind is headed."
 
 ## Pre-demo checklist
 
@@ -203,6 +206,6 @@ Then confirm:
 - Source Registry renders records and inspector details.
 - Knowledge Graph renders nodes/edges, the legend, and selected-item details.
 - Intelligence Report renders the Temporal Decay section with its
-  **Backend-derived** badge and per-row reason/age, and the Dreaming,
-  Provenance, and Query Trail sections with their **Demo data** badges.
+  **Backend-derived** badge and per-row reason/age, Dreaming and Provenance as
+  derived sections, and Query Trails with its **Demo data** badge.
 - Console accepts `help` / `status` and rejects unsafe commands.

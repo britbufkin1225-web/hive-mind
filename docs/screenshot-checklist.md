@@ -2,8 +2,8 @@
 
 Use this checklist when preparing portfolio screenshots or demo review notes.
 Screenshots should show the implemented product clearly and avoid implying that
-the fixture-backed sections (Dreaming, provenance, query trails) are real derived
-logic. The Temporal Decay section *is* real backend-derived logic and can be
+the fixture-backed Query Trails section is real derived logic. Temporal Decay,
+Dreaming Suggestions, and Provenance Chains are backend-derived logic and can be
 shown as such. To narrate each screenshot, follow the
 [Demo Script](demo-script.md), which walks the same surfaces in order.
 
@@ -16,7 +16,8 @@ shown as such. To narrate each screenshot, follow the
 - Knowledge Graph panel with visible nodes, edges, legend, summary stats, and
   selected-node or selected-edge inspector detail.
 - Intelligence Report overview showing summary counts, the backend-derived
-  Temporal Decay section, and the clearly read-only fixture sections.
+  Temporal Decay, Dreaming, and Provenance sections, and the clearly read-only
+  Query Trail fixture section.
 - Console panel showing safe command output, such as `help` or `status`.
 - API docs at `/docs` showing implemented backend routes.
 
@@ -27,17 +28,17 @@ Capture enough context to make each section's status clear:
 - Summary counts.
 - Temporal Decay rows with the **Backend-derived** badge, a per-row "reason,"
   and the age/review chips (real derived data).
-- Dreaming-style suggestion examples (fixture).
-- Provenance-style chain examples (fixture).
+- Dreaming-style suggestion examples (backend-derived).
+- Provenance-style chain examples (backend-derived).
 - Query trail-style examples (fixture).
 - The visible read-only wording plus the "Backend-derived" / "Demo data" badges.
 
 Caption suggestion:
 
 > Read-only Intelligence Report. Temporal Knowledge Decay is backend-derived from
-> real store timestamps (deterministic thresholds, no AI); the Dreaming,
-> provenance, and query-trail sections are deterministic fixtures, with real
-> derivation and AI/LLM logic planned as future work.
+> real store timestamps (deterministic thresholds, no AI); Dreaming Suggestions
+> and Provenance Chains are backend-derived from existing graph/source records;
+> Query Trails remain deterministic fixtures pending query persistence.
 
 ## Backend/API screenshots
 
@@ -58,9 +59,8 @@ Do not screenshot local secrets, personal vault paths, or private note content.
 - No panel overlaps another panel.
 - Graph nodes/edges are visible and not cropped into illegibility.
 - Selected graph item state is visible.
-- Intelligence fixture cards (Dreaming, provenance, query trails) do not claim to
-  be real generated output; the Temporal Decay section is correctly shown as
-  backend-derived.
+- Query Trail fixture cards do not claim to be real generated output; Temporal
+  Decay, Dreaming, and Provenance are correctly shown as backend-derived.
 - Console output stays inside its panel.
 - Screenshots include enough browser chrome or caption context to identify local
   demo state.
@@ -71,8 +71,8 @@ Good caption:
 
 > Hive|Mind normalizes local knowledge sources into a FastAPI-backed graph and
 > presents read-only inspection, a console, and an intelligence report whose
-> Temporal Decay section is backend-derived and whose remaining sections are
-> labeled demo fixtures.
+> Temporal Decay, Dreaming Suggestions, and Provenance Chains are
+> backend-derived while Query Trails remain labeled demo fixtures.
 
 Avoid captions that imply:
 

@@ -12,9 +12,9 @@ Guardrails honored here:
   * NO graph/knowledge mutation and NO filesystem access — this is a pure,
     read-only projection over already-persisted store state.
 
-Only the Temporal Decay section is derived; Dreaming suggestions, provenance
-chains, and query trails remain fixture-backed (see
-:mod:`app.services.intelligence_fixtures`).
+Temporal Decay, Dreaming Suggestions, and Provenance Chains now each have their
+own derivation service. Query Trails remain fixture-backed pending their
+dedicated phase (see :mod:`app.services.intelligence_fixtures`).
 """
 
 from __future__ import annotations
