@@ -5,26 +5,20 @@ should remain future work. It complements the per-phase summary table in the
 [README](../README.md), the [Intelligence Surface Plan](intelligence-surface-plan.md),
 the portfolio-facing [Demo Guide](demo-guide.md), and the
 [Phase 12A Demo Freeze + Release Snapshot](releases/phase-12a-demo-freeze.md),
-and the [Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-suggestions-e2e-evidence.md).
+and the [Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-suggestions-e2e-evidence.md), and the [Phase 15E Provenance Chains QA Evidence](qa/phase-15e-provenance-chains-qa-evidence.md).
 
 ## Current status
 
-**Active phase:** Phase 15C — Provenance Chains Backend Derivation MVP.
+**Active phase:** Phase 15E complete — Provenance Chains end-to-end QA and demo evidence pass.
 
-Phase 14E QA/evidence note: a Dreaming Suggestions end-to-end evidence pass was
-requested, but this checkout does not contain the Phase 14C/14D backend-derived
-Dreaming Suggestions implementation. The evidence record is documented in
-[Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-suggestions-e2e-evidence.md).
-
-Phase 14E is documentation-only. It records QA evidence for the completed Phase
-14C -> Phase 14D Dreaming Suggestions flow: backend-derived deterministic
-suggestions, frontend Intelligence Report visibility, and the read-only /
-non-mutating guardrails. See the
-[Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-suggestions-e2e-evidence.md).
+Phase 15E is documentation-only. It records QA evidence for the completed Phase
+15C → Phase 15D Provenance Chains flow: backend-derived deterministic chains,
+frontend Intelligence Report visibility, read-only display, and demo polish. See
+[Phase 15E Provenance Chains QA Evidence](qa/phase-15e-provenance-chains-qa-evidence.md).
 
 No backend logic, frontend feature changes, new endpoints, API contract changes,
 persistence changes, AI/LLM integration, graph/source mutation, dependency
-changes, `.gitignore` edits, or dashboard redesign are part of Phase 14E.
+changes, or dashboard redesign are part of Phase 15E.
 
 ## Implemented foundation
 
@@ -111,6 +105,8 @@ Current non-capabilities:
 | 15A | Complete | Provenance Chains backend derivation planning and frontend readiness notes. |
 | 15B | Complete | Provenance Chains contract types / schema alignment. |
 | 15C | Complete | Provenance Chains backend-derived MVP for existing source/import/node/edge records. |
+| 15D | Complete | Provenance Chains frontend visibility and demo polish. |
+| 15E | Complete | Provenance Chains end-to-end QA and demo evidence pass. |
 
 ## Future roadmap
 
@@ -118,7 +114,7 @@ Current non-capabilities:
 | --- | --- | --- |
 | Intelligence derivation | Dreaming `duplicate_signal` / `orphaned_node` / `stale_knowledge_link` suggestions shipped backend in Phase 14C and frontend-visible in Phase 14D. Remaining: `source_coverage_gap` deferred by the pinned Phase 14B contract/schema state and `unresolved_query_pattern` blocked until query-history persistence exists. | Read-only; no AI/LLM until separately planned. |
 | Temporal decay | Backend-derived MVP shipped in Phase 13A, frontend visibility/demo polish shipped in Phase 13B, and end-to-end QA shipped in Phase 13C. Remaining: richer reference/last-seen signals. | No graph mutation; indicators remain advisory. |
-| Provenance chains | Backend-derived MVP shipped in Phase 15C from existing source/import/node/edge records. Remaining: frontend visibility/demo polish and QA evidence. | Present existing evidence only; do not invent lineage; read-only. |
+| Provenance chains | Backend-derived MVP (Phase 15C), frontend visibility/demo polish (Phase 15D), and QA evidence pass (Phase 15E) complete. Remaining: selected-node inspector extension, per-section error state. | Present existing evidence only; do not invent lineage; read-only. |
 | Query trails | Persist and present useful console/search history. | Requires explicit persistence design before implementation. |
 | Agent Ops | Expose governed agent/source registry data in the app. | Start read-only from `docs/agent-lab/` shapes. |
 
