@@ -7,8 +7,8 @@ implementation notes.
 It began as a planning and shape contract. Several routes are now implemented,
 including local JSON persistence, Source Registry persistence, one-shot Obsidian
 import, graph reads, knowledge graph projection, console execution, and the
-fixture-backed intelligence report. Authentication, file watching, background
-sync, AI/LLM logic, and dashboard mutation flows are still deferred.
+read-only intelligence report. Authentication, file watching, background sync,
+AI/LLM logic, and dashboard mutation flows are still deferred.
 
 Local API base URL: `http://localhost:8787`
 
@@ -328,12 +328,12 @@ Returns an `IntelligenceReport`:
 }
 ```
 
-Current behavior: the **Temporal Decay** (Phase 13A) and **Dreaming Suggestions**
-(Phase 14C) sections are now backend-derived from real store state and tagged
-`metadata.derived = true`; each returns a clean empty section when nothing is
-derivable. The remaining sections (provenance chains, query trails) still return
-deterministic demo/seed fixtures (`metadata.fixture = true`) so the UI has
-meaningful sample content for demos and screenshots until their own phases land.
+Current behavior: the **Temporal Decay** (Phase 13A), **Dreaming Suggestions**
+(Phase 14C), and **Provenance Chains** (Phase 15C) sections are backend-derived
+from existing store/source state and tagged `metadata.derived = true`; each
+returns a clean empty section when nothing is derivable. Query Trails still
+return deterministic demo/seed fixtures (`metadata.fixture = true`) until query
+persistence lands.
 
 ### Dreaming suggestion contract
 
@@ -368,14 +368,13 @@ are conservative to avoid false positives on incomplete data (blank labels and
 dangling edges are skipped). `stale` is intentionally a lightweight "review this
 relationship" hint and does **not** re-implement per-node Temporal Decay.
 
-### Provenance Chain contract alignment (Phase 15B)
+### Provenance Chain backend derivation (Phase 15C)
 
-`provenance_chains` remains the existing Intelligence Report section; no new
-endpoint, persistence model, or derivation service is introduced in this phase.
-The contract is aligned for future read-only backend-derived chains such as
-source -> imported note -> knowledge node, source -> node -> related node,
-source -> node -> edge evidence, and import/source metadata -> derived
-knowledge record.
+`provenance_chains` remains the existing Intelligence Report section; Phase 15C
+adds a read-only derivation service without adding endpoints, persistence models,
+or graph/source mutations. Chains are derived from existing source registry
+records, stored graph sources, graph nodes, Obsidian/import metadata already
+present on nodes, and stored or graph-builder-derived edges.
 
 Each `ProvenanceChain` can now include these additive fields in addition to the
 existing node/source/link/edge/timestamp/metadata fields:
@@ -403,13 +402,20 @@ existing node/source/link/edge/timestamp/metadata fields:
 - `source_name` carries resolved source display text when available.
 - Existing `links` continue to carry ordered source/import/node/edge references
   with labels, origin markers, and evidence metadata.
+- Every derived chain carries `metadata.derived = true`,
+  `metadata.derivation_origin = "provenance_derivation"`, and
+  `metadata.evidence` with `reason`, `derivation`, `fields_used`, referenced
+  node/source/edge ids, and whether source metadata was found.
+- Empty graph/source state returns an empty `provenance_chains` list instead of
+  fabricated records.
 
 Guardrails:
 
 - Dreaming suggestions are derived by simple, deterministic label/edge/timestamp
   rules only — no scoring engine, no ranking model.
 - No temporal decay re-implementation inside Dreaming.
-- No provenance inference engine.
+- Provenance derivation is deterministic and evidence-only; it does not infer
+  semantic lineage beyond existing source/node/import/edge records.
 - No query persistence or query-memory logic.
 - No AI/LLM calls.
 - No graph, source, or store mutation (read-only projection).
