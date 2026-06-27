@@ -9,16 +9,18 @@ and the [Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-sugg
 
 ## Current status
 
-**Active phase:** Phase 15E complete — Provenance Chains end-to-end QA and demo evidence pass.
+**Active phase:** Phase 16A planned/active - Query Trails / Query Memory foundation planning.
 
-Phase 15E is documentation-only. It records QA evidence for the completed Phase
-15C → Phase 15D Provenance Chains flow: backend-derived deterministic chains,
-frontend Intelligence Report visibility, read-only display, and demo polish. See
-[Phase 15E Provenance Chains QA Evidence](qa/phase-15e-provenance-chains-qa-evidence.md).
+Phase 16A is documentation-only. It defines what Query Trails are, why they
+matter for the dev-tool use case, how future query records should connect to
+sources, graph nodes, provenance chains, Dreaming suggestions, and
+`unresolved_query_pattern`, and what must remain deferred until later
+implementation phases. See
+[Phase 16A Query Trails / Query Memory Foundation Planning](phase-16a-query-trails-foundation-planning.md).
 
 No backend logic, frontend feature changes, new endpoints, API contract changes,
 persistence changes, AI/LLM integration, graph/source mutation, dependency
-changes, or dashboard redesign are part of Phase 15E.
+changes, or dashboard redesign are part of Phase 16A.
 
 ## Implemented foundation
 
@@ -107,6 +109,7 @@ Current non-capabilities:
 | 15C | Complete | Provenance Chains backend-derived MVP for existing source/import/node/edge records. |
 | 15D | Complete | Provenance Chains frontend visibility and demo polish. |
 | 15E | Complete | Provenance Chains end-to-end QA and demo evidence pass. |
+| 16A | Planned / Active | Query Trails / Query Memory foundation planning before persistence or APIs. |
 
 ## Future roadmap
 
@@ -115,7 +118,7 @@ Current non-capabilities:
 | Intelligence derivation | Dreaming `duplicate_signal` / `orphaned_node` / `stale_knowledge_link` suggestions shipped backend in Phase 14C and frontend-visible in Phase 14D. Remaining: `source_coverage_gap` deferred by the pinned Phase 14B contract/schema state and `unresolved_query_pattern` blocked until query-history persistence exists. | Read-only; no AI/LLM until separately planned. |
 | Temporal decay | Backend-derived MVP shipped in Phase 13A, frontend visibility/demo polish shipped in Phase 13B, and end-to-end QA shipped in Phase 13C. Remaining: richer reference/last-seen signals. | No graph mutation; indicators remain advisory. |
 | Provenance chains | Backend-derived MVP (Phase 15C), frontend visibility/demo polish (Phase 15D), and QA evidence pass (Phase 15E) complete. Remaining: selected-node inspector extension, per-section error state. | Present existing evidence only; do not invent lineage; read-only. |
-| Query trails | Persist and present useful console/search history. | Requires explicit persistence design before implementation. |
+| Query trails | Persist and present useful console/search history. Phase 16A defines local/read-only boundaries, source/graph/provenance/Dreaming relationships, privacy risks, and Phase 16B readiness before implementation. | Requires explicit persistence design before implementation; no `unresolved_query_pattern` until query history exists. |
 | Agent Ops | Expose governed agent/source registry data in the app. | Start read-only from `docs/agent-lab/` shapes. |
 
 ## Standing guardrails
