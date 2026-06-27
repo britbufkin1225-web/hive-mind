@@ -9,6 +9,8 @@ import type {
   DreamingSuggestionType,
   IntelligenceReport,
   ProvenanceChain,
+  ProvenanceChainStatus,
+  ProvenanceLinkKind,
   QueryTrailEntry,
   QueryTrailStatus,
 } from "../types/api";
@@ -32,6 +34,19 @@ const SUGGESTION_TYPE_CLASS: Partial<Record<DreamingSuggestionType, string>> = {
   duplicate: "intel-suggest-duplicate",
   orphan: "intel-suggest-orphan",
   stale: "intel-suggest-stale",
+};
+
+const PROVENANCE_STATUS_LABELS: Record<ProvenanceChainStatus, string> = {
+  complete: "Complete",
+  partial: "Partial",
+  unknown: "Unknown",
+};
+
+const PROVENANCE_LINK_KIND_LABELS: Record<ProvenanceLinkKind, string> = {
+  source: "Source",
+  import: "Import",
+  node: "Node",
+  edge: "Edge",
 };
 
 const DECAY_BUCKET_LABELS: Record<DecayStatusBucket, string> = {
@@ -365,22 +380,157 @@ function DecayRow({ decay }: { decay: DecayStatus }) {
 }
 
 function ProvenanceRow({ chain }: { chain: ProvenanceChain }) {
+  const evidence = metaObject(chain, "evidence");
+  const reason = evidence ? asString(evidence.reason) : null;
+  const derivation = evidence ? asString(evidence.derivation) : null;
+  const fieldsUsed = evidence ? asStringArray(evidence.fields_used) : [];
+  const evidenceNodeIds = evidence ? asStringArray(evidence.node_ids) : [];
+  const evidenceEdgeIds = evidence ? asStringArray(evidence.edge_ids) : [];
+  const evidenceSourceIds = evidence ? asStringArray(evidence.source_ids) : [];
+  const sourceFound =
+    evidence !== null &&
+    typeof evidence.source_found === "boolean"
+      ? evidence.source_found
+      : null;
+  const hasEvidence =
+    derivation !== null ||
+    fieldsUsed.length > 0 ||
+    evidenceNodeIds.length > 0 ||
+    evidenceEdgeIds.length > 0 ||
+    evidenceSourceIds.length > 0;
+
+  const statusLabel = PROVENANCE_STATUS_LABELS[chain.status] ?? chain.status;
+
   return (
-    <li className="intel-row">
+    <li className="intel-row intel-provenance-row">
       <div className="intel-row-head">
         <span className="intel-row-id">
           <code>{chain.node_id}</code>
         </span>
+        <span className={`intel-status intel-provenance-${chain.status}`}>
+          {statusLabel}
+        </span>
+      </div>
+
+      {(chain.title || chain.summary) && (
+        <p className="intel-provenance-title">
+          {chain.title ?? chain.summary}
+        </p>
+      )}
+
+      {reason && <p className="intel-row-body intel-provenance-reason">{reason}</p>}
+
+      <div className="intel-chip-row">
         {chain.source_type && (
-          <span className="intel-tag">{chain.source_type}</span>
+          <span className="intel-chip intel-chip-source-type">
+            {chain.source_type}
+          </span>
+        )}
+        {chain.source_name && (
+          <span className="intel-chip">
+            Source: {chain.source_name}
+          </span>
+        )}
+        {sourceFound === false && (
+          <span className="intel-chip intel-chip-warn">No source record</span>
+        )}
+        {chain.links.length > 0 && (
+          <span className="intel-chip">
+            {chain.links.length} link{chain.links.length === 1 ? "" : "s"}
+          </span>
+        )}
+        {chain.linked_node_ids.length > 0 && (
+          <span className="intel-chip">
+            {chain.linked_node_ids.length} linked node
+            {chain.linked_node_ids.length === 1 ? "" : "s"}
+          </span>
+        )}
+        {chain.derived_edge_ids.length > 0 && (
+          <span className="intel-chip">
+            {chain.derived_edge_ids.length} derived edge
+            {chain.derived_edge_ids.length === 1 ? "" : "s"}
+          </span>
         )}
       </div>
+
+      {chain.links.length > 0 && (
+        <ul className="intel-provenance-links">
+          {chain.links.map((link) => (
+            <li key={link.ref_id} className="intel-provenance-link">
+              <span className="intel-chip intel-chip-link-kind">
+                {PROVENANCE_LINK_KIND_LABELS[link.kind] ?? link.kind}
+              </span>
+              <code className="intel-provenance-link-ref">{link.ref_id}</code>
+              {link.label && (
+                <span className="intel-provenance-link-label">{link.label}</span>
+              )}
+              {link.origin && (
+                <span className="intel-provenance-link-origin">
+                  via {link.origin}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {hasEvidence && (
+        <details className="intel-evidence">
+          <summary>Evidence trail</summary>
+          <dl>
+            {derivation && (
+              <>
+                <dt>Derivation</dt>
+                <dd>{derivation}</dd>
+              </>
+            )}
+            {fieldsUsed.length > 0 && (
+              <>
+                <dt>Fields used</dt>
+                <dd>{fieldsUsed.join(", ")}</dd>
+              </>
+            )}
+            {evidenceNodeIds.length > 0 && (
+              <>
+                <dt>Nodes</dt>
+                <dd>
+                  <code>{evidenceNodeIds.join(", ")}</code>
+                </dd>
+              </>
+            )}
+            {evidenceEdgeIds.length > 0 && (
+              <>
+                <dt>Edges</dt>
+                <dd>
+                  <code>{evidenceEdgeIds.join(", ")}</code>
+                </dd>
+              </>
+            )}
+            {evidenceSourceIds.length > 0 && (
+              <>
+                <dt>Sources</dt>
+                <dd>
+                  <code>{evidenceSourceIds.join(", ")}</code>
+                </dd>
+              </>
+            )}
+          </dl>
+        </details>
+      )}
+
       <p className="intel-row-sub">
-        {chain.links.length} link(s) · {chain.linked_node_ids.length} linked node(s)
-        {chain.origin_path ? ` · origin: ${chain.origin_path}` : ""}
-      </p>
-      <p className="intel-row-sub">
+        {chain.origin_path ? (
+          <>Origin: <code>{chain.origin_path}</code> · </>
+        ) : (
+          "Origin: Not provided · "
+        )}
         Last imported: {formatDate(chain.last_imported_at)}
+        {chain.created_at ? ` · Created: ${formatDate(chain.created_at)}` : ""}
+      </p>
+
+      <p className="intel-row-sub intel-readonly-note">
+        Backend-derived provenance · Read-only chain evidence · No graph or
+        source mutations are performed from this panel
       </p>
     </li>
   );
@@ -510,13 +660,13 @@ function IntelligenceReportPanel() {
             {isDemo && (
               <p className="intel-demo-note">
                 <strong>
-                  Temporal Knowledge Decay and Dreaming Suggestions are now
-                  backend-derived
+                  Temporal Knowledge Decay, Dreaming Suggestions, and Provenance
+                  Chains are now backend-derived
                 </strong>{" "}
-                — both are computed read-only from real store data and labelled
-                “Backend-derived” below. Provenance and query-trail sections
-                remain deterministic demo fixtures (labelled “Demo data”) until
-                their real logic ships in a later phase.
+                — all three are computed read-only from real store data and
+                labelled "Backend-derived" below. Query trails remain
+                deterministic demo fixtures (labelled "Demo data") until their
+                real logic ships in a later phase.
               </p>
             )}
 
@@ -531,7 +681,7 @@ function IntelligenceReportPanel() {
 
             <ReportSection
               title="Dreaming Suggestions"
-              description="Read-only maintenance hints the backend derives during “dreaming” — duplicate signals, orphaned nodes, and stale knowledge links. Advisory only; nothing is ever applied automatically."
+              description="Read-only maintenance hints the backend derives during dreaming — duplicate signals, orphaned nodes, and stale knowledge links. Advisory only; nothing is ever applied automatically."
               count={report.summary.dreaming_suggestion_count}
               emptyText="No suggestions found — Dreaming ran but found no maintenance opportunities in the current graph (no duplicate labels, orphaned nodes, or stale links)."
               badge={
@@ -587,7 +737,7 @@ function IntelligenceReportPanel() {
                   Read-only and deterministic: each row is derived on the backend
                   from real store timestamps using fixed thresholds
                   (fresh&nbsp;≤&nbsp;30 days, aging&nbsp;≤&nbsp;90 days). No
-                  scoring model and no AI — the “reason” explains exactly how each
+                  scoring model and no AI — the "reason" explains exactly how each
                   status was assigned.
                 </p>
               }
@@ -607,12 +757,26 @@ function IntelligenceReportPanel() {
 
             <ReportSection
               title="Provenance Chains"
-              description="Where each node came from — its originating source, import run, and linked nodes. A read-only audit trail tracing knowledge back to its origin."
+              description="Where each node came from — its originating source, import run, and linked nodes. A read-only audit trail derived from existing graph and source records."
               count={report.summary.provenance_chain_count}
               emptyText="No provenance chains yet — these appear once sources are imported into the graph."
               badge={
-                report.provenance_chains.some(isFixtureRecord) ? (
+                report.provenance_chains.some(isDerivedRecord) ? (
+                  <SectionBadge kind="derived" />
+                ) : report.provenance_chains.some(isFixtureRecord) ? (
                   <SectionBadge kind="demo" />
+                ) : undefined
+              }
+              note={
+                report.provenance_chains.some(isDerivedRecord) ? (
+                  <p className="intel-derived-note">
+                    <strong>Backend-derived · Read-only · Non-mutating.</strong>{" "}
+                    Each chain is derived on the backend from real graph nodes,
+                    source registry records, and existing graph edges. No AI and
+                    no scoring model — every row carries an evidence trail
+                    explaining exactly how the provenance was resolved. No graph
+                    or source mutations are performed from this panel.
+                  </p>
                 ) : undefined
               }
             >
