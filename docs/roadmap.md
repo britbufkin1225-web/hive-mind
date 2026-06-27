@@ -10,6 +10,12 @@ and the [Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-sugg
 ## Current status
 
 **Active phase:** Phase 14E - Dreaming Suggestions QA/demo evidence pass.
+**Active phase:** Phase 15B — Provenance Chains Contract Types / Schema Alignment.
+
+Phase 14E QA/evidence note: a Dreaming Suggestions end-to-end evidence pass was
+requested, but this checkout does not contain the Phase 14C/14D backend-derived
+Dreaming Suggestions implementation. The evidence record is documented in
+[Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-suggestions-e2e-evidence.md).
 
 Phase 14E is documentation-only. It records QA evidence for the completed Phase
 14C -> Phase 14D Dreaming Suggestions flow: backend-derived deterministic
@@ -86,22 +92,28 @@ Current non-capabilities:
 | 11A | Complete | Deterministic intelligence demo/seed fixtures. |
 | 11B | Complete | Intelligence fixture UX review and screenshot readiness. |
 | 11C | Complete | Repo cohesion, API/docs consistency, and demo documentation. |
-| 12A | Active | Demo freeze and release snapshot (documentation only). |
+| 12A | Complete | Demo freeze and release snapshot planning/status documentation. |
+| 12B | Complete | Screenshot and demo script polish. |
 | 13A | Complete | Temporal Decay section backend-derived from store timestamps (read-only MVP). |
-| 13B | Complete | Intelligence Report frontend visibility for backend-derived Temporal Decay (bucket badges, reason/age/review surfacing, provenance labelling). |
-| 13C | Complete | Temporal Decay end-to-end QA + demo-evidence and status-language pass (see [Phase 13C QA note](releases/phase-13c-temporal-decay-qa.md)). |
-| 14A | Complete | Dreaming suggestion backend-derivation plan (documentation only; see [Dreaming Suggestion Derivation Plan](dreaming-suggestion-derivation-plan.md)). |
+| 13B | Complete | Intelligence Report frontend visibility for backend-derived Temporal Decay. |
+| 13C | Complete | Temporal Decay end-to-end QA + demo evidence and status-language pass. |
+| 14A | Complete | Dreaming Suggestion backend-derivation planning documentation. |
+| 14B | Complete | Dreaming contract/schema alignment. |
+| 14B.5 | Complete | Temporal Decay contract QA and edge-case hardening. |
+| 14B.6 | Complete | Dreaming logic implementation readiness / defensive backend scope alignment. |
+| 14C | Complete | Dreaming Suggestions backend-derived MVP for `duplicate_signal`, `orphaned_node`, and `stale_knowledge_link`. |
+| 14D | Complete | Dreaming Suggestions frontend visibility and demo polish. |
+| 14E | Complete | Dreaming Suggestions end-to-end QA and demo evidence pass. |
+| 15A | Complete | Provenance Chains backend derivation planning and frontend readiness notes. |
+| 15B | Active | Provenance Chains contract types / schema alignment. |
 
 ## Future roadmap
 
-Future implementation should replace fixture content with real deterministic,
-read-only derivation in narrow phases. Keep the order conservative:
-
 | Future track | Goal | Guardrail |
 | --- | --- | --- |
-| Intelligence derivation | Dreaming `duplicate_signal`/`orphaned_node`/`stale_knowledge_link` suggestions shipped backend-derived in Phase 14C and frontend-visible in Phase 14D. Remaining: `source_coverage_gap` (deferred by the pinned Phase 14B contract/schema state) and `unresolved_query_pattern` (blocked until query-history persistence exists). | Read-only; no AI/LLM until separately planned. |
-| Temporal decay | Backend-derived MVP shipped in Phase 13A (timestamp thresholds). Remaining: richer reference/last-seen signals. | No graph mutation; indicators remain advisory. |
-| Provenance | Build source/import/node chains from real imported records. | Present existing evidence; do not invent lineage. |
+| Intelligence derivation | Dreaming `duplicate_signal` / `orphaned_node` / `stale_knowledge_link` suggestions shipped backend in Phase 14C and frontend-visible in Phase 14D. Remaining: `source_coverage_gap` deferred by the pinned Phase 14B contract/schema state and `unresolved_query_pattern` blocked until query-history persistence exists. | Read-only; no AI/LLM until separately planned. |
+| Temporal decay | Backend-derived MVP shipped in Phase 13A, frontend visibility/demo polish shipped in Phase 13B, and end-to-end QA shipped in Phase 13C. Remaining: richer reference/last-seen signals. | No graph mutation; indicators remain advisory. |
+| Provenance chains | Phase 15A planning/readiness complete. Phase 15B aligns source/import/node chain contracts for future backend-derived records. | Present existing evidence only; do not invent lineage; read-only. |
 | Query trails | Persist and present useful console/search history. | Requires explicit persistence design before implementation. |
 | Agent Ops | Expose governed agent/source registry data in the app. | Start read-only from `docs/agent-lab/` shapes. |
 
@@ -114,4 +126,5 @@ read-only derivation in narrow phases. Keep the order conservative:
 - No dashboard redesign or branding churn inside backend/API phases.
 - Demo fixtures must stay labeled as demo data.
 - Human merge gate remains with devdevbuilds.
+
 
