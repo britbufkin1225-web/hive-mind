@@ -1439,3 +1439,108 @@ dd {
   padding: 0 0.2rem;
 }
 
+/* Phase 15D — Provenance Chains frontend visibility and demo polish.
+   Status pills, link list, and read-only annotation. Additive and scoped
+   to the Intelligence Report provenance section only. */
+
+.intel-provenance-row {
+  border-left: 3px solid #c7d2fe;
+}
+
+/* Status pills: complete (green), partial (amber), unknown (neutral). */
+.intel-status.intel-provenance-complete {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+.intel-status.intel-provenance-partial {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #b45309;
+}
+
+.intel-status.intel-provenance-unknown {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+  color: #71717a;
+}
+
+/* Node title / descriptive label for the chain. */
+.intel-provenance-title {
+  margin: 0.25rem 0 0.15rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+/* Human-readable reason the backend derived this chain. */
+.intel-provenance-reason {
+  color: #3f3f46;
+  line-height: 1.45;
+}
+
+/* Chip variant: source type highlight. */
+.intel-chip-source-type {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+/* Chip variant: missing-source warning. */
+.intel-chip-warn {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+/* Chip variant: link kind label inside link list rows. */
+.intel-chip-link-kind {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+  font-size: 0.65rem;
+}
+
+/* Compact scannable list of provenance links for a chain. */
+.intel-provenance-links {
+  list-style: none;
+  margin: 0.4rem 0 0.2rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.intel-provenance-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.775rem;
+  line-height: 1.4;
+}
+
+.intel-provenance-link-ref {
+  font-size: 0.7rem;
+  color: #374151;
+}
+
+.intel-provenance-link-label {
+  color: #52525b;
+}
+
+.intel-provenance-link-origin {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Muted read-only annotation at the foot of each provenance row. */
+.intel-readonly-note {
+  margin-top: 0.4rem;
+  color: #9ca3af;
+  font-size: 0.7rem;
+  font-style: italic;
+}
+
