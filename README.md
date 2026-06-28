@@ -34,23 +34,29 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 19B - Release Readiness QA + Demo Evidence Pass`
-  (QA/documentation/evidence only). Phase 19B verifies and records the current
-  state of Hive|Mind as a controlled, demo-ready, release-readiness *candidate*
-  without changing behavior: it documents the readiness posture across backend
-  API stability, the security hardening sequence, the four Intelligence Report
-  surfaces, Obsidian import/read-only behavior, and the read-only Knowledge Graph
-  visualization; records the completed security (18A–19A) and intelligence arcs;
-  and adds a **Demo Evidence Checklist** and explicit **Release Readiness
-  Boundaries**. No code, contract, or behavior changes. The preceding Phase 19A
-  consolidated the Phase 18A–18F security-hardening arc into a single
-  release-readiness view (current posture without overclaiming, demo readiness vs.
-  production security readiness, release-readiness categories and checklist). The
-  Phase 18 arc delivered a threat model (18A), backend API defensive validation +
-  error safety (18B), regression/evidence (18C), edge-case triage (18D), an
-  edge-case validation MVP (18E), and a second regression/evidence pass (18F).
-  Hive|Mind has a stronger, evidence-backed **defensive API posture for a
-  local/demo dev-tool** — it is **not** production-hardened. See the
+- **Active phase:** `Phase 20A - Demo Release Candidate Planning + Final Portfolio Readiness Scope`
+  (planning/documentation only). Phase 20A defines the **final demo
+  release-candidate scope** for Hive|Mind before any final polish, screenshot
+  capture, README narrative hardening, UI tightening, release tagging, or
+  public-facing writeup. It states the current demo-ready story, locks the clean
+  portfolio narrative — a local-first developer knowledge intelligence dashboard
+  that organizes imported sources, visualizes relationships, and derives
+  deterministic, read-only intelligence signals with **no AI/LLM** — enumerates the
+  demo candidate surfaces with per-surface evidence and overstatement guards,
+  defines a portfolio-readiness checklist and a screenshot/evidence plan (no
+  screenshots are created in this phase), lists the known limitations to disclose
+  and the out-of-scope items, and recommends a controlled next-phase sequence
+  (20B–20E). No code, contract, or behavior changes. The preceding Phase 19B
+  verified and recorded the whole-project readiness posture as a controlled,
+  demo-ready, release-readiness *candidate*, with a **Demo Evidence Checklist** and
+  explicit **Release Readiness Boundaries**; Phase 19A consolidated the Phase
+  18A–18F security-hardening arc into a single release-readiness view. Hive|Mind
+  has a stronger, evidence-backed **defensive API posture for a local/demo
+  dev-tool** — it is **not** production-hardened. The next recommended phase is
+  **Phase 20B — Final README + Portfolio Narrative Hardening** (documentation only).
+  See the
+  [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness Scope](docs/release-readiness/phase-20a-demo-release-candidate-planning.md),
+  the
   [Phase 19B Release Readiness QA + Demo Evidence Pass](docs/release-readiness/phase-19b-release-readiness-qa-demo-evidence.md),
   the
   [Phase 19A Security Cohesion + Release Readiness Planning](docs/security/phase-19a-security-cohesion-release-readiness-planning.md),
@@ -150,7 +156,8 @@ or any graph/source/store mutation. See the
 | Phase 18E | Complete | API edge case defensive validation MVP; additive per-model bounded nesting-depth guard (`MAX_REQUEST_NESTING_DEPTH = 32`) and explicit null-like / empty-value decisions, with regression tests. |
 | Phase 18F | Complete | API edge case security regression QA + evidence pass (QA/documentation only); verifies the 18E guard/decisions and records test evidence (267 full backend tests passing). |
 | Phase 19A | Complete | Security cohesion + release readiness planning (documentation only); consolidates the Phase 18A–18F arc into a demo-ready (not production-secure) release-readiness view with posture, checklist, deferred scope, and rationale. |
-| Phase 19B | Planned / Active | Release readiness QA + demo evidence pass (documentation/evidence only); records the whole-project readiness posture, the completed security/intelligence arcs, a Demo Evidence Checklist, and explicit Release Readiness Boundaries. Demo-ready candidate, not production-ready/secure. |
+| Phase 19B | Complete | Release readiness QA + demo evidence pass (documentation/evidence only); records the whole-project readiness posture, the completed security/intelligence arcs, a Demo Evidence Checklist, and explicit Release Readiness Boundaries. Demo-ready candidate, not production-ready/secure. |
+| Phase 20A | Planned / Active | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); defines the final demo release-candidate scope before any polish/screenshots/release work — current demo story, locked deterministic read-only narrative (no AI/LLM), demo candidate surfaces with evidence/overstatement guards, portfolio-readiness checklist, screenshot/evidence plan (no screenshots created), known limitations, out-of-scope items, and a recommended 20B–20E sequence. |
 
 ## Planned logic
 
@@ -230,6 +237,8 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Phase 18B–18F | Delivered API-hardening arc: defensive validation + error safety (18B), regression/evidence (18C), edge-case triage (18D), edge-case validation MVP (18E), and a second regression/evidence pass (18F). |
 | Phase 19A | Security cohesion + release readiness planning (documentation only); consolidates the 18A–18F arc into a demo-ready (not production-secure) posture with a release-readiness checklist and deferred-scope carry-forward. |
 | Phase 19B | Release readiness QA + demo evidence pass (documentation/evidence only); records the whole-project readiness posture and demo boundaries, with a Demo Evidence Checklist and explicit Release Readiness Boundaries. |
+| Phase 20A | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); locks the final demo release-candidate scope, surfaces, evidence/overstatement guards, readiness checklist, screenshot/evidence plan, limitations, and the recommended 20B–20E sequence. |
+| Phase 20B | Final README + portfolio narrative hardening (documentation only); align README and landing docs with the locked Phase 20A story, status, setup, and links. |
 | Future security phases | Obsidian import filesystem safety, intelligence evidence regression, frontend rendering safety, dependency/static baseline; production-security controls (auth, rate limiting, deployment hardening, secrets, audit logging, monitoring) stay out of scope until the runtime model changes. |
 | Future query phases | Add query-persistence logic only after contracts, privacy boundaries, and validation. |
 
@@ -296,6 +305,7 @@ npm run dev:frontend
 - [Phase 18A Security Threat Model + Vulnerability Test Plan (status)](docs/planning/phase-18a-security-threat-model-plan.md)
 - [Phase 19A Security Cohesion + Release Readiness Planning](docs/security/phase-19a-security-cohesion-release-readiness-planning.md)
 - [Phase 19B Release Readiness QA + Demo Evidence Pass](docs/release-readiness/phase-19b-release-readiness-qa-demo-evidence.md)
+- [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness Scope](docs/release-readiness/phase-20a-demo-release-candidate-planning.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
