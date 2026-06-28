@@ -18,12 +18,27 @@ and the [Phase 19A Security Cohesion + Release Readiness Planning](security/phas
 and the [Phase 19B Release Readiness QA + Demo Evidence Pass](release-readiness/phase-19b-release-readiness-qa-demo-evidence.md),
 and the [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness Scope](release-readiness/phase-20a-demo-release-candidate-planning.md),
 and the [Phase 20B Final README + Portfolio Narrative Hardening](release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md),
-and the [Phase 21D UI Demo Polish Planning / Dashboard Refinement Scope](phase-21d-ui-demo-polish-planning.md).
+and the [Phase 21D UI Demo Polish Planning / Dashboard Refinement Scope](phase-21d-ui-demo-polish-planning.md),
+and the [Phase 22A UI Navigation + Demo Flow Planning](planning/phase-22a-ui-navigation-demo-flow-planning.md).
 
 ## Current status
 
-**Active phase:** Phase 21F - UI Demo Polish QA + Screenshot Evidence Refresh
-(QA / evidence / documentation only). Phase 21F re-ran the local backend (`8787`)
+**Active phase:** Phase 22A - UI Navigation + Demo Flow Planning (planning /
+documentation only). Phase 22A inventories the **seven** top-level dashboard
+surfaces that render today (hero, connection + API health, vault, Source Registry
+incl. the nested Obsidian import form, Knowledge Graph, Intelligence Report,
+Console), documents the current scroll-only demo flow, names the navigation
+pain points (no nav, no anchors, long single scroll, buried import controls, no
+"you are here" cue), and proposes a **controlled, single-page section-navigation
+model** for Phase 22B: in-page anchor nav over stable section `id`s, a scrollspy
+active-section cue, CSS-first smooth-scroll/anchor behavior, keyboard/`aria`
+usability, modest responsive nav, and a signposted demo walkthrough — **deferring
+React Router and any route architecture** and forbidding fake pages. It defines
+acceptance criteria for a frontend-only Phase 22B pass and locks read-only /
+non-mutating boundaries. It changes no backend, frontend, CSS, source-code,
+package, config, API, schema, dependency, or test behavior. See the
+[Phase 22A UI Navigation + Demo Flow Planning](planning/phase-22a-ui-navigation-demo-flow-planning.md).
+The preceding **Phase 21F** re-ran the local backend (`8787`)
 and frontend (`5173`), validated that the **Phase 21E**-polished dashboard is still
 **connected** to the backend, and refreshed the screenshot/evidence trail so the
 captured demo proof reflects the **current polished** app state. The directly
@@ -268,8 +283,9 @@ Current non-capabilities:
 | 21C | Complete | Connected UI screenshot + runtime evidence refresh (capture / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures the connected UI state — "Connected" status, live API health, the rendered Knowledge Graph (7 nodes / 6 edges), and the backend-derived Intelligence Report — replacing Phase 20D's `Failed to fetch` evidence while preserving that history. Records an [evidence doc](demo/phase-21c-connected-ui-evidence.md) and connected-UI screenshots. Implements no code and changes no behavior. |
 | 21D | Complete | UI demo polish planning / dashboard refinement scope (planning / documentation only); documents the current connected UI state and a prioritized dashboard refinement set (visual hierarchy, spacing/density, connected-data readability, Intelligence Report, Knowledge Graph, Source Registry, console, responsive, screenshot friendliness), separates demo-readiness from future premium-UI ideas, locks read-only/non-mutating boundaries, and recommends a scoped Phase 21E implementation pass. See the [planning doc](phase-21d-ui-demo-polish-planning.md). Implements no code and changes no behavior. |
 | 21E | Complete | UI demo polish implementation pass (frontend presentation only); polished header band (`DEVDEVBUILDS` parent label, `READ-ONLY DEMO BUILD` badge), connection/health status row, and card-style metric grids against the Phase 21D priorities. Frontend-only (`App.tsx`, `SourceRegistryPanel.tsx`, `styles.css`); no backend, contract, logic, data-value, or dependency changes. |
-| 21F | Active | UI demo polish QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`), validates the Phase 21E-polished UI is still connected (live API health `0.1.0`, Knowledge Graph 7 nodes / 6 edges, backend-derived Intelligence Report — Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7), confirms `npm run check:frontend` passes, and refreshes the screenshot trail with `phase-21f-connected-*` captures superseding the pre-polish `phase-21c-*` set while preserving that history. See the [evidence doc](demo/phase-21f-ui-demo-polish-qa-evidence.md). Implements no code and changes no behavior. |
-| Next: Phase 22 | Planned | Further UI / product expansion remains out of scope until explicitly opened; QA/evidence keeps the demo proof current in the interim. |
+| 21F | Complete | UI demo polish QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`), validates the Phase 21E-polished UI is still connected (live API health `0.1.0`, Knowledge Graph 7 nodes / 6 edges, backend-derived Intelligence Report — Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7), confirms `npm run check:frontend` passes, and refreshes the screenshot trail with `phase-21f-connected-*` captures superseding the pre-polish `phase-21c-*` set while preserving that history. See the [evidence doc](demo/phase-21f-ui-demo-polish-qa-evidence.md). Implements no code and changes no behavior. |
+| 22A | Active | UI navigation + demo flow planning (planning / documentation only); inventories the seven top-level dashboard surfaces (hero, connection + API health, vault, Source Registry incl. the nested Obsidian import form, Knowledge Graph, Intelligence Report, Console), documents the current scroll-only demo flow and its pain points (no nav, no anchors, long scroll, buried import controls, no active-section cue), and proposes a controlled single-page section-navigation model for Phase 22B — in-page anchor nav over stable section `id`s, scrollspy active-section cue, CSS-first smooth-scroll/anchor behavior, keyboard/`aria` usability, modest responsive nav, and a signposted demo walkthrough — deferring React Router/route architecture and forbidding fake pages. Defines Phase 22B acceptance criteria and locks read-only/non-mutating boundaries. See the [planning doc](planning/phase-22a-ui-navigation-demo-flow-planning.md). Implements no code and changes no behavior. |
+| Next: Phase 22B | Planned | Scoped, frontend-only section-navigation implementation against the Phase 22A model (nav + `id` anchors + scroll/active-state); no routing, no new pages, no new dependencies, no redesign. |
 
 ## Future roadmap
 
