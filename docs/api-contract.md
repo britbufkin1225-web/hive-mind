@@ -89,6 +89,41 @@ return deterministic demo/seed fixtures (`metadata.fixture = true`) until query
 persistence exists. No LLM/AI calls, graph/source/store mutation, new
 persistence, or new endpoints are part of this surface.
 
+### Query Trail contract (Phase 16B)
+
+Phase 16B is **contract/schema alignment only** for the `QueryTrailEntry` shape;
+it adds no query persistence, derivation, endpoints, or UI behavior. The intent
+is contract-first: locking a stable, future-compatible record shape before any
+persistence or query-memory logic lands keeps that future logic from being
+coupled to unstable fixture shapes. Query Trails are **still demo/seed fixtures**
+(`metadata.fixture = true`), not real persisted query history.
+
+A `QueryTrailEntry` carries, in addition to the existing
+`id`, `query`, `kind` (`console` | `search`), `status`
+(`resolved` | `unresolved`), `result_node_ids`, `result_count`,
+`occurrence_count`, `pinned`, `last_executed_at`, and `metadata` fields, these
+additive, default-safe fields:
+
+- `category` — trail-type axis (`QueryTrailCategory`), separate from `kind` (the
+  originating surface). One of `repeated_query`, `unresolved_question`,
+  `related_query_cluster`, `source_followup`, `knowledge_gap`, or `null`. These
+  are **contract-only placeholders**: no backend logic derives them yet — only
+  demo fixtures may set them.
+- `result_source_ids` / `provenance_chain_ids` — id-only references that let a
+  trail link out to Source Registry records and derived provenance chains
+  (mirroring the Phase 16A relationship plan). References only; the contract
+  never resolves, mutates, or copies the linked records.
+- `confidence_hint` — a lightweight human-readable label only (matching
+  `DreamingSuggestion`); a numeric `confidence` model stays deferred (Tier 2),
+  so the field is `confidence_hint`, never `confidence`.
+- `origin` — surface/origin marker (defaults to `query_trail`, mirroring
+  `DreamingSuggestion.origin`) advertising read-only query-trail output.
+
+All fields default-safe so existing fixtures and any future persisted record
+validate unchanged. `unresolved_question` is the query-trail analogue of the
+still-blocked Dreaming `unresolved_query` type and likewise does not imply
+persisted history.
+
 ## Compatibility Notes
 
 Existing Phase 1 routes and response shapes remain valid. New work should keep

@@ -166,6 +166,32 @@ def test_intelligence_report_provenance_chains_expose_aligned_contract_fields() 
     assert chain["metadata"]["evidence"]["reason"]
 
 
+def test_intelligence_report_query_trails_expose_aligned_contract_fields() -> None:
+    data = client.get("/api/intelligence/report").json()
+    entries = data["query_trail_entries"]
+    assert entries, "expected demo query-trail fixtures"
+
+    _CATEGORIES = {
+        "repeated_query",
+        "unresolved_question",
+        "related_query_cluster",
+        "source_followup",
+        "knowledge_gap",
+    }
+    for entry in entries:
+        # Phase 16B additive contract fields always serialize.
+        assert entry["kind"] in {"console", "search"}
+        assert entry["status"] in {"resolved", "unresolved"}
+        assert entry["category"] is None or entry["category"] in _CATEGORIES
+        assert isinstance(entry["result_node_ids"], list)
+        assert isinstance(entry["result_source_ids"], list)
+        assert isinstance(entry["provenance_chain_ids"], list)
+        # Surface/origin marker advertises read-only query-trail output.
+        assert entry["origin"] == "query_trail"
+        # Demo origin stays unambiguous in the payload itself.
+        assert entry["metadata"].get("fixture") is True
+
+
 def test_intelligence_report_does_not_mutate_store() -> None:
     before = store.stats()
     client.get("/api/intelligence/report")

@@ -265,15 +265,30 @@ export type QueryTrailKind = "console" | "search";
 
 export type QueryTrailStatus = "resolved" | "unresolved";
 
+// Phase 16B trail-type / category axis (separate from `kind`, the originating
+// surface). Contract-only placeholders for a future derivation/persistence
+// phase: no backend logic derives them yet — only demo fixtures may set them.
+export type QueryTrailCategory =
+  | "repeated_query"
+  | "unresolved_question"
+  | "related_query_cluster"
+  | "source_followup"
+  | "knowledge_gap";
+
 export interface QueryTrailEntry {
   id: string;
   query: string;
   kind: QueryTrailKind;
+  category: QueryTrailCategory | null;
   status: QueryTrailStatus;
   result_node_ids: string[];
+  result_source_ids: string[];
+  provenance_chain_ids: string[];
   result_count: number;
   occurrence_count: number;
   pinned: boolean;
+  confidence_hint: string | null;
+  origin: string;
   last_executed_at: string;
   metadata: HiveMetadata;
 }

@@ -34,8 +34,9 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 16A - Query Trails / Query Memory Foundation
-  Planning` (documentation-only planning before query persistence, APIs, or UI).
+- **Active phase:** `Phase 16B - Query Trails Contract Types / Schema
+  Alignment` (read-only `QueryTrailEntry` contract alignment before query
+  persistence, derivation, APIs, or UI).
 - **Completed foundation:** React/FastAPI app shell, local JSON-backed
   `HiveStore`, Hive Console (API + panel), Source Registry (backend + frontend +
   inspector), Obsidian adapter and import pipeline with frontend import panel,
@@ -116,7 +117,8 @@ query persistence, or any graph/source/store mutation. See the
 | Phase 15C | Complete | Backend-derived deterministic Provenance Chains MVP. |
 | Phase 15D | Complete | Provenance Chains frontend visibility and demo polish. |
 | Phase 15E | Complete | Provenance Chains QA/demo evidence lock pass. |
-| Phase 16A | Planned / Active | Query Trails / Query Memory foundation planning before persistence or APIs. |
+| Phase 16A | Complete | Query Trails / Query Memory foundation planning before persistence or APIs. |
+| Phase 16B | Planned / Active | Query Trails contract types / schema alignment (read-only `QueryTrailEntry` contract before persistence/derivation). |
 
 ## Planned logic
 
@@ -181,6 +183,7 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Phase 12A | Demo freeze + release snapshot; demo script, screenshot checklist, and README/API/docs consistency. |
 | Future intelligence phases | Replace fixture sections with real deterministic read-only derivation. |
 | Phase 16A | Query Trails / Query Memory foundation planning before persistence, APIs, or frontend display. |
+| Phase 16B | Query Trails contract types / schema alignment — read-only `QueryTrailEntry` contract before any persistence or derivation logic. |
 | Future query phases | Add query-trail logic only after contracts, privacy boundaries, and validation. |
 
 > **Intelligence data note:** `GET /api/intelligence/report` derives its
