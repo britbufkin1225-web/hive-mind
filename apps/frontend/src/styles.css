@@ -2086,3 +2086,149 @@ main > [id] {
   }
 }
 
+/* ============================================================================
+   Phase 23A — UI surface readability + panel hierarchy polish
+   Frontend presentation only. Additive pass on top of the Phase 21A token
+   system: gives every panel a consistent title cue, unifies the card-rounding
+   language across the list/inspector surfaces, separates the dense Intelligence
+   Report sub-sections, lifts muted label contrast onto the shared tokens, and
+   groups the Console output. No redesign, no new data, no network/API/contract
+   change, and no panel behavior change — only color, spacing, rounding, and
+   typography refinements that build on rules defined earlier in this file.
+   ============================================================================ */
+
+/* --- Panel title identity -------------------------------------------------
+   Every major panel renders an <h2> as its heading. A small accent tick before
+   the title gives the seven surfaces a shared, scannable identity so the eye
+   can find each panel's start at a glance. Inline-flex keeps the tick aligned
+   with the (sometimes multi-part) heading text and any trailing badge. */
+section h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+section h2::before {
+  content: "";
+  flex: none;
+  width: 0.22rem;
+  height: 1.05em;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+/* Sub-section headings (Graph map / Groups / Nodes / the Intelligence Report
+   sections) read one rung below the panel title. Nudge their size, weight, and
+   color so the panel → section → row hierarchy is unambiguous. */
+.graph-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.005em;
+}
+
+/* --- Unified card + container rounding ------------------------------------
+   The older per-panel rules predate the token system and left list cards,
+   inspectors, and framed regions with square corners while the panels and stat
+   tiles are rounded. Align them all to the shared small radius (and soften
+   their borders to the token hairline) so the surfaces share one card rhythm.
+   Hover/selected accents defined earlier are unaffected. */
+.source-card,
+.graph-node-row,
+.graph-edge-row,
+.intel-row {
+  border-radius: var(--radius-sm);
+}
+
+.source-inspector,
+.graph-inspector {
+  border-radius: var(--radius-sm);
+}
+
+.graph-canvas-wrap {
+  border-color: var(--border-soft);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+/* Stat band + legend: keep their flex layouts, just adopt the token hairline,
+   inset surface, and rounding so they read as part of the same panel system as
+   the App vault/health metric tiles rather than flat grey strips. */
+.graph-summary {
+  border-color: var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+}
+
+.graph-legend {
+  border-color: var(--border-soft);
+  border-radius: var(--radius-sm);
+}
+
+/* --- Intelligence Report section separation -------------------------------
+   The four read-only sections previously ran together with only a top margin.
+   A hairline divider and a little more air make each section read as a distinct
+   block, so the dense suggestion/decay/provenance/trail content is easier to
+   scan as separate groups. */
+.intel-section {
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+/* Slightly more inner padding and inter-card spacing gives the dense report
+   rows room to breathe without changing their structure. */
+.intel-list {
+  gap: 0.6rem;
+}
+
+.intel-row {
+  padding: 0.75rem 0.85rem;
+}
+
+/* --- Label + metadata contrast --------------------------------------------
+   Lift the metadata sub-lines and dense read-only notes off the legacy mid-grey
+   onto the shared muted token (a touch darker), improving legibility of the
+   small print under each card. */
+.source-card-sub,
+.graph-node-row-sub,
+.intel-row-sub {
+  color: var(--text-muted);
+}
+
+.intel-row-sub {
+  line-height: 1.5;
+}
+
+/* --- Console output grouping ----------------------------------------------
+   Separate the result area from the form, frame the echoed command as a labeled
+   inset chip, and firm up the result key contrast so a console run reads as
+   command → outcome → fields rather than a loose run of lines. */
+.console-output {
+  margin-top: 0.25rem;
+}
+
+.console-echo {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+  font-size: 0.85rem;
+}
+
+.console-echo code {
+  color: var(--text);
+}
+
+.result-key {
+  color: var(--text);
+}
+
+.result-field {
+  margin-bottom: 0.7rem;
+}
+
+.result-list li {
+  line-height: 1.5;
+}
+
