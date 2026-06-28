@@ -5,11 +5,21 @@ should remain future work. It complements the per-phase summary table in the
 [README](../README.md), the [Intelligence Surface Plan](intelligence-surface-plan.md),
 the portfolio-facing [Demo Guide](demo-guide.md), and the
 [Phase 12A Demo Freeze + Release Snapshot](releases/phase-12a-demo-freeze.md),
-and the [Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-suggestions-e2e-evidence.md), and the [Phase 15E Provenance Chains QA Evidence](qa/phase-15e-provenance-chains-qa-evidence.md).
+and the [Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-suggestions-e2e-evidence.md), and the [Phase 15E Provenance Chains QA Evidence](qa/phase-15e-provenance-chains-qa-evidence.md), and the [Phase 17A Intelligence Report Cohesion + System Readiness Plan](intelligence-report-cohesion-readiness-plan.md).
 
 ## Current status
 
-**Active phase:** Phase 16C - Query Trails backend derivation MVP.
+**Active phase:** Phase 17A - Intelligence Report cohesion + system readiness
+planning (documentation/planning only).
+
+With Phase 16C merged, all four Intelligence Report surfaces (Temporal Decay,
+Dreaming Suggestions, Provenance Chains, Query Trails) are backend-derived and
+frontend-visible. Phase 17A is a cohesion/readiness planning pass over the
+Intelligence Report as a whole before any further intelligence logic is added.
+It explains why cohesion comes before more implementation, reviews what is
+demo-stable vs. what should be hardened next, and recommends a conservative,
+foundation-first next phase. See
+[Phase 17A Intelligence Report Cohesion + System Readiness Plan](intelligence-report-cohesion-readiness-plan.md).
 
 Phase 16A (planning) and Phase 16B (contract/schema alignment) prepared a stable
 `QueryTrailEntry` shape. See
@@ -17,7 +27,7 @@ Phase 16A (planning) and Phase 16B (contract/schema alignment) prepared a stable
 and
 [Phase 16B Query Trails Contract Types / Schema Alignment](phase-16b-query-trails-contract-schema.md).
 
-Phase 16C makes the Query Trails section **backend-derived** from existing
+Phase 16C made the Query Trails section **backend-derived** from existing
 store structure (`app/services/query_trails.py`), replacing the demo fixture as
 the report's primary source. Rationale: derivation is backend-owned (not
 fixtures, not client capture) so the trail logic stays deterministic, reviewable,
@@ -122,7 +132,8 @@ Current non-capabilities:
 | 15E | Complete | Provenance Chains end-to-end QA and demo evidence pass. |
 | 16A | Complete | Query Trails / Query Memory foundation planning before persistence or APIs. |
 | 16B | Complete | Query Trails contract types / schema alignment (read-only contract before persistence/derivation). |
-| 16C | Planned / Active | Query Trails backend-derived MVP for `source_followup` / `knowledge_gap` / `related_query_cluster`; `repeated_query` / `unresolved_question` deferred until query history is persisted. |
+| 16C | Complete | Query Trails backend-derived MVP for `source_followup` / `knowledge_gap` / `related_query_cluster`; `repeated_query` / `unresolved_question` deferred until query history is persisted. |
+| 17A | Planned / Active | Intelligence Report cohesion + system readiness planning (documentation only); aligns the four backend-derived surfaces and recommends a conservative, foundation-first next phase. |
 
 ## Future roadmap
 
@@ -131,7 +142,8 @@ Current non-capabilities:
 | Intelligence derivation | Dreaming `duplicate_signal` / `orphaned_node` / `stale_knowledge_link` suggestions shipped backend in Phase 14C and frontend-visible in Phase 14D. Remaining: `source_coverage_gap` deferred by the pinned Phase 14B contract/schema state and `unresolved_query_pattern` blocked until query-history persistence exists. | Read-only; no AI/LLM until separately planned. |
 | Temporal decay | Backend-derived MVP shipped in Phase 13A, frontend visibility/demo polish shipped in Phase 13B, and end-to-end QA shipped in Phase 13C. Remaining: richer reference/last-seen signals. | No graph mutation; indicators remain advisory. |
 | Provenance chains | Backend-derived MVP (Phase 15C), frontend visibility/demo polish (Phase 15D), and QA evidence pass (Phase 15E) complete. Remaining: selected-node inspector extension, per-section error state. | Present existing evidence only; do not invent lineage; read-only. |
-| Query trails | Persist and present useful console/search history. Phase 16A defined local/read-only boundaries and relationships; Phase 16B aligned the `QueryTrailEntry` contract; Phase 16C ships a backend-derived MVP for `source_followup` / `knowledge_gap` / `related_query_cluster` from existing source/node/tag structure. Remaining: frontend visibility, and local query persistence to unblock `repeated_query` / `unresolved_question`. | Read-only structural projection; no query persistence/logging/capture; `repeated_query` / `unresolved_question` stay blocked until real query history exists. |
+| Query trails | Persist and present useful console/search history. Phase 16A defined local/read-only boundaries and relationships; Phase 16B aligned the `QueryTrailEntry` contract; Phase 16C shipped a backend-derived MVP for `source_followup` / `knowledge_gap` / `related_query_cluster` from existing source/node/tag structure and made it frontend-visible. Remaining: local query persistence to unblock `repeated_query` / `unresolved_question`. | Read-only structural projection; no query persistence/logging/capture; `repeated_query` / `unresolved_question` stay blocked until real query history exists. |
+| Intelligence cohesion | Keep the four backend-derived surfaces (decay, dreaming, provenance, trails) aligned on terminology, evidence shape, empty-state parity, and readiness before adding a fifth. Phase 17A is the planning pass. | Documentation/cohesion first; no new intelligence logic until the readiness review justifies it. |
 | Agent Ops | Expose governed agent/source registry data in the app. | Start read-only from `docs/agent-lab/` shapes. |
 
 ## Standing guardrails

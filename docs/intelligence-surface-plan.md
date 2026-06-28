@@ -5,16 +5,23 @@ This document began as the Phase 10A plan for the first
 design guardrail for those surfaces.
 
 Current status: the contract shapes, `GET /api/intelligence/report`, and the
-frontend Intelligence Report panel exist. The **Temporal Decay** section is
+frontend Intelligence Report panel exist. All four sections are now
+**backend-derived and read-only**. The **Temporal Decay** section is
 backend-derived from real store timestamps (Phase 13A — deterministic thresholds,
 read-only, no AI). The **Dreaming Suggestions** section is backend-derived from
 real store nodes/edges (Phase 14C — deterministic `duplicate`/`orphan`/`stale`
 rules, read-only, no AI; `source_coverage_gap` deferred and `unresolved_query`
 blocked). The **Provenance Chains** section is backend-derived from existing
 source/import/node/edge records (Phase 15C — deterministic, read-only, no AI).
-The Query Trails section is still populated with deterministic **demo/seed
-fixtures** only. No query persistence, AI/LLM integration, or graph mutation
-exists yet.
+The **Query Trails** section is backend-derived from existing source/node/tag
+structure (Phase 16C — deterministic `source_followup` / `knowledge_gap` /
+`related_query_cluster`, read-only, no AI); the query-history-dependent
+categories (`repeated_query` / `unresolved_question`) stay deferred until query
+persistence exists. No section is fixture-backed. No query persistence, AI/LLM
+integration, or graph mutation exists yet. Phase 17A is a
+documentation/planning-only cohesion + readiness pass over these four surfaces;
+see
+[Intelligence Report Cohesion + System Readiness Plan](intelligence-report-cohesion-readiness-plan.md).
 
 ## What already exists (do not rewrite)
 
@@ -38,11 +45,10 @@ These systems are the foundation the intelligence layer builds on.
   `apps/frontend/src/lib/graphLayout.ts`,
   `apps/frontend/src/lib/graphViewModel.ts`).
 - Intelligence report contracts, read-only endpoint, backend-derived Temporal
-  Decay/Dreaming/Provenance sections, deterministic Query Trail fixtures, and
-  frontend panel
+  Decay / Dreaming / Provenance / Query Trail sections, and frontend panel
   (`apps/backend/app/services/intelligence.py`,
   `apps/backend/app/services/temporal_decay.py`,
-  `apps/backend/app/services/intelligence_fixtures.py`,
+  `apps/backend/app/services/query_trails.py`,
   `apps/frontend/src/components/IntelligenceReportPanel.tsx`).
 
 ## Core principles for the intelligence layer
@@ -79,7 +85,7 @@ does not redesign the dashboard.
 | Dreaming suggestions panel | Section inside Intelligence Report | Tier 1 | Backend-derived (Phase 14C) |
 | Knowledge decay indicators | Section inside Intelligence Report; graph overlays still future | Tier 1 | Backend-derived (Phase 13A) |
 | Provenance chain inspector | Section inside Intelligence Report; selected-node inspector extension still future | Tier 1 | Backend-derived (Phase 15C) |
-| Query trail / history surface | Section inside Intelligence Report; persistence still future | Tier 1 | Fixture-only |
+| Query trail / history surface | Section inside Intelligence Report; persistence still future | Tier 1 | Backend-derived (Phase 16C) |
 | Confidence / uncertainty badges | Inline badges on nodes/edges | Tier 2 | TBD |
 | Session snapshots | Read-only history list | Tier 2 | TBD |
 | Intent-driven graph layouts | Layout mode selector on graph | Tier 2 | TBD |
@@ -215,23 +221,36 @@ lineage, and every derived chain carries backend-owned `metadata.evidence`.
 
 ### 5. Query Memory / Knowledge Trails
 
-Turns previous Console actions and searches into navigable trails — "what have I
-been asking, and where did it lead?"
+Turns store/source structure (and, eventually, previous Console actions and
+searches) into navigable trails — "what have I been asking, and where did it
+lead?"
 
-Planned contents:
+Backend-derived today (Phase 16C — `app/services/query_trails.py`):
+
+- **Source follow-up** (`source_followup`) — a source with linked nodes worth
+  navigating back into.
+- **Knowledge gap** (`knowledge_gap`) — an unsourced node or an uncovered source.
+- **Related query cluster** (`related_query_cluster`) — 2+ nodes sharing a tag.
+
+Each derived trail carries backend-owned `metadata.evidence` and the section
+returns cleanly empty when nothing is derivable. These are a read-only structural
+projection, not query memory.
+
+Still planned (not derived — blocked on query persistence):
 
 - **Recent queries** — last N console/search interactions.
 - **Saved useful queries** — user-pinned queries.
-- **Query-to-node links** — which nodes a query surfaced.
-- **Repeated question detection** — the same query asked multiple times (feeds
-  Dreaming's "unresolved query patterns").
-- **Unresolved search trail** — queries that returned nothing.
+- **Repeated question detection** (`repeated_query`) — the same query asked
+  multiple times (feeds Dreaming's "unresolved query patterns").
+- **Unresolved search trail** (`unresolved_question`) — queries that returned
+  nothing.
 - **Future "why did I ask this?" context view** — reconstructed context around a
   past query.
 
-No query-history persistence exists yet. Persistence of query history is
-deferred to a dedicated future phase. The current query trail entries are static
-fixtures for demo and screenshot readiness.
+No query-history persistence exists yet. Persistence of query history is deferred
+to a dedicated future phase; until it exists, `repeated_query` /
+`unresolved_question` stay blocked because fabricating query-memory records would
+be dishonest.
 
 ---
 
@@ -278,8 +297,16 @@ Knowledge Graph API and Console.
 ## Suggested next work
 
 Phase 11C completed the documentation cohesion pass, and Phase 12A froze the
-demo-ready snapshot. After that, future implementation should replace fixture
-sections with real deterministic read-only derivation one surface at a time. Start with a narrow contract/validation update,
-then backend derivation, then frontend presentation.
+demo-ready snapshot. Phases 13-16 then replaced each fixture section with real
+deterministic read-only derivation, one surface at a time, contract-first ->
+backend derivation -> frontend presentation. With all four surfaces now
+backend-derived, Phase 17A is a documentation/planning-only cohesion + readiness
+pass before any further intelligence logic. The recommended next work is
+conservative and foundation-first: align evidence shape/terminology/empty-state
+parity across the four surfaces, then build a dedicated local query-persistence
+foundation (which unblocks both the deferred Query Trail categories and Dreaming's
+`unresolved_query` pattern) — not a new intelligence engine, and not AI/LLM.
 
-See [roadmap.md](roadmap.md) for the current phased plan.
+See the
+[Intelligence Report Cohesion + System Readiness Plan](intelligence-report-cohesion-readiness-plan.md)
+and [roadmap.md](roadmap.md) for the current phased plan.

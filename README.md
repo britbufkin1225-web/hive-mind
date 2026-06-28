@@ -12,9 +12,9 @@ Hive|Mind is a full-stack knowledge graph dashboard and backend/cybersecurity
 portfolio project. It connects knowledge sources, starting with Obsidian vault
 content, into a normalized backend data model and presents that model through a
 focused web interface: a source registry, an import workflow, a query console, a
-read-only knowledge graph view, and an intelligence report (Temporal Decay and
-Dreaming Suggestions and Provenance Chains backend-derived; Query Trails
-fixture-backed).
+read-only knowledge graph view, and an intelligence report whose four sections
+(Temporal Decay, Dreaming Suggestions, Provenance Chains, and Query Trails) are
+all backend-derived and read-only.
 
 The conceptual model is deliberately simple:
 
@@ -34,27 +34,31 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 16B - Query Trails Contract Types / Schema
-  Alignment` (read-only `QueryTrailEntry` contract alignment before query
-  persistence, derivation, APIs, or UI).
+- **Active phase:** `Phase 17A - Intelligence Report Cohesion + System Readiness
+  Planning` (documentation/planning only — a cohesion pass over the four
+  backend-derived Intelligence Report surfaces before any further intelligence
+  logic). See the
+  [Intelligence Report Cohesion + System Readiness Plan](docs/intelligence-report-cohesion-readiness-plan.md).
 - **Completed foundation:** React/FastAPI app shell, local JSON-backed
   `HiveStore`, Hive Console (API + panel), Source Registry (backend + frontend +
   inspector), Obsidian adapter and import pipeline with frontend import panel,
   the Knowledge Graph API, the read-only Knowledge Graph panel, the custom
   read-only SVG graph visualization, and the read-only Intelligence Report panel
-  with backend-derived Temporal Decay, Dreaming Suggestions, and Provenance
-  Chains plus remaining labeled demo fixtures.
+  with all four sections (Temporal Decay, Dreaming Suggestions, Provenance
+  Chains, and Query Trails) backend-derived.
 
-The current Intelligence Report is **partially backend-derived**. As of Phase 13A
-the **Temporal Decay** section is backend-derived (read-only) from real store
+The current Intelligence Report is **fully backend-derived and read-only**. As of
+Phase 13A the **Temporal Decay** section is backend-derived from real store
 timestamps using deterministic thresholds; as of Phase 14C the **Dreaming
-Suggestions** section is likewise backend-derived (read-only) from real store
-nodes/edges via deterministic rules (duplicate labels, orphaned nodes, stale
-links); and as of Phase 15C **Provenance Chains** are backend-derived from
-existing source/import/node/edge records with explicit evidence metadata.
-Query-trail entries are still stable sample data for portfolio demos and
-screenshots. It does **not** run AI/LLM calls, semantic provenance inference,
-query persistence, or any graph/source/store mutation. See the
+Suggestions** section is backend-derived from real store nodes/edges via
+deterministic rules (duplicate labels, orphaned nodes, stale links); as of
+Phase 15C **Provenance Chains** are backend-derived from existing
+source/import/node/edge records with explicit evidence metadata; and as of
+Phase 16C **Query Trails** are backend-derived from existing source/node/tag
+structure (`source_followup` / `knowledge_gap` / `related_query_cluster`), with
+the query-history-dependent categories deferred. No section is fixture-backed. It
+does **not** run AI/LLM calls, semantic provenance inference, query persistence,
+or any graph/source/store mutation. See the
 [Intelligence Surface Plan](docs/intelligence-surface-plan.md),
 [Roadmap](docs/roadmap.md), [Demo Guide](docs/demo-guide.md), and
 [Screenshot Checklist](docs/screenshot-checklist.md).
@@ -118,7 +122,9 @@ query persistence, or any graph/source/store mutation. See the
 | Phase 15D | Complete | Provenance Chains frontend visibility and demo polish. |
 | Phase 15E | Complete | Provenance Chains QA/demo evidence lock pass. |
 | Phase 16A | Complete | Query Trails / Query Memory foundation planning before persistence or APIs. |
-| Phase 16B | Planned / Active | Query Trails contract types / schema alignment (read-only `QueryTrailEntry` contract before persistence/derivation). |
+| Phase 16B | Complete | Query Trails contract types / schema alignment (read-only `QueryTrailEntry` contract before persistence/derivation). |
+| Phase 16C | Complete | Query Trails backend-derived MVP (`source_followup` / `knowledge_gap` / `related_query_cluster`) and frontend visibility; query-history categories deferred. |
+| Phase 17A | Planned / Active | Intelligence Report cohesion + system readiness planning (documentation only). |
 
 ## Planned logic
 
@@ -144,9 +150,9 @@ are implemented today and some are planned (and labeled as such).
 - **Intelligence report contracts** *(implemented)* - shared backend/frontend
   shapes for Dreaming suggestions, decay statuses, provenance chains, query
   trails, and a summary rollup.
-- **Intelligence Report panel** *(implemented, read-only)* - renders
-  backend-derived Temporal Decay, Dreaming Suggestions, and Provenance Chains
-  plus labeled Query Trail demo data.
+- **Intelligence Report panel** *(implemented, read-only)* - renders all four
+  backend-derived sections: Temporal Decay, Dreaming Suggestions, Provenance
+  Chains, and Query Trails.
 - **Real Dreaming logic** *(implemented, read-only MVP — Phase 14C)* -
   deterministic, read-only suggestions derived from actual store nodes/edges:
   `duplicate` (shared normalized labels), `orphan` (no edges/source/parent), and
@@ -164,12 +170,19 @@ are implemented today and some are planned (and labeled as such).
   source registry data. Each carries backend-owned `metadata.evidence`; missing
   source metadata is represented honestly as partial/unknown rather than
   fabricated.
-- **Query memory / knowledge trails** *(planned)* - future persistence and review
-  surfaces for past console/search activity.
+- **Query trails** *(implemented, read-only MVP — Phase 16C)* - deterministic
+  `source_followup` / `knowledge_gap` / `related_query_cluster` projections over
+  existing source/node/tag structure, each with backend-owned `metadata.evidence`
+  and a clean empty section. The query-history-dependent categories
+  (`repeated_query` / `unresolved_question`) stay **deferred/blocked** until local
+  query persistence exists.
+- **Query memory persistence** *(planned)* - future local persistence and review
+  surfaces for past console/search activity, which would unblock the deferred
+  query-history categories above and Dreaming's `unresolved_query` pattern.
 
-The intelligence fixtures are illustrative. They are useful for explaining the
-planned product direction, but they are not evidence that the real intelligence
-engines exist.
+The Intelligence Report is now fully backend-derived; no section is fixture-backed.
+The deterministic derivations are reproducible from store/source state, which is
+what keeps the intelligence layer honest and reviewable as it grows.
 
 ## Roadmap
 
@@ -184,17 +197,19 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Future intelligence phases | Replace fixture sections with real deterministic read-only derivation. |
 | Phase 16A | Query Trails / Query Memory foundation planning before persistence, APIs, or frontend display. |
 | Phase 16B | Query Trails contract types / schema alignment — read-only `QueryTrailEntry` contract before any persistence or derivation logic. |
-| Future query phases | Add query-trail logic only after contracts, privacy boundaries, and validation. |
+| Phase 16C | Query Trails backend-derived MVP and frontend visibility; query-history categories deferred. |
+| Phase 17A | Intelligence Report cohesion + system readiness planning (documentation only). |
+| Future query phases | Add query-persistence logic only after contracts, privacy boundaries, and validation. |
 
-> **Intelligence data note:** `GET /api/intelligence/report` derives its
-> **Temporal Decay** (Phase 13A), **Dreaming Suggestions** (Phase 14C), and
-> **Provenance Chains** (Phase 15C) sections from existing store/source state —
-> deterministic rules, tagged `metadata.derived`, with a clean empty section
-> when nothing is derivable. Query Trails still return deterministic
-> **demo/seed fixtures** (tagged `metadata.fixture`) so the panel shows
-> meaningful sample content for demos and screenshots. No query persistence,
-> AI/LLM logic, or graph/source/store mutation runs, and the endpoint remains
-> read-only.
+> **Intelligence data note:** `GET /api/intelligence/report` derives all four of
+> its sections — **Temporal Decay** (Phase 13A), **Dreaming Suggestions**
+> (Phase 14C), **Provenance Chains** (Phase 15C), and **Query Trails**
+> (Phase 16C) — from existing store/source state, using deterministic rules,
+> tagged `metadata.derived`, with a clean empty section when nothing is
+> derivable. No section is fixture-backed. The query-history-dependent Query
+> Trail categories (`repeated_query` / `unresolved_question`) stay deferred until
+> local query persistence exists. No query persistence, AI/LLM logic, or
+> graph/source/store mutation runs, and the endpoint remains read-only.
 
 ## Setup
 
@@ -236,13 +251,14 @@ npm run dev:frontend
 - [ ] Obsidian import action panel renders.
 - [ ] Knowledge Graph read-only panel renders.
 - [ ] Graph view-model/prep data renders without runtime errors.
-- [ ] Intelligence Report panel renders backend-derived Temporal Decay, Dreaming Suggestions, and Provenance Chains plus labeled Query Trail demo data.
+- [ ] Intelligence Report panel renders all four backend-derived sections: Temporal Decay, Dreaming Suggestions, Provenance Chains, and Query Trails.
 
 ## Documentation
 
 - [Phase 1 foundation](docs/phase-1-foundation.md)
 - [API contract](docs/api-contract.md)
 - [Intelligence Surface Plan](docs/intelligence-surface-plan.md)
+- [Intelligence Report Cohesion + System Readiness Plan](docs/intelligence-report-cohesion-readiness-plan.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
