@@ -34,20 +34,26 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 19A - Security Cohesion + Release Readiness Planning`
-  (documentation/planning only). Phase 19A consolidates the completed Phase
-  18A–18F security-hardening arc into a single release-readiness view: it states
-  the current security posture without overclaiming, distinguishes **demo
-  readiness** from **production security readiness**, assesses the
-  release-readiness categories, carries the deferred/blocked scope forward
-  unchanged, and adds a release-readiness checklist. No security fix, auth,
-  validation, or behavior change is implemented. The preceding Phase 18 arc
-  delivered a security threat model (18A), backend API defensive validation +
-  error safety (18B), a regression/evidence pass (18C), an edge-case triage (18D),
-  an edge-case validation MVP (18E), and a second regression/evidence pass (18F).
-  Hive|Mind now has a stronger, evidence-backed **defensive API posture for a
+- **Active phase:** `Phase 19B - Release Readiness QA + Demo Evidence Pass`
+  (QA/documentation/evidence only). Phase 19B verifies and records the current
+  state of Hive|Mind as a controlled, demo-ready, release-readiness *candidate*
+  without changing behavior: it documents the readiness posture across backend
+  API stability, the security hardening sequence, the four Intelligence Report
+  surfaces, Obsidian import/read-only behavior, and the read-only Knowledge Graph
+  visualization; records the completed security (18A–19A) and intelligence arcs;
+  and adds a **Demo Evidence Checklist** and explicit **Release Readiness
+  Boundaries**. No code, contract, or behavior changes. The preceding Phase 19A
+  consolidated the Phase 18A–18F security-hardening arc into a single
+  release-readiness view (current posture without overclaiming, demo readiness vs.
+  production security readiness, release-readiness categories and checklist). The
+  Phase 18 arc delivered a threat model (18A), backend API defensive validation +
+  error safety (18B), regression/evidence (18C), edge-case triage (18D), an
+  edge-case validation MVP (18E), and a second regression/evidence pass (18F).
+  Hive|Mind has a stronger, evidence-backed **defensive API posture for a
   local/demo dev-tool** — it is **not** production-hardened. See the
-  [Phase 19A Security Cohesion + Release Readiness Planning](docs/security/phase-19a-security-cohesion-release-readiness-planning.md)
+  [Phase 19B Release Readiness QA + Demo Evidence Pass](docs/release-readiness/phase-19b-release-readiness-qa-demo-evidence.md),
+  the
+  [Phase 19A Security Cohesion + Release Readiness Planning](docs/security/phase-19a-security-cohesion-release-readiness-planning.md),
   and the
   [Security Threat Model + Vulnerability Test Plan](docs/security/threat-model-and-vulnerability-test-plan.md).
 - **Completed foundation:** React/FastAPI app shell, local JSON-backed
@@ -143,7 +149,8 @@ or any graph/source/store mutation. See the
 | Phase 18D | Complete | API edge case hardening planning / deferred security scope triage (planning/documentation only); triages and risk-rates the deferred API edges and scopes Phase 18E. |
 | Phase 18E | Complete | API edge case defensive validation MVP; additive per-model bounded nesting-depth guard (`MAX_REQUEST_NESTING_DEPTH = 32`) and explicit null-like / empty-value decisions, with regression tests. |
 | Phase 18F | Complete | API edge case security regression QA + evidence pass (QA/documentation only); verifies the 18E guard/decisions and records test evidence (267 full backend tests passing). |
-| Phase 19A | Planned / Active | Security cohesion + release readiness planning (documentation only); consolidates the Phase 18A–18F arc into a demo-ready (not production-secure) release-readiness view with posture, checklist, deferred scope, and rationale. |
+| Phase 19A | Complete | Security cohesion + release readiness planning (documentation only); consolidates the Phase 18A–18F arc into a demo-ready (not production-secure) release-readiness view with posture, checklist, deferred scope, and rationale. |
+| Phase 19B | Planned / Active | Release readiness QA + demo evidence pass (documentation/evidence only); records the whole-project readiness posture, the completed security/intelligence arcs, a Demo Evidence Checklist, and explicit Release Readiness Boundaries. Demo-ready candidate, not production-ready/secure. |
 
 ## Planned logic
 
@@ -222,6 +229,7 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Phase 18A | Security threat model + vulnerability test plan (documentation only); scope, trust boundaries, attack surfaces, planned tests, and pass/fail criteria before any defensive testing. |
 | Phase 18B–18F | Delivered API-hardening arc: defensive validation + error safety (18B), regression/evidence (18C), edge-case triage (18D), edge-case validation MVP (18E), and a second regression/evidence pass (18F). |
 | Phase 19A | Security cohesion + release readiness planning (documentation only); consolidates the 18A–18F arc into a demo-ready (not production-secure) posture with a release-readiness checklist and deferred-scope carry-forward. |
+| Phase 19B | Release readiness QA + demo evidence pass (documentation/evidence only); records the whole-project readiness posture and demo boundaries, with a Demo Evidence Checklist and explicit Release Readiness Boundaries. |
 | Future security phases | Obsidian import filesystem safety, intelligence evidence regression, frontend rendering safety, dependency/static baseline; production-security controls (auth, rate limiting, deployment hardening, secrets, audit logging, monitoring) stay out of scope until the runtime model changes. |
 | Future query phases | Add query-persistence logic only after contracts, privacy boundaries, and validation. |
 
@@ -287,6 +295,7 @@ npm run dev:frontend
 - [Security Threat Model + Vulnerability Test Plan](docs/security/threat-model-and-vulnerability-test-plan.md)
 - [Phase 18A Security Threat Model + Vulnerability Test Plan (status)](docs/planning/phase-18a-security-threat-model-plan.md)
 - [Phase 19A Security Cohesion + Release Readiness Planning](docs/security/phase-19a-security-cohesion-release-readiness-planning.md)
+- [Phase 19B Release Readiness QA + Demo Evidence Pass](docs/release-readiness/phase-19b-release-readiness-qa-demo-evidence.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
