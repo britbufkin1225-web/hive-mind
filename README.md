@@ -34,13 +34,15 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 17B - Intelligence Report Cohesion Hardening +
-  Readiness QA` (documentation/readiness only — rationale, decay thresholds,
-  edge cases, evidence expectations, performance notes, and a future adapter
-  strategy for the four backend-derived Intelligence Report surfaces, before any
-  further intelligence logic). See the
-  [Phase 17B Intelligence Report Cohesion Hardening + Readiness QA](docs/phase-17b-intelligence-cohesion-hardening.md),
+- **Active phase:** `Phase 18A - Security Threat Model + Vulnerability Test Plan`
+  (documentation/planning only — a threat model, trust boundaries, attack-surface
+  matrix, vulnerability test plan, pass/fail criteria, and future hardening
+  recommendations for later owner-authorized, local-only defensive testing; no
+  security fix, auth, validation, or behavior change is implemented). See the
+  [Security Threat Model + Vulnerability Test Plan](docs/security/threat-model-and-vulnerability-test-plan.md),
   building on the
+  [Phase 17B Intelligence Report Cohesion Hardening + Readiness QA](docs/phase-17b-intelligence-cohesion-hardening.md)
+  and the
   [Intelligence Report Cohesion + System Readiness Plan](docs/intelligence-report-cohesion-readiness-plan.md).
 - **Completed foundation:** React/FastAPI app shell, local JSON-backed
   `HiveStore`, Hive Console (API + panel), Source Registry (backend + frontend +
@@ -128,7 +130,8 @@ or any graph/source/store mutation. See the
 | Phase 16B | Complete | Query Trails contract types / schema alignment (read-only `QueryTrailEntry` contract before persistence/derivation). |
 | Phase 16C | Complete | Query Trails backend-derived MVP (`source_followup` / `knowledge_gap` / `related_query_cluster`) and frontend visibility; query-history categories deferred. |
 | Phase 17A | Complete | Intelligence Report cohesion + system readiness planning (documentation only). |
-| Phase 17B | Planned / Active | Intelligence Report cohesion hardening + readiness QA (documentation only); rationale, decay thresholds, edge cases, evidence expectations, performance notes, and future adapter strategy. |
+| Phase 17B | Complete | Intelligence Report cohesion hardening + readiness QA (documentation only); rationale, decay thresholds, edge cases, evidence expectations, performance notes, and future adapter strategy. |
+| Phase 18A | Planned / Active | Security threat model + vulnerability test plan (documentation only); scope/authorization, system inventory, trust boundaries, attack-surface matrix, planned test categories, pass/fail criteria, and future hardening phases. |
 
 ## Planned logic
 
@@ -204,6 +207,8 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Phase 16C | Query Trails backend-derived MVP and frontend visibility; query-history categories deferred. |
 | Phase 17A | Intelligence Report cohesion + system readiness planning (documentation only). |
 | Phase 17B | Intelligence Report cohesion hardening + readiness QA (documentation only). |
+| Phase 18A | Security threat model + vulnerability test plan (documentation only); scope, trust boundaries, attack surfaces, planned tests, and pass/fail criteria before any defensive testing. |
+| Phase 18B–18F | Recommended defensive hardening phases (API validation/error safety, Obsidian import filesystem safety, intelligence evidence regression, frontend rendering safety, dependency/static baseline). |
 | Future query phases | Add query-persistence logic only after contracts, privacy boundaries, and validation. |
 
 > **Intelligence data note:** `GET /api/intelligence/report` derives all four of
@@ -265,6 +270,8 @@ npm run dev:frontend
 - [Intelligence Surface Plan](docs/intelligence-surface-plan.md)
 - [Intelligence Report Cohesion + System Readiness Plan](docs/intelligence-report-cohesion-readiness-plan.md)
 - [Phase 17B Intelligence Report Cohesion Hardening + Readiness QA](docs/phase-17b-intelligence-cohesion-hardening.md)
+- [Security Threat Model + Vulnerability Test Plan](docs/security/threat-model-and-vulnerability-test-plan.md)
+- [Phase 18A Security Threat Model + Vulnerability Test Plan (status)](docs/planning/phase-18a-security-threat-model-plan.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
