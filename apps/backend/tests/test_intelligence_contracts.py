@@ -16,6 +16,7 @@ from app.models.hive_models import (
     ProvenanceChainStatus,
     ProvenanceLink,
     ProvenanceLinkKind,
+    QueryTrailCategory,
     QueryTrailEntry,
     QueryTrailKind,
     QueryTrailStatus,
@@ -204,6 +205,65 @@ def test_query_trail_entry_defaults() -> None:
     assert entry.occurrence_count == 1
     assert entry.pinned is False
     assert entry.metadata == {}
+    # Phase 16B additive, default-safe contract fields.
+    assert entry.category is None
+    assert entry.result_source_ids == []
+    assert entry.provenance_chain_ids == []
+    assert entry.confidence_hint is None
+    # Derived/surface output is explicitly labeled with its origin.
+    assert entry.origin == "query_trail"
+
+
+def test_query_trail_category_serialized_values() -> None:
+    # Pins the Phase 16B wire contract: UPPER_SNAKE member -> snake_case value.
+    # These literals are what the frontend `QueryTrailCategory` union keys on.
+    assert {member.name: member.value for member in QueryTrailCategory} == {
+        "REPEATED_QUERY": "repeated_query",
+        "UNRESOLVED_QUESTION": "unresolved_question",
+        "RELATED_QUERY_CLUSTER": "related_query_cluster",
+        "SOURCE_FOLLOWUP": "source_followup",
+        "KNOWLEDGE_GAP": "knowledge_gap",
+    }
+    # StrEnum: the serialized value is the snake_case string itself.
+    assert QueryTrailCategory.KNOWLEDGE_GAP == "knowledge_gap"
+
+
+def test_query_trail_entry_uses_confidence_hint_not_confidence() -> None:
+    # Matches DreamingSuggestion: the lightweight label field is
+    # `confidence_hint`; a numeric `confidence` model is deferred (Tier 2) and
+    # must not be introduced as a field rename.
+    fields = QueryTrailEntry.model_fields
+    assert "confidence_hint" in fields
+    assert "confidence" not in fields
+
+
+def test_query_trail_entry_supports_future_persisted_shape() -> None:
+    # The contract is future-compatible with persisted query history: a fully
+    # classified entry with source/provenance links round-trips deterministically
+    # without any persistence existing yet.
+    entry = QueryTrailEntry(
+        id="q-2",
+        query="graph import behavior",
+        kind=QueryTrailKind.SEARCH,
+        category=QueryTrailCategory.REPEATED_QUERY,
+        status=QueryTrailStatus.RESOLVED,
+        result_node_ids=["node-1", "node-2"],
+        result_source_ids=["source-1"],
+        provenance_chain_ids=["prov-node-1"],
+        result_count=2,
+        occurrence_count=3,
+        pinned=True,
+        confidence_hint="high",
+        last_executed_at=FIXED_TS,
+        metadata={"evidence": {"reason": "seen multiple times"}},
+    )
+    dumped = entry.model_dump(mode="json")
+    assert dumped["category"] == "repeated_query"
+    assert dumped["result_source_ids"] == ["source-1"]
+    assert dumped["provenance_chain_ids"] == ["prov-node-1"]
+    assert dumped["confidence_hint"] == "high"
+    assert dumped["origin"] == "query_trail"
+    assert QueryTrailEntry.model_validate(dumped) == entry
 
 
 def test_intelligence_shapes_round_trip() -> None:

@@ -627,25 +627,76 @@ class QueryTrailStatus(StrEnum):
     UNRESOLVED = "unresolved"
 
 
+class QueryTrailCategory(StrEnum):
+    """Trail-type / category axis for a Query Trail entry.
+
+    Phase 16B contract-alignment axis describing *what kind of query-memory
+    pattern* an entry represents, separate from ``kind`` (the originating
+    surface: console vs. search). Members follow the project convention: an
+    ``UPPER_SNAKE`` member name whose serialized ``StrEnum`` value is the
+    ``snake_case`` literal below — those literals are the stable wire contract
+    the frontend ``QueryTrailCategory`` union keys on.
+
+    These categories are **contract-only placeholders** for a later
+    derivation/persistence phase. No backend logic derives them yet; only
+    deterministic demo fixtures may set them. They intentionally mirror the
+    future concepts named in the Phase 16A plan and must not be read as evidence
+    that query history is persisted. ``unresolved_question`` is the query-trail
+    analogue of the still-blocked Dreaming ``unresolved_query`` type and likewise
+    does not imply persisted history.
+    """
+
+    REPEATED_QUERY = "repeated_query"
+    UNRESOLVED_QUESTION = "unresolved_question"
+    RELATED_QUERY_CLUSTER = "related_query_cluster"
+    SOURCE_FOLLOWUP = "source_followup"
+    KNOWLEDGE_GAP = "knowledge_gap"
+
+
 class QueryTrailEntry(BaseModel):
     """A single read-only entry in the query memory / knowledge trail.
 
-    Describes a past console/search interaction and where it led. Phase 10B
-    introduces NO query persistence (deferred to its dedicated phase); this is
-    the target shape only. ``status`` marks whether the query surfaced anything
-    (``unresolved`` feeds Dreaming's "unresolved query patterns"),
-    ``occurrence_count`` supports repeated-question detection, and ``pinned``
-    marks a user-saved useful query.
+    Describes a past console/search interaction and where it led. No query
+    persistence runs (deferred to a dedicated phase); this is the target shape
+    only. ``status`` marks whether the query surfaced anything (``unresolved``
+    feeds Dreaming's "unresolved query patterns"), ``occurrence_count`` supports
+    repeated-question detection, and ``pinned`` marks a user-saved useful query.
+
+    Phase 16B aligns this contract toward future persisted query history without
+    requiring it yet. The added fields are additive and default-safe so existing
+    fixtures and any future persisted record validate unchanged:
+
+    * ``category`` — the trail-type axis (:class:`QueryTrailCategory`), separate
+      from ``kind`` (the originating surface). ``None`` until a record is
+      explicitly classified; no derivation assigns it in this phase.
+    * ``result_source_ids`` / ``provenance_chain_ids`` — id-only references that
+      let a trail link out to the Source Registry and derived provenance chains
+      (mirroring the Phase 16A relationship plan). References only; this contract
+      never resolves, mutates, or copies the linked records.
+    * ``confidence_hint`` — a lightweight human-readable label only, matching
+      :class:`DreamingSuggestion`. A numeric ``confidence`` model is deferred
+      (Tier 2), so the field name stays ``confidence_hint`` (never
+      ``confidence``).
+    * ``origin`` — derived/surface origin marker (mirrors
+      ``DreamingSuggestion.origin``) advertising read-only query-trail output.
+
+    Supporting evidence/reason metadata continues to attach under
+    ``metadata`` (e.g. ``metadata.evidence``), keeping the contract additive.
     """
 
     id: str
     query: str
     kind: QueryTrailKind = QueryTrailKind.SEARCH
+    category: QueryTrailCategory | None = None
     status: QueryTrailStatus = QueryTrailStatus.RESOLVED
     result_node_ids: list[str] = Field(default_factory=list)
+    result_source_ids: list[str] = Field(default_factory=list)
+    provenance_chain_ids: list[str] = Field(default_factory=list)
     result_count: int = 0
     occurrence_count: int = 1
     pinned: bool = False
+    confidence_hint: str | None = None
+    origin: str = "query_trail"
     last_executed_at: datetime
     metadata: dict[str, Any] = Field(default_factory=dict)
 

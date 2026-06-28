@@ -420,6 +420,35 @@ Guardrails:
 - No AI/LLM calls.
 - No graph, source, or store mutation (read-only projection).
 
+### Query Trail contract alignment (Phase 16B)
+
+Phase 16B is **contract/schema alignment only**. It refines the
+`QueryTrailEntry` shape so a later phase can implement deterministic query-trail
+derivation and/or persistence against a stable contract. Rationale: aligning the
+contract first keeps future persistence/derivation logic from being coupled to
+unstable fixture shapes. This phase adds **no** query persistence, derivation,
+endpoints, dependencies, or UI behavior — Query Trails remain deterministic
+demo/seed fixtures tagged `metadata.fixture = true`, not real persisted history.
+
+`QueryTrailEntry` gains these additive, default-safe fields alongside the
+existing `id`, `query`, `kind`, `status`, `result_node_ids`, `result_count`,
+`occurrence_count`, `pinned`, `last_executed_at`, and `metadata`:
+
+- `category` — trail-type axis (`QueryTrailCategory`: `repeated_query`,
+  `unresolved_question`, `related_query_cluster`, `source_followup`,
+  `knowledge_gap`, or `null`), separate from `kind` (the originating surface).
+  Contract-only placeholders; no derivation assigns them yet.
+- `result_source_ids` / `provenance_chain_ids` — id-only references linking a
+  trail to Source Registry records and derived provenance chains. References
+  only; never resolved, mutated, or copied.
+- `confidence_hint` — lightweight label only (matches `DreamingSuggestion`); a
+  numeric `confidence` model stays deferred (Tier 2).
+- `origin` — surface/origin marker (defaults to `query_trail`).
+
+Because every added field is default-safe, existing fixtures and any future
+persisted record validate unchanged. `unresolved_question` mirrors the still
+blocked Dreaming `unresolved_query` type and does not imply persisted history.
+
 ## Search & Query Helpers (Phase 3C)
 
 The store exposes deterministic, read-only helpers that operate against the
