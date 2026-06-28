@@ -1813,3 +1813,148 @@ section > h2:first-child {
   border-radius: var(--radius-sm);
 }
 
+/* ============================================================================
+   Phase 21E — UI demo polish implementation pass
+   Frontend presentation only. Builds on the Phase 21A token system (no theme
+   change, no redesign) to sharpen first-glance hierarchy, group the low-density
+   status panels into a compact strip, typeset real connected values as data,
+   and make the connected empty states read as intentional. Introduces no new
+   data, network behavior, API, contract, or dependency. Implements the locked
+   Phase 21D refinement priorities (2.1–2.9).
+   ============================================================================ */
+
+/* 2.1/2.2 — Page rhythm. A touch more air between major blocks lets the
+   headline surfaces (Knowledge Graph, Intelligence Report) breathe and reads as
+   a deliberate dashboard rather than a flat stack. */
+main {
+  gap: 1.5rem;
+}
+
+/* 2.1 — Masthead. Give the product header real presence with a soft accent
+   wash and stronger title scale so a 3-second screenshot scan lands here first.
+   The accent top edge from 21A is retained. */
+.app-header {
+  background:
+    linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 70%);
+}
+
+.app-header h1 {
+  font-size: 2rem;
+}
+
+.parent-label {
+  color: var(--accent-strong);
+}
+
+/* 2.1/2.2 — Status strip. Connection state + API health sit side by side as a
+   compact band instead of two tall, near-empty cards, lifting the headline
+   panels up the page. Collapses to a stack on narrow screens (2.8). */
+.status-row {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.status-row > section {
+  margin: 0;
+}
+
+.panel-connection {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-connection .status-pill {
+  align-self: flex-start;
+  margin-top: auto;
+  font-size: 0.95rem;
+}
+
+/* 2.3 — Real connected values typeset as data. The metric lists render as a
+   row of labelled stat tiles: small uppercase key, large tabular value. This
+   makes the backend-derived counts the visual focus rather than chrome. */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.metric-grid-vault {
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  margin-bottom: 0.9rem;
+}
+
+.metric-grid > div {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+}
+
+.metric-grid dt {
+  width: auto;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-subtle);
+}
+
+.metric-grid dd {
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* Graph mode is a status word, not a number — keep it readable rather than
+   oversized so it sits comfortably beside the numeric tiles. */
+.metric-grid-vault > div:last-child dd {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.vault-message {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* 2.6 — Connected empty state reads as an intentional baseline ("ready,
+   nothing imported yet") rather than a defect: a centered, dashed inset panel
+   instead of a stray line of hint text. Honest framing — no fake sources. */
+.source-empty {
+  margin: 0;
+  padding: 1.1rem 1rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* 2.8 — Responsive: collapse the status strip and tighten gutters so panels
+   stay readable rather than cramping at common phone widths. */
+@media (max-width: 600px) {
+  main {
+    gap: 1.1rem;
+  }
+
+  .status-row {
+    grid-template-columns: 1fr;
+    gap: 1.1rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.7rem;
+  }
+}
+
