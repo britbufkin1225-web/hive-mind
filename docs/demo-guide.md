@@ -87,6 +87,13 @@ Open:
 - Backend health: <http://localhost:8787/api/health>
 - Interactive API docs: <http://localhost:8787/docs>
 
+> **Backend port:** `8787` is the canonical local dev backend port, and the
+> frontend client (and `.env.example`) default to it. Always start the backend
+> with `npm run dev:backend`. Launching `uvicorn` off-script binds its default
+> port `8000` instead, so the frontend's `http://localhost:8787/api` requests
+> hit nothing and surface as `Failed to fetch` — the cause of the Phase 20D
+> connection failures.
+
 ## Validate before demo
 
 ```bash
