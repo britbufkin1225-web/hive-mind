@@ -2,7 +2,12 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from app.services.validation import (
+    MAX_REQUEST_NESTING_DEPTH,
+    assert_within_nesting_depth,
+)
 
 # --------------------------------------------------------------------------- #
 # Phase 18B — defensive upper bounds for client-supplied free-text fields.
@@ -19,6 +24,33 @@ MAX_CONSOLE_COMMAND_LENGTH = 4096
 MAX_VAULT_PATH_LENGTH = 4096
 MAX_SOURCE_NAME_LENGTH = 512
 MAX_ROOT_PATH_LENGTH = 4096
+
+
+# --------------------------------------------------------------------------- #
+# Phase 18E — bounded request-body nesting-depth guard.
+#
+# Phase 18B bounded individual free-text fields; it could not see request
+# *shape*. A deeply nested object (``{"a": {"a": {"a": ...}}}``) is a structural
+# edge that lands in a free-form ``metadata`` dict (or in the nested lists of a
+# snapshot import) and would otherwise be traversed before any field guard runs.
+# This mixin rejects an over-depth body at the contract edge with a clean 422,
+# before downstream processing, using the shared iterative guard in
+# ``app.services.validation`` (see ``MAX_REQUEST_NESTING_DEPTH`` for the bound and
+# rationale). It is applied only to the POST/PATCH request models that accept a
+# free-form nested structure; read-only response models and flat request models
+# (e.g. ``ConsoleExecuteRequest``, ``ObsidianImportRequest``) have no nestable
+# field and are left untouched. The guard is additive: every realistic body
+# stays well under the bound, and the 422 it raises matches the existing
+# Phase 18B validation-error shape.
+# --------------------------------------------------------------------------- #
+class _NestingDepthGuardedModel(BaseModel):
+    """Mixin: reject request bodies nested deeper than ``MAX_REQUEST_NESTING_DEPTH``."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _enforce_nesting_depth(cls, data: Any) -> Any:
+        assert_within_nesting_depth(data, MAX_REQUEST_NESTING_DEPTH)
+        return data
 
 
 class SourceType(StrEnum):
@@ -211,7 +243,7 @@ class HiveExportSnapshot(BaseModel):
     models: list[HiveModel]
 
 
-class HiveImportRequest(BaseModel):
+class HiveImportRequest(_NestingDepthGuardedModel):
     sources: list[HiveSource] = Field(default_factory=list)
     nodes: list[HiveGraphNode] = Field(default_factory=list)
     edges: list[HiveGraphEdge] = Field(default_factory=list)
@@ -294,7 +326,7 @@ class SourceRecord(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class SourceRecordCreate(BaseModel):
+class SourceRecordCreate(_NestingDepthGuardedModel):
     name: str = Field(max_length=MAX_SOURCE_NAME_LENGTH)
     type: RegistrySourceType
     root_path: str | None = Field(default=None, max_length=MAX_ROOT_PATH_LENGTH)
@@ -309,7 +341,7 @@ class SourceRecordCreate(BaseModel):
         return value.strip()
 
 
-class SourceRecordUpdate(BaseModel):
+class SourceRecordUpdate(_NestingDepthGuardedModel):
     name: str | None = Field(default=None, max_length=MAX_SOURCE_NAME_LENGTH)
     type: RegistrySourceType | None = None
     root_path: str | None = Field(default=None, max_length=MAX_ROOT_PATH_LENGTH)
