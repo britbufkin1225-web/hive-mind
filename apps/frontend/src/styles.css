@@ -1,7 +1,40 @@
 :root {
-  font-family: system-ui, sans-serif;
-  color: #222;
-  background: #f4f4f4;
+  /* Phase 21A — design tokens. Neutral values intentionally track the existing
+     palette so the many per-panel rules below stay visually consistent without
+     being rewritten in this pass. */
+  --bg: #eef0f3;
+  --surface: #ffffff;
+  --surface-inset: #f4f4f4;
+  --border: #d4d4d4;
+  --border-soft: #e4e4e4;
+  --border-strong: #b9b9b9;
+
+  --text: #1f2328;
+  --text-muted: #5b616b;
+  --text-subtle: #828892;
+
+  --accent: #6b4fbb;
+  --accent-strong: #5a3fa6;
+  --accent-soft: #f3f0fb;
+  --accent-border: #d9cff0;
+
+  --success: #176b37;
+  --error: #a12622;
+  --warn: #8a6d00;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow-panel: 0 1px 2px rgba(24, 28, 35, 0.04),
+    0 1px 3px rgba(24, 28, 35, 0.06);
+  --shadow-focus: 0 0 0 3px rgba(107, 79, 187, 0.25);
+
+  --space-panel: 1.5rem;
+
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
@@ -9,16 +42,21 @@ body {
 }
 
 main {
-  width: min(720px, calc(100% - 2rem));
-  margin: 3rem auto;
+  width: min(880px, calc(100% - 2rem));
+  margin: 3rem auto 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
 header,
 section {
-  margin-bottom: 1rem;
-  padding: 1.25rem;
-  border: 1px solid #d4d4d4;
-  background: #fff;
+  margin: 0;
+  padding: var(--space-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-panel);
 }
 
 h1,
@@ -29,24 +67,30 @@ p {
 
 h1 {
   margin-bottom: 0.25rem;
+  font-size: 1.6rem;
+  letter-spacing: -0.01em;
 }
 
 h2 {
-  font-size: 1rem;
+  font-size: 1.05rem;
+  letter-spacing: -0.005em;
 }
 
 .parent-label {
-  margin-bottom: 0.25rem;
-  color: #666;
-  font-size: 0.875rem;
+  margin-bottom: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .success {
-  color: #176b37;
+  color: var(--success);
 }
 
 .error {
-  color: #a12622;
+  color: var(--error);
 }
 
 dl {
@@ -61,7 +105,7 @@ dl div {
 
 dt {
   width: 7rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
 dd {
@@ -1602,5 +1646,170 @@ dd {
 .intel-trail-reason {
   color: #3f3f46;
   line-height: 1.45;
+}
+
+/* ============================================================================
+   Phase 21A — UI foundation / dashboard shell
+   Frontend-only visual pass: app masthead, panel header rhythm, shared control
+   styling (buttons + inputs), and status/helper-text readability. Additive and
+   built on the design tokens declared in :root above. Introduces no new data,
+   network behavior, API, or contract changes.
+   ============================================================================ */
+
+/* App masthead: lift the title block above the panel grid with an accent edge
+   so it reads as the product header rather than just another card. */
+.app-header {
+  padding-top: 1.6rem;
+  padding-bottom: 1.6rem;
+  border-top: 3px solid var(--accent);
+}
+
+.app-tagline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.app-mode-badge {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-strong);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Consistent section-header rhythm: a hairline divider under each panel heading
+   makes every panel's content area scannable. Covers both the plain-section
+   headings and the flex head rows shared by the Sources / Graph / Intelligence
+   panels. */
+section > h2:first-child {
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.source-registry-head {
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+/* The Obsidian import action card lives inside the Sources panel; keep it flat
+   and inset so it reads as a nested control, not a second floating panel. */
+.obsidian-import-panel {
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+.obsidian-import-title {
+  margin-top: 0;
+}
+
+/* Status pill: connection / health state shown as a compact dot + label so the
+   backend state is scannable at the top of the dashboard. */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-inset);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: currentColor;
+  flex: none;
+}
+
+.status-pill-success {
+  color: var(--success);
+  border-color: #b6dbc2;
+  background: #f0f9f3;
+}
+
+.status-pill-error {
+  color: var(--error);
+  border-color: #e6bcbb;
+  background: #fdf3f3;
+}
+
+.status-pill-pending {
+  color: var(--text-muted);
+}
+
+/* Shared control baseline: every button and text input across the panels picks
+   up consistent rounding, hover feedback, and focus treatment. Role accents
+   (e.g. the purple Import primary) are preserved by the more specific rules
+   defined earlier in this file. */
+.console-actions button,
+.source-refresh,
+.obsidian-import-submit {
+  border-radius: var(--radius-sm);
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.console-actions button:not(:disabled):hover,
+.source-refresh:not(:disabled):hover {
+  border-color: var(--border-strong);
+  background: var(--surface-inset);
+}
+
+.obsidian-import-submit:not(:disabled):hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.console-actions button:focus-visible,
+.source-refresh:focus-visible,
+.obsidian-import-submit:focus-visible,
+.source-card:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
+}
+
+.console-input,
+.obsidian-import-field input {
+  border-radius: var(--radius-sm);
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.console-input:focus,
+.obsidian-import-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
+}
+
+/* Helper / hint text: a consistent, readable secondary voice across panels. */
+.console-hint {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Inset code/result block: align rounding with the refreshed shell. */
+.console-result {
+  border-radius: var(--radius-sm);
 }
 
