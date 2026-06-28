@@ -31,20 +31,32 @@ function App() {
 
   return (
     <main>
-      <header>
+      <header className="app-header">
         <p className="parent-label">devdevbuilds</p>
         <h1>Hive|Mind</h1>
-        <p>Local-first knowledge graph over your sources · read-only demo build</p>
+        <p className="app-tagline">
+          Local-first knowledge graph over your sources
+          <span className="app-mode-badge">read-only demo build</span>
+        </p>
       </header>
 
       <section>
         <h2>Backend connection</h2>
         {error ? (
-          <p className="error">Disconnected: {error}</p>
+          <p className="status-pill status-pill-error">
+            <span className="status-dot" aria-hidden="true" />
+            Disconnected: {error}
+          </p>
         ) : health ? (
-          <p className="success">Connected</p>
+          <p className="status-pill status-pill-success">
+            <span className="status-dot" aria-hidden="true" />
+            Connected
+          </p>
         ) : (
-          <p>Checking connection…</p>
+          <p className="status-pill status-pill-pending">
+            <span className="status-dot" aria-hidden="true" />
+            Checking connection…
+          </p>
         )}
       </section>
 
