@@ -83,11 +83,11 @@ the existing `node_id`, `source_id`, `source_type`, `origin_path`, ordered
 chain carries backend-owned evidence under `metadata.evidence` and is tagged
 `metadata.derived = true`.
 
-The endpoint remains **read-only**. Temporal Decay, Dreaming Suggestions, and
-Provenance Chains are deterministic backend-derived sections. Query Trails still
-return deterministic demo/seed fixtures (`metadata.fixture = true`) until query
-persistence exists. No LLM/AI calls, graph/source/store mutation, new
-persistence, or new endpoints are part of this surface.
+The endpoint remains **read-only**. Temporal Decay, Dreaming Suggestions,
+Provenance Chains, and (as of Phase 16C) Query Trails are all deterministic
+backend-derived sections; no section is fixture-backed anymore. No LLM/AI calls,
+graph/source/store mutation, new persistence, or new endpoints are part of this
+surface.
 
 ### Query Trail contract (Phase 16B)
 
@@ -123,6 +123,44 @@ All fields default-safe so existing fixtures and any future persisted record
 validate unchanged. `unresolved_question` is the query-trail analogue of the
 still-blocked Dreaming `unresolved_query` type and likewise does not imply
 persisted history.
+
+### Query Trail backend derivation (Phase 16C)
+
+Phase 16C makes the Query Trails section backend-derived
+(`app/services/query_trails.py`) from existing store structure, replacing the
+demo fixture as the report's primary source. It adds **no** query persistence,
+storage tables, query logging, browser/localStorage capture, new endpoints,
+AI/LLM, dependencies, graph/source mutation, or frontend changes — it is a
+read-only projection.
+
+Derivation is backend-owned (not fixtures, not client capture) so the trail
+logic is deterministic and testable against the same store the rest of the
+report reads. Query persistence stays deferred because Hive|Mind has **no
+persisted query history**; fabricating query-memory records would be dishonest,
+so query-history-dependent categories remain blocked.
+
+Derived categories (existing data supports them):
+
+- `source_followup` — a source with linked knowledge nodes; suggests exploring
+  the rest of its content (`status = resolved`).
+- `knowledge_gap` — an unsourced node or an uncovered source (`status =
+  unresolved`, `result_count = 0`).
+- `related_query_cluster` — 2+ nodes sharing a tag (`status = resolved`).
+
+Blocked / deferred until real query history exists:
+
+- `repeated_query` — needs a persisted recurrence count; `occurrence_count`
+  stays `1` and no record is manufactured.
+- `unresolved_question` — needs a persisted "asked but nothing surfaced" record.
+
+Each derived entry carries `metadata.derived = true`, `metadata.fixture = false`,
+`metadata.derivation_origin = "query_trail_derivation"`, and a `metadata.evidence`
+trail explaining what existing data produced it. Because no query log exists,
+`evidence.history_available = false` and the required `last_executed_at` reflects
+the underlying record's last activity
+(`evidence.last_executed_at_basis = "underlying_record_activity"`), not a real
+query execution. The `origin` field stays `query_trail`. An empty store returns
+an empty list — no fabricated records.
 
 ## Compatibility Notes
 

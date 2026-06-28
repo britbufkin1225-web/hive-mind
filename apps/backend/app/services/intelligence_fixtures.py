@@ -1,18 +1,20 @@
 """Phase 11A — deterministic intelligence demo / seed fixtures.
 
-This module supplies **read-only demo data** for the remaining fixture-backed
-section of the Phase 10C intelligence report (query trails) so the frontend
-panel shows meaningful, stable content for demos, screenshots, and README
-presentation. The Temporal Decay (Phase 13A), Dreaming Suggestions (Phase 14C),
-and Provenance Chains (Phase 15C) sections are now backend-derived and no
-longer sourced here.
+This module supplies **read-only demo data** that historically backed the
+fixture sections of the Phase 10C intelligence report. As of Phase 16C every
+intelligence-report section is backend-derived, so the report no longer wires
+any of these fixtures in: Temporal Decay (Phase 13A), Dreaming Suggestions
+(Phase 14C), Provenance Chains (Phase 15C), and Query Trails (Phase 16C) are all
+sourced from their derivation services. The demo builders below are retained for
+reference and standalone illustration only (mirroring the retained
+``demo_provenance_chains``); they are not part of the live report payload.
 
 It is explicitly *not* real intelligence:
 
   * NO temporal decay calculation runs here (now derived: ``temporal_decay``).
   * NO Dreaming engine, heuristics, or scoring runs here (now derived:
     ``dreaming``).
-  * NO query persistence runs here.
+  * NO query persistence runs here (Query Trails now derived: ``query_trails``).
   * NO AI/LLM integration.
 
 Every value is a hand-authored, static fixture. There is no randomness and no
