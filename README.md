@@ -55,15 +55,22 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 20C - Final Demo Script + Portfolio Presentation Lock`
-  (documentation / demo only). Phase 20C packages the existing project narrative
-  into a clean, canonical walkthrough and **locks the presentation spine** — the
-  one-line story, the data-flow surface order, and the honesty boundaries — before
-  any further UI work. It adds a [Final Demo Script](docs/demo/final-demo-script.md)
-  and a [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md),
-  **without changing any backend, frontend, API, schema, dependency, or test
-  behavior**. UI work remains intentionally deferred until the presentation spine is
-  locked. The preceding **Phase 20B** aligned this README and the landing docs with
+- **Active phase:** `Phase 20D - Final Demo Screenshot + Evidence Capture Pass`
+  (capture / documentation only). Phase 20D executes the Phase 20A
+  screenshot/evidence plan against **real, locally running app state**: it verifies
+  the backend runtime directly through `/api/health`, `/api/sources`, `/api/graph`,
+  and `/api/intelligence/report`, and records the captured backend-runtime
+  screenshots and an evidence doc — **without changing any backend, frontend, CSS,
+  source-code, package, config, API, schema, dependency, or test behavior**. The
+  frontend browser state showed a fetch failure during capture; that is documented
+  honestly as captured runtime evidence, and **frontend troubleshooting is explicitly
+  out of scope for this capture pass** (UI work remains deferred). See the
+  [Phase 20D Final Demo Screenshot + Evidence Capture Pass](docs/demo/phase-20d-demo-evidence.md).
+  The preceding **Phase 20C** packaged the existing project narrative into a
+  canonical [Final Demo Script](docs/demo/final-demo-script.md) and locked the
+  presentation spine via a [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md)
+  — the one-line story, the data-flow surface order, and the honesty boundaries.
+  The preceding **Phase 20B** aligned this README and the landing docs with
   the locked Phase 20A demo release-candidate story — tool-first overview, the
   locked one-line narrative, the implemented / intentionally-read-only / planned
   distinction, design-rationale notes, the agent-assisted/human-reviewed workflow,
@@ -81,9 +88,11 @@ SVG visualization.
   Boundaries**; Phase 19A consolidated the Phase 18A–18F security-hardening arc into
   a single release-readiness view. Hive|Mind has a stronger, evidence-backed
   **defensive API posture for a local/demo dev-tool** — it is **not**
-  production-hardened. The next recommended phase is the **Final Demo Screenshot +
-  Evidence Capture Pass** (capture only), executing the Phase 20A
-  screenshot/evidence plan against real app state. See the
+  production-hardened. The next recommended phase is the **Final Portfolio Packaging
+  / Public Presentation Pass**, drawing on the locked scope and the captured
+  evidence. See the
+  [Phase 20D Final Demo Screenshot + Evidence Capture Pass](docs/demo/phase-20d-demo-evidence.md),
+  the
   [Final Demo Script](docs/demo/final-demo-script.md),
   the
   [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md),
@@ -227,7 +236,8 @@ foundations should be stable and honest before they are clever.
 | Phase 19B | Complete | Release readiness QA + demo evidence pass (documentation/evidence only); records the whole-project readiness posture, the completed security/intelligence arcs, a Demo Evidence Checklist, and explicit Release Readiness Boundaries. Demo-ready candidate, not production-ready/secure. |
 | Phase 20A | Complete | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); defines the final demo release-candidate scope before any polish/screenshots/release work — current demo story, locked deterministic read-only narrative (no AI/LLM), demo candidate surfaces with evidence/overstatement guards, portfolio-readiness checklist, screenshot/evidence plan (no screenshots created), known limitations, out-of-scope items, and a recommended 20B–20E sequence. |
 | Phase 20B | Complete | Final README + portfolio narrative hardening (documentation only); aligns the README and landing docs with the locked Phase 20A story — tool-first overview, locked one-line narrative, explicit implemented / read-only / planned distinction, design-rationale notes, agent-assisted/human-reviewed workflow, a guardrails/non-goals section, and the status advance to Phase 20B. No code, contract, or behavior changes. |
-| Phase 20C | Active | Final demo script + portfolio presentation lock (documentation / demo only); packages the existing narrative into a canonical [Final Demo Script](docs/demo/final-demo-script.md) and locks the presentation spine via a [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md) — one-line story, data-flow surface order, and honesty boundaries — before any further UI work. UI remains intentionally deferred. No code, contract, or behavior changes. |
+| Phase 20C | Complete | Final demo script + portfolio presentation lock (documentation / demo only); packages the existing narrative into a canonical [Final Demo Script](docs/demo/final-demo-script.md) and locks the presentation spine via a [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md) — one-line story, data-flow surface order, and honesty boundaries — before any further UI work. UI remains intentionally deferred. No code, contract, or behavior changes. |
+| Phase 20D | Active | Final demo screenshot + evidence capture pass (capture / documentation only); verifies the backend runtime directly via `/api/health`, `/api/sources`, `/api/graph`, and `/api/intelligence/report` and records the captured backend-runtime screenshots and an [evidence doc](docs/demo/phase-20d-demo-evidence.md). The frontend browser state showed a fetch failure, documented honestly as captured runtime evidence; frontend troubleshooting is out of scope. No code, contract, or behavior changes. |
 
 ## Planned logic
 
@@ -309,8 +319,9 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Phase 19B | Release readiness QA + demo evidence pass (documentation/evidence only); records the whole-project readiness posture and demo boundaries, with a Demo Evidence Checklist and explicit Release Readiness Boundaries. |
 | Phase 20A | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); locks the final demo release-candidate scope, surfaces, evidence/overstatement guards, readiness checklist, screenshot/evidence plan, limitations, and the recommended 20B–20E sequence. |
 | Phase 20B | Final README + portfolio narrative hardening (documentation only); align README and landing docs with the locked Phase 20A story, status, setup, and links. **Complete.** |
-| Phase 20C | Final demo script + portfolio presentation lock (documentation / demo only); package the narrative into a canonical demo script and lock the presentation spine before further UI work. **Active.** |
-| Next: demo evidence capture | Final demo screenshot + evidence capture pass (capture only); execute the Phase 20A screenshot/evidence plan against real app state. UI work stays deferred until after presentation lock. |
+| Phase 20C | Final demo script + portfolio presentation lock (documentation / demo only); package the narrative into a canonical demo script and lock the presentation spine before further UI work. **Complete.** |
+| Phase 20D | Final demo screenshot + evidence capture pass (capture / documentation only); verify the backend runtime directly via `/api/health`, `/api/sources`, `/api/graph`, and `/api/intelligence/report` and record the captured backend-runtime screenshots and [evidence doc](docs/demo/phase-20d-demo-evidence.md). Frontend fetch failure documented honestly as captured evidence; frontend troubleshooting out of scope. **Active.** |
+| Next: portfolio packaging | Final portfolio packaging / public presentation pass, drawing on the locked scope and captured evidence. UI work stays deferred. |
 | Future security phases | Obsidian import filesystem safety, intelligence evidence regression, frontend rendering safety, dependency/static baseline; production-security controls (auth, rate limiting, deployment hardening, secrets, audit logging, monitoring) stay out of scope until the runtime model changes. |
 | Future query phases | Add query-persistence logic only after contracts, privacy boundaries, and validation. |
 
@@ -426,6 +437,7 @@ npm run dev:frontend
 - [Phase 20B Final README + Portfolio Narrative Hardening](docs/release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md)
 - [Final Demo Script](docs/demo/final-demo-script.md)
 - [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md)
+- [Phase 20D Final Demo Screenshot + Evidence Capture Pass](docs/demo/phase-20d-demo-evidence.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script (earlier walkthrough)](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
