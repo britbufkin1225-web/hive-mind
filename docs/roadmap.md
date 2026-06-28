@@ -17,19 +17,29 @@ and the [Phase 18F API Edge Case Security Regression QA + Evidence](security/pha
 and the [Phase 19A Security Cohesion + Release Readiness Planning](security/phase-19a-security-cohesion-release-readiness-planning.md),
 and the [Phase 19B Release Readiness QA + Demo Evidence Pass](release-readiness/phase-19b-release-readiness-qa-demo-evidence.md),
 and the [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness Scope](release-readiness/phase-20a-demo-release-candidate-planning.md),
-and the [Phase 20B Final README + Portfolio Narrative Hardening](release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md).
+and the [Phase 20B Final README + Portfolio Narrative Hardening](release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md),
+and the [Phase 21D UI Demo Polish Planning / Dashboard Refinement Scope](phase-21d-ui-demo-polish-planning.md).
 
 ## Current status
 
-**Active phase:** Phase 21C - Connected UI screenshot + runtime evidence refresh
-(capture / documentation only). Phase 21C re-runs the local backend
-(`npm run dev:backend`, port `8787`) and frontend (`npm run dev:frontend`, port
-`5173`) and captures the **connected** UI state after the Phase 21A/21B
-runtime-config fixes — the "Connected" status pill, live API health, the rendered
-Knowledge Graph (7 nodes / 6 edges), and the backend-derived Intelligence Report —
-replacing Phase 20D's honestly-recorded `Failed to fetch` evidence while preserving
-that earlier history. It changes no backend, frontend, CSS, source-code, package,
-config, API, schema, dependency, or test behavior. See the
+**Active phase:** Phase 21D - UI Demo Polish Planning / Dashboard Refinement Scope
+(planning / documentation only). Phase 21D defines the next UI demo-polish
+direction **before** any UI implementation resumes: it documents the current
+connected UI state, a prioritized set of dashboard refinement targets (visual
+hierarchy, spacing/density, connected-data readability, Intelligence Report,
+Knowledge Graph, Source Registry, console, responsive behavior, screenshot
+friendliness), separates demo-readiness goals from future premium-UI ideas, locks
+read-only/non-mutating refinement boundaries, and recommends a scoped
+**Phase 21E — UI Demo Polish Implementation Pass**. It changes no backend,
+frontend, CSS, source-code, package, config, API, schema, dependency, or test
+behavior. See the
+[Phase 21D UI Demo Polish Planning / Dashboard Refinement Scope](phase-21d-ui-demo-polish-planning.md).
+The preceding **Phase 21C** re-ran the local backend (`8787`) and frontend (`5173`)
+and captured the **connected** UI state after the Phase 21A/21B runtime-config
+fixes — the "Connected" status pill, live API health, the rendered Knowledge Graph
+(7 nodes / 6 edges), and the backend-derived Intelligence Report — replacing Phase
+20D's honestly-recorded `Failed to fetch` evidence while preserving that history.
+See the
 [Phase 21C Connected UI Screenshot + Runtime Evidence Refresh](demo/phase-21c-connected-ui-evidence.md).
 The preceding **Phase 21A** added the dashboard shell foundation and **Phase 21B**
 aligned the frontend API base-URL runtime config (root `envDir`, canonical backend
@@ -244,8 +254,9 @@ Current non-capabilities:
 | 20D | Complete | Final demo screenshot + evidence capture pass (capture / documentation only); executes the Phase 20A screenshot/evidence plan against real, locally running app state — verifies the backend runtime directly via `/api/health`, `/api/sources`, `/api/graph`, and `/api/intelligence/report` and records the captured backend-runtime screenshots and an [evidence doc](demo/phase-20d-demo-evidence.md). The frontend browser state showed a `Failed to fetch` (a run-configuration mismatch, since fixed in 21A/21B), documented honestly as captured runtime evidence. Implements no code and changes no behavior. |
 | 21A | Complete | Dashboard shell foundation (frontend styling/scaffold); adds the dashboard shell layout/styles ahead of connected-UI evidence. |
 | 21B | Complete | Frontend API base-URL runtime config alignment; loads env from the repo root (`envDir`), documents the canonical backend port `8787`, and adds `.env.example` guidance — fixing the frontend/backend mismatch Phase 20D recorded. |
-| 21C | Active | Connected UI screenshot + runtime evidence refresh (capture / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures the connected UI state — "Connected" status, live API health, the rendered Knowledge Graph (7 nodes / 6 edges), and the backend-derived Intelligence Report — replacing Phase 20D's `Failed to fetch` evidence while preserving that history. Records an [evidence doc](demo/phase-21c-connected-ui-evidence.md) and connected-UI screenshots. Implements no code and changes no behavior. |
-| Next: portfolio packaging | Planned | Final portfolio packaging / public presentation pass, drawing on the locked scope and captured evidence. No code or contract changes. |
+| 21C | Complete | Connected UI screenshot + runtime evidence refresh (capture / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures the connected UI state — "Connected" status, live API health, the rendered Knowledge Graph (7 nodes / 6 edges), and the backend-derived Intelligence Report — replacing Phase 20D's `Failed to fetch` evidence while preserving that history. Records an [evidence doc](demo/phase-21c-connected-ui-evidence.md) and connected-UI screenshots. Implements no code and changes no behavior. |
+| 21D | Active | UI demo polish planning / dashboard refinement scope (planning / documentation only); documents the current connected UI state and a prioritized dashboard refinement set (visual hierarchy, spacing/density, connected-data readability, Intelligence Report, Knowledge Graph, Source Registry, console, responsive, screenshot friendliness), separates demo-readiness from future premium-UI ideas, locks read-only/non-mutating boundaries, and recommends a scoped Phase 21E implementation pass. See the [planning doc](phase-21d-ui-demo-polish-planning.md). Implements no code and changes no behavior. |
+| Next: 21E UI polish implementation | Planned | Phase 21E — UI Demo Polish Implementation Pass; frontend-only presentation work against the Phase 21D priorities (hierarchy, spacing, readability, screenshot friendliness). No backend, contract, logic, data-value, or dependency changes. |
 
 ## Future roadmap
 
