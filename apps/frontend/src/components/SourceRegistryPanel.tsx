@@ -556,7 +556,7 @@ function SourceRegistryPanel() {
 
         {state === "success" &&
           (sources.length === 0 ? (
-            <p className="console-hint">
+            <p className="console-hint source-empty">
               No sources registered yet. Connectors will appear here once
               registered.
             </p>

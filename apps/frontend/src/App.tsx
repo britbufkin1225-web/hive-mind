@@ -40,54 +40,56 @@ function App() {
         </p>
       </header>
 
-      <section>
-        <h2>Backend connection</h2>
-        {error ? (
-          <p className="status-pill status-pill-error">
-            <span className="status-dot" aria-hidden="true" />
-            Disconnected: {error}
-          </p>
-        ) : health ? (
-          <p className="status-pill status-pill-success">
-            <span className="status-dot" aria-hidden="true" />
-            Connected
-          </p>
-        ) : (
-          <p className="status-pill status-pill-pending">
-            <span className="status-dot" aria-hidden="true" />
-            Checking connection…
-          </p>
-        )}
-      </section>
+      <div className="status-row">
+        <section className="panel-connection">
+          <h2>Backend connection</h2>
+          {error ? (
+            <p className="status-pill status-pill-error">
+              <span className="status-dot" aria-hidden="true" />
+              Disconnected: {error}
+            </p>
+          ) : health ? (
+            <p className="status-pill status-pill-success">
+              <span className="status-dot" aria-hidden="true" />
+              Connected
+            </p>
+          ) : (
+            <p className="status-pill status-pill-pending">
+              <span className="status-dot" aria-hidden="true" />
+              Checking connection…
+            </p>
+          )}
+        </section>
 
-      <section>
-        <h2>API health</h2>
-        {health ? (
-          <dl>
-            <div><dt>Service</dt><dd>{health.service}</dd></div>
-            <div><dt>Version</dt><dd>{health.version}</dd></div>
-            <div><dt>Healthy</dt><dd>{health.ok ? "Yes" : "No"}</dd></div>
-          </dl>
-        ) : (
-          <p>No health response yet.</p>
-        )}
-      </section>
+        <section className="panel-health">
+          <h2>API health</h2>
+          {health ? (
+            <dl className="metric-grid">
+              <div><dt>Service</dt><dd>{health.service}</dd></div>
+              <div><dt>Version</dt><dd>{health.version}</dd></div>
+              <div><dt>Healthy</dt><dd>{health.ok ? "Yes" : "No"}</dd></div>
+            </dl>
+          ) : (
+            <p className="console-hint">No health response yet.</p>
+          )}
+        </section>
+      </div>
 
-      <section>
+      <section className="panel-vault">
         <h2>Vault summary</h2>
         {vault ? (
           <>
-            <dl>
+            <dl className="metric-grid metric-grid-vault">
               <div><dt>Files</dt><dd>{vault.totalFiles}</dd></div>
               <div><dt>Sources</dt><dd>{vault.totalSources}</dd></div>
               <div><dt>Models</dt><dd>{vault.totalModels}</dd></div>
               <div><dt>Nodes</dt><dd>{vault.totalNodes}</dd></div>
               <div><dt>Graph mode</dt><dd>{vault.graphMode}</dd></div>
             </dl>
-            <p>{vault.message}</p>
+            <p className="vault-message">{vault.message}</p>
           </>
         ) : (
-          <p>Vault summary unavailable.</p>
+          <p className="console-hint">Vault summary unavailable.</p>
         )}
       </section>
 
