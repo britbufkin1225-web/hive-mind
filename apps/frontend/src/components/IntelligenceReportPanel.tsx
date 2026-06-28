@@ -11,6 +11,7 @@ import type {
   ProvenanceChain,
   ProvenanceChainStatus,
   ProvenanceLinkKind,
+  QueryTrailCategory,
   QueryTrailEntry,
   QueryTrailStatus,
 } from "../types/api";
@@ -49,6 +50,26 @@ const PROVENANCE_LINK_KIND_LABELS: Record<ProvenanceLinkKind, string> = {
   edge: "Edge",
 };
 
+/** Human-readable labels for the Phase 16B trail-type axis. All five are listed
+ *  for type-safety, but only the three Phase 16C-derived categories are ever
+ *  produced by the backend today (see QUERY_TRAIL_CATEGORY_CLASS). */
+const QUERY_TRAIL_CATEGORY_LABELS: Record<QueryTrailCategory, string> = {
+  source_followup: "Source follow-up",
+  knowledge_gap: "Knowledge gap",
+  related_query_cluster: "Related cluster",
+  repeated_query: "Repeated query",
+  unresolved_question: "Unresolved question",
+};
+
+/** Per-category accent class for the three Phase 16C backend-derived trail
+ *  categories, so follow-up / gap / cluster rows are scannable at a glance. The
+ *  two deferred categories deliberately have no class — they are never emitted. */
+const QUERY_TRAIL_CATEGORY_CLASS: Partial<Record<QueryTrailCategory, string>> = {
+  source_followup: "intel-trail-source-followup",
+  knowledge_gap: "intel-trail-knowledge-gap",
+  related_query_cluster: "intel-trail-related-cluster",
+};
+
 const DECAY_BUCKET_LABELS: Record<DecayStatusBucket, string> = {
   fresh: "Fresh",
   aging: "Aging",
@@ -71,6 +92,14 @@ function suggestionTypeLabel(type: DreamingSuggestionType): string {
 
 function decayBucketLabel(bucket: DecayStatusBucket): string {
   return DECAY_BUCKET_LABELS[bucket] ?? bucket;
+}
+
+/** Label for a trail's category, falling back to a neutral label when the
+ *  backend omits one (no current path does, but the contract allows null). */
+function queryTrailCategoryLabel(category: QueryTrailCategory | null): string {
+  return category === null
+    ? "Query trail"
+    : QUERY_TRAIL_CATEGORY_LABELS[category] ?? category;
 }
 
 /** True when a record carries the seed/demo fixture marker stamped by the
@@ -541,18 +570,112 @@ function QueryTrailRow({ entry }: { entry: QueryTrailEntry }) {
     resolved: "intel-trail-resolved",
     unresolved: "intel-trail-unresolved",
   };
+  const categoryClass = entry.category
+    ? QUERY_TRAIL_CATEGORY_CLASS[entry.category] ?? ""
+    : "";
+
+  // Phase 16C stamps a stable `metadata.evidence` trail on every derived trail.
+  // Surface it read-only, mirroring the Dreaming / Provenance evidence rows: the
+  // `reason` reads as a one-line summary and the rest opens a collapsible trail.
+  const evidence = metaObject(entry, "evidence");
+  const reason = evidence ? asString(evidence.reason) : null;
+  const derivation = evidence ? asString(evidence.derivation) : null;
+  const fieldsUsed = evidence ? asStringArray(evidence.fields_used) : [];
+  const evidenceNodeIds = evidence ? asStringArray(evidence.node_ids) : [];
+  const evidenceSourceIds = evidence ? asStringArray(evidence.source_ids) : [];
+  const hasEvidence =
+    derivation !== null ||
+    fieldsUsed.length > 0 ||
+    evidenceNodeIds.length > 0 ||
+    evidenceSourceIds.length > 0;
+
   return (
-    <li className="intel-row">
+    <li className={`intel-row intel-trail-row ${categoryClass}`.trim()}>
       <div className="intel-row-head">
-        <span className="intel-row-id">{entry.query}</span>
-        <span className={`intel-status ${statusClass[entry.status] ?? ""}`}>
-          {entry.status}
+        <span className={`intel-tag intel-trail-tag ${categoryClass}`.trim()}>
+          {queryTrailCategoryLabel(entry.category)}
+        </span>
+        <span className="intel-suggest-head-meta">
+          {entry.confidence_hint && (
+            <span
+              className={`intel-chip intel-confidence ${confidenceClass(
+                entry.confidence_hint,
+              )}`.trim()}
+            >
+              {entry.confidence_hint} confidence
+            </span>
+          )}
+          <span className={`intel-status ${statusClass[entry.status] ?? ""}`}>
+            {entry.status}
+          </span>
         </span>
       </div>
+
+      <p className="intel-trail-query">{entry.query}</p>
+
+      {reason && <p className="intel-row-body intel-trail-reason">{reason}</p>}
+
+      <div className="intel-chip-row">
+        <span className="intel-chip">
+          {entry.result_count} result{entry.result_count === 1 ? "" : "s"}
+        </span>
+        {entry.result_node_ids.length > 0 && (
+          <span className="intel-chip">
+            {entry.result_node_ids.length} node
+            {entry.result_node_ids.length === 1 ? "" : "s"}
+          </span>
+        )}
+        {entry.result_source_ids.length > 0 && (
+          <span className="intel-chip">
+            {entry.result_source_ids.length} source
+            {entry.result_source_ids.length === 1 ? "" : "s"}
+          </span>
+        )}
+        {fieldsUsed.length > 0 && (
+          <span className="intel-chip">Fields: {fieldsUsed.join(", ")}</span>
+        )}
+      </div>
+
+      {hasEvidence && (
+        <details className="intel-evidence">
+          <summary>Evidence trail</summary>
+          <dl>
+            {derivation && (
+              <>
+                <dt>Derivation</dt>
+                <dd>{derivation}</dd>
+              </>
+            )}
+            {evidenceNodeIds.length > 0 && (
+              <>
+                <dt>Nodes</dt>
+                <dd>
+                  <code>{evidenceNodeIds.join(", ")}</code>
+                </dd>
+              </>
+            )}
+            {evidenceSourceIds.length > 0 && (
+              <>
+                <dt>Sources</dt>
+                <dd>
+                  <code>{evidenceSourceIds.join(", ")}</code>
+                </dd>
+              </>
+            )}
+          </dl>
+        </details>
+      )}
+
+      {/* `last_executed_at` is the underlying record's activity timestamp, not a
+          real query run — Hive|Mind stores no query history (see Phase 16C). It
+          is labelled "activity" here so the surface never implies live tracking. */}
       <p className="intel-row-sub">
-        {entry.kind} · {entry.result_count} result(s) · seen{" "}
-        {entry.occurrence_count}× · last run {formatDate(entry.last_executed_at)}
-        {entry.pinned ? " · pinned" : ""}
+        {entry.kind} · derived from existing knowledge/source signals · activity{" "}
+        {formatDate(entry.last_executed_at)}
+      </p>
+      <p className="intel-row-sub intel-readonly-note">
+        Backend-derived read-only query trail · No query history is stored · No
+        graph, source, or store data is mutated
       </p>
     </li>
   );
@@ -660,13 +783,13 @@ function IntelligenceReportPanel() {
             {isDemo && (
               <p className="intel-demo-note">
                 <strong>
-                  Temporal Knowledge Decay, Dreaming Suggestions, and Provenance
-                  Chains are now backend-derived
+                  Temporal Knowledge Decay, Dreaming Suggestions, Provenance
+                  Chains, and Query Trails are all backend-derived
                 </strong>{" "}
-                — all three are computed read-only from real store data and
-                labelled "Backend-derived" below. Query trails remain
-                deterministic demo fixtures (labelled "Demo data") until their
-                real logic ships in a later phase.
+                — each is computed read-only from real store data and labelled
+                "Backend-derived" below. Any section still labelled "Demo data"
+                is a deterministic fixture until its real logic ships in a later
+                phase.
               </p>
             )}
 
@@ -789,13 +912,37 @@ function IntelligenceReportPanel() {
 
             <ReportSection
               title="Query Trails"
-              description="A history of console and search queries, showing which resolved to results and which went unanswered. Highlights recurring and unresolved questions over time."
+              description="Backend-derived follow-up paths over existing knowledge — source follow-ups, knowledge gaps, and related concept clusters. Computed read-only from current source, node, and tag structure, not from stored query history."
               count={report.summary.query_trail_entry_count}
-              emptyText="No query trails yet — these appear as queries are run against the graph."
+              emptyText="No query trails yet — these appear once sources, nodes, and shared tags exist for the backend to derive follow-up paths and gaps from."
               badge={
-                report.query_trail_entries.some(isFixtureRecord) ? (
+                report.query_trail_entries.some(isDerivedRecord) ? (
+                  <SectionBadge kind="derived" />
+                ) : report.query_trail_entries.some(isFixtureRecord) ? (
                   <SectionBadge kind="demo" />
                 ) : undefined
+              }
+              note={
+                report.query_trail_entries.some(isDerivedRecord) ? (
+                  <p className="intel-derived-note">
+                    <strong>Backend-derived · Read-only · Non-mutating.</strong>{" "}
+                    Each trail is derived per request from existing source, node,
+                    and tag structure — no stored query history, no AI, and no
+                    scoring model. Every row carries an evidence trail explaining
+                    exactly how it was derived. Surfaced through the existing
+                    Intelligence Report API; nothing is logged or mutated.
+                  </p>
+                ) : undefined
+              }
+              footer={
+                <p className="intel-deferred-note">
+                  <strong>Deferred until persisted query history exists.</strong>{" "}
+                  Two trail types are intentionally not implemented:{" "}
+                  <code>repeated_query</code> needs a stored count of how often a
+                  query recurred, and <code>unresolved_question</code> needs a
+                  stored record of a question that surfaced nothing. Hive|Mind
+                  keeps no query history, so neither is fabricated here.
+                </p>
               }
             >
               <ul className="intel-list">

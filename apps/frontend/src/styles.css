@@ -1544,3 +1544,63 @@ dd {
   font-style: italic;
 }
 
+/* Phase 16D — Query Trails frontend visibility. Surface the Phase 16C
+   backend-derived MVP categories (source_followup, knowledge_gap,
+   related_query_cluster): category-accented rows, a query title, the derivation
+   reason, confidence pills (reused from Dreaming), and a collapsible evidence
+   trail (reused from Dreaming/Provenance). Additive and scoped to the
+   Intelligence Report query-trails section only. */
+
+/* Left-edge accent makes the three derived categories scannable in a list.
+   Defaults to neutral when the contract-allowed null category is ever hit. */
+.intel-trail-row {
+  border-left: 3px solid #d4d4d8;
+}
+
+.intel-trail-row.intel-trail-source-followup {
+  border-left-color: #818cf8;
+}
+
+.intel-trail-row.intel-trail-knowledge-gap {
+  border-left-color: #fbbf24;
+}
+
+.intel-trail-row.intel-trail-related-cluster {
+  border-left-color: #2dd4bf;
+}
+
+/* Category pill tinting, echoing each row's accent color. Two-class selectors
+   so the accent wins over the base `.intel-tag` color regardless of order. */
+.intel-trail-tag.intel-trail-source-followup {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #3730a3;
+}
+
+.intel-trail-tag.intel-trail-knowledge-gap {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+.intel-trail-tag.intel-trail-related-cluster {
+  background: #f0fdfa;
+  border-color: #99f6e4;
+  color: #0f766e;
+}
+
+/* The derived trail's query reads as the row title. */
+.intel-trail-query {
+  margin: 0.1rem 0 0.15rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #27272a;
+  line-height: 1.4;
+}
+
+/* Human-readable reason the backend derived this trail. */
+.intel-trail-reason {
+  color: #3f3f46;
+  line-height: 1.45;
+}
+
