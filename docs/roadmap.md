@@ -14,25 +14,35 @@ and the [Phase 18E API Edge Case Defensive Validation MVP](security/phase-18e-ap
 and the [Phase 18F API Edge Case Security Regression QA + Evidence](security/phase-18f-api-edge-case-security-regression-qa.md),
 and the [Phase 19A Security Cohesion + Release Readiness Planning](security/phase-19a-security-cohesion-release-readiness-planning.md),
 and the [Phase 19B Release Readiness QA + Demo Evidence Pass](release-readiness/phase-19b-release-readiness-qa-demo-evidence.md),
-and the [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness Scope](release-readiness/phase-20a-demo-release-candidate-planning.md).
+and the [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness Scope](release-readiness/phase-20a-demo-release-candidate-planning.md),
+and the [Phase 20B Final README + Portfolio Narrative Hardening](release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md).
 
 ## Current status
 
-**Active phase:** Phase 20A - Demo release candidate planning + final portfolio
-readiness scope (planning / documentation only). Phase 20A defines the **final
-demo release-candidate scope** for Hive|Mind before any final polish, screenshot
-capture, README narrative hardening, UI tightening, release tagging, or
-public-facing writeup. It states the current demo-ready story, locks the clean
-portfolio narrative (a local-first, deterministic, read-only knowledge
-intelligence dashboard with no AI/LLM), enumerates the demo candidate surfaces
-with per-surface evidence and overstatement guards, defines a portfolio-readiness
-checklist and a screenshot/evidence plan (no screenshots are created here), lists
-the known limitations to disclose and the out-of-scope items, and recommends a
-controlled next-phase sequence (20B–20E). It implements no code and changes no
-behavior. See the
+**Active phase:** Phase 20B - Final README + portfolio narrative hardening
+(documentation only). Phase 20B aligns the README and landing docs with the
+**locked Phase 20A demo release-candidate story**: it leads with the dev-tool
+product narrative, carries the locked one-line story, makes the
+implemented / intentionally-read-only / planned distinction explicit, adds concise
+design-rationale notes and a guardrails/non-goals section, states the
+agent-assisted/human-reviewed workflow (with devdevbuilds as the merge gate), and
+advances the status block — without changing any backend, frontend, API, schema,
+dependency, or test behavior. See the
+[Phase 20B Final README + Portfolio Narrative Hardening](release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md).
+The next recommended phase is **Phase 20C — Final Demo Screenshot + Evidence
+Capture Pass** (capture only).
+
+Phase 20A defined the **final demo release-candidate scope** for Hive|Mind before
+any final polish, screenshot capture, README narrative hardening, UI tightening,
+release tagging, or public-facing writeup. It states the current demo-ready story,
+locks the clean portfolio narrative (a local-first, deterministic, read-only
+knowledge intelligence dashboard with no AI/LLM), enumerates the demo candidate
+surfaces with per-surface evidence and overstatement guards, defines a
+portfolio-readiness checklist and a screenshot/evidence plan (no screenshots are
+created there), lists the known limitations to disclose and the out-of-scope items,
+and recommends a controlled next-phase sequence (20B–20E). It implements no code and
+changes no behavior. See the
 [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness Scope](release-readiness/phase-20a-demo-release-candidate-planning.md).
-The next recommended phase is **Phase 20B — Final README + Portfolio Narrative
-Hardening** (documentation only).
 
 Phase 19B verified and recorded the current
 state of Hive|Mind as a controlled, demo-ready, release-readiness *candidate*
@@ -212,7 +222,8 @@ Current non-capabilities:
 | 19A | Complete | Security cohesion + release readiness planning (planning/documentation only); consolidates the Phase 18A–18F arc into one release-readiness view, states the current security posture without overclaiming, distinguishes demo readiness from production security readiness, assesses the release-readiness categories, carries the deferred/blocked scope forward unchanged, and adds a release-readiness checklist plus rationale notes. Implements no code and changes no behavior. |
 | 19B | Complete | Release readiness QA + demo evidence pass (QA/documentation/evidence only); verifies and records the current readiness posture across backend API stability, the security hardening sequence (18A–19A), the four backend-derived Intelligence Report surfaces, Obsidian import/read-only behavior, the read-only Knowledge Graph visualization, demo clarity, and documentation cohesion; adds a Demo Evidence Checklist and explicit Release Readiness Boundaries; frames Hive&#124;Mind as a controlled, local/dev, demo-ready release-readiness candidate (not production-ready/secure). Implements no code and changes no behavior. |
 | 20A | Complete | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); defines the final demo release-candidate scope before any polish/screenshots/release work — states the current demo-ready story, locks the deterministic, read-only, local-first portfolio narrative (no AI/LLM), enumerates the demo candidate surfaces with per-surface evidence and overstatement guards, defines a portfolio-readiness checklist and a screenshot/evidence plan (no screenshots created), lists known limitations to disclose and out-of-scope items, and recommends a controlled 20B–20E sequence. Implements no code and changes no behavior. |
-| 20B | Planned | Final README + portfolio narrative hardening (documentation only); align README and landing docs with the locked Phase 20A story, status, setup, and links. |
+| 20B | Active | Final README + portfolio narrative hardening (documentation only); aligns the README and landing docs with the locked Phase 20A story — tool-first overview, locked one-line narrative, explicit implemented / intentionally-read-only / planned distinction, design-rationale notes, agent-assisted/human-reviewed workflow (devdevbuilds as merge gate), a guardrails/non-goals section, and the status advance to Phase 20B. Implements no code and changes no behavior. |
+| 20C | Planned | Final demo screenshot + evidence capture pass (capture only); execute the Phase 20A screenshot/evidence plan against real app state. No code or contract changes. |
 
 ## Future roadmap
 
