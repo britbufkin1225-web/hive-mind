@@ -7,12 +7,16 @@ the portfolio-facing [Demo Guide](demo-guide.md), and the
 [Phase 12A Demo Freeze + Release Snapshot](releases/phase-12a-demo-freeze.md),
 and the [Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-suggestions-e2e-evidence.md), and the [Phase 15E Provenance Chains QA Evidence](qa/phase-15e-provenance-chains-qa-evidence.md), and the [Phase 17A Intelligence Report Cohesion + System Readiness Plan](intelligence-report-cohesion-readiness-plan.md),
 and the [Phase 17B Intelligence Report Cohesion Hardening + Readiness QA](phase-17b-intelligence-cohesion-hardening.md),
-and the [Security Threat Model + Vulnerability Test Plan](security/threat-model-and-vulnerability-test-plan.md).
+and the [Security Threat Model + Vulnerability Test Plan](security/threat-model-and-vulnerability-test-plan.md),
+and the [Phase 18C Backend API Security Regression QA + Evidence](security/phase-18c-backend-api-security-regression-qa.md).
 
 ## Current status
 
-**Active phase:** Phase 18A - Security threat model + vulnerability test plan
-(documentation/planning only).
+**Active phase:** Phase 18C - Backend API security regression QA + evidence pass
+(QA / documentation only). Phase 18A delivered the security threat model +
+vulnerability test plan; Phase 18B implemented the §5.1 API defensive-validation /
+error-safety cases; Phase 18C verifies those behaviors, maps coverage to the
+threat model, and records the regression evidence.
 
 With Phase 16C merged, all four Intelligence Report surfaces (Temporal Decay,
 Dreaming Suggestions, Provenance Chains, Query Trails) are backend-derived and
@@ -144,7 +148,9 @@ Current non-capabilities:
 | 16C | Complete | Query Trails backend-derived MVP for `source_followup` / `knowledge_gap` / `related_query_cluster`; `repeated_query` / `unresolved_question` deferred until query history is persisted. |
 | 17A | Complete | Intelligence Report cohesion + system readiness planning (documentation only); aligns the four backend-derived surfaces and recommends a conservative, foundation-first next phase. |
 | 17B | Complete | Intelligence Report cohesion hardening + readiness QA (documentation only); design rationale, explicit Temporal Decay thresholds, edge-case matrix, evidence expectations, performance/readiness notes, and future source-adapter strategy. |
-| 18A | Planned / Active | Security threat model + vulnerability test plan (documentation only); scope/authorization, system inventory, trust boundaries, attack-surface matrix, planned test categories, pass/fail criteria, and recommended future hardening phases (18B–18F). |
+| 18A | Complete | Security threat model + vulnerability test plan (documentation only); scope/authorization, system inventory, trust boundaries, attack-surface matrix, planned test categories, pass/fail criteria, and recommended future hardening phases (18B–18F). |
+| 18B | Complete | Backend API defensive validation + error safety; global clean-JSON `500` handler (no traceback/path leak), malformed Obsidian vault-path normalization (→ `400`), and additive upper-bound length guards on client free-text fields (→ `422`), with regression coverage in `test_api_error_safety.py`. |
+| 18C | Complete | Backend API security regression QA + evidence pass (QA/documentation only); verifies the Phase 18B §5.1/§5.3 behaviors, maps coverage to the threat model, and records test evidence (23 targeted + 249 full backend tests passing). |
 
 ## Future roadmap
 
@@ -156,7 +162,7 @@ Current non-capabilities:
 | Query trails | Persist and present useful console/search history. Phase 16A defined local/read-only boundaries and relationships; Phase 16B aligned the `QueryTrailEntry` contract; Phase 16C shipped a backend-derived MVP for `source_followup` / `knowledge_gap` / `related_query_cluster` from existing source/node/tag structure and made it frontend-visible. Remaining: local query persistence to unblock `repeated_query` / `unresolved_question`. | Read-only structural projection; no query persistence/logging/capture; `repeated_query` / `unresolved_question` stay blocked until real query history exists. |
 | Intelligence cohesion | Keep the four backend-derived surfaces (decay, dreaming, provenance, trails) aligned on terminology, evidence shape, empty-state parity, and readiness before adding a fifth. Phase 17A is the planning pass; Phase 17B is the readiness-hardening pass (rationale, thresholds, edge cases, evidence expectations, performance, adapter strategy). | Documentation/cohesion first; no new intelligence logic until the readiness review justifies it. |
 | Agent Ops | Expose governed agent/source registry data in the app. | Start read-only from `docs/agent-lab/` shapes. |
-| Security hardening | Owner-authorized, local-only defensive testing and hardening per the [threat model + vulnerability test plan](security/threat-model-and-vulnerability-test-plan.md): API validation/error safety (18B), Obsidian import filesystem safety (18C), intelligence evidence regression (18D), frontend rendering safety (18E), dependency/static baseline (18F). | Plan-first; no third-party targets; document findings before fixing; preserve read-only intelligence guardrails. |
+| Security hardening | Owner-authorized, local-only defensive testing and hardening per the [threat model + vulnerability test plan](security/threat-model-and-vulnerability-test-plan.md): API validation/error safety shipped (18B) and regression-verified (18C, [evidence](security/phase-18c-backend-api-security-regression-qa.md)). Remaining: Obsidian import filesystem safety, intelligence evidence regression, frontend rendering safety, dependency/static baseline. | Plan-first; no third-party targets; document findings before fixing; preserve read-only intelligence guardrails. |
 
 ## Standing guardrails
 
