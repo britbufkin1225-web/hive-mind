@@ -55,15 +55,20 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 20B - Final README + Portfolio Narrative Hardening`
-  (documentation only). Phase 20B aligns this README and the landing docs with the
-  **locked Phase 20A demo release-candidate story**: it leads with the dev-tool
-  product narrative, carries the locked one-line story, makes the
-  implemented / intentionally-read-only / planned distinction explicit, adds concise
-  design-rationale notes and a guardrails/non-goals section, states the
-  agent-assisted/human-reviewed workflow, and advances the status block — **without
-  changing any backend, frontend, API, schema, dependency, or test behavior**. The
-  preceding **Phase 20A** locked the final demo release-candidate scope: the current
+- **Active phase:** `Phase 20C - Final Demo Script + Portfolio Presentation Lock`
+  (documentation / demo only). Phase 20C packages the existing project narrative
+  into a clean, canonical walkthrough and **locks the presentation spine** — the
+  one-line story, the data-flow surface order, and the honesty boundaries — before
+  any further UI work. It adds a [Final Demo Script](docs/demo/final-demo-script.md)
+  and a [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md),
+  **without changing any backend, frontend, API, schema, dependency, or test
+  behavior**. UI work remains intentionally deferred until the presentation spine is
+  locked. The preceding **Phase 20B** aligned this README and the landing docs with
+  the locked Phase 20A demo release-candidate story — tool-first overview, the
+  locked one-line narrative, the implemented / intentionally-read-only / planned
+  distinction, design-rationale notes, the agent-assisted/human-reviewed workflow,
+  and a guardrails/non-goals section. Before that, **Phase 20A** locked the final
+  demo release-candidate scope: the current
   demo story, the clean portfolio narrative — a local-first developer knowledge
   intelligence dashboard that organizes imported sources, visualizes relationships,
   and derives deterministic, read-only intelligence signals with **no AI/LLM** — the
@@ -76,8 +81,13 @@ SVG visualization.
   Boundaries**; Phase 19A consolidated the Phase 18A–18F security-hardening arc into
   a single release-readiness view. Hive|Mind has a stronger, evidence-backed
   **defensive API posture for a local/demo dev-tool** — it is **not**
-  production-hardened. The next recommended phase is **Phase 20C — Final Demo
-  Screenshot + Evidence Capture Pass** (capture only). See the
+  production-hardened. The next recommended phase is the **Final Demo Screenshot +
+  Evidence Capture Pass** (capture only), executing the Phase 20A
+  screenshot/evidence plan against real app state. See the
+  [Final Demo Script](docs/demo/final-demo-script.md),
+  the
+  [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md),
+  the
   [Phase 20B Final README + Portfolio Narrative Hardening](docs/release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md),
   the
   [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness Scope](docs/release-readiness/phase-20a-demo-release-candidate-planning.md),
@@ -216,7 +226,8 @@ foundations should be stable and honest before they are clever.
 | Phase 19A | Complete | Security cohesion + release readiness planning (documentation only); consolidates the Phase 18A–18F arc into a demo-ready (not production-secure) release-readiness view with posture, checklist, deferred scope, and rationale. |
 | Phase 19B | Complete | Release readiness QA + demo evidence pass (documentation/evidence only); records the whole-project readiness posture, the completed security/intelligence arcs, a Demo Evidence Checklist, and explicit Release Readiness Boundaries. Demo-ready candidate, not production-ready/secure. |
 | Phase 20A | Complete | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); defines the final demo release-candidate scope before any polish/screenshots/release work — current demo story, locked deterministic read-only narrative (no AI/LLM), demo candidate surfaces with evidence/overstatement guards, portfolio-readiness checklist, screenshot/evidence plan (no screenshots created), known limitations, out-of-scope items, and a recommended 20B–20E sequence. |
-| Phase 20B | Active | Final README + portfolio narrative hardening (documentation only); aligns the README and landing docs with the locked Phase 20A story — tool-first overview, locked one-line narrative, explicit implemented / read-only / planned distinction, design-rationale notes, agent-assisted/human-reviewed workflow, a guardrails/non-goals section, and the status advance to Phase 20B. No code, contract, or behavior changes. |
+| Phase 20B | Complete | Final README + portfolio narrative hardening (documentation only); aligns the README and landing docs with the locked Phase 20A story — tool-first overview, locked one-line narrative, explicit implemented / read-only / planned distinction, design-rationale notes, agent-assisted/human-reviewed workflow, a guardrails/non-goals section, and the status advance to Phase 20B. No code, contract, or behavior changes. |
+| Phase 20C | Active | Final demo script + portfolio presentation lock (documentation / demo only); packages the existing narrative into a canonical [Final Demo Script](docs/demo/final-demo-script.md) and locks the presentation spine via a [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md) — one-line story, data-flow surface order, and honesty boundaries — before any further UI work. UI remains intentionally deferred. No code, contract, or behavior changes. |
 
 ## Planned logic
 
@@ -297,8 +308,9 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Phase 19A | Security cohesion + release readiness planning (documentation only); consolidates the 18A–18F arc into a demo-ready (not production-secure) posture with a release-readiness checklist and deferred-scope carry-forward. |
 | Phase 19B | Release readiness QA + demo evidence pass (documentation/evidence only); records the whole-project readiness posture and demo boundaries, with a Demo Evidence Checklist and explicit Release Readiness Boundaries. |
 | Phase 20A | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); locks the final demo release-candidate scope, surfaces, evidence/overstatement guards, readiness checklist, screenshot/evidence plan, limitations, and the recommended 20B–20E sequence. |
-| Phase 20B | Final README + portfolio narrative hardening (documentation only); align README and landing docs with the locked Phase 20A story, status, setup, and links. **Active.** |
-| Phase 20C | Final demo screenshot + evidence capture pass (capture only); execute the Phase 20A screenshot/evidence plan against real app state. |
+| Phase 20B | Final README + portfolio narrative hardening (documentation only); align README and landing docs with the locked Phase 20A story, status, setup, and links. **Complete.** |
+| Phase 20C | Final demo script + portfolio presentation lock (documentation / demo only); package the narrative into a canonical demo script and lock the presentation spine before further UI work. **Active.** |
+| Next: demo evidence capture | Final demo screenshot + evidence capture pass (capture only); execute the Phase 20A screenshot/evidence plan against real app state. UI work stays deferred until after presentation lock. |
 | Future security phases | Obsidian import filesystem safety, intelligence evidence regression, frontend rendering safety, dependency/static baseline; production-security controls (auth, rate limiting, deployment hardening, secrets, audit logging, monitoring) stay out of scope until the runtime model changes. |
 | Future query phases | Add query-persistence logic only after contracts, privacy boundaries, and validation. |
 
@@ -412,8 +424,10 @@ npm run dev:frontend
 - [Phase 19B Release Readiness QA + Demo Evidence Pass](docs/release-readiness/phase-19b-release-readiness-qa-demo-evidence.md)
 - [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness Scope](docs/release-readiness/phase-20a-demo-release-candidate-planning.md)
 - [Phase 20B Final README + Portfolio Narrative Hardening](docs/release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md)
+- [Final Demo Script](docs/demo/final-demo-script.md)
+- [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md)
 - [Demo Guide](docs/demo-guide.md)
-- [Demo Script](docs/demo-script.md)
+- [Demo Script (earlier walkthrough)](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
 - [Phase 11 Demo Readiness](docs/phase-11-demo-readiness.md)
 - [Phase 12A Demo Freeze + Release Snapshot](docs/releases/phase-12a-demo-freeze.md)
