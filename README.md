@@ -55,16 +55,27 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 20D - Final Demo Screenshot + Evidence Capture Pass`
-  (capture / documentation only). Phase 20D executes the Phase 20A
-  screenshot/evidence plan against **real, locally running app state**: it verifies
+- **Active phase:** `Phase 21C - Connected UI Screenshot + Runtime Evidence Refresh`
+  (capture / documentation only). Phase 21C re-runs the local backend
+  (`npm run dev:backend`, port `8787`) and frontend (`npm run dev:frontend`, port
+  `5173`) and captures the **connected** UI state after the Phase 21A/21B
+  runtime-config fixes — the **"Connected"** status pill, live API health
+  (`hivemind-backend` `0.1.0`), the rendered Knowledge Graph (7 nodes / 6 edges),
+  and the backend-derived Intelligence Report — **replacing Phase 20D's honestly
+  recorded `Failed to fetch` evidence while preserving that history**, and
+  **without changing any backend, frontend, CSS, source-code, package, config, API,
+  schema, dependency, or test behavior**. See the
+  [Phase 21C Connected UI Screenshot + Runtime Evidence Refresh](docs/demo/phase-21c-connected-ui-evidence.md).
+  The preceding **Phase 21A** added the dashboard shell foundation and **Phase 21B**
+  aligned the frontend API base-URL runtime config (root `envDir`, canonical backend
+  port `8787`), together fixing the frontend/backend mismatch Phase 20D documented.
+  Before that, **Phase 20D** executed the Phase 20A
+  screenshot/evidence plan against **real, locally running app state**: it verified
   the backend runtime directly through `/api/health`, `/api/sources`, `/api/graph`,
-  and `/api/intelligence/report`, and records the captured backend-runtime
-  screenshots and an evidence doc — **without changing any backend, frontend, CSS,
-  source-code, package, config, API, schema, dependency, or test behavior**. The
-  frontend browser state showed a fetch failure during capture; that is documented
-  honestly as captured runtime evidence, and **frontend troubleshooting is explicitly
-  out of scope for this capture pass** (UI work remains deferred). See the
+  and `/api/intelligence/report`, and recorded the captured backend-runtime
+  screenshots and an evidence doc; its frontend browser state showed a `Failed to
+  fetch` (a run-configuration mismatch, since fixed), documented honestly as
+  captured runtime evidence. See the
   [Phase 20D Final Demo Screenshot + Evidence Capture Pass](docs/demo/phase-20d-demo-evidence.md).
   The preceding **Phase 20C** packaged the existing project narrative into a
   canonical [Final Demo Script](docs/demo/final-demo-script.md) and locked the
@@ -237,7 +248,10 @@ foundations should be stable and honest before they are clever.
 | Phase 20A | Complete | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); defines the final demo release-candidate scope before any polish/screenshots/release work — current demo story, locked deterministic read-only narrative (no AI/LLM), demo candidate surfaces with evidence/overstatement guards, portfolio-readiness checklist, screenshot/evidence plan (no screenshots created), known limitations, out-of-scope items, and a recommended 20B–20E sequence. |
 | Phase 20B | Complete | Final README + portfolio narrative hardening (documentation only); aligns the README and landing docs with the locked Phase 20A story — tool-first overview, locked one-line narrative, explicit implemented / read-only / planned distinction, design-rationale notes, agent-assisted/human-reviewed workflow, a guardrails/non-goals section, and the status advance to Phase 20B. No code, contract, or behavior changes. |
 | Phase 20C | Complete | Final demo script + portfolio presentation lock (documentation / demo only); packages the existing narrative into a canonical [Final Demo Script](docs/demo/final-demo-script.md) and locks the presentation spine via a [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md) — one-line story, data-flow surface order, and honesty boundaries — before any further UI work. UI remains intentionally deferred. No code, contract, or behavior changes. |
-| Phase 20D | Active | Final demo screenshot + evidence capture pass (capture / documentation only); verifies the backend runtime directly via `/api/health`, `/api/sources`, `/api/graph`, and `/api/intelligence/report` and records the captured backend-runtime screenshots and an [evidence doc](docs/demo/phase-20d-demo-evidence.md). The frontend browser state showed a fetch failure, documented honestly as captured runtime evidence; frontend troubleshooting is out of scope. No code, contract, or behavior changes. |
+| Phase 20D | Complete | Final demo screenshot + evidence capture pass (capture / documentation only); verifies the backend runtime directly via `/api/health`, `/api/sources`, `/api/graph`, and `/api/intelligence/report` and records the captured backend-runtime screenshots and an [evidence doc](docs/demo/phase-20d-demo-evidence.md). The frontend browser state showed a `Failed to fetch` (run-configuration mismatch, since fixed in 21A/21B), documented honestly as captured runtime evidence. No code, contract, or behavior changes. |
+| Phase 21A | Complete | Dashboard shell foundation (frontend styling/scaffold); adds the dashboard shell layout/styles ahead of connected-UI evidence. |
+| Phase 21B | Complete | Frontend API base-URL runtime config alignment; loads env from the repo root (`envDir`), documents the canonical backend port `8787`, and adds `.env.example` guidance — fixing the frontend/backend mismatch Phase 20D recorded. |
+| Phase 21C | Active | Connected UI screenshot + runtime evidence refresh (capture / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures the connected UI state — "Connected" status, live API health, the rendered Knowledge Graph (7 nodes / 6 edges), and the backend-derived Intelligence Report — replacing Phase 20D's `Failed to fetch` evidence while preserving that history. Records an [evidence doc](docs/demo/phase-21c-connected-ui-evidence.md) and connected-UI screenshots. No code, contract, or behavior changes. |
 
 ## Planned logic
 
@@ -320,8 +334,10 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Phase 20A | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); locks the final demo release-candidate scope, surfaces, evidence/overstatement guards, readiness checklist, screenshot/evidence plan, limitations, and the recommended 20B–20E sequence. |
 | Phase 20B | Final README + portfolio narrative hardening (documentation only); align README and landing docs with the locked Phase 20A story, status, setup, and links. **Complete.** |
 | Phase 20C | Final demo script + portfolio presentation lock (documentation / demo only); package the narrative into a canonical demo script and lock the presentation spine before further UI work. **Complete.** |
-| Phase 20D | Final demo screenshot + evidence capture pass (capture / documentation only); verify the backend runtime directly via `/api/health`, `/api/sources`, `/api/graph`, and `/api/intelligence/report` and record the captured backend-runtime screenshots and [evidence doc](docs/demo/phase-20d-demo-evidence.md). Frontend fetch failure documented honestly as captured evidence; frontend troubleshooting out of scope. **Active.** |
-| Next: portfolio packaging | Final portfolio packaging / public presentation pass, drawing on the locked scope and captured evidence. UI work stays deferred. |
+| Phase 20D | Final demo screenshot + evidence capture pass (capture / documentation only); verify the backend runtime directly via `/api/health`, `/api/sources`, `/api/graph`, and `/api/intelligence/report` and record the captured backend-runtime screenshots and [evidence doc](docs/demo/phase-20d-demo-evidence.md). Frontend `Failed to fetch` documented honestly as captured evidence (run-configuration mismatch, since fixed). **Complete.** |
+| Phase 21A / 21B | Dashboard shell foundation (21A) and frontend API base-URL runtime config alignment (21B, root `envDir` + canonical backend port `8787`), fixing the frontend/backend mismatch Phase 20D recorded. **Complete.** |
+| Phase 21C | Connected UI screenshot + runtime evidence refresh (capture / documentation only); re-run the local backend (`8787`) and frontend (`5173`) and capture the connected UI state — "Connected" status, live API health, the rendered Knowledge Graph, and the backend-derived Intelligence Report — replacing Phase 20D's `Failed to fetch` evidence while preserving that history. See the [evidence doc](docs/demo/phase-21c-connected-ui-evidence.md). **Active.** |
+| Next: portfolio packaging | Final portfolio packaging / public presentation pass, drawing on the locked scope and captured evidence. |
 | Future security phases | Obsidian import filesystem safety, intelligence evidence regression, frontend rendering safety, dependency/static baseline; production-security controls (auth, rate limiting, deployment hardening, secrets, audit logging, monitoring) stay out of scope until the runtime model changes. |
 | Future query phases | Add query-persistence logic only after contracts, privacy boundaries, and validation. |
 
@@ -438,6 +454,7 @@ npm run dev:frontend
 - [Final Demo Script](docs/demo/final-demo-script.md)
 - [Portfolio Presentation Lock](docs/demo/portfolio-presentation-lock.md)
 - [Phase 20D Final Demo Screenshot + Evidence Capture Pass](docs/demo/phase-20d-demo-evidence.md)
+- [Phase 21C Connected UI Screenshot + Runtime Evidence Refresh](docs/demo/phase-21c-connected-ui-evidence.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script (earlier walkthrough)](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
