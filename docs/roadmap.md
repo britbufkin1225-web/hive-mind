@@ -22,17 +22,28 @@ and the [Phase 21D UI Demo Polish Planning / Dashboard Refinement Scope](phase-2
 
 ## Current status
 
-**Active phase:** Phase 21D - UI Demo Polish Planning / Dashboard Refinement Scope
-(planning / documentation only). Phase 21D defines the next UI demo-polish
-direction **before** any UI implementation resumes: it documents the current
-connected UI state, a prioritized set of dashboard refinement targets (visual
-hierarchy, spacing/density, connected-data readability, Intelligence Report,
-Knowledge Graph, Source Registry, console, responsive behavior, screenshot
-friendliness), separates demo-readiness goals from future premium-UI ideas, locks
-read-only/non-mutating refinement boundaries, and recommends a scoped
-**Phase 21E — UI Demo Polish Implementation Pass**. It changes no backend,
-frontend, CSS, source-code, package, config, API, schema, dependency, or test
-behavior. See the
+**Active phase:** Phase 21F - UI Demo Polish QA + Screenshot Evidence Refresh
+(QA / evidence / documentation only). Phase 21F re-ran the local backend (`8787`)
+and frontend (`5173`), validated that the **Phase 21E**-polished dashboard is still
+**connected** to the backend, and refreshed the screenshot/evidence trail so the
+captured demo proof reflects the **current polished** app state. The directly
+exercised endpoints returned the same shapes/values as Phase 21C (health `0.1.0`;
+graph 7 nodes / 6 edges; Intelligence Report Dreaming `0` / Decay `7` / Provenance
+`7` / Query Trails `7`), confirming **no backend/API/schema behavior changed**, and
+`npm run check:frontend` passes. New `phase-21f-connected-*` screenshots supersede
+the pre-polish `phase-21c-*` set while preserving that history. It changes no
+backend, frontend, CSS, source-code, package, config, API, schema, dependency, or
+test behavior. See the
+[Phase 21F UI Demo Polish QA + Screenshot Evidence Refresh](demo/phase-21f-ui-demo-polish-qa-evidence.md).
+The preceding **Phase 21E** implemented the presentation-only UI demo polish pass
+(header band, `DEVDEVBUILDS` parent label, `READ-ONLY DEMO BUILD` badge,
+connection/health status row, card-style metric grids) against the
+**Phase 21D — UI Demo Polish Planning / Dashboard Refinement Scope**, which
+documented the connected UI state and a prioritized set of dashboard refinement
+targets (visual hierarchy, spacing/density, connected-data readability,
+Intelligence Report, Knowledge Graph, Source Registry, console, responsive
+behavior, screenshot friendliness) and locked read-only/non-mutating boundaries.
+See the
 [Phase 21D UI Demo Polish Planning / Dashboard Refinement Scope](phase-21d-ui-demo-polish-planning.md).
 The preceding **Phase 21C** re-ran the local backend (`8787`) and frontend (`5173`)
 and captured the **connected** UI state after the Phase 21A/21B runtime-config
@@ -255,8 +266,10 @@ Current non-capabilities:
 | 21A | Complete | Dashboard shell foundation (frontend styling/scaffold); adds the dashboard shell layout/styles ahead of connected-UI evidence. |
 | 21B | Complete | Frontend API base-URL runtime config alignment; loads env from the repo root (`envDir`), documents the canonical backend port `8787`, and adds `.env.example` guidance — fixing the frontend/backend mismatch Phase 20D recorded. |
 | 21C | Complete | Connected UI screenshot + runtime evidence refresh (capture / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures the connected UI state — "Connected" status, live API health, the rendered Knowledge Graph (7 nodes / 6 edges), and the backend-derived Intelligence Report — replacing Phase 20D's `Failed to fetch` evidence while preserving that history. Records an [evidence doc](demo/phase-21c-connected-ui-evidence.md) and connected-UI screenshots. Implements no code and changes no behavior. |
-| 21D | Active | UI demo polish planning / dashboard refinement scope (planning / documentation only); documents the current connected UI state and a prioritized dashboard refinement set (visual hierarchy, spacing/density, connected-data readability, Intelligence Report, Knowledge Graph, Source Registry, console, responsive, screenshot friendliness), separates demo-readiness from future premium-UI ideas, locks read-only/non-mutating boundaries, and recommends a scoped Phase 21E implementation pass. See the [planning doc](phase-21d-ui-demo-polish-planning.md). Implements no code and changes no behavior. |
-| Next: 21E UI polish implementation | Planned | Phase 21E — UI Demo Polish Implementation Pass; frontend-only presentation work against the Phase 21D priorities (hierarchy, spacing, readability, screenshot friendliness). No backend, contract, logic, data-value, or dependency changes. |
+| 21D | Complete | UI demo polish planning / dashboard refinement scope (planning / documentation only); documents the current connected UI state and a prioritized dashboard refinement set (visual hierarchy, spacing/density, connected-data readability, Intelligence Report, Knowledge Graph, Source Registry, console, responsive, screenshot friendliness), separates demo-readiness from future premium-UI ideas, locks read-only/non-mutating boundaries, and recommends a scoped Phase 21E implementation pass. See the [planning doc](phase-21d-ui-demo-polish-planning.md). Implements no code and changes no behavior. |
+| 21E | Complete | UI demo polish implementation pass (frontend presentation only); polished header band (`DEVDEVBUILDS` parent label, `READ-ONLY DEMO BUILD` badge), connection/health status row, and card-style metric grids against the Phase 21D priorities. Frontend-only (`App.tsx`, `SourceRegistryPanel.tsx`, `styles.css`); no backend, contract, logic, data-value, or dependency changes. |
+| 21F | Active | UI demo polish QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`), validates the Phase 21E-polished UI is still connected (live API health `0.1.0`, Knowledge Graph 7 nodes / 6 edges, backend-derived Intelligence Report — Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7), confirms `npm run check:frontend` passes, and refreshes the screenshot trail with `phase-21f-connected-*` captures superseding the pre-polish `phase-21c-*` set while preserving that history. See the [evidence doc](demo/phase-21f-ui-demo-polish-qa-evidence.md). Implements no code and changes no behavior. |
+| Next: Phase 22 | Planned | Further UI / product expansion remains out of scope until explicitly opened; QA/evidence keeps the demo proof current in the interim. |
 
 ## Future roadmap
 
