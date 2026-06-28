@@ -34,16 +34,22 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 18A - Security Threat Model + Vulnerability Test Plan`
-  (documentation/planning only — a threat model, trust boundaries, attack-surface
-  matrix, vulnerability test plan, pass/fail criteria, and future hardening
-  recommendations for later owner-authorized, local-only defensive testing; no
-  security fix, auth, validation, or behavior change is implemented). See the
-  [Security Threat Model + Vulnerability Test Plan](docs/security/threat-model-and-vulnerability-test-plan.md),
-  building on the
-  [Phase 17B Intelligence Report Cohesion Hardening + Readiness QA](docs/phase-17b-intelligence-cohesion-hardening.md)
+- **Active phase:** `Phase 19A - Security Cohesion + Release Readiness Planning`
+  (documentation/planning only). Phase 19A consolidates the completed Phase
+  18A–18F security-hardening arc into a single release-readiness view: it states
+  the current security posture without overclaiming, distinguishes **demo
+  readiness** from **production security readiness**, assesses the
+  release-readiness categories, carries the deferred/blocked scope forward
+  unchanged, and adds a release-readiness checklist. No security fix, auth,
+  validation, or behavior change is implemented. The preceding Phase 18 arc
+  delivered a security threat model (18A), backend API defensive validation +
+  error safety (18B), a regression/evidence pass (18C), an edge-case triage (18D),
+  an edge-case validation MVP (18E), and a second regression/evidence pass (18F).
+  Hive|Mind now has a stronger, evidence-backed **defensive API posture for a
+  local/demo dev-tool** — it is **not** production-hardened. See the
+  [Phase 19A Security Cohesion + Release Readiness Planning](docs/security/phase-19a-security-cohesion-release-readiness-planning.md)
   and the
-  [Intelligence Report Cohesion + System Readiness Plan](docs/intelligence-report-cohesion-readiness-plan.md).
+  [Security Threat Model + Vulnerability Test Plan](docs/security/threat-model-and-vulnerability-test-plan.md).
 - **Completed foundation:** React/FastAPI app shell, local JSON-backed
   `HiveStore`, Hive Console (API + panel), Source Registry (backend + frontend +
   inspector), Obsidian adapter and import pipeline with frontend import panel,
@@ -131,7 +137,13 @@ or any graph/source/store mutation. See the
 | Phase 16C | Complete | Query Trails backend-derived MVP (`source_followup` / `knowledge_gap` / `related_query_cluster`) and frontend visibility; query-history categories deferred. |
 | Phase 17A | Complete | Intelligence Report cohesion + system readiness planning (documentation only). |
 | Phase 17B | Complete | Intelligence Report cohesion hardening + readiness QA (documentation only); rationale, decay thresholds, edge cases, evidence expectations, performance notes, and future adapter strategy. |
-| Phase 18A | Planned / Active | Security threat model + vulnerability test plan (documentation only); scope/authorization, system inventory, trust boundaries, attack-surface matrix, planned test categories, pass/fail criteria, and future hardening phases. |
+| Phase 18A | Complete | Security threat model + vulnerability test plan (documentation only); scope/authorization, system inventory, trust boundaries, attack-surface matrix, planned test categories, pass/fail criteria, and future hardening phases. |
+| Phase 18B | Complete | Backend API defensive validation + error safety; global clean-JSON `500` handler (no traceback/path leak), malformed Obsidian vault-path normalization (→ `400`), and additive free-text length guards (→ `422`). |
+| Phase 18C | Complete | Backend API security regression QA + evidence pass (QA/documentation only); verifies the 18B behaviors and records test evidence. |
+| Phase 18D | Complete | API edge case hardening planning / deferred security scope triage (planning/documentation only); triages and risk-rates the deferred API edges and scopes Phase 18E. |
+| Phase 18E | Complete | API edge case defensive validation MVP; additive per-model bounded nesting-depth guard (`MAX_REQUEST_NESTING_DEPTH = 32`) and explicit null-like / empty-value decisions, with regression tests. |
+| Phase 18F | Complete | API edge case security regression QA + evidence pass (QA/documentation only); verifies the 18E guard/decisions and records test evidence (267 full backend tests passing). |
+| Phase 19A | Planned / Active | Security cohesion + release readiness planning (documentation only); consolidates the Phase 18A–18F arc into a demo-ready (not production-secure) release-readiness view with posture, checklist, deferred scope, and rationale. |
 
 ## Planned logic
 
@@ -208,7 +220,9 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Phase 17A | Intelligence Report cohesion + system readiness planning (documentation only). |
 | Phase 17B | Intelligence Report cohesion hardening + readiness QA (documentation only). |
 | Phase 18A | Security threat model + vulnerability test plan (documentation only); scope, trust boundaries, attack surfaces, planned tests, and pass/fail criteria before any defensive testing. |
-| Phase 18B–18F | Recommended defensive hardening phases (API validation/error safety, Obsidian import filesystem safety, intelligence evidence regression, frontend rendering safety, dependency/static baseline). |
+| Phase 18B–18F | Delivered API-hardening arc: defensive validation + error safety (18B), regression/evidence (18C), edge-case triage (18D), edge-case validation MVP (18E), and a second regression/evidence pass (18F). |
+| Phase 19A | Security cohesion + release readiness planning (documentation only); consolidates the 18A–18F arc into a demo-ready (not production-secure) posture with a release-readiness checklist and deferred-scope carry-forward. |
+| Future security phases | Obsidian import filesystem safety, intelligence evidence regression, frontend rendering safety, dependency/static baseline; production-security controls (auth, rate limiting, deployment hardening, secrets, audit logging, monitoring) stay out of scope until the runtime model changes. |
 | Future query phases | Add query-persistence logic only after contracts, privacy boundaries, and validation. |
 
 > **Intelligence data note:** `GET /api/intelligence/report` derives all four of
@@ -272,6 +286,7 @@ npm run dev:frontend
 - [Phase 17B Intelligence Report Cohesion Hardening + Readiness QA](docs/phase-17b-intelligence-cohesion-hardening.md)
 - [Security Threat Model + Vulnerability Test Plan](docs/security/threat-model-and-vulnerability-test-plan.md)
 - [Phase 18A Security Threat Model + Vulnerability Test Plan (status)](docs/planning/phase-18a-security-threat-model-plan.md)
+- [Phase 19A Security Cohesion + Release Readiness Planning](docs/security/phase-19a-security-cohesion-release-readiness-planning.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
