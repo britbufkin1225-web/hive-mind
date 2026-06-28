@@ -19,9 +19,14 @@ structure (Phase 16C — deterministic `source_followup` / `knowledge_gap` /
 categories (`repeated_query` / `unresolved_question`) stay deferred until query
 persistence exists. No section is fixture-backed. No query persistence, AI/LLM
 integration, or graph mutation exists yet. Phase 17A is a
-documentation/planning-only cohesion + readiness pass over these four surfaces;
-see
-[Intelligence Report Cohesion + System Readiness Plan](intelligence-report-cohesion-readiness-plan.md).
+documentation/planning-only cohesion + readiness pass over these four surfaces,
+and Phase 17B is the documentation/readiness-only hardening pass that records the
+design rationale, explicit Temporal Decay thresholds, an edge-case matrix,
+evidence expectations, performance/readiness notes, and a future source-adapter
+strategy; see
+[Intelligence Report Cohesion + System Readiness Plan](intelligence-report-cohesion-readiness-plan.md)
+and
+[Phase 17B Intelligence Report Cohesion Hardening + Readiness QA](phase-17b-intelligence-cohesion-hardening.md).
 
 ## What already exists (do not rewrite)
 
