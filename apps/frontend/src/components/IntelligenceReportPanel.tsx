@@ -681,7 +681,7 @@ function QueryTrailRow({ entry }: { entry: QueryTrailEntry }) {
   );
 }
 
-function IntelligenceReportPanel() {
+function IntelligenceReportPanel({ id }: { id?: string }) {
   const [state, setState] = useState<PanelState>("loading");
   const [report, setReport] = useState<IntelligenceReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -718,7 +718,7 @@ function IntelligenceReportPanel() {
     report.summary.query_trail_entry_count === 0;
 
   return (
-    <section className="intelligence-report-panel">
+    <section className="intelligence-report-panel" id={id}>
       <div className="source-registry-head">
         <div>
           <h2 className="intel-title">

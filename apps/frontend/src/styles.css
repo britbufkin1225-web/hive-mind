@@ -1958,3 +1958,131 @@ main {
   }
 }
 
+/* ============================================================================
+   Phase 22B — single-page section navigation + demo-flow signposting
+   Frontend presentation only. Adds a sticky in-page section nav (a table of
+   contents for the one connected dashboard page), smooth anchor scrolling, a
+   scroll-spy active state, and a keyboard skip link. No router, no new pages,
+   no new dependency, and no change to any panel's data or behavior. Built on the
+   Phase 21A design tokens. Implements the locked Phase 22A navigation model.
+   ============================================================================ */
+
+/* Smooth in-page jumps; degrade to an instant jump when the user prefers reduced
+   motion. scroll-padding keeps the target heading clear of the sticky nav. */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 4.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Every navigable surface clears the sticky nav after a jump or focus() landing
+   (works alongside scroll-padding above). All anchored surfaces are direct
+   children of <main>. */
+main > [id] {
+  scroll-margin-top: 4.5rem;
+}
+
+/* The hero is a programmatic focus target after a "skip to content" jump; never
+   show a focus ring for that non-interactive landing. */
+.app-header:focus {
+  outline: none;
+}
+
+/* Skip link: visually offscreen until focused, then pinned top-left so keyboard
+   users can bypass the nav straight to the content. */
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -3rem;
+  z-index: 20;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  color: var(--accent-strong);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--shadow-panel);
+  transition: top 0.12s ease;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Sticky section nav: a full-width band that reads as the dashboard's table of
+   contents. The inner list is constrained to the page column so it lines up with
+   the panels below. */
+.section-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: saturate(1.4) blur(6px);
+  border-bottom: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-panel);
+}
+
+.section-nav-list {
+  width: min(880px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 0.5rem 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.section-nav-link {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.section-nav-link:hover {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.section-nav-link:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
+}
+
+/* "You are here" cue (scroll-spy + aria-current). The accent fill tells the
+   reviewer how far through the demo flow they are and that more remains below. */
+.section-nav-link-active {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+
+@media (max-width: 600px) {
+  /* Keep the nav a single, horizontally scrollable strip rather than wrapping
+     into a tall block that would push the hero off-screen. */
+  .section-nav-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+

@@ -106,7 +106,7 @@ function ConsoleResult({ result }: { result: Record<string, unknown> }) {
   );
 }
 
-function ConsolePanel() {
+function ConsolePanel({ id }: { id?: string }) {
   const [command, setCommand] = useState("");
   const [lastCommand, setLastCommand] = useState<string | null>(null);
   const [state, setState] = useState<PanelState>("idle");
@@ -158,7 +158,7 @@ function ConsolePanel() {
     state === "success" && response?.ok === true && resultCount === 0;
 
   return (
-    <section className="console-panel">
+    <section className="console-panel" id={id}>
       <h2>Hive Console</h2>
 
       <form className="console-form" onSubmit={handleSubmit}>

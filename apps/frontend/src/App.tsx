@@ -9,10 +9,26 @@ import SourceRegistryPanel from "./components/SourceRegistryPanel";
 import KnowledgeGraphPanel from "./components/KnowledgeGraphPanel";
 import IntelligenceReportPanel from "./components/IntelligenceReportPanel";
 
+/* Phase 22B — single-page section navigation. Each entry maps a nav label to a
+   stable `id` anchor on an existing top-level surface (see Phase 22A §4.3). The
+   labels mirror what the reviewer reads as section headings, so the nav reads as
+   a table of contents for the one connected dashboard page — no routes, no new
+   pages, no new data. */
+const SECTIONS = [
+  { id: "overview", label: "Overview" },
+  { id: "status", label: "Status" },
+  { id: "vault", label: "Vault" },
+  { id: "sources", label: "Sources" },
+  { id: "knowledge-graph", label: "Graph" },
+  { id: "intelligence-report", label: "Intelligence" },
+  { id: "console", label: "Console" },
+] as const;
+
 function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [vault, setVault] = useState<VaultSummaryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<string>(SECTIONS[0].id);
 
   useEffect(() => {
     Promise.all([apiClient.getHealth(), apiClient.getVaultSummary()])
@@ -29,9 +45,61 @@ function App() {
       });
   }, []);
 
+  // Scrollspy: a single IntersectionObserver toggles the active nav item as each
+  // section crosses a band near the top of the viewport. Presentation only — it
+  // observes scroll position and sets local state; it changes no data or panel
+  // behavior (Phase 22A §4.4).
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
+          );
+        if (visible.length > 0) {
+          setActiveSection(visible[0].target.id);
+        }
+      },
+      { rootMargin: "-40% 0px -55% 0px", threshold: 0 },
+    );
+
+    const observed = SECTIONS.map(({ id }) =>
+      document.getElementById(id),
+    ).filter((element): element is HTMLElement => element !== null);
+    observed.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <main>
-      <header className="app-header">
+    <>
+      <a className="skip-link" href="#overview">
+        Skip to main content
+      </a>
+
+      <nav className="section-nav" aria-label="Dashboard sections">
+        <ul className="section-nav-list">
+          {SECTIONS.map((section) => (
+            <li key={section.id}>
+              <a
+                className={
+                  activeSection === section.id
+                    ? "section-nav-link section-nav-link-active"
+                    : "section-nav-link"
+                }
+                href={`#${section.id}`}
+                aria-current={activeSection === section.id ? "true" : undefined}
+              >
+                {section.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <main>
+      <header id="overview" className="app-header" tabIndex={-1}>
         <p className="parent-label">devdevbuilds</p>
         <h1>Hive|Mind</h1>
         <p className="app-tagline">
@@ -40,7 +108,7 @@ function App() {
         </p>
       </header>
 
-      <div className="status-row">
+      <div id="status" className="status-row">
         <section className="panel-connection">
           <h2>Backend connection</h2>
           {error ? (
@@ -75,7 +143,7 @@ function App() {
         </section>
       </div>
 
-      <section className="panel-vault">
+      <section id="vault" className="panel-vault">
         <h2>Vault summary</h2>
         {vault ? (
           <>
@@ -93,14 +161,15 @@ function App() {
         )}
       </section>
 
-      <SourceRegistryPanel />
+      <SourceRegistryPanel id="sources" />
 
-      <KnowledgeGraphPanel />
+      <KnowledgeGraphPanel id="knowledge-graph" />
 
-      <IntelligenceReportPanel />
+      <IntelligenceReportPanel id="intelligence-report" />
 
-      <ConsolePanel />
-    </main>
+      <ConsolePanel id="console" />
+      </main>
+    </>
   );
 }
 
