@@ -34,10 +34,13 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 17A - Intelligence Report Cohesion + System Readiness
-  Planning` (documentation/planning only — a cohesion pass over the four
-  backend-derived Intelligence Report surfaces before any further intelligence
-  logic). See the
+- **Active phase:** `Phase 17B - Intelligence Report Cohesion Hardening +
+  Readiness QA` (documentation/readiness only — rationale, decay thresholds,
+  edge cases, evidence expectations, performance notes, and a future adapter
+  strategy for the four backend-derived Intelligence Report surfaces, before any
+  further intelligence logic). See the
+  [Phase 17B Intelligence Report Cohesion Hardening + Readiness QA](docs/phase-17b-intelligence-cohesion-hardening.md),
+  building on the
   [Intelligence Report Cohesion + System Readiness Plan](docs/intelligence-report-cohesion-readiness-plan.md).
 - **Completed foundation:** React/FastAPI app shell, local JSON-backed
   `HiveStore`, Hive Console (API + panel), Source Registry (backend + frontend +
@@ -124,7 +127,8 @@ or any graph/source/store mutation. See the
 | Phase 16A | Complete | Query Trails / Query Memory foundation planning before persistence or APIs. |
 | Phase 16B | Complete | Query Trails contract types / schema alignment (read-only `QueryTrailEntry` contract before persistence/derivation). |
 | Phase 16C | Complete | Query Trails backend-derived MVP (`source_followup` / `knowledge_gap` / `related_query_cluster`) and frontend visibility; query-history categories deferred. |
-| Phase 17A | Planned / Active | Intelligence Report cohesion + system readiness planning (documentation only). |
+| Phase 17A | Complete | Intelligence Report cohesion + system readiness planning (documentation only). |
+| Phase 17B | Planned / Active | Intelligence Report cohesion hardening + readiness QA (documentation only); rationale, decay thresholds, edge cases, evidence expectations, performance notes, and future adapter strategy. |
 
 ## Planned logic
 
@@ -199,6 +203,7 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Phase 16B | Query Trails contract types / schema alignment — read-only `QueryTrailEntry` contract before any persistence or derivation logic. |
 | Phase 16C | Query Trails backend-derived MVP and frontend visibility; query-history categories deferred. |
 | Phase 17A | Intelligence Report cohesion + system readiness planning (documentation only). |
+| Phase 17B | Intelligence Report cohesion hardening + readiness QA (documentation only). |
 | Future query phases | Add query-persistence logic only after contracts, privacy boundaries, and validation. |
 
 > **Intelligence data note:** `GET /api/intelligence/report` derives all four of
@@ -259,6 +264,7 @@ npm run dev:frontend
 - [API contract](docs/api-contract.md)
 - [Intelligence Surface Plan](docs/intelligence-surface-plan.md)
 - [Intelligence Report Cohesion + System Readiness Plan](docs/intelligence-report-cohesion-readiness-plan.md)
+- [Phase 17B Intelligence Report Cohesion Hardening + Readiness QA](docs/phase-17b-intelligence-cohesion-hardening.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
