@@ -472,7 +472,7 @@ function ObsidianImportPanel({
   );
 }
 
-function SourceRegistryPanel() {
+function SourceRegistryPanel({ id }: { id?: string }) {
   const [state, setState] = useState<PanelState>("loading");
   const [sources, setSources] = useState<SourceRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -528,7 +528,7 @@ function SourceRegistryPanel() {
   );
 
   return (
-    <section className="source-registry-panel">
+    <section className="source-registry-panel" id={id}>
       <div className="source-registry-head">
         <h2>Sources</h2>
         <button

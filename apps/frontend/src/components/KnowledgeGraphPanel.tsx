@@ -559,7 +559,7 @@ function GraphCanvas({
   );
 }
 
-function KnowledgeGraphPanel() {
+function KnowledgeGraphPanel({ id }: { id?: string }) {
   const [state, setState] = useState<PanelState>("loading");
   const [graph, setGraph] = useState<KnowledgeGraphResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -675,7 +675,7 @@ function KnowledgeGraphPanel() {
   };
 
   return (
-    <section className="knowledge-graph-panel" onKeyDown={handlePanelKeyDown}>
+    <section className="knowledge-graph-panel" id={id} onKeyDown={handlePanelKeyDown}>
       <div className="source-registry-head">
         <div>
           <h2>Knowledge Graph</h2>
