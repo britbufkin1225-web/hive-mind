@@ -4,6 +4,22 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+# --------------------------------------------------------------------------- #
+# Phase 18B — defensive upper bounds for client-supplied free-text fields.
+#
+# These guard the write/POST surface against pathologically large inputs without
+# constraining any realistic value. Oversized input is rejected with a
+# deterministic 422 at the contract boundary, before any downstream processing
+# (shlex parsing, filesystem path resolution, persistence) runs. The bounds are
+# additive: every existing valid request stays valid. No minimum length is added
+# so existing empty/blank handling (graceful console errors, 400 on empty vault
+# path) is preserved.
+# --------------------------------------------------------------------------- #
+MAX_CONSOLE_COMMAND_LENGTH = 4096
+MAX_VAULT_PATH_LENGTH = 4096
+MAX_SOURCE_NAME_LENGTH = 512
+MAX_ROOT_PATH_LENGTH = 4096
+
 
 class SourceType(StrEnum):
     MARKDOWN = "markdown"
@@ -233,7 +249,7 @@ class ImportResponse(BaseModel):
 
 
 class ConsoleExecuteRequest(BaseModel):
-    command: str
+    command: str = Field(max_length=MAX_CONSOLE_COMMAND_LENGTH)
 
 
 class ConsoleExecuteResponse(BaseModel):
@@ -279,9 +295,9 @@ class SourceRecord(BaseModel):
 
 
 class SourceRecordCreate(BaseModel):
-    name: str
+    name: str = Field(max_length=MAX_SOURCE_NAME_LENGTH)
     type: RegistrySourceType
-    root_path: str | None = None
+    root_path: str | None = Field(default=None, max_length=MAX_ROOT_PATH_LENGTH)
     status: RegistrySourceStatus = RegistrySourceStatus.PENDING
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -294,9 +310,9 @@ class SourceRecordCreate(BaseModel):
 
 
 class SourceRecordUpdate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, max_length=MAX_SOURCE_NAME_LENGTH)
     type: RegistrySourceType | None = None
-    root_path: str | None = None
+    root_path: str | None = Field(default=None, max_length=MAX_ROOT_PATH_LENGTH)
     status: RegistrySourceStatus | None = None
     last_imported_at: datetime | None = None
     metadata: dict[str, Any] | None = None
@@ -369,8 +385,8 @@ class ObsidianDocumentCandidate(BaseModel):
 class ObsidianImportRequest(BaseModel):
     """Request to import an explicit local Obsidian vault path (one-shot)."""
 
-    vault_path: str
-    source_name: str | None = None
+    vault_path: str = Field(max_length=MAX_VAULT_PATH_LENGTH)
+    source_name: str | None = Field(default=None, max_length=MAX_SOURCE_NAME_LENGTH)
 
 
 class ImportedSourceRef(BaseModel):

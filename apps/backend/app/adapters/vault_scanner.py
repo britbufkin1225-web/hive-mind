@@ -26,15 +26,27 @@ def _is_ignored_dir(name: str) -> bool:
 def resolve_vault_root(vault_path: str) -> Path:
     """Validate and resolve a vault path.
 
-    Raises ``ValueError`` if the path is empty, does not exist, or is not a
-    directory. Returns the resolved absolute path on success.
+    Raises ``ValueError`` if the path is empty, malformed, does not exist, or is
+    not a directory. Returns the resolved absolute path on success.
+
+    Phase 18B hardening: a malformed path *string* (embedded null byte, invalid
+    OS path syntax, or a name that exceeds the OS limit) can make the filesystem
+    probe itself raise ``OSError``/``ValueError``. The import path is the highest-
+    risk untrusted input, so those are normalized into a single ``ValueError``
+    here — the router maps it to a clean HTTP 400 instead of leaking an unhandled
+    500. The probe is read-only; nothing is created or modified.
     """
     if not vault_path or not vault_path.strip():
         raise ValueError("vault_path must not be empty")
-    path = Path(vault_path).expanduser()
-    if not path.exists():
+    try:
+        path = Path(vault_path).expanduser()
+        exists = path.exists()
+        is_dir = path.is_dir() if exists else False
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"vault_path is not a valid path: {vault_path}") from exc
+    if not exists:
         raise ValueError(f"vault_path does not exist: {vault_path}")
-    if not path.is_dir():
+    if not is_dir:
         raise ValueError(f"vault_path is not a directory: {vault_path}")
     return path.resolve()
 
