@@ -9,27 +9,29 @@ and the [Phase 14E Dreaming Suggestions E2E Evidence](qa/phase-14e-dreaming-sugg
 
 ## Current status
 
-**Active phase:** Phase 16B - Query Trails contract types / schema alignment.
+**Active phase:** Phase 16C - Query Trails backend derivation MVP.
 
-Phase 16A was documentation-only; it defined what Query Trails are, why they
-matter for the dev-tool use case, how future query records should connect to
-sources, graph nodes, provenance chains, Dreaming suggestions, and
-`unresolved_query_pattern`, and what must remain deferred until later
-implementation phases. See
-[Phase 16A Query Trails / Query Memory Foundation Planning](phase-16a-query-trails-foundation-planning.md).
-
-Phase 16B is **contract/schema alignment only**. It refines the `QueryTrailEntry`
-contract (a trail-type `category`, id-only `result_source_ids` /
-`provenance_chain_ids` links, a `confidence_hint` label, and an `origin` marker)
-so a later phase can implement deterministic derivation and/or persistence
-against a stable shape. Rationale: contract-first alignment prevents future
-persistence/derivation logic from being coupled to unstable fixture shapes. See
+Phase 16A (planning) and Phase 16B (contract/schema alignment) prepared a stable
+`QueryTrailEntry` shape. See
+[Phase 16A Query Trails / Query Memory Foundation Planning](phase-16a-query-trails-foundation-planning.md)
+and
 [Phase 16B Query Trails Contract Types / Schema Alignment](phase-16b-query-trails-contract-schema.md).
 
-Query Trails are **still not real persisted query history** — the section
-remains deterministic demo/seed fixtures (`metadata.fixture = true`). Phase 16B
-adds no query persistence, derivation, new endpoints, AI/LLM integration,
-graph/source mutation, dependency changes, or dashboard redesign.
+Phase 16C makes the Query Trails section **backend-derived** from existing
+store structure (`app/services/query_trails.py`), replacing the demo fixture as
+the report's primary source. Rationale: derivation is backend-owned (not
+fixtures, not client capture) so the trail logic stays deterministic, reviewable,
+and testable against the same store the rest of the report reads.
+
+Only the categories existing data supports are derived — `source_followup`
+(a source with linked nodes), `knowledge_gap` (an unsourced node or uncovered
+source), and `related_query_cluster` (2+ nodes sharing a tag). The query-history-
+dependent categories `repeated_query` and `unresolved_question` stay **blocked
+and deferred** because Hive|Mind has **no persisted query history**; fabricating
+query-memory records would be dishonest. Phase 16C adds no query persistence,
+storage tables, query logging, browser/localStorage capture, new endpoints,
+AI/LLM, dependencies, graph/source mutation, or frontend/dashboard changes — the
+derived trails are a read-only projection of structural data, not query memory.
 
 ## Implemented foundation
 
@@ -41,18 +43,16 @@ graph/source mutation, dependency changes, or dashboard redesign.
 - Knowledge Graph API and read-only Knowledge Graph panel.
 - Deterministic SVG graph visualization with inspector sync and demo polish.
 - Intelligence report contracts and `GET /api/intelligence/report`.
-- Read-only Intelligence Report panel with backend-derived Temporal Decay,
-  Dreaming Suggestions, and Provenance Chains plus remaining labeled demo
-  fixtures.
+- Read-only Intelligence Report panel with every section backend-derived
+  (Temporal Decay, Dreaming Suggestions, Provenance Chains, and Query Trails).
 
-## Demo-only intelligence surface
+## Backend-derived intelligence surface
 
-The Intelligence Report is currently a **partially backend-derived surface**.
-As of Phase 13A the **Temporal Decay** section, as of Phase 14C the **Dreaming
-Suggestions** section, and as of Phase 15C the **Provenance Chains** section are
-backend-derived (read-only) from existing store/source state. The remaining
-Query Trails section is still static sample data useful for explaining planned
-product direction and producing screenshots.
+The Intelligence Report is a **fully backend-derived, read-only surface** as of
+Phase 16C. As of Phase 13A the **Temporal Decay** section, as of Phase 14C the
+**Dreaming Suggestions** section, as of Phase 15C the **Provenance Chains**
+section, and as of Phase 16C the **Query Trails** section are derived
+(read-only) from existing store/source state. No section is fixture-backed.
 
 Backend-derived sections (read-only):
 
@@ -63,16 +63,18 @@ Backend-derived sections (read-only):
 - Provenance chains (Phase 15C — deterministic source/import/node/edge chains
   from existing store and source registry data, with backend-owned evidence and a
   clean empty section when no graph data exists).
-
-Current fixture sections:
-
-- Query trail-style entries.
+- Query trails (Phase 16C — deterministic `source_followup` / `knowledge_gap` /
+  `related_query_cluster` projections over store source/node/tag structure, with
+  backend-owned evidence and a clean empty section when nothing is derivable).
+  Query-history-dependent categories stay deferred.
 
 Current non-capabilities:
 
 - No `source_coverage_gap` derivation — deferred/blocked pending a future
   contract-expansion phase (Phase 14B contract decision).
 - No `unresolved_query` derivation — blocked until query history is persisted.
+- No `repeated_query` / `unresolved_question` Query Trail derivation — blocked
+  until real persisted query history exists (Phase 16C defers these).
 - No semantic provenance inference engine beyond existing source/node/import/edge
   records.
 - No query persistence or query-memory logic.
@@ -119,7 +121,8 @@ Current non-capabilities:
 | 15D | Complete | Provenance Chains frontend visibility and demo polish. |
 | 15E | Complete | Provenance Chains end-to-end QA and demo evidence pass. |
 | 16A | Complete | Query Trails / Query Memory foundation planning before persistence or APIs. |
-| 16B | Planned / Active | Query Trails contract types / schema alignment (read-only contract before persistence/derivation). |
+| 16B | Complete | Query Trails contract types / schema alignment (read-only contract before persistence/derivation). |
+| 16C | Planned / Active | Query Trails backend-derived MVP for `source_followup` / `knowledge_gap` / `related_query_cluster`; `repeated_query` / `unresolved_question` deferred until query history is persisted. |
 
 ## Future roadmap
 
@@ -128,7 +131,7 @@ Current non-capabilities:
 | Intelligence derivation | Dreaming `duplicate_signal` / `orphaned_node` / `stale_knowledge_link` suggestions shipped backend in Phase 14C and frontend-visible in Phase 14D. Remaining: `source_coverage_gap` deferred by the pinned Phase 14B contract/schema state and `unresolved_query_pattern` blocked until query-history persistence exists. | Read-only; no AI/LLM until separately planned. |
 | Temporal decay | Backend-derived MVP shipped in Phase 13A, frontend visibility/demo polish shipped in Phase 13B, and end-to-end QA shipped in Phase 13C. Remaining: richer reference/last-seen signals. | No graph mutation; indicators remain advisory. |
 | Provenance chains | Backend-derived MVP (Phase 15C), frontend visibility/demo polish (Phase 15D), and QA evidence pass (Phase 15E) complete. Remaining: selected-node inspector extension, per-section error state. | Present existing evidence only; do not invent lineage; read-only. |
-| Query trails | Persist and present useful console/search history. Phase 16A defined local/read-only boundaries, source/graph/provenance/Dreaming relationships, and privacy risks; Phase 16B aligns the `QueryTrailEntry` contract (category/source/provenance links, confidence hint, origin) ahead of any logic. Remaining: deterministic derivation and/or local persistence. | Requires explicit persistence design before implementation; Query Trails stay fixture-backed and read-only; no `unresolved_query_pattern` until query history exists. |
+| Query trails | Persist and present useful console/search history. Phase 16A defined local/read-only boundaries and relationships; Phase 16B aligned the `QueryTrailEntry` contract; Phase 16C ships a backend-derived MVP for `source_followup` / `knowledge_gap` / `related_query_cluster` from existing source/node/tag structure. Remaining: frontend visibility, and local query persistence to unblock `repeated_query` / `unresolved_question`. | Read-only structural projection; no query persistence/logging/capture; `repeated_query` / `unresolved_question` stay blocked until real query history exists. |
 | Agent Ops | Expose governed agent/source registry data in the app. | Start read-only from `docs/agent-lab/` shapes. |
 
 ## Standing guardrails

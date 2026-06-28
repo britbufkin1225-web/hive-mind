@@ -2,8 +2,8 @@
 
 Covers the read-only ``GET /api/intelligence/report`` endpoint: status,
 top-level shape, contract-model validation, the guarantee that calling it never
-mutates store state, backend-derived Temporal Decay/Dreaming/Provenance
-sections, and the remaining clearly tagged Query Trail demo fixture.
+mutates store state, and the backend-derived Temporal Decay/Dreaming/Provenance/
+Query Trail sections (every section is backend-derived as of Phase 16C).
 """
 
 from datetime import datetime, timedelta, timezone
@@ -31,11 +31,9 @@ _SECTIONS = (
     "query_trail_entries",
 )
 
-# Phase 13A/14C/15C: Temporal Decay, Dreaming Suggestions, and Provenance Chains
-# are now backend-derived, not fixtures. Query Trails stay fixture-backed.
-_FIXTURE_SECTIONS = (
-    "query_trail_entries",
-)
+# Phase 13A/14C/15C/16C: Temporal Decay, Dreaming Suggestions, Provenance Chains,
+# and Query Trails are all backend-derived now — no section is fixture-backed.
+_FIXTURE_SECTIONS: tuple[str, ...] = ()
 
 
 def test_intelligence_report_returns_200() -> None:
@@ -56,9 +54,10 @@ def test_intelligence_report_top_level_shape() -> None:
 
 def test_intelligence_report_summary_counts_match_sections() -> None:
     data = client.get("/api/intelligence/report").json()
-    # Summary counts always match the section lengths exactly. The fixture-backed
-    # sections stay non-empty for demos; the derived sections (decay/dreaming)
-    # are sized by real store state and may legitimately be empty.
+    # Summary counts always match the section lengths exactly. Every section is
+    # backend-derived and sized by real store state; the seed store yields
+    # non-empty decay/provenance/query-trail sections (dreaming may legitimately
+    # be empty when the seed has no duplicate/orphan/stale signals).
     summary = data["summary"]
     assert summary["dreaming_suggestion_count"] == len(data["dreaming_suggestions"])
     assert summary["decay_status_count"] == len(data["decay_statuses"]) > 0
@@ -84,16 +83,14 @@ def test_intelligence_report_dreaming_section_is_backend_derived() -> None:
         assert entry["type"] not in {"unresolved_query", "source_coverage_gap"}
 
 
-def test_intelligence_report_remaining_fixtures_are_tagged_as_demo_data() -> None:
+def test_intelligence_report_has_no_remaining_fixture_sections() -> None:
     data = client.get("/api/intelligence/report").json()
-    # Demo origin must be unambiguous in the payload itself: every fixture entry
-    # carries metadata.fixture == True so consumers never mistake it for real
-    # production intelligence. The Temporal Decay section is exempt — it is now
-    # backend-derived (see test below), not fixture data.
-    for section in _FIXTURE_SECTIONS:
-        assert data[section], f"expected demo fixtures in {section}"
+    # Phase 16C: every section is backend-derived, so no section should carry
+    # demo/fixture rows. Guard against a regression that re-wires a fixture in.
+    assert _FIXTURE_SECTIONS == ()
+    for section in _SECTIONS:
         for entry in data[section]:
-            assert entry["metadata"].get("fixture") is True
+            assert entry["metadata"].get("fixture") is not True
 
 
 def test_intelligence_report_decay_section_is_backend_derived() -> None:
@@ -166,30 +163,52 @@ def test_intelligence_report_provenance_chains_expose_aligned_contract_fields() 
     assert chain["metadata"]["evidence"]["reason"]
 
 
-def test_intelligence_report_query_trails_expose_aligned_contract_fields() -> None:
+def test_intelligence_report_query_trails_are_backend_derived() -> None:
     data = client.get("/api/intelligence/report").json()
     entries = data["query_trail_entries"]
-    assert entries, "expected demo query-trail fixtures"
+    assert entries, "expected backend-derived query-trail rows from seed store"
 
-    _CATEGORIES = {
-        "repeated_query",
-        "unresolved_question",
-        "related_query_cluster",
+    # Phase 16C: only the data-supported categories are derived; the
+    # query-history-dependent categories stay blocked/deferred entirely.
+    _DERIVED_CATEGORIES = {
         "source_followup",
         "knowledge_gap",
+        "related_query_cluster",
     }
+    _BLOCKED_CATEGORIES = {"repeated_query", "unresolved_question"}
+
+    real_node_ids = {n.id for n in store.get_nodes()}
+    real_source_ids = {s.id for s in store.get_sources()}
     for entry in entries:
         # Phase 16B additive contract fields always serialize.
         assert entry["kind"] in {"console", "search"}
         assert entry["status"] in {"resolved", "unresolved"}
-        assert entry["category"] is None or entry["category"] in _CATEGORIES
         assert isinstance(entry["result_node_ids"], list)
         assert isinstance(entry["result_source_ids"], list)
         assert isinstance(entry["provenance_chain_ids"], list)
         # Surface/origin marker advertises read-only query-trail output.
         assert entry["origin"] == "query_trail"
-        # Demo origin stays unambiguous in the payload itself.
-        assert entry["metadata"].get("fixture") is True
+        # Derived, never fixture/demo data.
+        assert entry["metadata"].get("derived") is True
+        assert entry["metadata"].get("fixture") is not True
+        assert entry["metadata"]["derivation_origin"] == "query_trail_derivation"
+        # Only supported categories appear; blocked categories never do.
+        assert entry["category"] in _DERIVED_CATEGORIES
+        assert entry["category"] not in _BLOCKED_CATEGORIES
+        # Derived rows reference real store records, not demo-* fixture ids.
+        for node_id in entry["result_node_ids"]:
+            assert node_id in real_node_ids
+        for source_id in entry["result_source_ids"]:
+            assert source_id in real_source_ids
+        # No fabricated query memory: occurrence stays 1, never user-pinned.
+        assert entry["occurrence_count"] == 1
+        assert entry["pinned"] is False
+        # Backend-owned evidence explains what existing data caused the trail.
+        evidence = entry["metadata"]["evidence"]
+        assert evidence["reason"]
+        assert evidence["derivation"]
+        assert "fields_used" in evidence
+        assert evidence["history_available"] is False
 
 
 def test_intelligence_report_does_not_mutate_store() -> None:
