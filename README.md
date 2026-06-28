@@ -8,13 +8,27 @@ Parent label: **devdevbuilds**
 
 ## Overview
 
-Hive|Mind is a full-stack knowledge graph dashboard and backend/cybersecurity
-portfolio project. It connects knowledge sources, starting with Obsidian vault
-content, into a normalized backend data model and presents that model through a
-focused web interface: a source registry, an import workflow, a query console, a
-read-only knowledge graph view, and an intelligence report whose four sections
-(Temporal Decay, Dreaming Suggestions, Provenance Chains, and Query Trails) are
-all backend-derived and read-only.
+Hive|Mind is a **local-first developer knowledge and coordination tool**. It
+connects knowledge sources — starting with Obsidian vault content — into a
+normalized backend data model and presents that model through a focused web
+interface: a source registry, an import workflow, a query console, a read-only
+knowledge graph view, and an intelligence report whose four sections (Temporal
+Decay, Dreaming Suggestions, Provenance Chains, and Query Trails) are all
+backend-derived and read-only.
+
+It is built to improve everyday development work — organization, data provenance,
+workflow speed, knowledge consistency, source tracking, and development
+coordination — on top of a human-reviewed agent workflow and safer project memory
+and reasoning surfaces. It is also a deliberately scoped backend/cybersecurity
+portfolio project, and the two goals reinforce each other: the discipline that
+makes it a credible portfolio piece (deterministic logic, read-only surfaces,
+honest scope) is the same discipline that makes it a trustworthy tool.
+
+> **What it is, in one line:** Hive|Mind is a local-first developer knowledge
+> intelligence dashboard that organizes imported knowledge sources, visualizes
+> their relationships, and derives deterministic, read-only intelligence signals —
+> temporal decay, dreaming suggestions, provenance chains, and query trails — from
+> existing structure rather than from any AI/LLM call.
 
 The conceptual model is deliberately simple:
 
@@ -26,6 +40,13 @@ The conceptual model is deliberately simple:
 Obsidian is where you think; Hive|Mind is where that thinking becomes a graph you
 can inspect and, over time, reason about.
 
+**Agent-assisted, human-reviewed.** Hive|Mind's development is agent-assisted but
+human-reviewed. Agents may propose structure, documentation, implementation, or
+analysis; **devdevbuilds remains the human decision-maker and merge gate.** The
+project intentionally relies on deterministic backend logic and read-only
+intelligence surfaces *before* any mutation or automation — agents help draft,
+humans decide what ships.
+
 ## Current status
 
 The project has moved beyond the initial foundation. The original Phase 1 app
@@ -34,27 +55,31 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 20A - Demo Release Candidate Planning + Final Portfolio Readiness Scope`
-  (planning/documentation only). Phase 20A defines the **final demo
-  release-candidate scope** for Hive|Mind before any final polish, screenshot
-  capture, README narrative hardening, UI tightening, release tagging, or
-  public-facing writeup. It states the current demo-ready story, locks the clean
-  portfolio narrative — a local-first developer knowledge intelligence dashboard
-  that organizes imported sources, visualizes relationships, and derives
-  deterministic, read-only intelligence signals with **no AI/LLM** — enumerates the
-  demo candidate surfaces with per-surface evidence and overstatement guards,
-  defines a portfolio-readiness checklist and a screenshot/evidence plan (no
-  screenshots are created in this phase), lists the known limitations to disclose
-  and the out-of-scope items, and recommends a controlled next-phase sequence
-  (20B–20E). No code, contract, or behavior changes. The preceding Phase 19B
-  verified and recorded the whole-project readiness posture as a controlled,
-  demo-ready, release-readiness *candidate*, with a **Demo Evidence Checklist** and
-  explicit **Release Readiness Boundaries**; Phase 19A consolidated the Phase
-  18A–18F security-hardening arc into a single release-readiness view. Hive|Mind
-  has a stronger, evidence-backed **defensive API posture for a local/demo
-  dev-tool** — it is **not** production-hardened. The next recommended phase is
-  **Phase 20B — Final README + Portfolio Narrative Hardening** (documentation only).
-  See the
+- **Active phase:** `Phase 20B - Final README + Portfolio Narrative Hardening`
+  (documentation only). Phase 20B aligns this README and the landing docs with the
+  **locked Phase 20A demo release-candidate story**: it leads with the dev-tool
+  product narrative, carries the locked one-line story, makes the
+  implemented / intentionally-read-only / planned distinction explicit, adds concise
+  design-rationale notes and a guardrails/non-goals section, states the
+  agent-assisted/human-reviewed workflow, and advances the status block — **without
+  changing any backend, frontend, API, schema, dependency, or test behavior**. The
+  preceding **Phase 20A** locked the final demo release-candidate scope: the current
+  demo story, the clean portfolio narrative — a local-first developer knowledge
+  intelligence dashboard that organizes imported sources, visualizes relationships,
+  and derives deterministic, read-only intelligence signals with **no AI/LLM** — the
+  demo candidate surfaces with per-surface evidence and overstatement guards, a
+  portfolio-readiness checklist, a screenshot/evidence plan (no screenshots created),
+  the known limitations to disclose, the out-of-scope items, and the controlled
+  next-phase sequence (20B–20E). Before that, Phase 19B verified and recorded the
+  whole-project readiness posture as a controlled, demo-ready, release-readiness
+  *candidate*, with a **Demo Evidence Checklist** and explicit **Release Readiness
+  Boundaries**; Phase 19A consolidated the Phase 18A–18F security-hardening arc into
+  a single release-readiness view. Hive|Mind has a stronger, evidence-backed
+  **defensive API posture for a local/demo dev-tool** — it is **not**
+  production-hardened. The next recommended phase is **Phase 20C — Final Demo
+  Screenshot + Evidence Capture Pass** (capture only). See the
+  [Phase 20B Final README + Portfolio Narrative Hardening](docs/release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md),
+  the
   [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness Scope](docs/release-readiness/phase-20a-demo-release-candidate-planning.md),
   the
   [Phase 19B Release Readiness QA + Demo Evidence Pass](docs/release-readiness/phase-19b-release-readiness-qa-demo-evidence.md),
@@ -94,6 +119,39 @@ or any graph/source/store mutation. See the
 - **Storage / model foundation:** local JSON-backed `HiveStore` with explicit
   Pydantic contracts.
 - **Source integration:** Obsidian adapter and import foundation.
+
+## Design rationale
+
+A few deliberate choices shape the whole project. Each is a small bet that
+foundations should be stable and honest before they are clever.
+
+- **Local-first.** Hive|Mind runs entirely on one machine against local
+  JSON-backed storage — no accounts, no cloud, no network exposure. The data stays
+  the developer's own, every run is reproducible, and a whole class of security and
+  privacy concerns never enters the demo surface.
+- **Deterministic, backend-derived intelligence.** Every intelligence signal is
+  computed by reviewable rules over the store, not by model inference. The same
+  store state always produces the same report, which is what keeps the intelligence
+  layer testable, auditable, and honest as it grows.
+- **Read-only intelligence surfaces.** The graph and the Intelligence Report
+  project existing structure; they never mutate the store, sources, or graph.
+  Repeated reads are side-effect-free, so inspecting the system can never damage it.
+- **Stable contracts before feature expansion.** New surfaces land as additive,
+  documented API contracts first, so the frontend and backend evolve against a known
+  shape instead of a moving target.
+- **Source provenance before automation.** The system tracks where knowledge came
+  from before it tries to act on that knowledge. Provenance is shown, never invented,
+  and missing lineage is represented honestly as partial/unknown.
+- **Security validation before release polish.** The request → API boundary was
+  defended and evidenced (the Phase 18 arc) before any final demo polish, so the
+  presentable surface sits on a checked foundation rather than the reverse.
+- **No AI/LLM until the foundations are stable.** Model inference, embeddings, and
+  vector search are deliberately out of scope until the deterministic core,
+  contracts, and provenance are solid — adding "AI" earlier would trade a credible,
+  auditable story for one a reviewer would immediately probe.
+- **No graph/source mutation until review workflows exist.** Suggestions are
+  advisory and never auto-applied; mutation waits until there is a human-reviewed
+  workflow to gate it.
 
 ## Completed phase summary
 
@@ -157,7 +215,8 @@ or any graph/source/store mutation. See the
 | Phase 18F | Complete | API edge case security regression QA + evidence pass (QA/documentation only); verifies the 18E guard/decisions and records test evidence (267 full backend tests passing). |
 | Phase 19A | Complete | Security cohesion + release readiness planning (documentation only); consolidates the Phase 18A–18F arc into a demo-ready (not production-secure) release-readiness view with posture, checklist, deferred scope, and rationale. |
 | Phase 19B | Complete | Release readiness QA + demo evidence pass (documentation/evidence only); records the whole-project readiness posture, the completed security/intelligence arcs, a Demo Evidence Checklist, and explicit Release Readiness Boundaries. Demo-ready candidate, not production-ready/secure. |
-| Phase 20A | Planned / Active | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); defines the final demo release-candidate scope before any polish/screenshots/release work — current demo story, locked deterministic read-only narrative (no AI/LLM), demo candidate surfaces with evidence/overstatement guards, portfolio-readiness checklist, screenshot/evidence plan (no screenshots created), known limitations, out-of-scope items, and a recommended 20B–20E sequence. |
+| Phase 20A | Complete | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); defines the final demo release-candidate scope before any polish/screenshots/release work — current demo story, locked deterministic read-only narrative (no AI/LLM), demo candidate surfaces with evidence/overstatement guards, portfolio-readiness checklist, screenshot/evidence plan (no screenshots created), known limitations, out-of-scope items, and a recommended 20B–20E sequence. |
+| Phase 20B | Active | Final README + portfolio narrative hardening (documentation only); aligns the README and landing docs with the locked Phase 20A story — tool-first overview, locked one-line narrative, explicit implemented / read-only / planned distinction, design-rationale notes, agent-assisted/human-reviewed workflow, a guardrails/non-goals section, and the status advance to Phase 20B. No code, contract, or behavior changes. |
 
 ## Planned logic
 
@@ -238,7 +297,8 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Phase 19A | Security cohesion + release readiness planning (documentation only); consolidates the 18A–18F arc into a demo-ready (not production-secure) posture with a release-readiness checklist and deferred-scope carry-forward. |
 | Phase 19B | Release readiness QA + demo evidence pass (documentation/evidence only); records the whole-project readiness posture and demo boundaries, with a Demo Evidence Checklist and explicit Release Readiness Boundaries. |
 | Phase 20A | Demo release candidate planning + final portfolio readiness scope (planning/documentation only); locks the final demo release-candidate scope, surfaces, evidence/overstatement guards, readiness checklist, screenshot/evidence plan, limitations, and the recommended 20B–20E sequence. |
-| Phase 20B | Final README + portfolio narrative hardening (documentation only); align README and landing docs with the locked Phase 20A story, status, setup, and links. |
+| Phase 20B | Final README + portfolio narrative hardening (documentation only); align README and landing docs with the locked Phase 20A story, status, setup, and links. **Active.** |
+| Phase 20C | Final demo screenshot + evidence capture pass (capture only); execute the Phase 20A screenshot/evidence plan against real app state. |
 | Future security phases | Obsidian import filesystem safety, intelligence evidence regression, frontend rendering safety, dependency/static baseline; production-security controls (auth, rate limiting, deployment hardening, secrets, audit logging, monitoring) stay out of scope until the runtime model changes. |
 | Future query phases | Add query-persistence logic only after contracts, privacy boundaries, and validation. |
 
@@ -251,6 +311,51 @@ third. See the [full roadmap](docs/roadmap.md) and the
 > Trail categories (`repeated_query` / `unresolved_question`) stay deferred until
 > local query persistence exists. No query persistence, AI/LLM logic, or
 > graph/source/store mutation runs, and the endpoint remains read-only.
+
+## Guardrails and non-goals
+
+Hive|Mind is deliberately scoped. The following are **not** present and are not
+implied to be — naming them is what keeps the project honest about what it is.
+
+- **No AI/LLM integration.** Every signal is deterministic rule-based derivation;
+  there is no model inference, embedding, or vector search.
+- **No live Obsidian watcher or write-back.** Import is a one-shot read; there is no
+  filesystem watcher and nothing is written back to the vault.
+- **No graph or intelligence mutation from the UI.** The graph and the Intelligence
+  Report are read-only; suggestions are advisory and never auto-applied.
+- **No persisted query history yet.** The query-history-dependent Query Trail
+  categories (`repeated_query` / `unresolved_question`) stay deferred until local
+  query persistence exists; fabricating query-memory records would be dishonest.
+- **No auth, users, or multi-user support.** There are no accounts, sessions, roles,
+  or permissions — only the defensive API boundary from the Phase 18 arc.
+- **Not production / SaaS-ready.** Single-user, local, no network exposure; a
+  demo-grade defensive posture, **not** production-hardened security or operation.
+
+These are constraints chosen on purpose, not a backlog to clear before the project
+is "real." The full known-limitations and out-of-scope lists live in the
+[Phase 20A Demo Release Candidate Planning](docs/release-readiness/phase-20a-demo-release-candidate-planning.md).
+
+## Portfolio narrative
+
+For a reviewer, Hive|Mind is meant to read as a small, complete, honest system
+rather than a pile of half-features. What it demonstrates:
+
+- **End-to-end ownership.** A React/FastAPI app with a local data model, an import
+  pipeline, a graph visualization, and a derived intelligence layer — designed,
+  built, documented, and QA'd across a recorded phase history.
+- **Engineering judgment over feature count.** A bounded scope done well, with
+  deferred work named explicitly instead of implied as present.
+- **Security reasoning, evidenced.** A threat model, a defensive API-hardening arc,
+  and regression evidence — security treated as something to reason about and test,
+  not decorate.
+- **Honesty as a feature.** The deterministic, read-only, local-first framing is
+  precise about what the tool does and does not do, which is more credible than an
+  inflated "AI platform" claim.
+
+The per-surface evidence and overstatement guards behind this narrative live in the
+[Phase 20A Demo Release Candidate Planning](docs/release-readiness/phase-20a-demo-release-candidate-planning.md)
+and the
+[Phase 20B Final README + Portfolio Narrative Hardening](docs/release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md).
 
 ## Setup
 
@@ -306,6 +411,7 @@ npm run dev:frontend
 - [Phase 19A Security Cohesion + Release Readiness Planning](docs/security/phase-19a-security-cohesion-release-readiness-planning.md)
 - [Phase 19B Release Readiness QA + Demo Evidence Pass](docs/release-readiness/phase-19b-release-readiness-qa-demo-evidence.md)
 - [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness Scope](docs/release-readiness/phase-20a-demo-release-candidate-planning.md)
+- [Phase 20B Final README + Portfolio Narrative Hardening](docs/release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
