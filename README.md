@@ -51,12 +51,12 @@ humans decide what ships.
 
 These are real captures of the running dashboard — the local frontend (`5173`)
 talking to the local backend (`8787`), not mockups. They were taken during the
-Phase 23B QA pass after the Phase 23A readability/panel-hierarchy polish, so they
-show the current connected state. Three surfaces tell the whole story:
+Phase 25C QA pass on the **premium dark-metallic visual system** shipped in Phase
+25B, so they show the current connected state. Three surfaces tell the whole story:
 
 **1. Connected dashboard** — the app talking to its backend.
 
-![Hive|Mind connected dashboard: header band, green "Connected" status pill, live API health (hivemind-backend 0.1.0), and the Vault summary metric grid](./docs/demo/screenshots/phase-23b-connected-ui-top.png)
+![Hive|Mind connected dashboard: header band, green "Connected" status pill, live API health (hivemind-backend 0.1.0), and the Vault summary metric grid](./docs/demo/screenshots/phase-25c-connected-ui-top.png)
 
 The header band, the green **Connected** pill, live API health
 (`hivemind-backend` `0.1.0`), and the Vault summary — proof the frontend and
@@ -64,7 +64,7 @@ backend are actually wired together, not a static page.
 
 **2. Knowledge Graph** — the core product surface.
 
-![Hive|Mind Knowledge Graph: a summary band (7 nodes, 6 edges, 7 connected, 0 isolated), a type/relationship/status legend, and a deterministic SVG graph map of named nodes](./docs/demo/screenshots/phase-23b-connected-knowledge-graph.png)
+![Hive|Mind Knowledge Graph: a summary band (7 nodes, 6 edges, 7 connected, 0 isolated), a type/relationship/status legend, and a deterministic SVG graph map of named nodes](./docs/demo/screenshots/phase-25c-connected-knowledge-graph.png)
 
 A read-only, deterministic SVG view of the graph derived from the sources — the
 summary band (7 nodes / 6 edges), the type/relationship/status legend, and the
@@ -72,7 +72,7 @@ graph map with named nodes. No physics, no editing, no mutation.
 
 **3. Intelligence Report** — the differentiator.
 
-![Hive|Mind Intelligence Report: read-only summary band (Suggestions 0, Decay 7, Provenance 7, Query Trails 7), Report version 0.1.0, Mode Read-only, and the backend-derived Temporal Decay section with a BACKEND-DERIVED badge](./docs/demo/screenshots/phase-23b-connected-intelligence-report.png)
+![Hive|Mind Intelligence Report: read-only summary band (Suggestions 0, Decay 7, Provenance 7, Query Trails 7), Report version 0.1.0, Mode Read-only, and the backend-derived Temporal Decay section with a BACKEND-DERIVED badge](./docs/demo/screenshots/phase-25c-connected-intelligence-report.png)
 
 Four backend-derived, read-only sections (Temporal Decay, Dreaming Suggestions,
 Provenance Chains, Query Trails) with a `BACKEND-DERIVED` badge, `Mode Read-only`,
@@ -80,12 +80,13 @@ and honest empty-states (Dreaming `0`). This is deterministic rule-based
 derivation over the store — **no AI/LLM** — which is what makes it auditable.
 
 > The full end-to-end page capture and the Source Registry / Console surfaces are
-> kept in [`docs/demo/screenshots/`](docs/demo/screenshots/) and indexed in the
+> kept in [`docs/demo/screenshots/`](docs/demo/screenshots/). The landing-page
+> selection rationale (why these three) is recorded in the
 > [Phase 24A Portfolio Screenshot + README Visual Lock](docs/demo/phase-24a-portfolio-screenshot-readme-visual-lock.md)
-> note, which records why these three were chosen for the landing page and the
-> rest were intentionally left out. See also the
-> [Phase 23B UI Surface Readability QA + Screenshot Evidence Refresh](docs/demo/phase-23b-ui-readability-qa-screenshot-evidence.md)
-> for the capture session and computed-style verification behind these images.
+> note, and the capture session behind the current dark-theme images is documented in
+> the [Phase 25C Premium Visual System QA + Screenshot Evidence Refresh](docs/demo/phase-25c-premium-visual-system-qa-screenshot-evidence.md).
+> The earlier light-theme `phase-23b-connected-*` captures are preserved in
+> `docs/demo/screenshots/` as history.
 
 ## Current status
 
