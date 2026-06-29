@@ -2705,3 +2705,293 @@ section {
   color: var(--text-subtle);
 }
 
+/* ============================================================================
+   Phase 26B — Graph Visual Presentation (frontend presentation only)
+   Elevates the Knowledge Graph to the primary visual identity of Hive|Mind.
+   Per-type node ring colors, type-aware selected glow, per-relationship edge
+   colors, a stronger canvas viewport frame, improved legend/inspector
+   hierarchy, and premium empty/loading/error states. Builds on the Phase 25B
+   dark-metallic token system. No data, API, backend, or behavior change.
+   ============================================================================ */
+
+/* === Canvas viewport frame ===
+   Deeper inner shadow + a faint accent inner edge to read as a deliberate
+   intelligence-map viewport rather than a plain inset rectangle. */
+.graph-canvas-wrap {
+  box-shadow:
+    inset 0 1px 40px rgba(0, 0, 0, 0.65),
+    inset 0 0 0 1px rgba(139, 124, 240, 0.10);
+}
+
+/* === Canvas hint bar ===
+   Lift from the plain hint text to a subtle metadata strip. */
+.graph-canvas-hint {
+  font-size: 0.78rem;
+  color: var(--text-subtle);
+  letter-spacing: 0.02em;
+}
+
+/* === Node label refinements ===
+   Tighter, slightly bolder so short labels read clearly against the grid. */
+.graph-canvas-node-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Selected label: dark fill so it reads on the type-color circle fill. */
+.graph-canvas-node-selected .graph-canvas-node-label {
+  fill: #08090c;
+}
+
+/* Arrow marker: lift from near-invisible dark to a visible neutral so
+   directionality reads on the dark canvas even on unselected edges. */
+.graph-canvas-arrow {
+  fill: rgba(255, 255, 255, 0.28);
+}
+
+/* === Per-type node circle colors (resting) ===
+   Each node type gets its own accent ring and a faint tinted fill so type is
+   legible at a glance without interaction. Using attribute selectors on the
+   parent <g data-node-type="…"> with higher specificity than the base
+   .graph-canvas-node-circle rule. */
+[data-node-type="root"] .graph-canvas-node-circle {
+  stroke: #a99df8;
+  fill: rgba(169, 157, 248, 0.13);
+}
+[data-node-type="source"] .graph-canvas-node-circle {
+  stroke: #818cf8;
+  fill: rgba(129, 140, 248, 0.10);
+}
+[data-node-type="concept"] .graph-canvas-node-circle {
+  stroke: #fbbf24;
+  fill: rgba(251, 191, 36, 0.10);
+}
+[data-node-type="file"] .graph-canvas-node-circle {
+  stroke: #34d399;
+  fill: rgba(52, 211, 153, 0.10);
+}
+[data-node-type="model"] .graph-canvas-node-circle {
+  stroke: #38bdf8;
+  fill: rgba(56, 189, 248, 0.10);
+}
+[data-node-type="note"] .graph-canvas-node-circle {
+  stroke: #f472b6;
+  fill: rgba(244, 114, 182, 0.10);
+}
+[data-node-type="folder"] .graph-canvas-node-circle {
+  stroke: #60a5fa;
+  fill: rgba(96, 165, 250, 0.10);
+}
+
+/* === Per-type hover ===
+   Hover brightens the existing type ring (slightly lighter fill). Keep stroke
+   on accent for maximum contrast as a hover cue. */
+[data-node-type="root"]:hover .graph-canvas-node-circle {
+  stroke: #c4baff;
+  fill: rgba(169, 157, 248, 0.22);
+}
+[data-node-type="source"]:hover .graph-canvas-node-circle {
+  stroke: #a5b4fc;
+  fill: rgba(129, 140, 248, 0.20);
+}
+[data-node-type="concept"]:hover .graph-canvas-node-circle {
+  stroke: #fde68a;
+  fill: rgba(251, 191, 36, 0.20);
+}
+[data-node-type="file"]:hover .graph-canvas-node-circle {
+  stroke: #6ee7b7;
+  fill: rgba(52, 211, 153, 0.20);
+}
+[data-node-type="model"]:hover .graph-canvas-node-circle {
+  stroke: #7dd3fc;
+  fill: rgba(56, 189, 248, 0.20);
+}
+[data-node-type="note"]:hover .graph-canvas-node-circle {
+  stroke: #f9a8d4;
+  fill: rgba(244, 114, 182, 0.20);
+}
+[data-node-type="folder"]:hover .graph-canvas-node-circle {
+  stroke: #93c5fd;
+  fill: rgba(96, 165, 250, 0.20);
+}
+
+/* === Per-type selected state (type-colored fill + glow) ===
+   The selected node fills with its type color and emits a matched glow so the
+   selection reads immediately as the "active" element in the map.
+   Specificity (0,3,0) beats the base selected rule (0,2,0). */
+[data-node-type="root"].graph-canvas-node-selected .graph-canvas-node-circle {
+  fill: #a99df8;
+  stroke: rgba(255, 255, 255, 0.7);
+  filter: drop-shadow(0 0 10px rgba(169, 157, 248, 0.80));
+}
+[data-node-type="source"].graph-canvas-node-selected .graph-canvas-node-circle {
+  fill: #818cf8;
+  stroke: rgba(255, 255, 255, 0.7);
+  filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.80));
+}
+[data-node-type="concept"].graph-canvas-node-selected .graph-canvas-node-circle {
+  fill: #fbbf24;
+  stroke: rgba(255, 255, 255, 0.7);
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.75));
+}
+[data-node-type="file"].graph-canvas-node-selected .graph-canvas-node-circle {
+  fill: #34d399;
+  stroke: rgba(255, 255, 255, 0.7);
+  filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.75));
+}
+[data-node-type="model"].graph-canvas-node-selected .graph-canvas-node-circle {
+  fill: #38bdf8;
+  stroke: rgba(255, 255, 255, 0.7);
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.75));
+}
+[data-node-type="note"].graph-canvas-node-selected .graph-canvas-node-circle {
+  fill: #f472b6;
+  stroke: rgba(255, 255, 255, 0.7);
+  filter: drop-shadow(0 0 10px rgba(244, 114, 182, 0.75));
+}
+[data-node-type="folder"].graph-canvas-node-selected .graph-canvas-node-circle {
+  fill: #60a5fa;
+  stroke: rgba(255, 255, 255, 0.7);
+  filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.75));
+}
+
+/* === Per-relationship edge colors ===
+   Relationship type is the semantic content of an edge; each type gets its own
+   accent color so clusters of same-type edges read as a pattern. The
+   :not() guards preserve existing selected and incident accent rules. */
+[data-edge-type="contains"] .graph-canvas-edge:not(.graph-canvas-edge-selected):not(.graph-canvas-edge-incident) {
+  stroke: #4ade80;
+  stroke-opacity: 0.7;
+}
+[data-edge-type="references"] .graph-canvas-edge:not(.graph-canvas-edge-selected):not(.graph-canvas-edge-incident) {
+  stroke: #60a5fa;
+  stroke-opacity: 0.7;
+}
+[data-edge-type="related"] .graph-canvas-edge:not(.graph-canvas-edge-selected):not(.graph-canvas-edge-incident) {
+  stroke: #a78bfa;
+  stroke-opacity: 0.7;
+}
+[data-edge-type="generated_from"] .graph-canvas-edge:not(.graph-canvas-edge-selected):not(.graph-canvas-edge-incident) {
+  stroke: #fbbf24;
+  stroke-opacity: 0.7;
+}
+[data-edge-type="linked_to"] .graph-canvas-edge:not(.graph-canvas-edge-selected):not(.graph-canvas-edge-incident) {
+  stroke: #38bdf8;
+  stroke-opacity: 0.7;
+}
+
+/* Incident edges (connected to selected node) keep the accent at full opacity
+   to stand out over the type-colored resting state. */
+.graph-canvas-edge-incident {
+  stroke-opacity: 1;
+}
+
+/* === Legend improvements ===
+   Grid layout prevents ragged wrapping; larger swatches; colored edge lines. */
+.graph-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.9rem 1.5rem;
+  align-items: start;
+}
+
+.graph-legend-swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  box-shadow: 0 0 5px currentColor;
+}
+
+.graph-legend-edge {
+  border-top-width: 2px;
+  opacity: 0.9;
+}
+
+.graph-legend-label {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* === Inspector left accent bar ===
+   NodeInspector applies an inline borderLeftColor matching the node type.
+   This rule sets the default width so the border is visible. */
+.graph-inspector {
+  border-left-width: 3px;
+}
+
+.graph-inspector-empty {
+  border-left-width: 1px;
+}
+
+.graph-inspector-empty-hint {
+  text-align: center;
+  padding: 0.75rem 0;
+  font-size: 0.875rem;
+  color: var(--text-subtle);
+}
+
+/* === Empty/loading/error states ===
+   Designed as distinct, premium "system states" rather than plain hint text. */
+.graph-state-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0.5rem 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.graph-state-loading::before {
+  content: "";
+  display: block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0.75;
+  flex: none;
+}
+
+.graph-state-error {
+  margin: 0.5rem 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  border-left-width: 3px;
+  border-left-color: var(--error);
+  border-radius: var(--radius-sm);
+  background: rgba(248, 113, 113, 0.07);
+}
+
+.graph-state-error p {
+  margin: 0;
+  color: var(--error);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.graph-state-empty {
+  margin: 1.25rem 0 0.25rem;
+  padding: 2rem 1.5rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+  text-align: center;
+}
+
+.graph-state-empty p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  max-width: 44ch;
+  margin-inline: auto;
+}
+
+/* Responsive: collapse legend grid to two columns on narrow panels. */
+@media (max-width: 600px) {
+  .graph-legend {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
