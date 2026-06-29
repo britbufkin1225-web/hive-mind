@@ -21,12 +21,24 @@ and the [Phase 20B Final README + Portfolio Narrative Hardening](release-readine
 and the [Phase 21D UI Demo Polish Planning / Dashboard Refinement Scope](phase-21d-ui-demo-polish-planning.md),
 and the [Phase 22A UI Navigation + Demo Flow Planning](planning/phase-22a-ui-navigation-demo-flow-planning.md),
 and the [Phase 22C UI Navigation QA + Screenshot Evidence Refresh](demo/phase-22c-ui-navigation-qa-screenshot-evidence.md),
-and the [Phase 23B UI Surface Readability QA + Screenshot Evidence Refresh](demo/phase-23b-ui-readability-qa-screenshot-evidence.md).
+and the [Phase 23B UI Surface Readability QA + Screenshot Evidence Refresh](demo/phase-23b-ui-readability-qa-screenshot-evidence.md),
+and the [Phase 24A Portfolio Screenshot + README Visual Lock](demo/phase-24a-portfolio-screenshot-readme-visual-lock.md).
 
 ## Current status
 
-**Active phase:** Phase 23B - UI Surface Readability QA + Screenshot Evidence
-Refresh (QA / evidence / documentation only). Phase 23B re-ran the local backend
+**Active phase:** Phase 24A - Portfolio Screenshot Selection + README Visual Lock
+(docs / README / demo presentation only). Phase 24A reviewed the existing Phase 23B
+connected screenshot set and selected the three strongest surfaces for the README
+landing page — the connected dashboard top (`phase-23b-connected-ui-top.png`), the
+Knowledge Graph (`phase-23b-connected-knowledge-graph.png`), and the Intelligence
+Report (`phase-23b-connected-intelligence-report.png`) — adding a **Visual evidence**
+README section with honest captions and recording the selection rationale (including
+the intentionally-omitted Sources / Console / full-page captures) in the
+[Phase 24A Portfolio Screenshot + README Visual Lock](demo/phase-24a-portfolio-screenshot-readme-visual-lock.md)
+note. It reuses **only existing, real captured screenshots**, fabricates no images,
+and changes no UI/CSS/frontend/backend/API/schema/package/dependency or runtime
+behavior.
+The preceding **Phase 23B** re-ran the local backend
 (`8787`) and frontend (`5173`) and captured honest screenshot/runtime evidence that
 the **Phase 23A** UI surface readability + panel-hierarchy polish renders correctly
 over the still-connected dashboard: the per-panel accent-tick headings, unified
@@ -314,7 +326,8 @@ Current non-capabilities:
 | 22B | Complete | Single-page section navigation + demo flow (frontend presentation/structure only, PR #80); adds a sticky in-page section nav (table of contents) over the connected dashboard, stable `id` anchors on every top-level surface (`#overview` … `#console`), an `IntersectionObserver` scrollspy "you are here" cue with `aria-current`, smooth anchor scrolling that respects `prefers-reduced-motion`, and a keyboard skip link. Touches `App.tsx`, the four panel components (optional `id` prop), and `styles.css` only; no router, no new dependency, no new pages, and no backend/API/schema/contract or data-value changes. |
 | 22C | Complete | UI navigation QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures honest evidence that the Phase 22B section navigation is visible and usable over the connected dashboard — sticky nav, `id` anchors, scrollspy active-section highlight, and skip link — with the directly exercised endpoints returning the same shapes/values as Phase 21C/21F (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a `phase-22c-connected-*` screenshot set (including the honest scrollspy edge behavior at the page top/bottom) and an [evidence doc](demo/phase-22c-ui-navigation-qa-screenshot-evidence.md) while preserving the `phase-21f-*` history. Implements no code and changes no behavior. |
 | 23A | Complete | UI surface readability + panel hierarchy polish (frontend presentation only, PR #82); an additive `styles.css` pass on the Phase 21A token system — a shared accent-tick identity on every panel `<h2>`, sub-section heading hierarchy, unified card/inspector/container rounding onto the shared token radius with softened hairline borders, hairline dividers separating the dense Intelligence Report sub-sections, lifted muted-label/metadata contrast, and grouped Console output (labeled echo chip + firmer result-key contrast). CSS-only; no backend, contract, logic, data-value, dependency, or panel-behavior change. |
-| 23B | Active | UI surface readability QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures honest evidence that the Phase 23A readability/panel-hierarchy polish renders over the still-connected dashboard — per-panel accent-tick headings, unified card rounding, Intelligence Report hairline section dividers, lifted label contrast, and grouped Console output — with the directly exercised endpoints returning the same shapes/values as Phase 21C/21F/22C (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a `phase-23b-connected-*` screenshot set and an [evidence doc](demo/phase-23b-ui-readability-qa-screenshot-evidence.md) while preserving the `phase-22c-*` history. Implements no code and changes no behavior. |
+| 23B | Complete | UI surface readability QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures honest evidence that the Phase 23A readability/panel-hierarchy polish renders over the still-connected dashboard — per-panel accent-tick headings, unified card rounding, Intelligence Report hairline section dividers, lifted label contrast, and grouped Console output — with the directly exercised endpoints returning the same shapes/values as Phase 21C/21F/22C (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a `phase-23b-connected-*` screenshot set and an [evidence doc](demo/phase-23b-ui-readability-qa-screenshot-evidence.md) while preserving the `phase-22c-*` history. Implements no code and changes no behavior. |
+| 24A | Active | Portfolio screenshot selection + README visual lock (docs / README / demo presentation only); reviews the existing Phase 23B connected screenshot set and selects the three strongest README surfaces (connected dashboard top, Knowledge Graph, Intelligence Report), adds a **Visual evidence** README section with honest connected-runtime captions, and records the selection rationale — including the intentionally-omitted Sources / Console / full-page captures and the no-fabrication confirmation — in the [Phase 24A Portfolio Screenshot + README Visual Lock](demo/phase-24a-portfolio-screenshot-readme-visual-lock.md) note. Reuses only existing real screenshots; no image fabrication and no UI/CSS/frontend/backend/API/schema/package/dependency/runtime behavior change. |
 
 ## Future roadmap
 
