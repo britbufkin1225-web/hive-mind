@@ -55,21 +55,32 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 22C - UI Navigation QA + Screenshot Evidence Refresh`
-  (QA / evidence / documentation only). Phase 22C re-ran the local backend (`8787`)
+- **Active phase:** `Phase 23B - UI Surface Readability QA + Screenshot Evidence Refresh`
+  (QA / evidence / documentation only). Phase 23B re-ran the local backend (`8787`)
   and frontend (`5173`) and captured honest screenshot/runtime evidence that the
-  **Phase 22B** single-page section navigation is **present and usable** over the
-  connected dashboard: a sticky section nav (Overview · Status · Vault · Sources ·
-  Graph · Intelligence · Console), stable `id` anchors on every top-level surface,
-  the scrollspy active-section highlight, and the skip link. The directly exercised
-  endpoints returned the same shapes/values as Phase 21C/21F (health `0.1.0`; graph
-  7 nodes / 6 edges; Intelligence Report Dreaming `0` / Decay `7` / Provenance `7` /
-  Query Trails `7`), confirming **no backend/API/schema behavior changed** (22B was
-  frontend-only), and `npm run check:frontend` passes. A new `phase-22c-connected-*`
-  screenshot set records the sticky nav and its active-section highlight on every
-  major surface — including the honest scrollspy edge behavior at the page top and
-  bottom — while preserving the `phase-21f-*` history. It changes no application
+  **Phase 23A** UI surface readability + panel-hierarchy polish renders correctly
+  over the still-connected dashboard: the per-panel accent-tick headings, unified
+  card/inspector rounding, the Intelligence Report hairline section dividers, lifted
+  muted-label contrast, and the grouped Console output. The directly exercised
+  endpoints returned the same shapes/values as Phase 21C/21F/22C (health `0.1.0`;
+  graph 7 nodes / 6 edges; Intelligence Report Dreaming `0` / Decay `7` / Provenance
+  `7` / Query Trails `7`), confirming **no backend/API/schema behavior changed** (23A
+  was frontend CSS-only), and `npm run check:frontend` passes. A new
+  `phase-23b-connected-*` screenshot set records the polished panel hierarchy on every
+  major surface while preserving the `phase-22c-*` history. It changes no application
   behavior. See the
+  [Phase 23B UI Surface Readability QA + Screenshot Evidence Refresh](docs/demo/phase-23b-ui-readability-qa-screenshot-evidence.md).
+  The preceding **Phase 23A** applied the presentation-only readability + panel-
+  hierarchy polish as a **frontend CSS-only** pass (PR #82): a shared accent-tick
+  identity on every panel heading, unified card/inspector/container rounding onto the
+  shared token radius, hairline dividers separating the dense Intelligence Report
+  sub-sections, lifted muted-label contrast, and grouped Console output — **no new
+  data, network/API/contract, or panel-behavior change**.
+  The preceding **Phase 22C** re-ran the local backend (`8787`) and frontend (`5173`)
+  and captured honest screenshot/runtime evidence that the **Phase 22B** single-page
+  section navigation is **present and usable** over the connected dashboard, with a
+  new `phase-22c-connected-*` set recording the sticky nav and its active-section
+  highlight. See the
   [Phase 22C UI Navigation QA + Screenshot Evidence Refresh](docs/demo/phase-22c-ui-navigation-qa-screenshot-evidence.md).
   The preceding **Phase 22B** implemented the locked navigation model as a
   **frontend-only** pass (PR #80): the sticky in-page section nav, `id` anchors on

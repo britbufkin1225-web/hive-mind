@@ -20,26 +20,38 @@ and the [Phase 20A Demo Release Candidate Planning + Final Portfolio Readiness S
 and the [Phase 20B Final README + Portfolio Narrative Hardening](release-readiness/phase-20b-final-readme-portfolio-narrative-hardening.md),
 and the [Phase 21D UI Demo Polish Planning / Dashboard Refinement Scope](phase-21d-ui-demo-polish-planning.md),
 and the [Phase 22A UI Navigation + Demo Flow Planning](planning/phase-22a-ui-navigation-demo-flow-planning.md),
-and the [Phase 22C UI Navigation QA + Screenshot Evidence Refresh](demo/phase-22c-ui-navigation-qa-screenshot-evidence.md).
+and the [Phase 22C UI Navigation QA + Screenshot Evidence Refresh](demo/phase-22c-ui-navigation-qa-screenshot-evidence.md),
+and the [Phase 23B UI Surface Readability QA + Screenshot Evidence Refresh](demo/phase-23b-ui-readability-qa-screenshot-evidence.md).
 
 ## Current status
 
-**Active phase:** Phase 22C - UI Navigation QA + Screenshot Evidence Refresh (QA /
-evidence / documentation only). Phase 22C re-ran the local backend (`8787`) and
-frontend (`5173`) and captured honest screenshot/runtime evidence that the **Phase
-22B** single-page section navigation is **present and usable** over the connected
-dashboard: a sticky section nav (Overview · Status · Vault · Sources · Graph ·
-Intelligence · Console), stable `id` anchors on every top-level surface, the
-scrollspy active-section highlight, and the keyboard skip link. The directly
-exercised endpoints returned the same shapes/values as Phase 21C/21F (health
-`0.1.0`; graph 7 nodes / 6 edges; Intelligence Report Dreaming `0` / Decay `7` /
-Provenance `7` / Query Trails `7`), confirming **no backend/API/schema behavior
-changed** (Phase 22B was frontend-only), and `npm run check:frontend` passes. A new
-`phase-22c-connected-*` screenshot set records the sticky nav and its
-active-section highlight on every major surface — including the honest scrollspy
-edge behavior at the page top and bottom — while preserving the `phase-21f-*`
-history. It changes no backend, frontend, CSS, source-code, package, config, API,
-schema, dependency, or test behavior. See the
+**Active phase:** Phase 23B - UI Surface Readability QA + Screenshot Evidence
+Refresh (QA / evidence / documentation only). Phase 23B re-ran the local backend
+(`8787`) and frontend (`5173`) and captured honest screenshot/runtime evidence that
+the **Phase 23A** UI surface readability + panel-hierarchy polish renders correctly
+over the still-connected dashboard: the per-panel accent-tick headings, unified
+card/inspector rounding, the Intelligence Report hairline section dividers, lifted
+muted-label contrast, and the grouped Console output. The directly exercised
+endpoints returned the same shapes/values as Phase 21C/21F/22C (health `0.1.0`;
+graph 7 nodes / 6 edges; Intelligence Report Dreaming `0` / Decay `7` / Provenance
+`7` / Query Trails `7`), confirming **no backend/API/schema behavior changed**
+(Phase 23A was frontend CSS-only), and `npm run check:frontend` passes. A new
+`phase-23b-connected-*` screenshot set records the polished panel hierarchy on every
+major surface while preserving the `phase-22c-*` history. It changes no backend,
+frontend, CSS, source-code, package, config, API, schema, dependency, or test
+behavior. See the
+[Phase 23B UI Surface Readability QA + Screenshot Evidence Refresh](demo/phase-23b-ui-readability-qa-screenshot-evidence.md).
+The preceding **Phase 23A** applied the presentation-only readability +
+panel-hierarchy polish as a **frontend CSS-only** pass (PR #82): a shared accent-tick
+identity on every panel heading, unified card/inspector/container rounding onto the
+shared token radius, hairline dividers separating the dense Intelligence Report
+sub-sections, lifted muted-label contrast, and grouped Console output — no new data,
+network/API/contract, or panel-behavior change.
+The preceding **Phase 22C** re-ran the local backend (`8787`) and frontend (`5173`)
+and captured honest screenshot/runtime evidence that the **Phase 22B** single-page
+section navigation is **present and usable** over the connected dashboard, with a
+new `phase-22c-connected-*` set recording the sticky nav and its active-section
+highlight while preserving the `phase-21f-*` history. See the
 [Phase 22C UI Navigation QA + Screenshot Evidence Refresh](demo/phase-22c-ui-navigation-qa-screenshot-evidence.md).
 The preceding **Phase 22B** implemented the locked navigation model as a
 frontend-only pass (PR #80): the sticky in-page section nav, `id` anchors on every
@@ -300,7 +312,9 @@ Current non-capabilities:
 | 21F | Complete | UI demo polish QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`), validates the Phase 21E-polished UI is still connected (live API health `0.1.0`, Knowledge Graph 7 nodes / 6 edges, backend-derived Intelligence Report — Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7), confirms `npm run check:frontend` passes, and refreshes the screenshot trail with `phase-21f-connected-*` captures superseding the pre-polish `phase-21c-*` set while preserving that history. See the [evidence doc](demo/phase-21f-ui-demo-polish-qa-evidence.md). Implements no code and changes no behavior. |
 | 22A | Complete | UI navigation + demo flow planning (planning / documentation only); inventories the seven top-level dashboard surfaces (hero, connection + API health, vault, Source Registry incl. the nested Obsidian import form, Knowledge Graph, Intelligence Report, Console), documents the current scroll-only demo flow and its pain points (no nav, no anchors, long scroll, buried import controls, no active-section cue), and proposes a controlled single-page section-navigation model for Phase 22B — in-page anchor nav over stable section `id`s, scrollspy active-section cue, CSS-first smooth-scroll/anchor behavior, keyboard/`aria` usability, modest responsive nav, and a signposted demo walkthrough — deferring React Router/route architecture and forbidding fake pages. Defines Phase 22B acceptance criteria and locks read-only/non-mutating boundaries. See the [planning doc](planning/phase-22a-ui-navigation-demo-flow-planning.md). Implements no code and changes no behavior. |
 | 22B | Complete | Single-page section navigation + demo flow (frontend presentation/structure only, PR #80); adds a sticky in-page section nav (table of contents) over the connected dashboard, stable `id` anchors on every top-level surface (`#overview` … `#console`), an `IntersectionObserver` scrollspy "you are here" cue with `aria-current`, smooth anchor scrolling that respects `prefers-reduced-motion`, and a keyboard skip link. Touches `App.tsx`, the four panel components (optional `id` prop), and `styles.css` only; no router, no new dependency, no new pages, and no backend/API/schema/contract or data-value changes. |
-| 22C | Active | UI navigation QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures honest evidence that the Phase 22B section navigation is visible and usable over the connected dashboard — sticky nav, `id` anchors, scrollspy active-section highlight, and skip link — with the directly exercised endpoints returning the same shapes/values as Phase 21C/21F (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a `phase-22c-connected-*` screenshot set (including the honest scrollspy edge behavior at the page top/bottom) and an [evidence doc](demo/phase-22c-ui-navigation-qa-screenshot-evidence.md) while preserving the `phase-21f-*` history. Implements no code and changes no behavior. |
+| 22C | Complete | UI navigation QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures honest evidence that the Phase 22B section navigation is visible and usable over the connected dashboard — sticky nav, `id` anchors, scrollspy active-section highlight, and skip link — with the directly exercised endpoints returning the same shapes/values as Phase 21C/21F (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a `phase-22c-connected-*` screenshot set (including the honest scrollspy edge behavior at the page top/bottom) and an [evidence doc](demo/phase-22c-ui-navigation-qa-screenshot-evidence.md) while preserving the `phase-21f-*` history. Implements no code and changes no behavior. |
+| 23A | Complete | UI surface readability + panel hierarchy polish (frontend presentation only, PR #82); an additive `styles.css` pass on the Phase 21A token system — a shared accent-tick identity on every panel `<h2>`, sub-section heading hierarchy, unified card/inspector/container rounding onto the shared token radius with softened hairline borders, hairline dividers separating the dense Intelligence Report sub-sections, lifted muted-label/metadata contrast, and grouped Console output (labeled echo chip + firmer result-key contrast). CSS-only; no backend, contract, logic, data-value, dependency, or panel-behavior change. |
+| 23B | Active | UI surface readability QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures honest evidence that the Phase 23A readability/panel-hierarchy polish renders over the still-connected dashboard — per-panel accent-tick headings, unified card rounding, Intelligence Report hairline section dividers, lifted label contrast, and grouped Console output — with the directly exercised endpoints returning the same shapes/values as Phase 21C/21F/22C (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a `phase-23b-connected-*` screenshot set and an [evidence doc](demo/phase-23b-ui-readability-qa-screenshot-evidence.md) while preserving the `phase-22c-*` history. Implements no code and changes no behavior. |
 
 ## Future roadmap
 
