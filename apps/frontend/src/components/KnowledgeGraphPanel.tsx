@@ -4,6 +4,7 @@ import { apiClient } from "../api/client";
 import type { HiveMetadata, KnowledgeGraphResponse } from "../types/api";
 import {
   buildGraphViewModel,
+  edgeTypeColor,
   nodeTypeColor,
   nodeTypeLabel,
   relatedToNode,
@@ -142,7 +143,11 @@ function GraphLegend({
           <ul className="graph-legend-items">
             {relationshipTypes.map((entry) => (
               <li key={entry.type} className="graph-legend-item">
-                <span className="graph-legend-edge" aria-hidden="true" />
+                <span
+                  className="graph-legend-edge"
+                  style={{ borderTopColor: edgeTypeColor(entry.type) }}
+                  aria-hidden="true"
+                />
                 <span className="graph-legend-label">{entry.label}</span>
                 <span className="graph-legend-count">{entry.count}</span>
               </li>
@@ -334,7 +339,10 @@ function NodeInspector({ node }: { node: GraphViewNode }) {
   }
 
   return (
-    <div className="graph-inspector">
+    <div
+      className="graph-inspector"
+      style={{ borderLeftWidth: "3px", borderLeftColor: nodeTypeColor(node.type) }}
+    >
       <div className="graph-inspector-head">
         <h3>{node.label}</h3>
         <span className="graph-node-type">{nodeTypeLabel(node.type)}</span>
@@ -399,8 +407,8 @@ function GraphInspector({
   }
   return (
     <div className="graph-inspector graph-inspector-empty">
-      <p className="console-hint">
-        Select a node or edge to inspect graph details.
+      <p className="console-hint graph-inspector-empty-hint">
+        Select a node or edge to inspect its details.
       </p>
     </div>
   );
@@ -436,6 +444,14 @@ function GraphCanvas({
     () => computeGraphLayout(nodes, edges),
     [nodes, edges],
   );
+
+  const edgeTypeById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const e of edges) {
+      if (e.type) m.set(e.id, String(e.type));
+    }
+    return m;
+  }, [edges]);
 
   if (layout.nodes.length === 0) {
     return null;
@@ -481,7 +497,7 @@ function GraphCanvas({
                 .filter(Boolean)
                 .join(" ");
               return (
-                <g key={edge.id}>
+                <g key={edge.id} data-edge-type={edgeTypeById.get(edge.id) ?? ""}>
                   <line
                     className={className}
                     x1={edge.x1}
@@ -523,6 +539,7 @@ function GraphCanvas({
                   className={`graph-canvas-node${
                     selected ? " graph-canvas-node-selected" : ""
                   }`}
+                  data-node-type={node.type}
                   transform={`translate(${node.x}, ${node.y})`}
                   role="button"
                   tabIndex={0}
@@ -707,13 +724,15 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
 
       <div aria-live="polite" aria-busy={state === "loading"}>
         {state === "loading" && (
-          <p className="console-hint">Loading knowledge graph…</p>
+          <div className="graph-state-loading" role="status">
+            Loading knowledge graph…
+          </div>
         )}
 
         {state === "error" && (
-          <p className="error" role="alert">
-            Error: could not load the knowledge graph — {error}
-          </p>
+          <div className="graph-state-error" role="alert">
+            <p>Could not load the knowledge graph — {error}</p>
+          </div>
         )}
 
         {state === "success" && (
@@ -735,10 +754,12 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
             )}
 
             {isEmptyGraph ? (
-              <p className="console-hint">
-                The graph is empty. Import or register a source to populate
-                nodes and relationships.
-              </p>
+              <div className="graph-state-empty">
+                <p>
+                  The graph is empty. Import or register a source to populate
+                  nodes and relationships.
+                </p>
+              </div>
             ) : (
               <>
                 <GraphCanvas

@@ -100,18 +100,30 @@ const NODE_TYPE_LABELS: Record<string, string> = {
  * Stable accent colors per node type, used by the legend and as the swatch on
  * node chips so the same type reads consistently across the panel. Deterministic
  * and purely presentational — no layout or rendering happens here.
+ * Phase 26B: updated to premium dark-metallic palette (vibrant on dark canvas).
  */
 const NODE_TYPE_COLORS: Record<string, string> = {
-  root: "#6b4fbb",
-  folder: "#3b7dd8",
-  file: "#2f9e6f",
-  concept: "#c2792f",
-  note: "#c44f8f",
-  model: "#7a7a2f",
-  source: "#4f8fbb",
+  root: "#a99df8",
+  folder: "#60a5fa",
+  file: "#34d399",
+  concept: "#fbbf24",
+  note: "#f472b6",
+  model: "#38bdf8",
+  source: "#818cf8",
 };
 
-const NODE_TYPE_FALLBACK_COLOR = "#6b6b6b";
+const NODE_TYPE_FALLBACK_COLOR = "#6b7585";
+
+/** Accent colors per edge relationship type for the canvas and legend. */
+const EDGE_TYPE_COLORS: Record<string, string> = {
+  contains: "#4ade80",
+  references: "#60a5fa",
+  related: "#a78bfa",
+  generated_from: "#fbbf24",
+  linked_to: "#38bdf8",
+};
+
+const EDGE_TYPE_FALLBACK_COLOR = "#3b4350";
 
 /** How many top-degree nodes to surface for a future "most connected" view. */
 const TOP_CONNECTED_LIMIT = 5;
@@ -127,6 +139,11 @@ export function nodeTypeLabel(type: string): string {
 /** Accent color for a node type; falls back to a neutral gray for unknowns. */
 export function nodeTypeColor(type: string): string {
   return NODE_TYPE_COLORS[type] ?? NODE_TYPE_FALLBACK_COLOR;
+}
+
+/** Accent color for an edge relationship type; falls back to a neutral slate. */
+export function edgeTypeColor(type: string): string {
+  return EDGE_TYPE_COLORS[type] ?? EDGE_TYPE_FALLBACK_COLOR;
 }
 
 /**
