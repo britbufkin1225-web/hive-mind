@@ -95,16 +95,30 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 24A - Portfolio Screenshot Selection + README Visual Lock`
-  (docs / README / demo presentation only). Phase 24A reviewed the existing Phase 23B
-  connected screenshot set, selected the three strongest surfaces for the README
-  landing page (connected dashboard top, Knowledge Graph, Intelligence Report), added
-  the **Visual evidence** section above with honest captions, and recorded the
-  selection rationale — including which screenshots were intentionally left out — in
-  the [Phase 24A Portfolio Screenshot + README Visual Lock](docs/demo/phase-24a-portfolio-screenshot-readme-visual-lock.md)
-  note. It uses **only existing, real captured screenshots**; it fabricates no images
-  and changes no UI/CSS/frontend/backend/API/schema/package/dependency or runtime
-  behavior.
+- **Active phase:** `Phase 25A - Premium Visual Design System / Frontend Presentation Direction`
+  (planning / documentation only). Phase 25A defines a **buildable visual design
+  system** for the next UI implementation pass — a premium, dark metallic
+  intelligence-console aesthetic with a graph-forward identity — **before** any
+  frontend/CSS change. It documents the current (light-theme) visual baseline, the
+  target visual identity, the design principles, a layered surface/panel system, the
+  typography and hierarchy direction, a graph-centered experience direction (node/edge
+  language, canvas framing, inspector relationship, legend/status, and *planned*
+  read-only overlay concepts for Temporal Decay / Dreaming Suggestions / Provenance
+  Chains / Query Trails), the Intelligence-Report visual direction (with a clear
+  real-vs-planned visual contract), the navigation/demo-flow direction, and the exact
+  implementation boundaries for **Phase 25B** plus the QA/evidence expectations for
+  **Phase 25C**. The graph stays read-only; nothing is faked. See the
+  [Phase 25A Premium Visual Design System / Frontend Presentation Direction](docs/ui/phase-25a-premium-visual-system-planning.md).
+  It changes no UI/CSS/frontend/backend/API/schema/package/dependency or runtime
+  behavior and creates no screenshots.
+  The preceding **Phase 24A** reviewed the existing Phase 23B connected screenshot set,
+  selected the three strongest surfaces for the README landing page (connected
+  dashboard top, Knowledge Graph, Intelligence Report), added the **Visual evidence**
+  section above with honest captions, and recorded the selection rationale — including
+  which screenshots were intentionally left out — in the
+  [Phase 24A Portfolio Screenshot + README Visual Lock](docs/demo/phase-24a-portfolio-screenshot-readme-visual-lock.md)
+  note, using **only existing, real captured screenshots** with no image fabrication
+  and no behavior change.
   The preceding **Phase 23B** re-ran the local backend (`8787`)
   and frontend (`5173`) and captured honest screenshot/runtime evidence that the
   **Phase 23A** UI surface readability + panel-hierarchy polish renders correctly
@@ -356,7 +370,8 @@ foundations should be stable and honest before they are clever.
 | Phase 22C | Complete | UI navigation QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures honest evidence that the Phase 22B section navigation is visible and usable over the connected dashboard — sticky nav, `id` anchors, scrollspy active-section highlight, and skip link — with the directly exercised endpoints returning the same shapes/values as Phase 21C/21F (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a `phase-22c-connected-*` screenshot set (including the honest scrollspy edge behavior at the page top/bottom) and an [evidence doc](docs/demo/phase-22c-ui-navigation-qa-screenshot-evidence.md) while preserving the `phase-21f-*` history. No code, contract, or behavior changes. |
 | Phase 23A | Complete | UI surface readability + panel hierarchy polish (frontend presentation only, PR #82); an additive `styles.css` pass on the Phase 21A token system — a shared accent-tick identity on every panel `<h2>`, sub-section heading hierarchy, unified card/inspector/container rounding onto the shared token radius with softened hairline borders, hairline dividers separating the dense Intelligence Report sub-sections, lifted muted-label/metadata contrast, and grouped Console output. CSS-only; no backend, contract, logic, data-value, dependency, or panel-behavior change. |
 | Phase 23B | Complete | UI surface readability QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures honest evidence that the Phase 23A readability/panel-hierarchy polish renders over the still-connected dashboard, with the directly exercised endpoints returning the same shapes/values as Phase 21C/21F/22C (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a `phase-23b-connected-*` screenshot set and an [evidence doc](docs/demo/phase-23b-ui-readability-qa-screenshot-evidence.md) while preserving the `phase-22c-*` history. No code, contract, or behavior changes. |
-| Phase 24A | Active | Portfolio screenshot selection + README visual lock (docs / README / demo presentation only); reviews the existing Phase 23B connected screenshot set, selects the three strongest README surfaces (connected dashboard top, Knowledge Graph, Intelligence Report), adds a **Visual evidence** README section with honest captions, and records the selection rationale (including intentionally-omitted screenshots) in the [Phase 24A Portfolio Screenshot + README Visual Lock](docs/demo/phase-24a-portfolio-screenshot-readme-visual-lock.md) note. Uses only existing real screenshots; no image fabrication and no UI/CSS/frontend/backend/API/schema/package/dependency/runtime behavior changes. |
+| Phase 24A | Complete | Portfolio screenshot selection + README visual lock (docs / README / demo presentation only); reviews the existing Phase 23B connected screenshot set, selects the three strongest README surfaces (connected dashboard top, Knowledge Graph, Intelligence Report), adds a **Visual evidence** README section with honest captions, and records the selection rationale (including intentionally-omitted screenshots) in the [Phase 24A Portfolio Screenshot + README Visual Lock](docs/demo/phase-24a-portfolio-screenshot-readme-visual-lock.md) note. Uses only existing real screenshots; no image fabrication and no UI/CSS/frontend/backend/API/schema/package/dependency/runtime behavior changes. |
+| Phase 25A | Active | Premium visual design system / frontend presentation direction (planning / documentation only); defines a buildable premium dark-metallic intelligence-console visual system with a graph-forward identity before any UI/CSS change — current (light) visual baseline, target visual identity, design principles, a layered surface/panel system, typography/hierarchy direction, a graph-centered experience direction (node/edge language, canvas framing, inspector relationship, legend/status, and *planned* read-only overlay concepts for Temporal Decay / Dreaming / Provenance / Query Trails), the Intelligence-Report visual direction with a real-vs-planned visual contract, the navigation/demo-flow direction, the Phase 25B implementation boundaries, and the Phase 25C QA/evidence expectations. Graph stays read-only; nothing faked. See the [planning doc](docs/ui/phase-25a-premium-visual-system-planning.md). No code, contract, or behavior changes. |
 
 ## Planned logic
 
@@ -447,7 +462,10 @@ third. See the [full roadmap](docs/roadmap.md) and the
 | Phase 21F | UI demo polish QA + screenshot evidence refresh (QA / evidence / documentation only); re-run the local backend (`8787`) and frontend (`5173`), validate the Phase 21E-polished UI is still connected (live API health, Knowledge Graph 7 nodes / 6 edges, backend-derived Intelligence Report), confirm the frontend build passes, and refresh the screenshot trail with `phase-21f-connected-*` captures superseding the pre-polish `phase-21c-*` set while preserving that history. See the [evidence doc](docs/demo/phase-21f-ui-demo-polish-qa-evidence.md). **Complete.** |
 | Phase 22A | UI navigation + demo flow planning (planning / documentation only); inventory the seven top-level dashboard surfaces, document the scroll-only demo flow and its pain points, and propose a controlled single-page section-navigation model for Phase 22B (in-page anchor nav over stable section `id`s, scrollspy active state, CSS-first scroll/anchor behavior, keyboard/`aria` usability, modest responsive nav, signposted walkthrough) while deferring React Router and forbidding fake pages; define Phase 22B acceptance criteria. See the [planning doc](docs/planning/phase-22a-ui-navigation-demo-flow-planning.md). **Complete.** |
 | Phase 22B | Single-page section navigation + demo flow (frontend presentation/structure only); add a sticky in-page section nav over the connected dashboard, stable `id` anchors on every top-level surface, an `IntersectionObserver` scrollspy active-section cue, smooth anchor scrolling that respects `prefers-reduced-motion`, and a keyboard skip link; no router, no new dependency, no new pages, no backend/API/schema/contract changes. **Complete.** |
-| Phase 22C | UI navigation QA + screenshot evidence refresh (QA / evidence / documentation only); re-run the local backend (`8787`) and frontend (`5173`) and capture honest evidence that the Phase 22B section navigation is visible and usable over the connected dashboard (sticky nav, `id` anchors, scrollspy active-section highlight, skip link), confirm the same connected backend data as Phase 21C/21F and a passing frontend build, and record a `phase-22c-connected-*` screenshot set. See the [evidence doc](docs/demo/phase-22c-ui-navigation-qa-screenshot-evidence.md). **Active.** |
+| Phase 22C | UI navigation QA + screenshot evidence refresh (QA / evidence / documentation only); re-run the local backend (`8787`) and frontend (`5173`) and capture honest evidence that the Phase 22B section navigation is visible and usable over the connected dashboard (sticky nav, `id` anchors, scrollspy active-section highlight, skip link), confirm the same connected backend data as Phase 21C/21F and a passing frontend build, and record a `phase-22c-connected-*` screenshot set. See the [evidence doc](docs/demo/phase-22c-ui-navigation-qa-screenshot-evidence.md). **Complete.** |
+| Phase 25A | Premium visual design system / frontend presentation direction (planning / documentation only); define a buildable premium dark-metallic intelligence-console visual system with a graph-forward identity before any UI/CSS change — visual baseline, target identity, design principles, surface/panel system, typography/hierarchy, graph-centered experience direction (with *planned* read-only overlay concepts), Intelligence-Report real-vs-planned visual contract, navigation/demo-flow direction, and the Phase 25B/25C boundaries. Graph stays read-only; nothing faked. See the [planning doc](docs/ui/phase-25a-premium-visual-system-planning.md). **Active.** |
+| Phase 25B | Premium visual system implementation pass (frontend presentation only); apply the Phase 25A direction through the CSS token system (dark metallic palette, elevation/spacing/type/glow tokens) and per-surface restyle of header/command-bar, panels, cards, section nav, graph framing/visual language, inspector, Intelligence Report sections, and console — no backend/API/schema/contract/data/graph-logic/graph-mutation/dependency change; graph stays read-only. **Planned (next frontend implementation pass).** |
+| Phase 25C | Premium visual system QA + screenshot evidence (QA / evidence / documentation only); re-run the local backend (`8787`) and frontend (`5173`), confirm the reskin changed appearance only by verifying the same connected backend data as the 21C/21F/22C/23B baseline and a passing frontend build, capture a `phase-25c-connected-*` set on the dark theme (preserving prior history), and record an evidence doc. **Planned.** |
 | Future security phases | Obsidian import filesystem safety, intelligence evidence regression, frontend rendering safety, dependency/static baseline; production-security controls (auth, rate limiting, deployment hardening, secrets, audit logging, monitoring) stay out of scope until the runtime model changes. |
 | Future query phases | Add query-persistence logic only after contracts, privacy boundaries, and validation. |
 
@@ -571,6 +589,7 @@ npm run dev:frontend
 - [Phase 22C UI Navigation QA + Screenshot Evidence Refresh](docs/demo/phase-22c-ui-navigation-qa-screenshot-evidence.md)
 - [Phase 23B UI Surface Readability QA + Screenshot Evidence Refresh](docs/demo/phase-23b-ui-readability-qa-screenshot-evidence.md)
 - [Phase 24A Portfolio Screenshot + README Visual Lock](docs/demo/phase-24a-portfolio-screenshot-readme-visual-lock.md)
+- [Phase 25A Premium Visual Design System / Frontend Presentation Direction](docs/ui/phase-25a-premium-visual-system-planning.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script (earlier walkthrough)](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
