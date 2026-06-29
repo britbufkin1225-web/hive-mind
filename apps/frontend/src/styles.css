@@ -1,34 +1,62 @@
 :root {
-  /* Phase 21A — design tokens. Neutral values intentionally track the existing
-     palette so the many per-panel rules below stay visually consistent without
-     being rewritten in this pass. */
-  --bg: #eef0f3;
-  --surface: #ffffff;
-  --surface-inset: #f4f4f4;
-  --border: #d4d4d4;
-  --border-soft: #e4e4e4;
-  --border-strong: #b9b9b9;
+  /* ==========================================================================
+     Phase 25B — Premium dark metallic token system.
+     The Phase 21A light tokens are replaced with a dark, layered, metallic
+     palette (Phase 25A direction §2/§4). Token *names* are preserved so every
+     token-driven rule (panels, text, status pills, focus ring) re-themes
+     automatically; the Phase 25B section at the foot of this file remaps the
+     remaining hardcoded-light surfaces onto these same tokens. This block
+     changes token *values* only — no selector, layout, data, or behavior change.
+     ========================================================================== */
 
-  --text: #1f2328;
-  --text-muted: #5b616b;
-  --text-subtle: #828892;
+  /* Elevation scale (L0 canvas → L3 overlay). Depth comes from layered slate
+     surfaces + hairline borders, not heavy drop shadow. */
+  --bg: #0b0d12;             /* L0 — deep metallic graphite canvas */
+  --surface: #14171f;        /* L1 — panel / section reading surface */
+  --surface-raised: #1a1e27; /* L2 — cards, summary bands, legend */
+  --surface-overlay: #20252f;/* L3 — inspector / overlay (highest) */
+  --surface-inset: #0f1219;  /* recessed wells: inputs, code, canvas */
 
-  --accent: #6b4fbb;
-  --accent-strong: #5a3fa6;
-  --accent-soft: #f3f0fb;
-  --accent-border: #d9cff0;
+  --border: #2a313c;         /* structural edge */
+  --border-soft: #20262f;    /* soft divider */
+  --border-strong: #3a434f;  /* emphasized edge */
 
-  --success: #176b37;
-  --error: #a12622;
-  --warn: #8a6d00;
+  --text: #e7ebf2;           /* primary text (near-white, not pure) */
+  --text-muted: #9aa4b2;     /* secondary / labels */
+  --text-subtle: #6b7585;    /* tertiary / captions */
 
-  --radius: 10px;
-  --radius-sm: 6px;
-  --shadow-panel: 0 1px 2px rgba(24, 28, 35, 0.04),
-    0 1px 3px rgba(24, 28, 35, 0.06);
-  --shadow-focus: 0 0 0 3px rgba(107, 79, 187, 0.25);
+  --accent: #8b7cf0;         /* identity + focus (brighter for dark) */
+  --accent-strong: #a99df8;  /* hover / emphasis */
+  --accent-soft: rgba(139, 124, 240, 0.12); /* wash */
+  --accent-border: rgba(139, 124, 240, 0.42);
 
-  --space-panel: 1.5rem;
+  --success: #34d399;
+  --error: #f87171;
+  --warn: #fbbf24;
+
+  --radius: 12px;
+  --radius-sm: 7px;
+
+  /* Depth: a 1px inner top highlight (brushed-metal edge) + soft drop. */
+  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 22px rgba(0, 0, 0, 0.35);
+  --shadow-focus: 0 0 0 3px rgba(139, 124, 240, 0.35);
+  /* Controlled glow — focus/selection emphasis only (Phase 25A §4 glow rule). */
+  --glow-accent: 0 0 0 1px rgba(139, 124, 240, 0.5),
+    0 0 18px rgba(139, 124, 240, 0.4);
+
+  /* Spacing scale (extends the single Phase 21A --space-panel). */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-panel: 1.6rem;
+
+  /* Monospace "instrument readout" face for ids, counts, evidence keys. */
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", "Source Code Pro",
+    Menlo, Consolas, monospace;
 
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--text);
@@ -2230,5 +2258,450 @@ section h2::before {
 
 .result-list li {
   line-height: 1.5;
+}
+
+/* ============================================================================
+   Phase 25B — Premium dark metallic visual system (frontend presentation only)
+   Applies the Phase 25A direction over the existing markup: a deep metallic
+   canvas, a command-bar header, a console-rail section nav, layered slate
+   panels/cards, a framed graph "viewport" with controlled selection glow, and
+   instrument-readout typography. This section remaps the remaining
+   hardcoded-light surfaces from earlier phases onto the dark tokens declared in
+   :root. Cascade-only: every rule re-declares an existing selector at equal or
+   higher specificity so depth/color/framing change while structure does not.
+   No data, network, API, contract, prop, or behavior change.
+   ============================================================================ */
+
+/* --- L0 canvas ------------------------------------------------------------
+   A subtle vertical luminance + a faint accent bloom at the top so the
+   background reads as a deep metallic field rather than flat black. No
+   texture, no motion (Phase 25A §4 L0). */
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 620px at 50% -12%, rgba(139, 124, 240, 0.08),
+      transparent 60%),
+    linear-gradient(180deg, #0d1016 0%, var(--bg) 42%);
+  background-attachment: fixed;
+}
+
+/* --- L1 panels ------------------------------------------------------------
+   A faint brushed top sheen over the slate surface + structural border reads
+   as a machined panel. The token --shadow-panel already carries the inner
+   highlight and drop. (Element-level so the more specific .app-header /
+   .section-nav rules below keep their own treatments.) */
+header,
+section {
+  border-color: var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 130px),
+    var(--surface);
+}
+
+/* --- Command-bar header (Phase 25A §8) ------------------------------------
+   The masthead becomes the top of the hierarchy: structural border, retained
+   accent top edge, a corner accent bloom, and a metallic gradient wordmark. */
+.app-header {
+  border-color: var(--border);
+  border-top: 3px solid var(--accent);
+  background:
+    radial-gradient(130% 150% at 0% 0%, rgba(139, 124, 240, 0.16),
+      transparent 55%),
+    var(--surface);
+  box-shadow: var(--shadow-panel), 0 0 44px rgba(139, 124, 240, 0.06);
+}
+
+.app-header h1 {
+  font-size: 2.1rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #ffffff 0%, #b7bfd0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* --- Premium section rail (Phase 25A §8) ----------------------------------
+   The sticky nav reads as a dark console navigator: translucent graphite with
+   a metallic top edge instead of the old frosted-white band. */
+.section-nav {
+  background: rgba(13, 16, 22, 0.82);
+  backdrop-filter: saturate(1.2) blur(10px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* --- Controls: inputs + buttons ------------------------------------------
+   Recessed inset wells with structural borders; light text. Role accents
+   (the violet Import primary) are preserved by their earlier, more specific
+   rules. */
+.console-input,
+.console-actions button,
+.console-result,
+.source-refresh,
+.obsidian-import-field input {
+  background: var(--surface-inset);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.console-input::placeholder,
+.obsidian-import-field input::placeholder {
+  color: var(--text-subtle);
+}
+
+.console-actions button:disabled,
+.source-refresh:disabled {
+  color: var(--text-subtle);
+}
+
+/* --- L2 cards: list rows, chips, nested action panel ----------------------
+   Inset surfaces grouped on the panel; hover lifts the border to the stronger
+   weight. */
+.source-card,
+.graph-node-row,
+.graph-edge-row,
+.graph-group-chip {
+  background: var(--surface-inset);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.source-card:hover,
+.graph-node-row:hover,
+.graph-edge-row:hover {
+  border-color: var(--border-strong);
+}
+
+.obsidian-import-panel {
+  background: var(--surface-raised);
+  border-color: var(--border);
+}
+
+/* Selected card: an accent edge + a 1px accent halo instead of the old dark
+   inset bar, so selection glows on dark (the only sanctioned list glow). */
+.source-card-selected,
+.graph-row-selected {
+  background: var(--surface-raised);
+  border-color: var(--accent-border);
+  box-shadow: inset 3px 0 0 var(--accent), 0 0 0 1px var(--accent-border);
+}
+
+.graph-row-related {
+  border-color: var(--accent);
+}
+
+/* --- L3 inspectors / overlays ---------------------------------------------
+   The most-raised surface with the strongest border and the standing panel
+   shadow; empty states recede to the inset well. */
+.source-inspector,
+.graph-inspector {
+  background: var(--surface-overlay);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-panel);
+}
+
+.source-inspector-empty,
+.graph-inspector-empty {
+  background: var(--surface-inset);
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+/* Legacy hairline dividers (#eee / #e6e6e6) lifted onto the soft token. */
+.source-inspector-metadata,
+.source-obsidian-section,
+.obsidian-import-summary,
+.graph-inspector-metadata {
+  border-top-color: var(--border-soft);
+}
+
+/* --- Graph: status strip (summary + legend) (Phase 25A §6) ----------------
+   Promote the summary band and legend to confident raised "instrument
+   readout" strips that frame the graph. */
+.graph-summary,
+.graph-legend {
+  background: var(--surface-raised);
+  border-color: var(--border);
+}
+
+.graph-summary dd {
+  color: var(--text);
+}
+
+.graph-summary dd,
+.metric-grid dd {
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+
+.graph-legend-title {
+  color: var(--text-subtle);
+}
+
+.graph-legend-item {
+  color: var(--text);
+}
+
+.graph-legend-count {
+  color: var(--text-subtle);
+}
+
+.graph-legend-edge {
+  border-top-color: var(--accent);
+}
+
+.graph-badge-connected {
+  background: var(--success);
+}
+
+.graph-badge-isolated {
+  background: var(--surface-raised);
+  border-color: var(--border-strong);
+}
+
+/* --- Graph canvas viewport (Phase 25A §6) ---------------------------------
+   Frame the SVG as a deliberate console viewport: a recessed dark plotting
+   area with a faint grid backdrop and an inner shadow, so the graph reads as
+   the centerpiece rather than a thumbnail. */
+.graph-canvas-wrap {
+  background: var(--surface-inset);
+  border-color: var(--border);
+  box-shadow: inset 0 1px 26px rgba(0, 0, 0, 0.45);
+}
+
+.graph-canvas {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(139, 124, 240, 0.10),
+      transparent 60%),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px) 0 0 /
+      100% 40px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px) 0 0 /
+      40px 100%,
+    var(--surface-inset);
+}
+
+.graph-canvas-hint {
+  border-top-color: var(--border-soft);
+}
+
+/* Edges: calm slate lines; relationship + selection carry the only edge
+   emphasis. */
+.graph-canvas-edge {
+  stroke: #3b4350;
+}
+
+.graph-canvas-arrow {
+  fill: #3b4350;
+}
+
+.graph-canvas-edge-incident {
+  stroke: var(--accent);
+}
+
+.graph-canvas-edge-selected {
+  stroke: var(--text);
+}
+
+.graph-canvas-edge-hit:hover {
+  stroke: rgba(139, 124, 240, 0.18);
+}
+
+/* Nodes: dark metal rings rather than bright dots; the selected node fills
+   with the accent and carries the single sanctioned graph glow. */
+.graph-canvas-node-circle {
+  fill: #1b212c;
+  stroke: #6a738a;
+}
+
+.graph-canvas-node:hover .graph-canvas-node-circle {
+  fill: #262d3a;
+  stroke: var(--accent);
+}
+
+.graph-canvas-node-selected .graph-canvas-node-circle {
+  fill: var(--accent);
+  stroke: var(--text);
+  filter: drop-shadow(0 0 6px rgba(139, 124, 240, 0.7));
+}
+
+.graph-canvas-node-label {
+  fill: var(--text-muted);
+}
+
+.graph-canvas-node-selected .graph-canvas-node-label {
+  fill: var(--text);
+}
+
+.graph-canvas-node:focus-visible .graph-canvas-node-circle {
+  stroke: var(--accent);
+}
+
+/* Focus rings across the interactive graph targets adopt the bright accent. */
+.graph-node-row:focus-visible,
+.graph-edge-row:focus-visible,
+.graph-canvas-edge-hit:focus-visible {
+  outline-color: var(--accent);
+}
+
+/* --- Graph: badges + accents ----------------------------------------------
+   Lift the type pill, relationship pill, and arrow/count accents off the old
+   dark-on-light values onto the dark tokens. */
+.graph-node-type {
+  border-color: var(--accent-border);
+  color: var(--accent-strong);
+}
+
+.graph-edge-relationship {
+  background: var(--surface-inset);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.graph-edge-arrow,
+.graph-group-count {
+  color: var(--accent-strong);
+}
+
+/* --- Strong text → light --------------------------------------------------
+   Titles/labels that sat at near-black (#222/#27272a/#1e293b) on light cards
+   would vanish on dark; lift them to the primary text token. */
+.source-name,
+.graph-node-name,
+.graph-edge-node,
+.graph-inspector-head h3,
+.source-inspector-head h3,
+.intel-suggest-title,
+.intel-trail-query,
+.intel-provenance-title,
+.intel-decay-reason,
+.intel-provenance-reason,
+.intel-trail-reason {
+  color: var(--text);
+}
+
+/* --- Secondary prose → muted ----------------------------------------------
+   Descriptions, previews, section blurbs, and legacy mid-greys onto the muted
+   token so small print stays legible without competing with titles. */
+.source-description,
+.graph-node-preview,
+.intel-section-desc,
+.console-label,
+.console-status,
+.result-count,
+.source-obsidian-summary,
+.obsidian-import-field label,
+.obsidian-import-message {
+  color: var(--text-muted);
+}
+
+/* --- Source status pills --------------------------------------------------
+   The currentColor-bordered pills need the bright status hues to read on dark. */
+.source-status-active {
+  color: var(--success);
+}
+
+.source-status-error {
+  color: var(--error);
+}
+
+.source-status-pending {
+  color: var(--warn);
+}
+
+.source-status-inactive {
+  color: var(--text-subtle);
+}
+
+.source-badge-obsidian {
+  background: var(--accent);
+}
+
+/* --- Connection / health status pills -------------------------------------
+   Translucent tinted pills instead of stark light fills. */
+.status-pill {
+  background: var(--surface-inset);
+  border-color: var(--border);
+}
+
+.status-pill-success {
+  color: var(--success);
+  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.status-pill-error {
+  color: var(--error);
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+/* --- Intelligence Report surfaces (Phase 25A §7) --------------------------
+   Rows become raised cards; notes/empties/errors become tinted-on-dark
+   callouts; the evidence trail reads as a quiet monospaced "why". The
+   functional status/confidence pills keep their existing tinted treatment so
+   the section stays scannable. */
+.intel-row {
+  background: var(--surface-raised);
+  border-color: var(--border);
+}
+
+.intel-section-count {
+  background: var(--surface-raised);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.intel-empty,
+.intel-deferred-note {
+  background: var(--surface-inset);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.intel-derived-note {
+  background: rgba(139, 124, 240, 0.08);
+  border-color: var(--accent-border);
+  color: var(--text);
+}
+
+.intel-demo-note {
+  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(251, 191, 36, 0.4);
+  color: var(--text);
+}
+
+.intel-error {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.intel-error-detail {
+  color: #fca5a5;
+}
+
+.intel-evidence {
+  color: var(--text-muted);
+}
+
+.intel-evidence > summary {
+  color: var(--accent-strong);
+}
+
+.intel-evidence dt {
+  color: var(--text-subtle);
+}
+
+.intel-provenance-link-ref {
+  color: var(--text);
+}
+
+.intel-provenance-link-label {
+  color: var(--text-muted);
+}
+
+.intel-provenance-link-origin,
+.intel-readonly-note {
+  color: var(--text-subtle);
 }
 
