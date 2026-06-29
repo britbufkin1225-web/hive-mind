@@ -692,7 +692,12 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
   };
 
   return (
-    <section className="knowledge-graph-panel" id={id} onKeyDown={handlePanelKeyDown}>
+    <section
+      className="knowledge-graph-panel"
+      id={id}
+      onKeyDown={handlePanelKeyDown}
+      data-has-selection={hasSelection ? "true" : "false"}
+    >
       <div className="source-registry-head">
         <div>
           <h2>Knowledge Graph</h2>
@@ -744,17 +749,8 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
               isolatedNodeCount={model.isolatedNodeCount}
             />
 
-            {!isEmptyGraph && (
-              <GraphLegend
-                nodeTypes={model.nodeTypes}
-                relationshipTypes={model.relationshipTypes}
-                connectedNodeCount={model.connectedNodeCount}
-                isolatedNodeCount={model.isolatedNodeCount}
-              />
-            )}
-
             {isEmptyGraph ? (
-              <div className="graph-state-empty">
+              <div className="graph-state-empty graph-map-area">
                 <p>
                   The graph is empty. Import or register a source to populate
                   nodes and relationships.
@@ -762,14 +758,22 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
               </div>
             ) : (
               <>
-                <GraphCanvas
-                  nodes={model.nodes}
-                  edges={model.edges}
-                  selectedNodeId={selectedNode?.id ?? null}
-                  selectedEdgeId={selectedEdge?.id ?? null}
-                  onSelectNode={selectNode}
-                  onSelectEdge={selectEdge}
-                />
+                <div className="graph-map-area">
+                  <GraphLegend
+                    nodeTypes={model.nodeTypes}
+                    relationshipTypes={model.relationshipTypes}
+                    connectedNodeCount={model.connectedNodeCount}
+                    isolatedNodeCount={model.isolatedNodeCount}
+                  />
+                  <GraphCanvas
+                    nodes={model.nodes}
+                    edges={model.edges}
+                    selectedNodeId={selectedNode?.id ?? null}
+                    selectedEdgeId={selectedEdge?.id ?? null}
+                    onSelectNode={selectNode}
+                    onSelectEdge={selectEdge}
+                  />
+                </div>
 
                 <div className="graph-section">
                   <h3 className="graph-section-title">Groups</h3>

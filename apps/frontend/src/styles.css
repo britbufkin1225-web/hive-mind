@@ -2995,3 +2995,164 @@ section {
   }
 }
 
+/* ============================================================================
+   Phase 26B addendum — Graph-first product surface direction
+   The Knowledge Graph panel reads as the primary product surface rather than
+   a peer widget in a dashboard stack. Supporting elements (legend, section
+   titles, inspector, groups) are redesigned as contextual instruments that
+   serve the graph rather than competing with it for visual weight.
+   Purely additive on top of the Phase 26B base. No new data or behavior.
+   ============================================================================ */
+
+/* === Panel hero elevation ===
+   The Knowledge Graph section carries a distinct accent border + soft outward
+   bloom so it registers as the headline surface in the panel stack. */
+.knowledge-graph-panel {
+  border-color: rgba(139, 124, 240, 0.28);
+  box-shadow: var(--shadow-panel), 0 0 90px rgba(139, 124, 240, 0.07);
+}
+
+/* === Graph map area: legend + canvas as one unified surface ===
+   The legend strip is docked directly above the canvas so they read as a
+   single intelligence-map block — a compact control header over a full
+   viewport — rather than two separate stacked blocks. */
+.graph-map-area {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+/* Legend inside the map area becomes a compact control strip. */
+.graph-map-area .graph-legend {
+  margin-bottom: 0;
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  padding: 0.4rem 0.85rem;
+  /* Tighter columns inside the strip. */
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 0.35rem 1rem;
+  align-items: center;
+}
+
+/* Hide the group title labels inside the strip — swatches are self-explaining
+   in this compact context and the labels just add visual noise. */
+.graph-map-area .graph-legend-title {
+  display: none;
+}
+
+/* Canvas inside the map area connects seamlessly to the legend strip above. */
+.graph-map-area .graph-canvas-wrap {
+  border-top-color: var(--border-soft);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+/* Remove the "Graph map" section heading inside the map area — the legend
+   strip already identifies the block visually. */
+.graph-map-area .graph-section {
+  margin-top: 0;
+}
+
+.graph-map-area .graph-section-title {
+  display: none;
+}
+
+/* === Section titles: compact instrument labels ===
+   Sub-sections (Groups, Nodes, Relationships, Top connected) read as compact
+   instrument labels rather than equal-weight headings so the graph canvas
+   and inspector are unambiguously the primary surfaces. */
+.graph-section-title {
+  font-family: var(--font-mono);
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-subtle);
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+/* === Summary strip: compact instrument-readout band ===
+   Reduce vertical weight so the stat values read as header metadata rather
+   than dominant metric tiles. */
+.graph-summary {
+  padding: 0.35rem 0.85rem;
+  gap: 1.25rem;
+}
+
+.graph-summary dt {
+  font-size: 0.63rem;
+}
+
+.graph-summary dd {
+  font-size: 1.05rem;
+}
+
+/* === Group chips: compact metadata tags ===
+   Groups are contextual metadata, not primary actions — tighten them. */
+.graph-group-chip {
+  padding: 0.13rem 0.5rem;
+  font-size: 0.775rem;
+}
+
+/* === Selection-activated state ===
+   When a node or edge is selected, the canvas inner border brightens (the
+   map is "active"), the inspector panel is promoted to a focused glass panel,
+   and the list section titles recede so the map + inspector read as primary. */
+[data-has-selection="true"] .graph-canvas-wrap {
+  box-shadow:
+    inset 0 1px 40px rgba(0, 0, 0, 0.65),
+    inset 0 0 0 1px rgba(139, 124, 240, 0.22);
+}
+
+[data-has-selection="true"] .graph-inspector:not(.graph-inspector-empty) {
+  box-shadow:
+    var(--shadow-panel),
+    0 0 0 1px var(--accent-border),
+    0 0 32px rgba(139, 124, 240, 0.14);
+}
+
+[data-has-selection="true"] .graph-lists .graph-section-title {
+  opacity: 0.6;
+}
+
+/* === Inspector: contextual intelligence panel ===
+   Smooth transitions so selection/deselection feel responsive, not jarring.
+   The empty placeholder recedes so focus goes to the map. */
+.graph-inspector {
+  transition:
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.graph-inspector-empty {
+  opacity: 0.6;
+  transition: opacity 0.18s ease;
+}
+
+.graph-inspector-empty:hover {
+  opacity: 1;
+}
+
+/* Inspector metadata key/value: tighter, more instrument-like. */
+.graph-inspector-metadata .source-meta {
+  font-size: 0.8125rem;
+}
+
+/* === Empty state inside map area ===
+   The empty graph placeholder should still read as the map surface, not a
+   generic content-missing card. */
+.graph-state-empty.graph-map-area {
+  border-radius: var(--radius-sm);
+  border-style: dashed;
+}
+
+/* Responsive: at narrow widths restore legend stacking inside the strip. */
+@media (max-width: 600px) {
+  .graph-map-area .graph-legend {
+    grid-template-columns: 1fr;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  }
+
+  .graph-legend {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
