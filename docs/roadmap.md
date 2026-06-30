@@ -24,12 +24,13 @@ and the [Phase 22C UI Navigation QA + Screenshot Evidence Refresh](demo/phase-22
 and the [Phase 23B UI Surface Readability QA + Screenshot Evidence Refresh](demo/phase-23b-ui-readability-qa-screenshot-evidence.md),
 and the [Phase 24A Portfolio Screenshot + README Visual Lock](demo/phase-24a-portfolio-screenshot-readme-visual-lock.md),
 and the [Phase 25A Premium Visual Design System / Frontend Presentation Direction](ui/phase-25a-premium-visual-system-planning.md),
-and the [Frontend Asset Contract + Icon Usage Planning](frontend-asset-contract.md).
+and the [Frontend Asset Contract + Icon Usage Planning](frontend-asset-contract.md),
+and the [Phase 26C Graph Visual QA + Screenshot Evidence Refresh](demo/phase-26c-graph-visual-qa-screenshot-evidence.md).
 
 ## Current status
 
-**Active phase:** Phase 25B.5 - Frontend Asset Contract + Icon Usage Planning
-(planning / documentation only). Phase 25B.5 defines the **frontend asset contract**
+**Active phase:** Phase 26C — Graph Visual QA + Screenshot Evidence Refresh
+(QA / evidence / documentation only). Phase 25B.5 defines the **frontend asset contract**
 for Hive&#124;Mind — how approved devdevbuilds/Hive&#124;Mind icons, marks, logos,
 badges, SVGs, and screenshot evidence may be used in the frontend — **before** any
 icon/asset is added. It audits the current repo (a clean baseline: the only static
