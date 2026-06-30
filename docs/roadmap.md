@@ -30,13 +30,12 @@ and the [Phase 27A Graph-First App Shell Planning](ui/phase-27a-graph-first-app-
 
 ## Current status
 
-**Active phase:** Phase 27A — Graph-First App Shell Planning (planning / documentation only).
-Phase 27A defines the next major UI architecture direction: a graph-first app shell where the
-Knowledge Graph becomes the primary full-app view and the Source Registry, Intelligence Report,
-Console, and inspectors become contextual overlays, trays, docks, and command surfaces around it.
-See the [planning doc](ui/phase-27a-graph-first-app-shell-planning.md) for the full surface model
-and guardrails. The likely next phase is Phase 27B — Graph-First App Shell Frontend Implementation
-Pass. It implements no code and changes no behavior.
+**Active phase:** Phase 27B — Graph-First App Shell Frontend Implementation Pass.
+Phase 27B implements the direction defined in [Phase 27A](ui/phase-27a-graph-first-app-shell-planning.md):
+the Knowledge Graph is now the persistent, full-viewport primary surface, and the Source Registry,
+Intelligence Report, Console, and Vault/status summary are reachable as contextual dock panes opened
+from a compact control rail instead of stacked dashboard sections. All existing data, endpoints, and
+read-only behavior are unchanged — this phase is layout/composition only.
 
 Phase 25B.5 defines the **frontend asset contract**
 for Hive&#124;Mind — how approved devdevbuilds/Hive&#124;Mind icons, marks, logos,
