@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   apiClient,
   type HealthResponse,
@@ -9,26 +9,38 @@ import SourceRegistryPanel from "./components/SourceRegistryPanel";
 import KnowledgeGraphPanel from "./components/KnowledgeGraphPanel";
 import IntelligenceReportPanel from "./components/IntelligenceReportPanel";
 
-/* Phase 22B — single-page section navigation. Each entry maps a nav label to a
-   stable `id` anchor on an existing top-level surface (see Phase 22A §4.3). The
-   labels mirror what the reviewer reads as section headings, so the nav reads as
-   a table of contents for the one connected dashboard page — no routes, no new
-   pages, no new data. */
-const SECTIONS = [
-  { id: "overview", label: "Overview" },
-  { id: "status", label: "Status" },
-  { id: "vault", label: "Vault" },
-  { id: "sources", label: "Sources" },
-  { id: "knowledge-graph", label: "Graph" },
-  { id: "intelligence-report", label: "Intelligence" },
-  { id: "console", label: "Console" },
-] as const;
+/* Phase 27B — graph-first app shell. The Knowledge Graph is the persistent
+   primary viewport; every other surface (vault/status, Source Registry,
+   Intelligence Report, Console) becomes a contextual dock pane opened from a
+   compact control rail instead of a stacked dashboard section. All panes stay
+   mounted (just hidden) so toggling between them never re-triggers their data
+   fetch — only the active pane is visible/focusable at a time. */
+type PanelKey = "vault" | "sources" | "intelligence" | "console";
+
+const RAIL_ITEMS: Array<{ key: PanelKey; label: string }> = [
+  { key: "vault", label: "Vault" },
+  { key: "sources", label: "Sources" },
+  { key: "intelligence", label: "Intelligence" },
+  { key: "console", label: "Console" },
+];
+
+const PANEL_LABELS: Record<PanelKey, string> = {
+  vault: "Vault & Status",
+  sources: "Source Registry",
+  intelligence: "Intelligence Report",
+  console: "Console",
+};
 
 function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [vault, setVault] = useState<VaultSummaryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<string>(SECTIONS[0].id);
+  const [activePanel, setActivePanel] = useState<PanelKey | null>(null);
+
+  const dockRef = useRef<HTMLElement | null>(null);
+  const railButtonRefs = useRef<Partial<Record<PanelKey, HTMLButtonElement | null>>>(
+    {},
+  );
 
   useEffect(() => {
     Promise.all([apiClient.getHealth(), apiClient.getVaultSummary()])
@@ -45,76 +57,56 @@ function App() {
       });
   }, []);
 
-  // Scrollspy: a single IntersectionObserver toggles the active nav item as each
-  // section crosses a band near the top of the viewport. Presentation only — it
-  // observes scroll position and sets local state; it changes no data or panel
-  // behavior (Phase 22A §4.4).
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort(
-            (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
-          );
-        if (visible.length > 0) {
-          setActiveSection(visible[0].target.id);
-        }
-      },
-      { rootMargin: "-40% 0px -55% 0px", threshold: 0 },
-    );
-
-    const observed = SECTIONS.map(({ id }) =>
-      document.getElementById(id),
-    ).filter((element): element is HTMLElement => element !== null);
-    observed.forEach((element) => observer.observe(element));
-
-    return () => observer.disconnect();
+  const closePanel = useCallback(() => {
+    setActivePanel((current) => {
+      if (current) {
+        railButtonRefs.current[current]?.focus();
+      }
+      return null;
+    });
   }, []);
 
+  const togglePanel = useCallback((key: PanelKey) => {
+    setActivePanel((current) => (current === key ? null : key));
+  }, []);
+
+  // Move focus into the dock when it opens, and let Escape close it from
+  // anywhere — the dock is a contextual surface, not a modal, so the graph
+  // underneath stays interactive while it's open.
+  useEffect(() => {
+    if (activePanel === null) {
+      return;
+    }
+    dockRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closePanel();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activePanel, closePanel]);
+
   return (
-    <>
-      <a className="skip-link" href="#overview">
-        Skip to main content
+    <div className="app-shell">
+      <a className="skip-link" href="#graph-viewport">
+        Skip to knowledge graph
       </a>
 
-      <nav className="section-nav" aria-label="Dashboard sections">
-        <ul className="section-nav-list">
-          {SECTIONS.map((section) => (
-            <li key={section.id}>
-              <a
-                className={
-                  activeSection === section.id
-                    ? "section-nav-link section-nav-link-active"
-                    : "section-nav-link"
-                }
-                href={`#${section.id}`}
-                aria-current={activeSection === section.id ? "true" : undefined}
-              >
-                {section.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      <main>
-      <header id="overview" className="app-header" tabIndex={-1}>
-        <p className="parent-label">devdevbuilds</p>
-        <h1>Hive|Mind</h1>
-        <p className="app-tagline">
+      <header className="shell-topbar">
+        <div className="shell-topbar-brand">
+          <p className="parent-label">devdevbuilds</p>
+          <h1>Hive|Mind</h1>
+        </div>
+        <p className="shell-topbar-tagline">
           Local-first knowledge graph over your sources
           <span className="app-mode-badge">read-only demo build</span>
         </p>
-      </header>
-
-      <div id="status" className="status-row">
-        <section className="panel-connection">
-          <h2>Backend connection</h2>
+        <div className="shell-topbar-status">
           {error ? (
             <p className="status-pill status-pill-error">
               <span className="status-dot" aria-hidden="true" />
-              Disconnected: {error}
+              Disconnected
             </p>
           ) : health ? (
             <p className="status-pill status-pill-success">
@@ -124,54 +116,174 @@ function App() {
           ) : (
             <p className="status-pill status-pill-pending">
               <span className="status-dot" aria-hidden="true" />
-              Checking connection…
+              Checking…
             </p>
           )}
-        </section>
+        </div>
+      </header>
 
-        <section className="panel-health">
-          <h2>API health</h2>
-          {health ? (
-            <dl className="metric-grid">
-              <div><dt>Service</dt><dd>{health.service}</dd></div>
-              <div><dt>Version</dt><dd>{health.version}</dd></div>
-              <div><dt>Healthy</dt><dd>{health.ok ? "Yes" : "No"}</dd></div>
-            </dl>
-          ) : (
-            <p className="console-hint">No health response yet.</p>
-          )}
-        </section>
+      <div className="shell-body">
+        <nav className="shell-rail" aria-label="Workspace panels">
+          <ul className="shell-rail-list">
+            {RAIL_ITEMS.map((item) => (
+              <li key={item.key}>
+                <button
+                  type="button"
+                  ref={(element) => {
+                    railButtonRefs.current[item.key] = element;
+                  }}
+                  className={
+                    activePanel === item.key
+                      ? "shell-rail-button shell-rail-button-active"
+                      : "shell-rail-button"
+                  }
+                  aria-pressed={activePanel === item.key}
+                  aria-controls="contextual-dock"
+                  onClick={() => togglePanel(item.key)}
+                >
+                  {item.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <main id="graph-viewport" className="shell-graph-viewport">
+          <KnowledgeGraphPanel id="knowledge-graph" />
+        </main>
+
+        <aside
+          id="contextual-dock"
+          ref={dockRef}
+          className={
+            activePanel ? "shell-dock shell-dock-open" : "shell-dock"
+          }
+          aria-hidden={activePanel === null}
+          aria-label={
+            activePanel ? PANEL_LABELS[activePanel] : "Contextual panel"
+          }
+          // `inert` is a standard HTML attribute (React 19 supports it); it
+          // keeps the closed dock's contents out of tab order and pointer
+          // reach without unmounting them, so reopening never re-fetches data.
+          inert={activePanel === null ? true : undefined}
+          tabIndex={-1}
+        >
+          <div className="shell-dock-header">
+            <h2>{activePanel ? PANEL_LABELS[activePanel] : "Panel"}</h2>
+            <button
+              type="button"
+              className="shell-dock-close"
+              onClick={closePanel}
+            >
+              Close
+            </button>
+          </div>
+
+          <div className="shell-dock-body">
+            <div className="shell-dock-pane" hidden={activePanel !== "vault"}>
+              <div className="status-row">
+                <section className="panel-connection">
+                  <h2>Backend connection</h2>
+                  {error ? (
+                    <p className="status-pill status-pill-error">
+                      <span className="status-dot" aria-hidden="true" />
+                      Disconnected: {error}
+                    </p>
+                  ) : health ? (
+                    <p className="status-pill status-pill-success">
+                      <span className="status-dot" aria-hidden="true" />
+                      Connected
+                    </p>
+                  ) : (
+                    <p className="status-pill status-pill-pending">
+                      <span className="status-dot" aria-hidden="true" />
+                      Checking connection…
+                    </p>
+                  )}
+                </section>
+
+                <section className="panel-health">
+                  <h2>API health</h2>
+                  {health ? (
+                    <dl className="metric-grid">
+                      <div>
+                        <dt>Service</dt>
+                        <dd>{health.service}</dd>
+                      </div>
+                      <div>
+                        <dt>Version</dt>
+                        <dd>{health.version}</dd>
+                      </div>
+                      <div>
+                        <dt>Healthy</dt>
+                        <dd>{health.ok ? "Yes" : "No"}</dd>
+                      </div>
+                    </dl>
+                  ) : (
+                    <p className="console-hint">No health response yet.</p>
+                  )}
+                </section>
+              </div>
+
+              <section className="panel-vault">
+                <h2>Vault summary</h2>
+                {vault ? (
+                  <>
+                    <dl className="metric-grid metric-grid-vault">
+                      <div>
+                        <dt>Files</dt>
+                        <dd>{vault.totalFiles}</dd>
+                      </div>
+                      <div>
+                        <dt>Sources</dt>
+                        <dd>{vault.totalSources}</dd>
+                      </div>
+                      <div>
+                        <dt>Models</dt>
+                        <dd>{vault.totalModels}</dd>
+                      </div>
+                      <div>
+                        <dt>Nodes</dt>
+                        <dd>{vault.totalNodes}</dd>
+                      </div>
+                      <div>
+                        <dt>Graph mode</dt>
+                        <dd>{vault.graphMode}</dd>
+                      </div>
+                    </dl>
+                    <p className="vault-message">{vault.message}</p>
+                  </>
+                ) : (
+                  <p className="console-hint">Vault summary unavailable.</p>
+                )}
+              </section>
+            </div>
+
+            <div
+              className="shell-dock-pane"
+              hidden={activePanel !== "sources"}
+            >
+              <SourceRegistryPanel id="sources" />
+            </div>
+
+            <div
+              className="shell-dock-pane"
+              hidden={activePanel !== "intelligence"}
+            >
+              <IntelligenceReportPanel id="intelligence-report" />
+            </div>
+
+            <div
+              className="shell-dock-pane"
+              hidden={activePanel !== "console"}
+            >
+              <ConsolePanel id="console" />
+            </div>
+          </div>
+        </aside>
       </div>
-
-      <section id="vault" className="panel-vault">
-        <h2>Vault summary</h2>
-        {vault ? (
-          <>
-            <dl className="metric-grid metric-grid-vault">
-              <div><dt>Files</dt><dd>{vault.totalFiles}</dd></div>
-              <div><dt>Sources</dt><dd>{vault.totalSources}</dd></div>
-              <div><dt>Models</dt><dd>{vault.totalModels}</dd></div>
-              <div><dt>Nodes</dt><dd>{vault.totalNodes}</dd></div>
-              <div><dt>Graph mode</dt><dd>{vault.graphMode}</dd></div>
-            </dl>
-            <p className="vault-message">{vault.message}</p>
-          </>
-        ) : (
-          <p className="console-hint">Vault summary unavailable.</p>
-        )}
-      </section>
-
-      <SourceRegistryPanel id="sources" />
-
-      <KnowledgeGraphPanel id="knowledge-graph" />
-
-      <IntelligenceReportPanel id="intelligence-report" />
-
-      <ConsolePanel id="console" />
-      </main>
-    </>
+    </div>
   );
 }
 
 export default App;
-
