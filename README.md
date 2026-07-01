@@ -96,18 +96,15 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 27E - Full-Viewfinder Graph Surface QA + Screenshot Evidence Refresh`
-  (QA / evidence / documentation only). Since the Phase 25A direction below, the
-  project shipped the premium dark-metallic visual system (25B/25C), the frontend
-  asset contract (25B.5), the graph visual identity pass (26A–26C), and the
-  graph-first app shell (27A–27D) that made the Knowledge Graph the persistent,
-  full-viewport primary surface with Vault/Sources/Intelligence/Console as
-  contextual dock panes. Phase 27E re-verifies that connected, corrected shell
-  and records fresh `phase-27e-connected-*` screenshots (the default
-  full-viewfinder graph view, node-selection/inspector behavior, and each dock
-  pane) with no frontend/CSS/backend/API/schema/package/graph-logic change. See
-  the [Phase 27E Full-Viewfinder Graph Surface QA + Screenshot Evidence Refresh](docs/demo/phase-27e-full-viewfinder-graph-surface-qa-screenshot-evidence.md)
-  and the [full roadmap](docs/roadmap.md) for the complete 25B–27D history.
+- **Active phase:** `Phase 28A - True Graph-Primary Surface Planning + Overlay Contract`
+  (planning / documentation only). Phase 27E verified the connected,
+  full-viewfinder graph shell shipped in 27A–27D. Phase 28A tightens that
+  direction into a stricter contract — the graph as the full application
+  surface with every other panel treated strictly as a contextual overlay —
+  before any further layout implementation, so the next frontend pass
+  (Phase 28B) cannot drift back toward dashboard/sidebar framing. See the
+  [Phase 28A True Graph-Primary Surface + Overlay Contract](docs/phase-28a-true-graph-primary-overlay-contract.md)
+  and the [full roadmap](docs/roadmap.md) for the complete 25B–27E history.
   The remainder of this section (below) is preserved as the historical Phase
   25A-and-earlier narrative.
 - **Phase 25A** (planning / documentation only) defined a **buildable visual design
@@ -608,6 +605,7 @@ npm run dev:frontend
 - [Phase 25A Premium Visual Design System / Frontend Presentation Direction](docs/ui/phase-25a-premium-visual-system-planning.md)
 - [Frontend Asset Contract + Icon Usage Planning](docs/frontend-asset-contract.md)
 - [Phase 27E Full-Viewfinder Graph Surface QA + Screenshot Evidence Refresh](docs/demo/phase-27e-full-viewfinder-graph-surface-qa-screenshot-evidence.md)
+- [Phase 28A True Graph-Primary Surface + Overlay Contract](docs/phase-28a-true-graph-primary-overlay-contract.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script (earlier walkthrough)](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
