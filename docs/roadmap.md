@@ -26,16 +26,20 @@ and the [Phase 24A Portfolio Screenshot + README Visual Lock](demo/phase-24a-por
 and the [Phase 25A Premium Visual Design System / Frontend Presentation Direction](ui/phase-25a-premium-visual-system-planning.md),
 and the [Frontend Asset Contract + Icon Usage Planning](frontend-asset-contract.md),
 and the [Phase 26C Graph Visual QA + Screenshot Evidence Refresh](demo/phase-26c-graph-visual-qa-screenshot-evidence.md),
-and the [Phase 27A Graph-First App Shell Planning](ui/phase-27a-graph-first-app-shell-planning.md).
+and the [Phase 27A Graph-First App Shell Planning](ui/phase-27a-graph-first-app-shell-planning.md),
+and the [Phase 27E Full-Viewfinder Graph Surface QA + Screenshot Evidence Refresh](demo/phase-27e-full-viewfinder-graph-surface-qa-screenshot-evidence.md).
 
 ## Current status
 
-**Active phase:** Phase 27B — Graph-First App Shell Frontend Implementation Pass.
-Phase 27B implements the direction defined in [Phase 27A](ui/phase-27a-graph-first-app-shell-planning.md):
+**Active phase:** Phase 27E — Full-Viewfinder Graph Surface QA + Screenshot Evidence Refresh.
+Phase 27B implemented the direction defined in [Phase 27A](ui/phase-27a-graph-first-app-shell-planning.md):
 the Knowledge Graph is now the persistent, full-viewport primary surface, and the Source Registry,
 Intelligence Report, Console, and Vault/status summary are reachable as contextual dock panes opened
 from a compact control rail instead of stacked dashboard sections. All existing data, endpoints, and
-read-only behavior are unchanged — this phase is layout/composition only.
+read-only behavior are unchanged — this phase is layout/composition only. Phase 27D corrected the
+shell to the intended full-viewfinder surface, and Phase 27E is the QA/evidence pass that verifies
+the connected runtime and records fresh screenshots of the corrected shell — see the
+[Phase 27E evidence doc](demo/phase-27e-full-viewfinder-graph-surface-qa-screenshot-evidence.md).
 
 Phase 25B.5 defines the **frontend asset contract**
 for Hive&#124;Mind — how approved devdevbuilds/Hive&#124;Mind icons, marks, logos,
@@ -375,7 +379,10 @@ Current non-capabilities:
 | 26A | Complete | Graph visual identity planning (planning / documentation only); see [Graph Visual Identity](ui/graph-visual-identity.md). |
 | 26B | Complete | Graph Visual Presentation frontend pass, plus a 26B addendum docking the legend, promoting the inspector on selection, and giving the Knowledge Graph panel hero elevation so the canvas reads as the primary surface. Frontend presentation only; graph stays read-only. |
 | 26C | Complete | Graph visual QA + screenshot evidence refresh (QA / evidence / documentation only); see the [evidence doc](demo/phase-26c-graph-visual-qa-screenshot-evidence.md). |
-| 27A | Active | Graph-first app shell planning (planning / documentation only); defines the transition from the current dashboard-with-panels layout to a graph-first app shell where the Knowledge Graph is the primary full-app view and the Source Registry, Intelligence Report, Console, and inspectors become contextual overlays/trays/docks/command surfaces. Maps each current surface to its future role, defines interaction and layout principles, and scopes Phase 27B (frontend-only shell restructuring) with explicit allowed/forbidden lists. See the [planning doc](ui/phase-27a-graph-first-app-shell-planning.md). Implements no code and changes no behavior. |
+| 27A | Complete | Graph-first app shell planning (planning / documentation only); defines the transition from the current dashboard-with-panels layout to a graph-first app shell where the Knowledge Graph is the primary full-app view and the Source Registry, Intelligence Report, Console, and inspectors become contextual overlays/trays/docks/command surfaces. Maps each current surface to its future role, defines interaction and layout principles, and scopes Phase 27B (frontend-only shell restructuring) with explicit allowed/forbidden lists. See the [planning doc](ui/phase-27a-graph-first-app-shell-planning.md). Implements no code and changes no behavior. |
+| 27B | Complete | Graph-first app shell frontend implementation pass (frontend presentation/structure only, PR #95); implements the Phase 27A direction — the Knowledge Graph becomes the persistent, full-viewport primary surface in `App.tsx`, and the Source Registry, Intelligence Report, Console, and Vault/status summary become contextual dock panes opened from a compact control rail, staying mounted (`inert`) while hidden so reopening never re-fetches data. No backend/API/schema/dependency change. |
+| 27D | Complete | Correct the graph-first shell to a full-viewfinder surface (PR #97); a follow-up frontend-only pass that fixes the Phase 27B shell so the graph canvas genuinely fills the primary viewport as intended. No backend/API/schema/dependency change. |
+| 27E | Complete | Full-viewfinder graph surface QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) after the Phase 27D correction and captures honest evidence of the connected full-viewfinder graph shell — the default dock-closed graph viewport, node-selection/inspector behavior, and each contextual dock pane (Vault, Sources, Intelligence, Console) — with the directly exercised endpoints returning the same shapes/values as the established evidence trail (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a `phase-27e-connected-*` screenshot set and an [evidence doc](demo/phase-27e-full-viewfinder-graph-surface-qa-screenshot-evidence.md). Implements no code and changes no behavior. |
 
 ## Future roadmap
 
