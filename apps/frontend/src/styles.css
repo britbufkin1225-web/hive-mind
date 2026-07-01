@@ -3005,54 +3005,14 @@ section {
    ============================================================================ */
 
 /* === Panel hero elevation ===
-   The Knowledge Graph section carries a distinct accent border + soft outward
-   bloom so it registers as the headline surface in the panel stack. */
+   The Knowledge Graph section carries no card framing of its own — inside the
+   Phase 27D viewfinder shell it *is* the app surface, not a card floating in
+   one (see `.shell-graph-viewport .knowledge-graph-panel` in the Phase 27D
+   section, which wins by specificity). This base rule remains only as a
+   sane fallback if the panel is ever rendered outside the shell. */
 .knowledge-graph-panel {
   border-color: rgba(139, 124, 240, 0.28);
   box-shadow: var(--shadow-panel), 0 0 90px rgba(139, 124, 240, 0.07);
-}
-
-/* === Graph map area: legend + canvas as one unified surface ===
-   The legend strip is docked directly above the canvas so they read as a
-   single intelligence-map block — a compact control header over a full
-   viewport — rather than two separate stacked blocks. */
-.graph-map-area {
-  position: relative;
-  margin-bottom: 1.5rem;
-}
-
-/* Legend inside the map area becomes a compact control strip. */
-.graph-map-area .graph-legend {
-  margin-bottom: 0;
-  border-bottom: none;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  padding: 0.4rem 0.85rem;
-  /* Tighter columns inside the strip. */
-  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
-  gap: 0.35rem 1rem;
-  align-items: center;
-}
-
-/* Hide the group title labels inside the strip — swatches are self-explaining
-   in this compact context and the labels just add visual noise. */
-.graph-map-area .graph-legend-title {
-  display: none;
-}
-
-/* Canvas inside the map area connects seamlessly to the legend strip above. */
-.graph-map-area .graph-canvas-wrap {
-  border-top-color: var(--border-soft);
-  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-}
-
-/* Remove the "Graph map" section heading inside the map area — the legend
-   strip already identifies the block visually. */
-.graph-map-area .graph-section {
-  margin-top: 0;
-}
-
-.graph-map-area .graph-section-title {
-  display: none;
 }
 
 /* === Section titles: compact instrument labels ===
@@ -3096,7 +3056,7 @@ section {
    When a node or edge is selected, the canvas inner border brightens (the
    map is "active"), the inspector panel is promoted to a focused glass panel,
    and the list section titles recede so the map + inspector read as primary. */
-[data-has-selection="true"] .graph-canvas-wrap {
+[data-has-selection="true"] .viewfinder-canvas-wrap {
   box-shadow:
     inset 0 1px 40px rgba(0, 0, 0, 0.65),
     inset 0 0 0 1px rgba(139, 124, 240, 0.22);
@@ -3109,7 +3069,7 @@ section {
     0 0 32px rgba(139, 124, 240, 0.14);
 }
 
-[data-has-selection="true"] .graph-lists .graph-section-title {
+[data-has-selection="true"] .viewfinder-pane-explorer .graph-section-title {
   opacity: 0.6;
 }
 
@@ -3136,21 +3096,8 @@ section {
   font-size: 0.8125rem;
 }
 
-/* === Empty state inside map area ===
-   The empty graph placeholder should still read as the map surface, not a
-   generic content-missing card. */
-.graph-state-empty.graph-map-area {
-  border-radius: var(--radius-sm);
-  border-style: dashed;
-}
-
-/* Responsive: at narrow widths restore legend stacking inside the strip. */
+/* Responsive: collapse the legend to a single column on narrow panels. */
 @media (max-width: 600px) {
-  .graph-map-area .graph-legend {
-    grid-template-columns: 1fr;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  }
-
   .graph-legend {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -3293,49 +3240,29 @@ body,
   color: var(--accent-strong);
 }
 
-/* Primary graph viewport: the dominant, full-height/full-width surface the
-   shell is built around. Overrides the legacy centered-column `main` rule. */
+/* Primary graph viewport: the dominant, full-bleed surface the shell is
+   built around. Overrides the legacy centered-column `main` rule. No inner
+   padding or scroll — the graph is the app's living background, not a
+   scrollable dashboard column (Phase 27D). */
 .shell-graph-viewport {
+  position: relative;
   flex: 1 1 auto;
   min-width: 0;
   height: 100%;
   margin: 0;
-  padding: 1rem;
-  overflow-y: auto;
+  padding: 0;
+  overflow: hidden;
 }
 
+/* The panel itself carries no card framing here — no border, background, or
+   shadow — so the graph reads as the app surface rather than a card sitting
+   inside a dashboard (Phase 27D). */
 .shell-graph-viewport .knowledge-graph-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-
-.shell-graph-viewport .knowledge-graph-panel > div[aria-live] {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-}
-
-/* Let the map (legend + canvas) claim most of the vertical space so the
-   graph reads as the dominant viewport; lists/groups/inspector remain below,
-   reachable by scrolling the panel rather than the page. */
-.shell-graph-viewport .graph-map-area {
-  flex: 1 1 auto;
-  min-height: min(58vh, 620px);
-  display: flex;
-  flex-direction: column;
-}
-
-.shell-graph-viewport .graph-map-area .graph-canvas-wrap {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.shell-graph-viewport .graph-map-area .graph-canvas {
-  width: 100%;
   height: 100%;
-  min-height: 22rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 /* Contextual dock: a glass side panel that slides over the graph viewport
@@ -3458,10 +3385,6 @@ body,
     white-space: nowrap;
   }
 
-  .shell-graph-viewport {
-    padding: 0.6rem;
-  }
-
   .shell-dock {
     top: auto;
     bottom: 0;
@@ -3480,6 +3403,286 @@ body,
 
 @media (prefers-reduced-motion: reduce) {
   .shell-dock {
+    transition: none;
+  }
+}
+
+/* ============================================================================
+   Phase 27D — Full-viewfinder graph surface correction pass
+   Phase 27B/27C made the Knowledge Graph the persistent surface behind a
+   control rail and contextual dock, but the graph panel itself still read as
+   a bordered dashboard card: a title/summary header, a bounded map area, then
+   stacked list sections scrolling underneath. This pass turns the graph into
+   the full app viewfinder — the canvas fills the entire panel as a living
+   background layer, and the title, actions, legend, groups, node/edge lists,
+   and inspector become glass overlay chrome floating above it instead of a
+   scrollable dashboard stack. Presentation/layout only: no panel's data
+   fetching, selection logic, or markup semantics change — only how the
+   existing pieces are composed and positioned.
+   ============================================================================ */
+
+:root {
+  --viewfinder-topbar-h: 3.75rem;
+  --viewfinder-glass: rgba(20, 23, 31, 0.82);
+}
+
+.graph-viewfinder {
+  position: relative;
+  overflow: hidden;
+}
+
+/* === Base layer: the canvas is the app background =========================
+   Fills the entire viewfinder. Loading/error/empty states render here too,
+   centered, so every panel state still reads as "the map surface" rather
+   than a content-missing placeholder floating in a card. */
+.viewfinder-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.viewfinder-canvas-wrap {
+  position: absolute;
+  inset: 0;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.viewfinder-canvas-wrap .graph-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.viewfinder-canvas-hint {
+  position: absolute;
+  left: 1rem;
+  bottom: 0.85rem;
+  margin: 0;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--viewfinder-glass);
+  backdrop-filter: saturate(1.2) blur(6px);
+}
+
+.viewfinder-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  text-align: center;
+}
+
+.viewfinder-state p {
+  max-width: 40ch;
+}
+
+/* Loading/error/empty text stays legible against the bare canvas field
+   without the card chrome those states carried in the dashboard layout. */
+.viewfinder-state.graph-state-loading,
+.viewfinder-state.graph-state-empty {
+  background: transparent;
+}
+
+.viewfinder-state.graph-state-error {
+  background: rgba(248, 113, 113, 0.05);
+}
+
+/* === Overlay layer: glass chrome over the graph ============================
+   Sits above the canvas. `pointer-events: none` on the layer lets clicks pass
+   through to the graph in the gaps between panes; each pane re-enables
+   pointer events for itself. */
+.viewfinder-chrome {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* === Top bar: title + summary + actions, not a dashboard section header ===
+   Compact, translucent, pinned to the top edge — metadata chrome, not a
+   headline. The graph shows through beneath it. */
+.viewfinder-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--viewfinder-topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1rem;
+  pointer-events: auto;
+  border: none;
+  border-bottom: 1px solid var(--border-soft);
+  border-radius: 0;
+  background: var(--viewfinder-glass);
+  backdrop-filter: saturate(1.2) blur(10px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.viewfinder-title {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+/* The graph title reads as compact chrome, not a dashboard section headline
+   — small, medium weight, no divider rule. */
+.viewfinder-title h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text);
+}
+
+.viewfinder-title .graph-subtitle {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .viewfinder-title .graph-subtitle {
+    display: block;
+    margin: 0;
+    font-size: 0.7rem;
+    color: var(--text-subtle);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Summary metrics become a compact inline instrument readout inside the top
+   bar instead of a standalone stat band — a couple of corner-readout badges,
+   not a metric dashboard. */
+.viewfinder-topbar .graph-summary {
+  flex: none;
+  margin: 0;
+  padding: 0;
+  gap: 1rem;
+  flex-wrap: nowrap;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.graph-summary-compact div {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.viewfinder-topbar .graph-summary dt {
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+
+.viewfinder-topbar .graph-summary dd {
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.viewfinder-topbar .graph-head-actions {
+  flex: none;
+}
+
+/* === Side panes: legend/lists and the inspector as glass trays =============
+   Float over the graph on either edge instead of stacking beneath the map in
+   a scrollable dashboard column. */
+.viewfinder-pane {
+  position: absolute;
+  top: var(--viewfinder-topbar-h);
+  bottom: 0;
+  width: min(23rem, 88vw);
+  overflow-y: auto;
+  padding: 1rem;
+  pointer-events: auto;
+  background: var(--viewfinder-glass);
+  backdrop-filter: saturate(1.2) blur(10px);
+}
+
+.viewfinder-pane-explorer {
+  left: 0;
+  border-right: 1px solid var(--border-soft);
+  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.28);
+}
+
+.viewfinder-pane-inspector {
+  right: 0;
+  border-left: 1px solid var(--border-soft);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.28);
+}
+
+.viewfinder-pane-explorer .graph-legend {
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.viewfinder-pane .graph-section:first-of-type {
+  margin-top: 0;
+}
+
+/* === Responsive: below the shell's two-pane breakpoint, fall back to a
+   single scrollable column so the overlay trays don't crowd a phone-width
+   screen. The graph keeps a fixed viewing height above the stacked chrome
+   rather than disappearing behind full-width panes. === */
+@media (max-width: 760px) {
+  .shell-graph-viewport {
+    overflow-y: auto;
+  }
+
+  .graph-viewfinder {
+    overflow: visible;
+    min-height: 100%;
+  }
+
+  .viewfinder-field {
+    position: relative;
+    inset: auto;
+    height: 60vh;
+    min-height: 20rem;
+  }
+
+  .viewfinder-chrome {
+    position: relative;
+    inset: auto;
+    pointer-events: auto;
+  }
+
+  .viewfinder-topbar {
+    position: relative;
+    height: auto;
+    flex-wrap: wrap;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .viewfinder-topbar .graph-summary {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .viewfinder-pane {
+    position: relative;
+    top: auto;
+    bottom: auto;
+    width: 100%;
+    max-height: none;
+    box-shadow: none;
+    border-right: none;
+    border-left: none;
+    border-top: 1px solid var(--border-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewfinder-pane,
+  .viewfinder-chrome {
     transition: none;
   }
 }
