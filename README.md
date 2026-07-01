@@ -96,8 +96,26 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 25A - Premium Visual Design System / Frontend Presentation Direction`
-  (planning / documentation only). Phase 25A defines a **buildable visual design
+- **Active phase:** `Phase 27C - Graph-First App Shell QA + Screenshot Evidence Refresh`
+  (QA / evidence / documentation only). Phase 27C re-runs the local backend (`8787`)
+  and frontend (`5173`) and captures honest evidence that the **Phase 27B**
+  graph-first app shell — the Knowledge Graph promoted to the persistent,
+  full-viewport primary surface, with Vault/Status, Source Registry, Intelligence
+  Report, and Console as contextual dock panes opened from a compact control rail —
+  renders and functions correctly in a connected runtime. It confirms the same
+  backend data as every prior connected pass (health `0.1.0`, graph 7 nodes / 6
+  edges) and a passing `npm run check:frontend`, and records a
+  `phase-27c-connected-*` screenshot set covering the default shell state, the
+  closed control rail, and all four dock panes. See the
+  [Phase 27C Graph-First App Shell QA + Screenshot Evidence Refresh](docs/demo/phase-27c-graph-first-app-shell-qa-evidence.md).
+  It changes no frontend/backend/API/schema/package/dependency or application
+  behavior. The preceding **Phase 27B** implemented the graph-first app shell
+  (frontend presentation/structure only) and **Phase 27A**
+  ([planning doc](docs/ui/phase-27a-graph-first-app-shell-planning.md)) defined the
+  surface model and interaction/layout principles before that implementation. Before
+  the graph-first shell arc, **Phase 26A–26C** delivered the graph visual identity
+  planning, the Graph Visual Presentation frontend pass, and its QA/evidence
+  refresh. Before that, **Phase 25A** defined a **buildable visual design
   system** for the next UI implementation pass — a premium, dark metallic
   intelligence-console aesthetic with a graph-forward identity — **before** any
   frontend/CSS change. It documents the current (light-theme) visual baseline, the
@@ -374,7 +392,13 @@ foundations should be stable and honest before they are clever.
 | Phase 24A | Complete | Portfolio screenshot selection + README visual lock (docs / README / demo presentation only); reviews the existing Phase 23B connected screenshot set, selects the three strongest README surfaces (connected dashboard top, Knowledge Graph, Intelligence Report), adds a **Visual evidence** README section with honest captions, and records the selection rationale (including intentionally-omitted screenshots) in the [Phase 24A Portfolio Screenshot + README Visual Lock](docs/demo/phase-24a-portfolio-screenshot-readme-visual-lock.md) note. Uses only existing real screenshots; no image fabrication and no UI/CSS/frontend/backend/API/schema/package/dependency/runtime behavior changes. |
 | Phase 25A | Complete | Premium visual design system / frontend presentation direction (planning / documentation only); defines a buildable premium dark-metallic intelligence-console visual system with a graph-forward identity before any UI/CSS change — current (light) visual baseline, target visual identity, design principles, a layered surface/panel system, typography/hierarchy direction, a graph-centered experience direction (node/edge language, canvas framing, inspector relationship, legend/status, and *planned* read-only overlay concepts for Temporal Decay / Dreaming / Provenance / Query Trails), the Intelligence-Report visual direction with a real-vs-planned visual contract, the navigation/demo-flow direction, the Phase 25B implementation boundaries, and the Phase 25C QA/evidence expectations. Graph stays read-only; nothing faked. See the [planning doc](docs/ui/phase-25a-premium-visual-system-planning.md). No code, contract, or behavior changes. |
 | Phase 25B | Complete | Premium visual system implementation pass (frontend presentation only); applies the Phase 25A direction as a token-driven reskin in `apps/frontend/src/styles.css` — a dark metallic palette plus elevation/spacing/type/glow tokens (token names preserved so token-driven rules re-theme automatically) and per-surface restyling of header/panels/cards/section nav/graph framing/inspector/Intelligence Report/console onto those tokens. Presentation-only over the existing token system and SVG view model; graph stays read-only; no backend/API/schema/contract/data-value/package/dependency or runtime behavior change. |
-| Phase 25B.5 | Active | Frontend asset contract + icon usage planning (planning / documentation only); audits current repo asset usage (clean baseline — only the approved `docs/assets/branding/hivemind-readme-banner.png` brand image plus `docs/demo/screenshots/*` evidence; the running app ships no favicon/logo/static asset and the sole SVG is the inline data-driven Knowledge Graph render) and creates the first Hive&#124;Mind [frontend asset contract](docs/frontend-asset-contract.md): approved source authority (devdevbuilds parent → Hive&#124;Mind lockup), allowed/forbidden asset categories (no icon-library dependency, no CDN, no generated/random or screenshot-derived assets), file-location and naming conventions, SVG safety, accessibility, dark-metallic theming (monochrome/duotone/glow/metallic/status treatments), the app-mark-vs-decorative-icon line, and how future asset phases must reference the contract. Adds no asset and no dependency; no UI/CSS/frontend/backend/API/schema/package or behavior change. |
+| Phase 25B.5 | Complete | Frontend asset contract + icon usage planning (planning / documentation only); audits current repo asset usage (clean baseline — only the approved `docs/assets/branding/hivemind-readme-banner.png` brand image plus `docs/demo/screenshots/*` evidence; the running app ships no favicon/logo/static asset and the sole SVG is the inline data-driven Knowledge Graph render) and creates the first Hive&#124;Mind [frontend asset contract](docs/frontend-asset-contract.md): approved source authority (devdevbuilds parent → Hive&#124;Mind lockup), allowed/forbidden asset categories (no icon-library dependency, no CDN, no generated/random or screenshot-derived assets), file-location and naming conventions, SVG safety, accessibility, dark-metallic theming (monochrome/duotone/glow/metallic/status treatments), the app-mark-vs-decorative-icon line, and how future asset phases must reference the contract. Adds no asset and no dependency; no UI/CSS/frontend/backend/API/schema/package or behavior change. |
+| Phase 26A | Complete | Graph visual identity planning (planning / documentation only). See [Graph Visual Identity](docs/ui/graph-visual-identity.md). |
+| Phase 26B | Complete | Graph Visual Presentation frontend pass, plus a 26B addendum docking the legend, promoting the inspector on selection, and giving the Knowledge Graph panel hero elevation so the canvas reads as the primary surface. Frontend presentation only; graph stays read-only. |
+| Phase 26C | Complete | Graph visual QA + screenshot evidence refresh (QA / evidence / documentation only). See the [evidence doc](docs/demo/phase-26c-graph-visual-qa-screenshot-evidence.md). |
+| Phase 27A | Complete | Graph-first app shell planning (planning / documentation only); defines the transition from the dashboard-with-panels layout to a graph-first app shell where the Knowledge Graph is the primary full-app view and the Source Registry, Intelligence Report, Console, and inspectors become contextual dock panes. See the [planning doc](docs/ui/phase-27a-graph-first-app-shell-planning.md). No code or behavior changes. |
+| Phase 27B | Complete | Graph-first app shell implementation (frontend presentation/structure only, PR #95); promotes the Knowledge Graph to the persistent full-viewport primary surface and turns Vault/Status, Source Registry, Intelligence Report, and Console into contextual dock panes opened from a compact control rail. All panes stay mounted (toggled via `hidden`/`inert`) so switching panes never re-fetches data. Frontend-only (`App.tsx`, `styles.css`); no backend/API/schema/contract/package/dependency change. |
+| Phase 27C | Complete | Graph-first app shell QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) and captures honest evidence that the Phase 27B graph-first shell is connected and functional — default shell state, graph viewport, closed rail, and all four dock panes (Vault, Sources, Intelligence, Console) opening over the still-visible graph canvas — confirming the same backend data as prior phases (health `0.1.0`, graph 7 nodes / 6 edges) and a passing `npm run check:frontend`. Records a `phase-27c-connected-*` screenshot set and an [evidence doc](docs/demo/phase-27c-graph-first-app-shell-qa-evidence.md). No code or behavior changes. |
 
 ## Planned logic
 
@@ -594,6 +618,9 @@ npm run dev:frontend
 - [Phase 24A Portfolio Screenshot + README Visual Lock](docs/demo/phase-24a-portfolio-screenshot-readme-visual-lock.md)
 - [Phase 25A Premium Visual Design System / Frontend Presentation Direction](docs/ui/phase-25a-premium-visual-system-planning.md)
 - [Frontend Asset Contract + Icon Usage Planning](docs/frontend-asset-contract.md)
+- [Phase 26C Graph Visual QA + Screenshot Evidence Refresh](docs/demo/phase-26c-graph-visual-qa-screenshot-evidence.md)
+- [Phase 27A Graph-First App Shell Planning](docs/ui/phase-27a-graph-first-app-shell-planning.md)
+- [Phase 27C Graph-First App Shell QA + Screenshot Evidence Refresh](docs/demo/phase-27c-graph-first-app-shell-qa-evidence.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script (earlier walkthrough)](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
