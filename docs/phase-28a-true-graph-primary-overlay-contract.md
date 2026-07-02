@@ -4,6 +4,12 @@ Status: Planning / documentation only. No frontend, backend, CSS, API, schema,
 package, dependency, runtime asset, or graph-logic changes. This phase defines
 the contract Phase 28B must implement against.
 
+**Visual correction lock addendum:** after an initial UI direction pass, this
+contract was tightened with Section 6 (Visual correction lock), which locks
+in stricter shell/chrome, color-discipline, navigation, overlay, and
+graph-visual-identity rules and extends the Section 5 Phase 28B handoff.
+See Section 6 below.
+
 ## Why this phase exists
 
 Phase 27A–27E delivered a graph-first app shell: the Knowledge Graph became
@@ -262,6 +268,119 @@ Phase 28B success criteria:
   into a leftover column.
 - The layout feels like a viewfinder/intelligence-map surface per the
   Section 4 visual-feel test, not a SaaS admin page.
+
+## 6. Visual correction lock (addendum)
+
+A review of the current UI direction found it closer to the contract above
+but still drifting in ways the original five sections did not pin down
+tightly enough — chrome that reads as a generic dark dashboard rather than a
+graph-native surface, a persistent sidebar in spirit if not in name, and
+overlays heavy enough to read as walls rather than glass. This addendum
+locks in the corrections. It amends and tightens Sections 1–4; it does not
+reopen the decisions already made there.
+
+**6.1 Shell / chrome direction**
+
+- The app shell reads as deep black / dark chrome / metallic — a serious
+  dev-tool product, not a generic "dark mode" skin of a light dashboard.
+- The overall background and shell are darker and more visually restrained
+  than the current implementation: less midtone gray, more true dark
+  chrome/metallic depth.
+- The shell does not rely on colorful accents to establish identity. Its
+  identity comes from material (metallic, chrome, depth) and restraint, not
+  color.
+
+**6.2 Color discipline**
+
+- No color exists outside graph-related systems, with three narrow
+  exceptions: white/off-white, grayscale metallic neutrals, and occasional
+  functional color-coded text where consistency requires it (e.g., a status
+  word that must stay red/green/amber for legibility).
+- General UI chrome — rail, command surface, dock frames, headers, borders,
+  labels — carries no decorative accent color. If a chrome element needs
+  emphasis, it uses elevation, contrast, or metallic sheen, not hue.
+- Nearly all visual color energy belongs to the graph itself: nodes, edges,
+  pulses, halos, grouping/cluster color, and graph-state signals (selected,
+  stale, connected, etc.). Color is how the graph communicates; it is not
+  how the shell decorates itself.
+
+**6.3 Navigation correction**
+
+- The persistent left sidebar (control rail as currently built) does not
+  remain as a standard, always-visible, screen-dividing sidebar — even a
+  narrow one is still a permanent column and fails Section 1's dominance
+  rule.
+- The sidebar pattern is replaced conceptually with a translucent,
+  icon-based hover/reveal/command-triggered utility surface: icons that sit
+  quietly over the graph (not beside it), expand or reveal labels/tools on
+  hover or invocation, and recede to near-invisible at rest.
+- Navigation and tools feel **summoned over the graph**, not permanently
+  dividing the screen into a nav region and a content region.
+
+**6.4 Overlay correction**
+
+- Overlays are glass-like: translucent, floating, and visually subordinate
+  to the graph in both material and precedence — they read as a pane of
+  glass laid over the map, not a solid card placed on top of it.
+- Section surfaces/cards must not behave like fully blocking, opaque
+  walls — no overlay should fully occlude the graph behind it, even when
+  the overlay's own background has some transparency in name only (e.g., a
+  95%+ opaque fill still reads as a wall and fails this rule).
+- Overlays preserve visibility of the graph behind them at all times they
+  are open, and must not cause the app to reflow into columns (the graph
+  never shrinks, never gets pushed into a leftover region to make room).
+
+**6.5 Graph visual identity**
+
+The graph itself is the correction's center of gravity — it must visibly
+earn the color and life budget the rest of the shell gives up:
+
+- A living / breathing feel — subtle motion or animation cues that read as
+  "alive," not static geometry.
+- Pulsing node and edge energy — signal, not decoration; pulses should be
+  legible as activity/emphasis, not random ambient noise.
+- Aura / halo treatment around nodes, used to carry meaning (selection,
+  status, emphasis) rather than purely for effect.
+- Group / cluster presence — visually legible clustering so related nodes
+  read as a group without needing a legend to explain it.
+- Reactive selected-node focus — the graph itself visibly responds to
+  selection (not just the inspector overlay opening).
+- An intelligence-map / tactical-surface feel overall.
+
+The graph must read as the app's core product identity — the thing the
+product *is* — not as one panel inside an app whose identity lives in its
+chrome. (This section describes the target visual language; the concrete
+implementation of pulse/halo/cluster/motion mechanics belongs to Phase 28B
+or a dedicated follow-on graph-visual phase — this addendum does not itself
+add graph logic, mutation, physics, or new dependencies. See Section 5's
+forbidden list, which still applies unchanged.)
+
+**6.6 Explicit rejection (addendum to Section 1)**
+
+In addition to the rejections already listed in Section 1, the following
+are also rejected:
+
+- Persistent sidebar navigation, including a narrow icon rail that is
+  always visible and always occupies fixed screen space.
+- Split-column dashboard structure, in any variant.
+- Card walls around the graph — any arrangement of multiple simultaneously
+  visible, opaque-feeling cards framing the canvas.
+- Colorful chrome unrelated to graph semantics — accent colors on shell
+  elements that exist for branding/decoration rather than to represent
+  graph state.
+- Dashboard-first composition — any layout where the eye is drawn to shell
+  structure before the graph.
+- Graph-as-widget composition — the graph rendered as if it were one
+  embeddable component among several, rather than the surface everything
+  else floats over.
+
+**Amendment to Section 5 (Phase 28B handoff):** Phase 28B's forbidden list
+and success criteria are extended by this addendum — Phase 28B must satisfy
+Sections 6.1–6.6 in addition to the original Section 5 criteria. Where the
+current implementation (post-27B/27D) conflicts with this addendum
+(persistent rail, opaque/heavy overlays, shell accent color, flat/static
+graph rendering), Phase 28B is expected to correct it, not preserve it for
+compatibility.
 
 ## Relationship to prior phases
 
