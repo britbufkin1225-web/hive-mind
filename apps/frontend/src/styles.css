@@ -10,16 +10,19 @@
      ========================================================================== */
 
   /* Elevation scale (L0 canvas → L3 overlay). Depth comes from layered slate
-     surfaces + hairline borders, not heavy drop shadow. */
-  --bg: #0b0d12;             /* L0 — deep metallic graphite canvas */
-  --surface: #14171f;        /* L1 — panel / section reading surface */
-  --surface-raised: #1a1e27; /* L2 — cards, summary bands, legend */
-  --surface-overlay: #20252f;/* L3 — inspector / overlay (highest) */
-  --surface-inset: #0f1219;  /* recessed wells: inputs, code, canvas */
+     surfaces + hairline borders, not heavy drop shadow.
+     Phase 28B — darkened per the Phase 28A §6.1 visual correction lock: less
+     midtone gray, more true dark chrome/metallic depth. Values only; token
+     names and the elevation relationships between them are unchanged. */
+  --bg: #05060a;             /* L0 — deep black chrome canvas */
+  --surface: #0d0f15;        /* L1 — panel / section reading surface */
+  --surface-raised: #12151c; /* L2 — cards, summary bands, legend */
+  --surface-overlay: #171b23;/* L3 — inspector / overlay (highest) */
+  --surface-inset: #08090d;  /* recessed wells: inputs, code, canvas */
 
-  --border: #2a313c;         /* structural edge */
-  --border-soft: #20262f;    /* soft divider */
-  --border-strong: #3a434f;  /* emphasized edge */
+  --border: #232a33;         /* structural edge */
+  --border-soft: #1a1f27;    /* soft divider */
+  --border-strong: #333c47;  /* emphasized edge */
 
   --text: #e7ebf2;           /* primary text (near-white, not pure) */
   --text-muted: #9aa4b2;     /* secondary / labels */
@@ -895,6 +898,15 @@ dd {
   cursor: default;
 }
 
+/* Phase 28B: the Explorer toggle reads active via elevation/contrast, not
+   hue — consistent with the command cluster's non-decorative active state
+   (Phase 28A §6.2). */
+.graph-explorer-toggle-active {
+  background: var(--surface-overlay);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
 .graph-legend {
   display: flex;
   flex-wrap: wrap;
@@ -1702,13 +1714,15 @@ dd {
   font-size: 0.95rem;
 }
 
+/* Phase 28B: grayscale/metallic badge — no decorative accent color on shell
+   chrome (Phase 28A §6.2). Emphasis comes from the border/inset contrast. */
 .app-mode-badge {
   display: inline-block;
   padding: 0.1rem 0.55rem;
   border-radius: 999px;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-border);
-  color: var(--accent-strong);
+  background: var(--surface-inset);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -3130,7 +3144,10 @@ body,
 }
 
 /* Slim masthead bar instead of the old full hero — the graph, not the
-   header, is the first thing the shell shows. */
+   header, is the first thing the shell shows.
+   Phase 28B: dropped the accent gradient wash + accent top edge (Phase 28A
+   §6.1/§6.2 — shell chrome carries no decorative accent color; identity
+   comes from material/restraint, not hue). Flat dark chrome instead. */
 .shell-topbar {
   display: flex;
   flex: none;
@@ -3140,9 +3157,8 @@ body,
   padding: 0.6rem 1.25rem;
   border: none;
   border-bottom: 1px solid var(--border);
-  border-top: 3px solid var(--accent);
   border-radius: 0;
-  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 100%);
+  background: var(--surface);
   box-shadow: none;
 }
 
@@ -3154,7 +3170,7 @@ body,
 
 .shell-topbar-brand .parent-label {
   margin: 0;
-  color: var(--accent-strong);
+  color: var(--text-subtle);
 }
 
 .shell-topbar-brand h1 {
@@ -3177,81 +3193,130 @@ body,
   font-size: 0.8rem;
 }
 
-/* Body row: control rail | graph viewport | contextual dock. */
+/* Body: a single relative stacking context. The graph viewport fills it
+   completely; the command cluster and contextual dock float above it as
+   absolutely-positioned overlays instead of occupying their own flex tracks.
+   Phase 28B removed the Phase 27B rail's dedicated column — no layout
+   region is reserved for anything other than the graph (Phase 28A §1). */
 .shell-body {
   position: relative;
-  display: flex;
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
 }
 
-/* Control rail: compact, persistent, always visible — a toolbar for reaching
-   contextual surfaces without competing with the graph for visual weight. */
-.shell-rail {
-  flex: none;
-  width: 7.5rem;
-  overflow-y: auto;
-  padding: 0.85rem 0.6rem;
-  border-right: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.shell-rail-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.shell-rail-button {
-  width: 100%;
-  padding: 0.55rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-inset);
-  color: var(--text-muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    border-color 0.12s ease,
-    background-color 0.12s ease,
-    color 0.12s ease;
-}
-
-.shell-rail-button:hover {
-  border-color: var(--border-strong);
-  color: var(--text);
-}
-
-.shell-rail-button:focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: var(--shadow-focus);
-}
-
-.shell-rail-button-active {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-}
-
 /* Primary graph viewport: the dominant, full-bleed surface the shell is
    built around. Overrides the legacy centered-column `main` rule. No inner
    padding or scroll — the graph is the app's living background, not a
-   scrollable dashboard column (Phase 27D). */
+   scrollable dashboard column (Phase 27D). Phase 28B: absolutely
+   positioned to fill `.shell-body` now that no sidebar shares its row. */
 .shell-graph-viewport {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   margin: 0;
   padding: 0;
   overflow: hidden;
+}
+
+/* === Floating command cluster (Phase 28B) ==================================
+   Replaces the Phase 27B persistent rail. A quiet, translucent glass pill
+   floats over the graph rather than beside it — no fixed column, no
+   screen-dividing sidebar (Phase 28A §6.3). Icon-first: each button is a
+   compact monogram that is always visible and always tappable; the text
+   label only reveals on hover/focus as a progressive enhancement, so touch
+   users never depend on hover to identify or reach a panel. */
+.command-cluster {
+  position: absolute;
+  left: 50%;
+  bottom: 1.1rem;
+  z-index: 6;
+  transform: translateX(-50%);
+}
+
+.command-cluster-list {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  background: rgba(8, 9, 13, 0.5);
+  backdrop-filter: saturate(1.3) blur(16px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.command-cluster-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.35rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    width 0.16s ease,
+    padding 0.16s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.command-cluster-icon {
+  flex: none;
+  width: 2.35rem;
+  height: 2.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.command-cluster-label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0;
+  transition:
+    max-width 0.16s ease,
+    opacity 0.12s ease;
+}
+
+.command-cluster-button:hover,
+.command-cluster-button:focus-visible {
+  padding-right: 0.85rem;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.command-cluster-button:hover .command-cluster-label,
+.command-cluster-button:focus-visible .command-cluster-label {
+  max-width: 8rem;
+  opacity: 1;
+}
+
+.command-cluster-button:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Active state reads via elevation/contrast, not hue — no accent color on
+   shell chrome (Phase 28A §6.2). */
+.command-cluster-button-active {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 /* The panel itself carries no card framing here — no border, background, or
@@ -3265,31 +3330,57 @@ body,
   box-shadow: none;
 }
 
-/* Contextual dock: a glass side panel that slides over the graph viewport
-   without removing it from view — it coexists with the graph rather than
-   replacing it, per the Phase 27A interaction principles. `inert` (set in
-   App.tsx) keeps its closed contents out of tab order and pointer reach. */
+/* Contextual dock: a glass panel that floats over the graph viewport without
+   removing it from view — it coexists with the graph rather than replacing
+   it, per the Phase 27A interaction principles. `inert` (set in App.tsx)
+   keeps its closed contents out of tab order and pointer reach.
+   Phase 28B: inset from the edges (not edge-to-edge) with rounded corners
+   and a much lower fill opacity so it reads as a pane of glass laid over the
+   map, not a solid wall — a 95%+ opaque fill still reads as a wall and fails
+   the Phase 28A §6.4 overlay correction, so this drops well below that. */
 .shell-dock {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 1rem;
+  right: 1rem;
+  bottom: 1rem;
   z-index: 5;
   display: flex;
   flex-direction: column;
-  width: min(440px, 100%);
-  height: 100%;
-  border: none;
-  border-left: 1px solid var(--border);
-  border-radius: 0;
-  background: rgba(20, 23, 31, 0.96);
-  backdrop-filter: saturate(1.3) blur(10px);
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45);
-  transform: translateX(100%);
-  transition: transform 0.2s ease;
+  width: min(400px, calc(100% - 2rem));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  background: rgba(9, 11, 15, 0.58);
+  backdrop-filter: saturate(1.3) blur(20px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 20px 60px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transform: translateX(2rem);
+  pointer-events: none;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .shell-dock-open {
+  opacity: 1;
   transform: translateX(0);
+  pointer-events: auto;
+}
+
+/* The dock's contents are existing panel `<section>` elements, which
+   normally carry their own opaque `--surface` card background (see the
+   `header, section` rule above). Inside the dock that would recreate the
+   opaque-wall problem one layer down, so it's neutralized here — only the
+   dock's own glass background shows, and inner content cards (source cards,
+   the inspector, intel rows) keep their own raised-surface contrast for
+   legibility against it. */
+.shell-dock section {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 .shell-dock-header {
@@ -3359,45 +3450,35 @@ body,
   gap: 1rem;
 }
 
-/* Responsive: below the graph's two-pane breakpoint the rail collapses to a
-   slim horizontal strip and the dock becomes a bottom sheet, so the graph
-   keeps the majority of the viewport instead of competing with a side rail
-   on narrow screens. */
+/* Responsive: below the graph's two-pane breakpoint the dock becomes a
+   full-width bottom sheet so it stays usable at phone widths, and the
+   command cluster narrows its hover-reveal label so it doesn't crowd a
+   narrow screen. The graph keeps the full viewport either way — there is no
+   side-rail breakpoint to manage since Phase 28B removed the rail. */
 @media (max-width: 760px) {
-  .shell-body {
-    flex-direction: column;
-  }
-
-  .shell-rail {
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .shell-rail-list {
-    flex-direction: row;
-  }
-
-  .shell-rail-button {
-    width: auto;
-    white-space: nowrap;
-  }
-
   .shell-dock {
     top: auto;
-    bottom: 0;
     right: 0;
+    bottom: 0;
+    left: 0;
     width: 100%;
-    height: min(82vh, 100%);
-    border-left: none;
-    border-top: 1px solid var(--border);
+    max-height: min(82vh, 100%);
+    border-radius: var(--radius) var(--radius) 0 0;
+    border-width: 1px 0 0;
     transform: translateY(100%);
   }
 
   .shell-dock-open {
     transform: translateY(0);
+  }
+
+  .command-cluster-label {
+    display: none;
+  }
+
+  .command-cluster-button:hover,
+  .command-cluster-button:focus-visible {
+    padding-right: 0;
   }
 }
 
@@ -3423,7 +3504,11 @@ body,
 
 :root {
   --viewfinder-topbar-h: 3.75rem;
-  --viewfinder-glass: rgba(20, 23, 31, 0.82);
+  /* Phase 28B: lowered from 0.82 — the Phase 28A §6.4 overlay correction
+     calls out that even a 95%+ opaque fill still reads as a wall, so this
+     drops meaningfully below that for the topbar/pane/hint chrome that all
+     share this token. */
+  --viewfinder-glass: rgba(10, 12, 16, 0.6);
 }
 
 .graph-viewfinder {
@@ -3594,6 +3679,12 @@ body,
 /* === Side panes: legend/lists and the inspector as glass trays =============
    Float over the graph on either edge instead of stacking beneath the map in
    a scrollable dashboard column. */
+/* Phase 28B: the explorer and inspector panes are summoned overlays, not
+   permanent side columns (Phase 28A §2/§3) — stay mounted (so their lists
+   never re-render on toggle) but hidden by default: translated off their own
+   edge, invisible, and out of the hit-test tree (`inert`, set in
+   KnowledgeGraphPanel.tsx, backs this up for keyboard/AT users). The open
+   variant slides them in as a floating glass tray. */
 .viewfinder-pane {
   position: absolute;
   top: var(--viewfinder-topbar-h);
@@ -3601,21 +3692,40 @@ body,
   width: min(23rem, 88vw);
   overflow-y: auto;
   padding: 1rem;
-  pointer-events: auto;
+  opacity: 0;
+  pointer-events: none;
   background: var(--viewfinder-glass);
-  backdrop-filter: saturate(1.2) blur(10px);
+  backdrop-filter: saturate(1.2) blur(16px);
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.viewfinder-pane-open {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .viewfinder-pane-explorer {
   left: 0;
+  transform: translateX(-100%);
   border-right: 1px solid var(--border-soft);
   box-shadow: 8px 0 24px rgba(0, 0, 0, 0.28);
 }
 
+.viewfinder-pane-explorer.viewfinder-pane-open {
+  transform: translateX(0);
+}
+
 .viewfinder-pane-inspector {
   right: 0;
+  transform: translateX(100%);
   border-left: 1px solid var(--border-soft);
   box-shadow: -8px 0 24px rgba(0, 0, 0, 0.28);
+}
+
+.viewfinder-pane-inspector.viewfinder-pane-open {
+  transform: translateX(0);
 }
 
 .viewfinder-pane-explorer .graph-legend {
@@ -3667,6 +3777,9 @@ body,
     order: 3;
   }
 
+  /* In-flow on mobile rather than an absolutely-positioned slide-in tray, so
+     a closed pane must collapse out of the flow entirely (opacity alone
+     would leave a blank gap where it used to float). */
   .viewfinder-pane {
     position: relative;
     top: auto;
@@ -3677,6 +3790,12 @@ body,
     border-right: none;
     border-left: none;
     border-top: 1px solid var(--border-soft);
+    transform: none;
+    display: none;
+  }
+
+  .viewfinder-pane-open {
+    display: block;
   }
 }
 
@@ -3685,5 +3804,102 @@ body,
   .viewfinder-chrome {
     transition: none;
   }
+}
+
+/* ============================================================================
+   Phase 28B — Living graph visual identity (first controlled pass)
+   Presentation-only, deterministic CSS animation over the existing per-type
+   node/edge coloring from Phase 26B — no graph algorithm, layout, mutation,
+   or data change. Gives the canvas a subtle "alive" quality at rest (a slow
+   idle breathe on every node) and a legible pulse/aura on whatever the
+   selection hierarchy already highlights (the selected node and its incident
+   edges), per the Phase 28A §6.5 graph-visual-identity direction. Entirely
+   opt-out under prefers-reduced-motion, per that section's accessibility
+   requirement.
+   ============================================================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Idle breathe: a very low-amplitude stroke-opacity cycle on every node so
+     the map reads as a living surface rather than static geometry, even with
+     nothing selected. Deliberately subtle — signal comes from the pulse/aura
+     below, not from this ambient layer. */
+  .graph-canvas-node-circle {
+    animation: hm-node-breathe 6s ease-in-out infinite;
+  }
+
+  /* Selected-node aura: the existing per-type `filter: drop-shadow(...)` glow
+     (Phase 26B) becomes a pulse instead of a static halo — legible as "this
+     is the active node," not ambient decoration. `--node-glow` (declared per
+     `[data-node-type]` below) carries each type's own glow color into the
+     keyframe, so the pulse reads in the selected node's own type color
+     rather than a generic accent; a CSS animation's keyframe values for an
+     animated property win over a static declaration of that same property
+     regardless of the static rule's specificity, so this applies cleanly on
+     top of the per-type selected rule below. */
+  .graph-canvas-node-selected .graph-canvas-node-circle {
+    animation: hm-node-pulse 1.8s ease-in-out infinite;
+  }
+
+  /* Incident-edge energy: edges touching the current selection pulse in
+     opacity so the selection's connections read as active signal radiating
+     outward, not just a static highlighted line. */
+  .graph-canvas-edge-incident {
+    animation: hm-edge-pulse 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes hm-node-breathe {
+  0%,
+  100% {
+    stroke-opacity: 0.88;
+  }
+  50% {
+    stroke-opacity: 1;
+  }
+}
+
+@keyframes hm-node-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px var(--node-glow, rgba(139, 124, 240, 0.75)));
+  }
+  50% {
+    filter: drop-shadow(0 0 18px var(--node-glow, rgba(139, 124, 240, 0.75)));
+  }
+}
+
+@keyframes hm-edge-pulse {
+  0%,
+  100% {
+    stroke-opacity: 0.7;
+  }
+  50% {
+    stroke-opacity: 1;
+  }
+}
+
+/* Per-type glow color feeding `hm-node-pulse` above — the same colors used
+   by the Phase 26B per-type selected `filter: drop-shadow(...)` values, so
+   the animated pulse and the static resting glow agree. */
+[data-node-type="root"] {
+  --node-glow: rgba(169, 157, 248, 0.8);
+}
+[data-node-type="source"] {
+  --node-glow: rgba(129, 140, 248, 0.8);
+}
+[data-node-type="concept"] {
+  --node-glow: rgba(251, 191, 36, 0.75);
+}
+[data-node-type="file"] {
+  --node-glow: rgba(52, 211, 153, 0.75);
+}
+[data-node-type="model"] {
+  --node-glow: rgba(56, 189, 248, 0.75);
+}
+[data-node-type="note"] {
+  --node-glow: rgba(244, 114, 182, 0.75);
+}
+[data-node-type="folder"] {
+  --node-glow: rgba(96, 165, 250, 0.75);
 }
 

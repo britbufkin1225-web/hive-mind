@@ -592,6 +592,10 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
   const [graph, setGraph] = useState<KnowledgeGraphResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selection, setSelection] = useState<Selection>(null);
+  // Phase 28B: the legend/groups/lists pane is a summoned overlay, not a
+  // permanent sidebar — closed by default so the at-rest view is the graph
+  // alone (Phase 28A §1/§3).
+  const [explorerOpen, setExplorerOpen] = useState(false);
 
   const load = useCallback(async (): Promise<void> => {
     setState("loading");
@@ -654,6 +658,7 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
     [],
   );
   const clearSelection = useCallback(() => setSelection(null), []);
+  const toggleExplorer = useCallback(() => setExplorerOpen((open) => !open), []);
 
   // Related elements drive the "focus + dim" hierarchy: with a selection
   // active, the selected record and anything connected to it stay prominent
@@ -673,15 +678,22 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
 
   const hasSelection = selectedNode !== null || selectedEdge !== null;
 
-  // Escape clears the selection, so keyboard users can reset focus state
-  // without reaching for the mouse. Scoped to the panel via onKeyDown.
+  // Escape closes whichever contextual layer is topmost: a selection first
+  // (the secondary tier), then the explorer overlay (tertiary) — so keyboard
+  // users can back out one layer at a time without reaching for the mouse.
+  // Scoped to the panel via onKeyDown.
   const handlePanelKeyDown = useCallback(
     (event: KeyboardEvent<HTMLElement>) => {
-      if (event.key === "Escape" && hasSelection) {
+      if (event.key !== "Escape") {
+        return;
+      }
+      if (hasSelection) {
         clearSelection();
+      } else if (explorerOpen) {
+        setExplorerOpen(false);
       }
     },
-    [hasSelection, clearSelection],
+    [hasSelection, clearSelection, explorerOpen],
   );
 
   const hasNodes = model.nodes.length > 0;
@@ -772,6 +784,22 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
           )}
 
           <div className="graph-head-actions">
+            {state === "success" && !isEmptyGraph && (
+              <button
+                type="button"
+                className={
+                  explorerOpen
+                    ? "source-refresh graph-explorer-toggle graph-explorer-toggle-active"
+                    : "source-refresh graph-explorer-toggle"
+                }
+                onClick={toggleExplorer}
+                aria-pressed={explorerOpen}
+                aria-controls="graph-explorer-pane"
+                title="Toggle legend, groups, and node/relationship lists"
+              >
+                {explorerOpen ? "Hide explorer" : "Explorer"}
+              </button>
+            )}
             <button
               type="button"
               className="source-refresh graph-reset"
@@ -794,9 +822,20 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
 
         {state === "success" && !isEmptyGraph && (
           <>
+            {/* Legend/groups/lists: a tertiary overlay summoned from the
+                Explorer toggle above, not a permanent side column (Phase 28A
+                §2/§3). Stays mounted while closed (inert + CSS-hidden) so
+                toggling never re-renders the lists from scratch. */}
             <aside
-              className="viewfinder-pane viewfinder-pane-explorer"
+              id="graph-explorer-pane"
+              className={
+                explorerOpen
+                  ? "viewfinder-pane viewfinder-pane-explorer viewfinder-pane-open"
+                  : "viewfinder-pane viewfinder-pane-explorer"
+              }
               aria-label="Graph legend, groups, and lists"
+              aria-hidden={!explorerOpen}
+              inert={explorerOpen ? undefined : true}
             >
               <GraphLegend
                 nodeTypes={model.nodeTypes}
@@ -882,9 +921,18 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
               </div>
             </aside>
 
+            {/* Selected-node context: the secondary tier. It appears only in
+                response to a selection (Phase 28A §2/§3) rather than sitting
+                open at rest with an empty placeholder. */}
             <aside
-              className="viewfinder-pane viewfinder-pane-inspector"
+              className={
+                hasSelection
+                  ? "viewfinder-pane viewfinder-pane-inspector viewfinder-pane-open"
+                  : "viewfinder-pane viewfinder-pane-inspector"
+              }
               aria-label="Inspector"
+              aria-hidden={!hasSelection}
+              inert={hasSelection ? undefined : true}
             >
               <GraphInspector
                 node={selectedNode}

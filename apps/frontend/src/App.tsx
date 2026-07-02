@@ -9,19 +9,23 @@ import SourceRegistryPanel from "./components/SourceRegistryPanel";
 import KnowledgeGraphPanel from "./components/KnowledgeGraphPanel";
 import IntelligenceReportPanel from "./components/IntelligenceReportPanel";
 
-/* Phase 27B — graph-first app shell. The Knowledge Graph is the persistent
-   primary viewport; every other surface (vault/status, Source Registry,
-   Intelligence Report, Console) becomes a contextual dock pane opened from a
-   compact control rail instead of a stacked dashboard section. All panes stay
-   mounted (just hidden) so toggling between them never re-triggers their data
-   fetch — only the active pane is visible/focusable at a time. */
+/* Phase 27B/28B — graph-first app shell. The Knowledge Graph is the
+   persistent, full-bleed primary surface; every other surface (vault/status,
+   Source Registry, Intelligence Report, Console) becomes a contextual glass
+   dock pane summoned from a compact floating command cluster instead of a
+   permanent sidebar or dashboard section. All panes stay mounted (just
+   hidden) so toggling between them never re-triggers their data fetch — only
+   the active pane is visible/focusable at a time. Phase 28B replaced the
+   always-visible rail (a sidebar in spirit, per the Phase 28A visual
+   correction lock) with a floating, icon-first cluster that sits over the
+   graph rather than beside it. */
 type PanelKey = "vault" | "sources" | "intelligence" | "console";
 
-const RAIL_ITEMS: Array<{ key: PanelKey; label: string }> = [
-  { key: "vault", label: "Vault" },
-  { key: "sources", label: "Sources" },
-  { key: "intelligence", label: "Intelligence" },
-  { key: "console", label: "Console" },
+const RAIL_ITEMS: Array<{ key: PanelKey; label: string; glyph: string }> = [
+  { key: "vault", label: "Vault", glyph: "V" },
+  { key: "sources", label: "Sources", glyph: "S" },
+  { key: "intelligence", label: "Intel", glyph: "I" },
+  { key: "console", label: "Console", glyph: "C" },
 ];
 
 const PANEL_LABELS: Record<PanelKey, string> = {
@@ -123,8 +127,17 @@ function App() {
       </header>
 
       <div className="shell-body">
-        <nav className="shell-rail" aria-label="Workspace panels">
-          <ul className="shell-rail-list">
+        <main id="graph-viewport" className="shell-graph-viewport">
+          <KnowledgeGraphPanel id="knowledge-graph" />
+        </main>
+
+        {/* Floating command cluster: replaces the Phase 27B persistent rail.
+            Icon-first buttons sit quietly over the graph and reveal their
+            label on hover/focus; every button stays independently visible
+            and tappable at rest so touch users never depend on hover to
+            reach a panel (Phase 28A §6.3). */}
+        <nav className="command-cluster" aria-label="Workspace panels">
+          <ul className="command-cluster-list">
             {RAIL_ITEMS.map((item) => (
               <li key={item.key}>
                 <button
@@ -134,23 +147,22 @@ function App() {
                   }}
                   className={
                     activePanel === item.key
-                      ? "shell-rail-button shell-rail-button-active"
-                      : "shell-rail-button"
+                      ? "command-cluster-button command-cluster-button-active"
+                      : "command-cluster-button"
                   }
                   aria-pressed={activePanel === item.key}
                   aria-controls="contextual-dock"
                   onClick={() => togglePanel(item.key)}
                 >
-                  {item.label}
+                  <span className="command-cluster-icon" aria-hidden="true">
+                    {item.glyph}
+                  </span>
+                  <span className="command-cluster-label">{item.label}</span>
                 </button>
               </li>
             ))}
           </ul>
         </nav>
-
-        <main id="graph-viewport" className="shell-graph-viewport">
-          <KnowledgeGraphPanel id="knowledge-graph" />
-        </main>
 
         <aside
           id="contextual-dock"
