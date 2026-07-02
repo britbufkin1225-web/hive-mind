@@ -102,7 +102,12 @@ SVG visualization.
   direction into a stricter contract — the graph as the full application
   surface with every other panel treated strictly as a contextual overlay —
   before any further layout implementation, so the next frontend pass
-  (Phase 28B) cannot drift back toward dashboard/sidebar framing. See the
+  (Phase 28B) cannot drift back toward dashboard/sidebar framing. A **visual
+  correction lock addendum** further locks deep-black/metallic chrome with
+  color reserved almost entirely for the graph, a translucent hover/
+  command-triggered nav surface in place of any persistent sidebar,
+  glass-like non-occluding overlays, and a living/pulsing/aura/cluster graph
+  visual identity. See the
   [Phase 28A True Graph-Primary Surface + Overlay Contract](docs/phase-28a-true-graph-primary-overlay-contract.md)
   and the [full roadmap](docs/roadmap.md) for the complete 25B–27E history.
   The remainder of this section (below) is preserved as the historical Phase
