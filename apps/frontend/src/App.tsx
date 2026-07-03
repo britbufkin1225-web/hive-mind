@@ -9,19 +9,21 @@ import SourceRegistryPanel from "./components/SourceRegistryPanel";
 import KnowledgeGraphPanel from "./components/KnowledgeGraphPanel";
 import IntelligenceReportPanel from "./components/IntelligenceReportPanel";
 
-/* Phase 27B — graph-first app shell. The Knowledge Graph is the persistent
-   primary viewport; every other surface (vault/status, Source Registry,
-   Intelligence Report, Console) becomes a contextual dock pane opened from a
-   compact control rail instead of a stacked dashboard section. All panes stay
-   mounted (just hidden) so toggling between them never re-triggers their data
-   fetch — only the active pane is visible/focusable at a time. */
+/* Phase 27B — graph-first app shell; corrected by Phase 28B (see
+   docs/phase-28a-true-graph-primary-overlay-contract.md). The Knowledge Graph
+   is the full-viewport application surface; every other surface (vault/status,
+   Source Registry, Intelligence Report, Console) becomes a contextual overlay
+   opened from a floating, translucent icon rail instead of a permanent
+   sidebar column. All panes stay mounted (just hidden) so toggling between
+   them never re-triggers their data fetch — only the active pane is
+   visible/focusable at a time. */
 type PanelKey = "vault" | "sources" | "intelligence" | "console";
 
-const RAIL_ITEMS: Array<{ key: PanelKey; label: string }> = [
-  { key: "vault", label: "Vault" },
-  { key: "sources", label: "Sources" },
-  { key: "intelligence", label: "Intelligence" },
-  { key: "console", label: "Console" },
+const RAIL_ITEMS: Array<{ key: PanelKey; label: string; glyph: string }> = [
+  { key: "vault", label: "Vault", glyph: "V" },
+  { key: "sources", label: "Sources", glyph: "S" },
+  { key: "intelligence", label: "Intelligence", glyph: "I" },
+  { key: "console", label: "Console", glyph: "C" },
 ];
 
 const PANEL_LABELS: Record<PanelKey, string> = {
@@ -123,6 +125,14 @@ function App() {
       </header>
 
       <div className="shell-body">
+        <main id="graph-viewport" className="shell-graph-viewport">
+          <KnowledgeGraphPanel id="knowledge-graph" />
+        </main>
+
+        {/* Floating utility rail: a translucent icon dock that sits over the
+            graph rather than beside it — recedes to icon-only at rest, and
+            reveals labels on hover/focus so it never reads as a permanent
+            sidebar column (Phase 28A §6.3). */}
         <nav className="shell-rail" aria-label="Workspace panels">
           <ul className="shell-rail-list">
             {RAIL_ITEMS.map((item) => (
@@ -141,16 +151,15 @@ function App() {
                   aria-controls="contextual-dock"
                   onClick={() => togglePanel(item.key)}
                 >
-                  {item.label}
+                  <span className="shell-rail-glyph" aria-hidden="true">
+                    {item.glyph}
+                  </span>
+                  <span className="shell-rail-label">{item.label}</span>
                 </button>
               </li>
             ))}
           </ul>
         </nav>
-
-        <main id="graph-viewport" className="shell-graph-viewport">
-          <KnowledgeGraphPanel id="knowledge-graph" />
-        </main>
 
         <aside
           id="contextual-dock"
@@ -180,10 +189,17 @@ function App() {
           </div>
 
           <div className="shell-dock-body">
+            {/* Phase 28B correction pass 2: the Vault pane previously rendered
+                three stacked `<section>` cards (each carrying the global
+                opaque `--surface` background) — inside the glass dock that
+                read as a monitoring dashboard restored behind the rail
+                button. It's now flat rows of content sharing the dock's own
+                single translucent glass panel, so there is exactly one HUD
+                surface, not one outer glass card wrapping three opaque ones. */}
             <div className="shell-dock-pane" hidden={activePanel !== "vault"}>
-              <div className="status-row">
-                <section className="panel-connection">
-                  <h2>Backend connection</h2>
+              <div className="vault-hud">
+                <div className="vault-hud-row">
+                  <span className="vault-hud-label">Connection</span>
                   {error ? (
                     <p className="status-pill status-pill-error">
                       <span className="status-dot" aria-hidden="true" />
@@ -200,36 +216,26 @@ function App() {
                       Checking connection…
                     </p>
                   )}
-                </section>
+                </div>
 
-                <section className="panel-health">
-                  <h2>API health</h2>
+                <div className="vault-hud-row">
+                  <span className="vault-hud-label">API health</span>
                   {health ? (
-                    <dl className="metric-grid">
-                      <div>
-                        <dt>Service</dt>
-                        <dd>{health.service}</dd>
-                      </div>
-                      <div>
-                        <dt>Version</dt>
-                        <dd>{health.version}</dd>
-                      </div>
-                      <div>
-                        <dt>Healthy</dt>
-                        <dd>{health.ok ? "Yes" : "No"}</dd>
-                      </div>
-                    </dl>
+                    <span className="vault-hud-value">
+                      {health.service} · v{health.version} ·{" "}
+                      {health.ok ? "Healthy" : "Unhealthy"}
+                    </span>
                   ) : (
-                    <p className="console-hint">No health response yet.</p>
+                    <span className="console-hint">No health response yet.</span>
                   )}
-                </section>
-              </div>
+                </div>
 
-              <section className="panel-vault">
-                <h2>Vault summary</h2>
+                <div className="vault-hud-divider" aria-hidden="true" />
+
+                <span className="vault-hud-label">Vault summary</span>
                 {vault ? (
                   <>
-                    <dl className="metric-grid metric-grid-vault">
+                    <dl className="vault-hud-metrics">
                       <div>
                         <dt>Files</dt>
                         <dd>{vault.totalFiles}</dd>
@@ -251,12 +257,12 @@ function App() {
                         <dd>{vault.graphMode}</dd>
                       </div>
                     </dl>
-                    <p className="vault-message">{vault.message}</p>
+                    <p className="vault-hud-message">{vault.message}</p>
                   </>
                 ) : (
                   <p className="console-hint">Vault summary unavailable.</p>
                 )}
-              </section>
+              </div>
             </div>
 
             <div
