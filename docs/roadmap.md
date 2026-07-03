@@ -32,20 +32,25 @@ and the [Phase 28A True Graph-Primary Surface + Overlay Contract](phase-28a-true
 
 ## Current status
 
-**Active phase:** Phase 28A — True Graph-Primary Surface Planning + Overlay Contract.
-Phase 28A is a planning-only pass that tightens the Phase 27A–27E graph-first
-shell direction into a stricter graph-dominance/overlay contract — the graph
-as the full application surface, with node inspector, Source Registry,
-Intelligence Report, Console, and Vault/status treated strictly as contextual
-overlays rather than layout columns — and explicitly scopes and bounds the
-next implementation pass, Phase 28B (True Graph-Primary Surface Frontend
-Implementation Pass). It implements no code and changes no behavior. A
-**visual correction lock addendum** (Section 6 of the planning doc) further
-tightens the contract after an initial UI pass read as too colorful/
-sidebar-like: darker deep-black/metallic chrome, near-zero decorative color
-outside the graph itself, a translucent hover/command-triggered nav surface
-in place of any persistent sidebar, glass-like non-occluding overlays, and a
-living/pulsing/aura-based graph visual identity. See the
+**Active phase:** Phase 28B — True Graph-Primary Surface Frontend
+Implementation Pass. Phase 28B implements the Phase 28A contract (including
+its Section 6 visual correction lock) in the running frontend: the Knowledge
+Graph now fills the entire viewport edge-to-edge at every breakpoint, with no
+persistent sidebar, column, or card-grid framing left standing. The former
+always-visible control rail is now a compact, icon-only, bottom-docked glass
+capsule that recedes to near-invisible at rest and reveals labels on
+hover/focus; the app masthead and the contextual dock (Vault/Sources/
+Intelligence/Console) are translucent floating overlays rather than
+layout-dividing flex-row siblings; and the graph's own legend/groups/lists
+explorer and node inspector are now summoned/selection-triggered floating
+glass cards instead of always-visible edge columns. Shell chrome (rail,
+masthead, dock frame) carries no decorative accent color — all color energy
+stays with the graph, which also gained a living-identity groundwork: a
+subtle idle aura/breathing pulse on every node, a per-type resting halo, a
+stronger pulsing glow on the selected node, and an animated "energy flow"
+dash on edges incident to the current selection. No backend/API/schema/
+dependency change, no graph mutation, no new runtime assets, no router/D3/
+Cytoscape/React Flow/3D. `npm run check:frontend` passes. See the
 [Phase 28A planning doc](phase-28a-true-graph-primary-overlay-contract.md).
 Phase 27B implemented the direction defined in [Phase 27A](ui/phase-27a-graph-first-app-shell-planning.md):
 the Knowledge Graph is now the persistent, full-viewport primary surface, and the Source Registry,
@@ -398,7 +403,8 @@ Current non-capabilities:
 | 27B | Complete | Graph-first app shell frontend implementation pass (frontend presentation/structure only, PR #95); implements the Phase 27A direction — the Knowledge Graph becomes the persistent, full-viewport primary surface in `App.tsx`, and the Source Registry, Intelligence Report, Console, and Vault/status summary become contextual dock panes opened from a compact control rail, staying mounted (`inert`) while hidden so reopening never re-fetches data. No backend/API/schema/dependency change. |
 | 27D | Complete | Correct the graph-first shell to a full-viewfinder surface (PR #97); a follow-up frontend-only pass that fixes the Phase 27B shell so the graph canvas genuinely fills the primary viewport as intended. No backend/API/schema/dependency change. |
 | 27E | Complete | Full-viewfinder graph surface QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) after the Phase 27D correction and captures honest evidence of the connected full-viewfinder graph shell — the default dock-closed graph viewport, node-selection/inspector behavior, and each contextual dock pane (Vault, Sources, Intelligence, Console) — with the directly exercised endpoints returning the same shapes/values as the established evidence trail (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a `phase-27e-connected-*` screenshot set and an [evidence doc](demo/phase-27e-full-viewfinder-graph-surface-qa-screenshot-evidence.md). Implements no code and changes no behavior. |
-| 28A | Active | True graph-primary surface planning + overlay contract (planning / documentation only); tightens the Phase 27A–27E graph-first shell direction into a stricter contract before further layout work — graph dominance rules (full-viewport, no sidebar/column/card-grid framing, explicit rejection list), an overlay hierarchy (primary graph canvas, secondary node inspector, tertiary Source Registry/Intelligence Report/Console/future intelligence overlays, utility rail/command/status), a per-surface panel behavior contract, a desired-vs-undesired visual-feel test, and a scoped Phase 28B handoff (True Graph-Primary Surface Frontend Implementation Pass) with explicit allowed/forbidden files and success criteria. A **visual correction lock addendum** (Section 6) further locks deep-black/metallic chrome with color reserved almost entirely for the graph itself, a translucent hover/command-triggered nav surface replacing any persistent sidebar, glass-like non-occluding overlays, and a living/pulsing/aura/cluster graph visual identity, and extends the Phase 28B handoff accordingly. See the [planning doc](phase-28a-true-graph-primary-overlay-contract.md). Implements no code and changes no behavior. |
+| 28A | Complete | True graph-primary surface planning + overlay contract (planning / documentation only); tightens the Phase 27A–27E graph-first shell direction into a stricter contract before further layout work — graph dominance rules (full-viewport, no sidebar/column/card-grid framing, explicit rejection list), an overlay hierarchy (primary graph canvas, secondary node inspector, tertiary Source Registry/Intelligence Report/Console/future intelligence overlays, utility rail/command/status), a per-surface panel behavior contract, a desired-vs-undesired visual-feel test, and a scoped Phase 28B handoff (True Graph-Primary Surface Frontend Implementation Pass) with explicit allowed/forbidden files and success criteria. A **visual correction lock addendum** (Section 6) further locks deep-black/metallic chrome with color reserved almost entirely for the graph itself, a translucent hover/command-triggered nav surface replacing any persistent sidebar, glass-like non-occluding overlays, and a living/pulsing/aura/cluster graph visual identity, and extends the Phase 28B handoff accordingly. See the [planning doc](phase-28a-true-graph-primary-overlay-contract.md). Implements no code and changes no behavior. |
+| 28B | Active | True graph-primary surface frontend implementation pass (frontend presentation/structure only); implements the Phase 28A contract in `App.tsx`, `KnowledgeGraphPanel.tsx`, and `styles.css` — the graph now fills the entire viewport edge-to-edge at all breakpoints; the app masthead, the control rail, and the contextual dock are floating translucent glass overlays instead of flex-row layout siblings; the persistent control rail is replaced with a compact, icon-only, bottom-docked capsule that reveals labels on hover/focus; the graph explorer (legend/groups/node/edge lists) and node inspector are now summoned/selection-triggered floating glass cards (not always-visible edge columns); shell chrome carries no decorative accent color (Phase 28A §6.2); and the graph gained a living-identity groundwork — a subtle idle aura/breathing pulse on every node, a per-type resting halo, a stronger pulsing glow on the selected node, and an animated "energy flow" dash on edges incident to the selection. No backend/API/schema/dependency change, no graph mutation, no new runtime assets, no router/D3/Cytoscape/React Flow/3D. `npm run check:frontend` passes. |
 
 ## Future roadmap
 

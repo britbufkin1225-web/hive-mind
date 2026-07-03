@@ -592,6 +592,10 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
   const [graph, setGraph] = useState<KnowledgeGraphResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selection, setSelection] = useState<Selection>(null);
+  // Phase 28B: the legend/groups/lists explorer is a summoned overlay, closed
+  // by default, rather than an always-visible side column — the graph alone
+  // is the at-rest state (Phase 28A §1).
+  const [explorerOpen, setExplorerOpen] = useState(false);
 
   const load = useCallback(async (): Promise<void> => {
     setState("loading");
@@ -673,15 +677,22 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
 
   const hasSelection = selectedNode !== null || selectedEdge !== null;
 
-  // Escape clears the selection, so keyboard users can reset focus state
-  // without reaching for the mouse. Scoped to the panel via onKeyDown.
+  // Escape closes whatever summoned overlay is topmost: the selection
+  // inspector first (it's the more specific, more recently opened context),
+  // then the explorer tray. Keyboard users can always back out to the bare
+  // graph without reaching for the mouse. Scoped to the panel via onKeyDown.
   const handlePanelKeyDown = useCallback(
     (event: KeyboardEvent<HTMLElement>) => {
-      if (event.key === "Escape" && hasSelection) {
+      if (event.key !== "Escape") {
+        return;
+      }
+      if (hasSelection) {
         clearSelection();
+      } else if (explorerOpen) {
+        setExplorerOpen(false);
       }
     },
-    [hasSelection, clearSelection],
+    [hasSelection, clearSelection, explorerOpen],
   );
 
   const hasNodes = model.nodes.length > 0;
@@ -772,6 +783,21 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
           )}
 
           <div className="graph-head-actions">
+            {state === "success" && !isEmptyGraph && (
+              <button
+                type="button"
+                className={
+                  explorerOpen
+                    ? "source-refresh graph-explorer-toggle graph-explorer-toggle-active"
+                    : "source-refresh graph-explorer-toggle"
+                }
+                aria-pressed={explorerOpen}
+                aria-controls="graph-explorer-pane"
+                onClick={() => setExplorerOpen((open) => !open)}
+              >
+                {explorerOpen ? "Hide legend" : "Legend & lists"}
+              </button>
+            )}
             <button
               type="button"
               className="source-refresh graph-reset"
@@ -792,107 +818,140 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
           </div>
         </header>
 
-        {state === "success" && !isEmptyGraph && (
-          <>
-            <aside
-              className="viewfinder-pane viewfinder-pane-explorer"
-              aria-label="Graph legend, groups, and lists"
-            >
-              <GraphLegend
-                nodeTypes={model.nodeTypes}
-                relationshipTypes={model.relationshipTypes}
-                connectedNodeCount={model.connectedNodeCount}
-                isolatedNodeCount={model.isolatedNodeCount}
-              />
+        {/* Explorer tray: summoned from the topbar toggle rather than a
+            permanently mounted side column (Phase 28A §1/§2 — a graph-loaded
+            state must not imply a persistent split-column layout). */}
+        {state === "success" && !isEmptyGraph && explorerOpen && (
+          <aside
+            id="graph-explorer-pane"
+            className="viewfinder-pane viewfinder-pane-explorer"
+            aria-label="Graph legend, groups, and lists"
+          >
+            <div className="viewfinder-pane-head">
+              <h3>Legend &amp; lists</h3>
+              <button
+                type="button"
+                className="viewfinder-pane-close"
+                onClick={() => setExplorerOpen(false)}
+              >
+                Close
+              </button>
+            </div>
 
-              <div className="graph-section">
-                <h3 className="graph-section-title">Groups</h3>
-                {model.groups.length === 0 ? (
-                  <p className="console-hint">No nodes to group yet.</p>
-                ) : (
-                  <ul className="graph-group-list">
-                    {model.groups.map((group) => (
-                      <li key={group.name} className="graph-group-chip">
-                        <span className="graph-group-name">{group.name}</span>
-                        <span className="graph-group-count">
-                          {group.count}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+            <GraphLegend
+              nodeTypes={model.nodeTypes}
+              relationshipTypes={model.relationshipTypes}
+              connectedNodeCount={model.connectedNodeCount}
+              isolatedNodeCount={model.isolatedNodeCount}
+            />
 
-              {model.topConnectedNodes.length > 0 && (
-                <div className="graph-section">
-                  <h3 className="graph-section-title">Top connected nodes</h3>
-                  <ul className="graph-node-list" onKeyDown={handleListArrowKeys}>
-                    {model.topConnectedNodes.map((node) => (
-                      <NodeRow
-                        key={node.id}
-                        node={node}
-                        {...nodeStateFor(node.id)}
-                        onSelect={() => selectNode(node.id)}
-                      />
-                    ))}
-                  </ul>
-                </div>
+            <div className="graph-section">
+              <h3 className="graph-section-title">Groups</h3>
+              {model.groups.length === 0 ? (
+                <p className="console-hint">No nodes to group yet.</p>
+              ) : (
+                <ul className="graph-group-list">
+                  {model.groups.map((group) => (
+                    <li key={group.name} className="graph-group-chip">
+                      <span className="graph-group-name">{group.name}</span>
+                      <span className="graph-group-count">
+                        {group.count}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               )}
+            </div>
 
+            {model.topConnectedNodes.length > 0 && (
               <div className="graph-section">
-                <h3 className="graph-section-title">Nodes</h3>
-                {hasNodes ? (
-                  <ul className="graph-node-list" onKeyDown={handleListArrowKeys}>
-                    {model.nodes.map((node) => (
-                      <NodeRow
-                        key={node.id}
-                        node={node}
-                        {...nodeStateFor(node.id)}
-                        onSelect={() => selectNode(node.id)}
-                      />
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="console-hint">
-                    No nodes yet. Import or register a source to populate the
-                    graph.
-                  </p>
-                )}
+                <h3 className="graph-section-title">Top connected nodes</h3>
+                <ul className="graph-node-list" onKeyDown={handleListArrowKeys}>
+                  {model.topConnectedNodes.map((node) => (
+                    <NodeRow
+                      key={node.id}
+                      node={node}
+                      {...nodeStateFor(node.id)}
+                      onSelect={() => selectNode(node.id)}
+                    />
+                  ))}
+                </ul>
               </div>
+            )}
 
-              <div className="graph-section">
-                <h3 className="graph-section-title">Relationships</h3>
-                {hasEdges ? (
-                  <ul className="graph-edge-list" onKeyDown={handleListArrowKeys}>
-                    {model.edges.map((edge) => (
-                      <EdgeRow
-                        key={edge.id}
-                        edge={edge}
-                        labelFor={labelFor}
-                        {...edgeStateFor(edge.id)}
-                        onSelect={() => selectEdge(edge.id)}
-                      />
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="console-hint">
-                    No relationships yet. Edges appear once nodes are linked.
-                  </p>
-                )}
-              </div>
-            </aside>
+            <div className="graph-section">
+              <h3 className="graph-section-title">Nodes</h3>
+              {hasNodes ? (
+                <ul className="graph-node-list" onKeyDown={handleListArrowKeys}>
+                  {model.nodes.map((node) => (
+                    <NodeRow
+                      key={node.id}
+                      node={node}
+                      {...nodeStateFor(node.id)}
+                      onSelect={() => selectNode(node.id)}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <p className="console-hint">
+                  No nodes yet. Import or register a source to populate the
+                  graph.
+                </p>
+              )}
+            </div>
 
-            <aside
-              className="viewfinder-pane viewfinder-pane-inspector"
-              aria-label="Inspector"
-            >
-              <GraphInspector
-                node={selectedNode}
-                edge={selectedEdge}
-                labelFor={labelFor}
-              />
-            </aside>
-          </>
+            <div className="graph-section">
+              <h3 className="graph-section-title">Relationships</h3>
+              {hasEdges ? (
+                <ul className="graph-edge-list" onKeyDown={handleListArrowKeys}>
+                  {model.edges.map((edge) => (
+                    <EdgeRow
+                      key={edge.id}
+                      edge={edge}
+                      labelFor={labelFor}
+                      {...edgeStateFor(edge.id)}
+                      onSelect={() => selectEdge(edge.id)}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <p className="console-hint">
+                  No relationships yet. Edges appear once nodes are linked.
+                </p>
+              )}
+            </div>
+          </aside>
+        )}
+
+        {/* Node inspector: mounts only once something is selected. Phase 28B
+            correction — this used to render an always-visible pane with a
+            "select a node…" placeholder any time the graph had data, which
+            reads as a permanent detail column; the bottom-left canvas hint
+            already communicates the selection affordance, so the quiet,
+            graph-first empty state is simply "no pane at all" (Phase 28A
+            §3/§6, "Empty state should be quiet and graph-first"). */}
+        {hasSelection && (
+          <aside
+            className="viewfinder-pane viewfinder-pane-inspector"
+            aria-label="Inspector"
+          >
+            <div className="viewfinder-pane-head">
+              <h3>Inspector</h3>
+              <button
+                type="button"
+                className="viewfinder-pane-close"
+                onClick={clearSelection}
+              >
+                Close
+              </button>
+            </div>
+
+            <GraphInspector
+              node={selectedNode}
+              edge={selectedEdge}
+              labelFor={labelFor}
+            />
+          </aside>
         )}
       </div>
     </section>

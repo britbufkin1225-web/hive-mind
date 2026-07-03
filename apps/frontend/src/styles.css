@@ -58,6 +58,26 @@
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", "Source Code Pro",
     Menlo, Consolas, monospace;
 
+  /* Phase 28B — true graph-primary shell tokens (Phase 28A §6.1/§6.4). The
+     app shell's own chrome (topbar, floating rail, dock frame) reads as deep
+     black glass/metal rather than the mid-slate --surface tokens used by the
+     dock panes' own content, and stays hueless — no --accent — so all color
+     energy stays with the graph. Deliberately separate from --surface/etc so
+     this pass doesn't recolor the Source/Intelligence/Console panel content,
+     which is out of Phase 28B's scope. */
+  --shell-bg: radial-gradient(ellipse 120% 90% at 50% -10%, #14161c 0%, #06070a 55%, #020203 100%);
+  --shell-glass: rgba(6, 7, 11, 0.52);
+  --shell-glass-strong: rgba(6, 7, 11, 0.7);
+  --shell-chrome-border: rgba(255, 255, 255, 0.09);
+  /* Bounded height of the app masthead (.shell-topbar) — kept a fixed,
+     single-line height at every breakpoint (the tagline is hidden below
+     760px specifically to keep this bound true) so the graph panel's own
+     viewfinder-topbar can sit directly below it without either overlapping
+     or guessing at a measured height. */
+  --shell-topbar-h: 3.75rem;
+  --shell-chrome-border-strong: rgba(255, 255, 255, 0.18);
+  --shell-focus-ring: 0 0 0 2px rgba(255, 255, 255, 0.65);
+
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -895,6 +915,14 @@ dd {
   cursor: default;
 }
 
+/* Phase 28B — explorer tray toggle. Active state reads via elevation/contrast
+   (a brighter neutral fill), not a decorative accent hue (Phase 28A §6.2). */
+.graph-explorer-toggle-active {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--shell-chrome-border-strong, var(--border-strong));
+  color: var(--text);
+}
+
 .graph-legend {
   display: flex;
   flex-wrap: wrap;
@@ -1702,13 +1730,16 @@ dd {
   font-size: 0.95rem;
 }
 
+/* Phase 28B — neutral metallic chip, not an accent-colored badge: shell chrome
+   carries no decorative hue (Phase 28A §6.2), so this reads via elevation/
+   contrast instead of color. */
 .app-mode-badge {
   display: inline-block;
   padding: 0.1rem 0.55rem;
   border-radius: 999px;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-border);
-  color: var(--accent-strong);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--shell-chrome-border-strong, var(--border-strong));
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1874,88 +1905,6 @@ main {
   color: var(--accent-strong);
 }
 
-/* 2.1/2.2 — Status strip. Connection state + API health sit side by side as a
-   compact band instead of two tall, near-empty cards, lifting the headline
-   panels up the page. Collapses to a stack on narrow screens (2.8). */
-.status-row {
-  display: grid;
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-  gap: 1.5rem;
-  align-items: stretch;
-}
-
-.status-row > section {
-  margin: 0;
-}
-
-.panel-connection {
-  display: flex;
-  flex-direction: column;
-}
-
-.panel-connection .status-pill {
-  align-self: flex-start;
-  margin-top: auto;
-  font-size: 0.95rem;
-}
-
-/* 2.3 — Real connected values typeset as data. The metric lists render as a
-   row of labelled stat tiles: small uppercase key, large tabular value. This
-   makes the backend-derived counts the visual focus rather than chrome. */
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
-  gap: 0.75rem;
-  margin: 0;
-}
-
-.metric-grid-vault {
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-  margin-bottom: 0.9rem;
-}
-
-.metric-grid > div {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.2rem;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-sm);
-  background: var(--surface-inset);
-}
-
-.metric-grid dt {
-  width: auto;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-subtle);
-}
-
-.metric-grid dd {
-  font-size: 1.35rem;
-  font-weight: 600;
-  line-height: 1.2;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
-}
-
-/* Graph mode is a status word, not a number — keep it readable rather than
-   oversized so it sits comfortably beside the numeric tiles. */
-.metric-grid-vault > div:last-child dd {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-
-.vault-message {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
 /* 2.6 — Connected empty state reads as an intentional baseline ("ready,
    nothing imported yet") rather than a defect: a centered, dashed inset panel
    instead of a stray line of hint text. Honest framing — no fake sources. */
@@ -1973,11 +1922,6 @@ main {
    stay readable rather than cramping at common phone widths. */
 @media (max-width: 600px) {
   main {
-    gap: 1.1rem;
-  }
-
-  .status-row {
-    grid-template-columns: 1fr;
     gap: 1.1rem;
   }
 
@@ -2430,7 +2374,7 @@ section {
 }
 
 .graph-summary dd,
-.metric-grid dd {
+.vault-hud-metrics dd {
   font-family: var(--font-mono);
   letter-spacing: -0.01em;
 }
@@ -2751,109 +2695,168 @@ section {
 }
 
 /* === Per-type node circle colors (resting) ===
-   Each node type gets its own accent ring and a faint tinted fill so type is
-   legible at a glance without interaction. Using attribute selectors on the
-   parent <g data-node-type="…"> with higher specificity than the base
-   .graph-canvas-node-circle rule. */
+   Each node type gets its own accent ring, a faint tinted fill, and now a
+   matched low-amplitude halo (Phase 28B / Phase 28A §6.5 "aura/halo... used
+   to carry meaning") so type/cluster identity radiates even before any
+   interaction — the graph, not the shell, owns this color energy (§6.2).
+   Using attribute selectors on the parent <g data-node-type="…"> with higher
+   specificity than the base .graph-canvas-node-circle rule. */
 [data-node-type="root"] .graph-canvas-node-circle {
   stroke: #a99df8;
   fill: rgba(169, 157, 248, 0.13);
+  filter: drop-shadow(0 0 4px rgba(169, 157, 248, 0.30));
 }
 [data-node-type="source"] .graph-canvas-node-circle {
   stroke: #818cf8;
   fill: rgba(129, 140, 248, 0.10);
+  filter: drop-shadow(0 0 4px rgba(129, 140, 248, 0.28));
 }
 [data-node-type="concept"] .graph-canvas-node-circle {
   stroke: #fbbf24;
   fill: rgba(251, 191, 36, 0.10);
+  filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.28));
 }
 [data-node-type="file"] .graph-canvas-node-circle {
   stroke: #34d399;
   fill: rgba(52, 211, 153, 0.10);
+  filter: drop-shadow(0 0 4px rgba(52, 211, 153, 0.28));
 }
 [data-node-type="model"] .graph-canvas-node-circle {
   stroke: #38bdf8;
   fill: rgba(56, 189, 248, 0.10);
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.28));
 }
 [data-node-type="note"] .graph-canvas-node-circle {
   stroke: #f472b6;
   fill: rgba(244, 114, 182, 0.10);
+  filter: drop-shadow(0 0 4px rgba(244, 114, 182, 0.28));
 }
 [data-node-type="folder"] .graph-canvas-node-circle {
   stroke: #60a5fa;
   fill: rgba(96, 165, 250, 0.10);
+  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.28));
+}
+
+/* Idle "breathing" aura: a slow, subtle stroke-opacity pulse so the resting
+   graph reads as alive rather than static geometry (§6.5 "living/breathing
+   feel"). Disabled the instant a node is hovered/selected, which take over
+   with their own stronger, purposeful pulse below. */
+@keyframes graph-node-idle-breathe {
+  0%,
+  100% {
+    stroke-opacity: 1;
+  }
+  50% {
+    stroke-opacity: 0.68;
+  }
+}
+
+.graph-canvas-node-circle {
+  animation: graph-node-idle-breathe 5.5s ease-in-out infinite;
+}
+
+.graph-canvas-node:hover .graph-canvas-node-circle,
+.graph-canvas-node-selected .graph-canvas-node-circle {
+  animation: none;
+  stroke-opacity: 1;
 }
 
 /* === Per-type hover ===
-   Hover brightens the existing type ring (slightly lighter fill). Keep stroke
+   Hover brightens the existing type ring (slightly lighter fill) and lifts
+   the resting halo into a brighter activation glow — a direct, legible
+   response to focus/hover (§6.5 "reactive... focus activation"). Keep stroke
    on accent for maximum contrast as a hover cue. */
 [data-node-type="root"]:hover .graph-canvas-node-circle {
   stroke: #c4baff;
   fill: rgba(169, 157, 248, 0.22);
+  filter: drop-shadow(0 0 8px rgba(169, 157, 248, 0.55));
 }
 [data-node-type="source"]:hover .graph-canvas-node-circle {
   stroke: #a5b4fc;
   fill: rgba(129, 140, 248, 0.20);
+  filter: drop-shadow(0 0 8px rgba(129, 140, 248, 0.55));
 }
 [data-node-type="concept"]:hover .graph-canvas-node-circle {
   stroke: #fde68a;
   fill: rgba(251, 191, 36, 0.20);
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.55));
 }
 [data-node-type="file"]:hover .graph-canvas-node-circle {
   stroke: #6ee7b7;
   fill: rgba(52, 211, 153, 0.20);
+  filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.55));
 }
 [data-node-type="model"]:hover .graph-canvas-node-circle {
   stroke: #7dd3fc;
   fill: rgba(56, 189, 248, 0.20);
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.55));
 }
 [data-node-type="note"]:hover .graph-canvas-node-circle {
   stroke: #f9a8d4;
   fill: rgba(244, 114, 182, 0.20);
+  filter: drop-shadow(0 0 8px rgba(244, 114, 182, 0.55));
 }
 [data-node-type="folder"]:hover .graph-canvas-node-circle {
   stroke: #93c5fd;
   fill: rgba(96, 165, 250, 0.20);
+  filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.55));
 }
 
-/* === Per-type selected state (type-colored fill + glow) ===
-   The selected node fills with its type color and emits a matched glow so the
-   selection reads immediately as the "active" element in the map.
-   Specificity (0,3,0) beats the base selected rule (0,2,0). */
+/* === Per-type selected state (type-colored fill + pulsing glow) ===
+   The selected node fills with its type color and emits a matched, pulsing
+   glow so the selection reads immediately as the map's one "active" element
+   (§6.5 "reactive selected-node focus", "pulsing node... energy"). Each
+   type rule sets --node-glow so the single shared keyframe animation below
+   can pulse the *right* color per node without duplicating seven keyframe
+   blocks. Specificity (0,3,0) beats the base selected rule (0,2,0). */
 [data-node-type="root"].graph-canvas-node-selected .graph-canvas-node-circle {
   fill: #a99df8;
   stroke: rgba(255, 255, 255, 0.7);
-  filter: drop-shadow(0 0 10px rgba(169, 157, 248, 0.80));
+  --node-glow: rgba(169, 157, 248, 0.85);
 }
 [data-node-type="source"].graph-canvas-node-selected .graph-canvas-node-circle {
   fill: #818cf8;
   stroke: rgba(255, 255, 255, 0.7);
-  filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.80));
+  --node-glow: rgba(129, 140, 248, 0.85);
 }
 [data-node-type="concept"].graph-canvas-node-selected .graph-canvas-node-circle {
   fill: #fbbf24;
   stroke: rgba(255, 255, 255, 0.7);
-  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.75));
+  --node-glow: rgba(251, 191, 36, 0.8);
 }
 [data-node-type="file"].graph-canvas-node-selected .graph-canvas-node-circle {
   fill: #34d399;
   stroke: rgba(255, 255, 255, 0.7);
-  filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.75));
+  --node-glow: rgba(52, 211, 153, 0.8);
 }
 [data-node-type="model"].graph-canvas-node-selected .graph-canvas-node-circle {
   fill: #38bdf8;
   stroke: rgba(255, 255, 255, 0.7);
-  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.75));
+  --node-glow: rgba(56, 189, 248, 0.8);
 }
 [data-node-type="note"].graph-canvas-node-selected .graph-canvas-node-circle {
   fill: #f472b6;
   stroke: rgba(255, 255, 255, 0.7);
-  filter: drop-shadow(0 0 10px rgba(244, 114, 182, 0.75));
+  --node-glow: rgba(244, 114, 182, 0.8);
 }
 [data-node-type="folder"].graph-canvas-node-selected .graph-canvas-node-circle {
   fill: #60a5fa;
   stroke: rgba(255, 255, 255, 0.7);
-  filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.75));
+  --node-glow: rgba(96, 165, 250, 0.8);
+}
+
+@keyframes graph-node-selected-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px var(--node-glow, rgba(255, 255, 255, 0.6)));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px var(--node-glow, rgba(255, 255, 255, 0.6)));
+  }
+}
+
+.graph-canvas-node-selected .graph-canvas-node-circle {
+  animation: graph-node-selected-pulse 1.7s ease-in-out infinite;
 }
 
 /* === Per-relationship edge colors ===
@@ -2882,9 +2885,28 @@ section {
 }
 
 /* Incident edges (connected to selected node) keep the accent at full opacity
-   to stand out over the type-colored resting state. */
+   to stand out over the type-colored resting state, and now carry a moving
+   dash so relationship "energy" visibly flows along the connection — signal,
+   not decoration: it only appears on edges touching the current selection
+   (§6.5 "pulsing... edge energy"). */
 .graph-canvas-edge-incident {
   stroke-opacity: 1;
+  stroke-dasharray: 7 6;
+  animation: graph-edge-energy-flow 0.9s linear infinite;
+}
+
+@keyframes graph-edge-energy-flow {
+  to {
+    stroke-dashoffset: -26;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .graph-canvas-node-circle,
+  .graph-canvas-node-selected .graph-canvas-node-circle,
+  .graph-canvas-edge-incident {
+    animation: none;
+  }
 }
 
 /* === Legend improvements ===
@@ -3105,15 +3127,16 @@ section {
 
 /* ============================================================================
    Phase 27B — Graph-first app shell
-   Replaces the stacked single-page dashboard composition with a full-viewport
-   shell: the Knowledge Graph is the persistent primary surface, and Vault,
-   Source Registry, Intelligence Report, and Console become contextual dock
-   panes opened from a compact control rail. Purely a layout/composition pass
-   on top of the existing Phase 21/23/25/26 token system and panel styling —
-   no panel's internal markup, data, or behavior changes; this section only
-   positions the existing panels within the new shell and overrides the
-   legacy single-column page rules (`main`, `header, section`) that would
-   otherwise conflict with it.
+   Corrected by Phase 28B (docs/phase-28a-true-graph-primary-overlay-contract.md,
+   §6). The Knowledge Graph now fills the entire viewport edge-to-edge; the
+   masthead, the workspace rail, and the contextual dock are all floating,
+   translucent overlays laid over the graph rather than flex-row siblings that
+   reserve permanent screen space beside it. Rationale: a persistent rail
+   column — even a narrow one — still divides the screen into a nav region and
+   a content region, which Phase 28A §6.3 explicitly rejects; converting every
+   non-graph surface to `position: absolute` removes the graph's competing
+   layout neighbors entirely. No panel's internal markup, data, or behavior
+   changes — this section only repositions the existing panels.
    ============================================================================ */
 
 html,
@@ -3123,27 +3146,38 @@ body,
 }
 
 .app-shell {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   height: 100vh;
   overflow: hidden;
+  background: var(--shell-bg);
 }
 
-/* Slim masthead bar instead of the old full hero — the graph, not the
-   header, is the first thing the shell shows. */
+/* Masthead: a slim glass HUD strip floating over the graph, not a header bar
+   that reserves vertical space above it. No --accent — shell chrome carries
+   no decorative hue (§6.2); the graph is the only color source. Height is
+   pinned to --shell-topbar-h (rather than left to grow with wrapped content)
+   because the graph panel's own viewfinder-topbar docks directly beneath it
+   (see `.viewfinder-topbar` below) — an unbounded height here would let this
+   bar grow underneath/behind the panel's title and action buttons. */
 .shell-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 7;
+  box-sizing: border-box;
+  height: var(--shell-topbar-h);
+  overflow: hidden;
   display: flex;
-  flex: none;
   align-items: center;
-  flex-wrap: wrap;
   gap: 0.5rem 1.5rem;
-  padding: 0.6rem 1.25rem;
+  padding: 0.55rem 1.25rem;
   border: none;
-  border-bottom: 1px solid var(--border);
-  border-top: 3px solid var(--accent);
+  border-bottom: 1px solid var(--shell-chrome-border);
   border-radius: 0;
-  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 100%);
-  box-shadow: none;
+  background: var(--shell-glass);
+  backdrop-filter: saturate(1.15) blur(14px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .shell-topbar-brand {
@@ -3154,7 +3188,7 @@ body,
 
 .shell-topbar-brand .parent-label {
   margin: 0;
-  color: var(--accent-strong);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .shell-topbar-brand h1 {
@@ -3165,89 +3199,57 @@ body,
 .shell-topbar-tagline {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.5rem;
   margin: 0;
   margin-right: auto;
+  overflow: hidden;
+  white-space: nowrap;
   color: var(--text-muted);
   font-size: 0.825rem;
+}
+
+/* Hidden below the graph panel's own subtitle breakpoint (900px, see
+   .viewfinder-title .graph-subtitle) so the single-row, fixed-height
+   masthead (--shell-topbar-h) never has more content than it can fit —
+   the alternative is wrapping, which would grow the masthead underneath
+   the graph panel's own topbar docked just below it. */
+@media (max-width: 899px) {
+  .shell-topbar-tagline {
+    display: none;
+  }
+
+  .shell-topbar {
+    justify-content: space-between;
+  }
 }
 
 .shell-topbar-status .status-pill {
   font-size: 0.8rem;
 }
 
-/* Body row: control rail | graph viewport | contextual dock. */
+/* Body: a bare positioning context. The graph viewport, the floating rail,
+   and the contextual dock are all absolutely positioned within it — there is
+   no flex row dividing the screen into columns. */
 .shell-body {
   position: relative;
-  display: flex;
   flex: 1 1 auto;
   min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 
-/* Control rail: compact, persistent, always visible — a toolbar for reaching
-   contextual surfaces without competing with the graph for visual weight. */
-.shell-rail {
-  flex: none;
-  width: 7.5rem;
-  overflow-y: auto;
-  padding: 0.85rem 0.6rem;
-  border-right: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.shell-rail-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.shell-rail-button {
-  width: 100%;
-  padding: 0.55rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-inset);
-  color: var(--text-muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    border-color 0.12s ease,
-    background-color 0.12s ease,
-    color 0.12s ease;
-}
-
-.shell-rail-button:hover {
-  border-color: var(--border-strong);
-  color: var(--text);
-}
-
-.shell-rail-button:focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: var(--shadow-focus);
-}
-
-.shell-rail-button-active {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-}
-
-/* Primary graph viewport: the dominant, full-bleed surface the shell is
-   built around. Overrides the legacy centered-column `main` rule. No inner
-   padding or scroll — the graph is the app's living background, not a
-   scrollable dashboard column (Phase 27D). */
+/* Primary graph viewport: fills the entire shell body edge-to-edge. No inner
+   padding, no reserved margin for the rail/dock — those float above it.
+   `<main>` also carries the legacy Phase 1 single-column page rule
+   (`width: min(880px, ...); margin: 3rem auto 4rem;`) — width/margin/display
+   are reset explicitly here so that rule can't letterbox the graph. */
 .shell-graph-viewport {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
@@ -3265,31 +3267,154 @@ body,
   box-shadow: none;
 }
 
-/* Contextual dock: a glass side panel that slides over the graph viewport
-   without removing it from view — it coexists with the graph rather than
-   replacing it, per the Phase 27A interaction principles. `inert` (set in
-   App.tsx) keeps its closed contents out of tab order and pointer reach. */
+/* Floating utility rail: a compact glass capsule docked along the graph's
+   bottom edge instead of occupying a permanent column. A vertically-centered
+   left-edge dock was tried and rejected here — it collided with the graph
+   explorer/inspector panes, which also float over the left/right edges
+   (see viewfinder-pane-explorer/-inspector below), making both unusable at
+   once. Bottom-center never competes with either pane. Sized to its content
+   (icon glyphs only) and dimmed at rest; hover/focus-within brightens it and
+   reveals each button's label (Phase 28A §6.3). */
+.shell-rail {
+  position: absolute;
+  bottom: 0.9rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: auto;
+  padding: 0.5rem;
+  border: 1px solid var(--shell-chrome-border);
+  border-radius: 999px;
+  background: var(--shell-glass);
+  backdrop-filter: saturate(1.15) blur(14px);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
+  opacity: 0.62;
+  transition: opacity 0.16s ease, box-shadow 0.16s ease;
+}
+
+.shell-rail:hover,
+.shell-rail:focus-within {
+  opacity: 1;
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--shell-chrome-border-strong);
+}
+
+.shell-rail-list {
+  display: flex;
+  flex-direction: row;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shell-rail-button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+
+/* Always-visible glyph — the rail's "icon" at rest, no runtime asset needed. */
+.shell-rail-glyph {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Label collapses to nothing at rest and expands on hover/focus, so the rail
+   reads as icons-only until summoned (Phase 28A §6.3). */
+.shell-rail-label {
+  max-width: 0;
+  margin-left: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  transition: max-width 0.16s ease, opacity 0.12s ease, margin-left 0.16s ease;
+}
+
+.shell-rail-button:hover .shell-rail-label,
+.shell-rail-button:focus-visible .shell-rail-label,
+.shell-rail:focus-within .shell-rail-label {
+  max-width: 8rem;
+  margin-left: 0.55rem;
+  opacity: 1;
+  padding-right: 0.35rem;
+}
+
+.shell-rail-button:hover {
+  color: var(--text);
+}
+
+.shell-rail-button:focus-visible {
+  outline: none;
+  box-shadow: var(--shell-focus-ring);
+}
+
+.shell-rail-button-active .shell-rail-glyph {
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--shell-chrome-border-strong);
+}
+
+.shell-rail-button-active {
+  color: var(--text);
+}
+
+/* Contextual dock: Phase 28B correction pass 2. Previously a full-height
+   right-edge column (top:0/right:0/height:100%) that slid in from off-
+   screen — even translucent, a 100%-tall edge column still reads as a fixed
+   right-side dock/sidebar, which is exactly what this pass removes. It's now
+   a bounded, edge-margined floating card anchored below the masthead, the
+   same "summoned HUD" treatment as the graph's own explorer/inspector panes
+   (see `.viewfinder-pane` above) — capped width and height, rounded on every
+   corner, with graph visible on all four sides rather than just the left.
+   `inert` (set in App.tsx) keeps its closed contents out of tab order and
+   pointer reach. Background reuses `--viewfinder-glass` (not the heavier
+   `--shell-glass-strong`) so opacity/card-weight matches the already-approved
+   inspector overlay instead of reading as a denser panel. */
 .shell-dock {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: calc(var(--shell-topbar-h) + 0.85rem);
+  right: 0.9rem;
   z-index: 5;
   display: flex;
   flex-direction: column;
-  width: min(440px, 100%);
-  height: 100%;
-  border: none;
-  border-left: 1px solid var(--border);
-  border-radius: 0;
-  background: rgba(20, 23, 31, 0.96);
-  backdrop-filter: saturate(1.3) blur(10px);
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45);
-  transform: translateX(100%);
-  transition: transform 0.2s ease;
+  width: min(420px, calc(100vw - 1.8rem));
+  max-height: min(74vh, calc(100% - var(--shell-topbar-h) - 4.5rem));
+  overflow: hidden;
+  border: 1px solid var(--shell-chrome-border);
+  border-radius: var(--radius);
+  background: var(--viewfinder-glass);
+  backdrop-filter: saturate(1.25) blur(16px);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: transform 0.18s ease, opacity 0.18s ease;
 }
 
 .shell-dock-open {
-  transform: translateX(0);
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .shell-dock-header {
@@ -3299,7 +3424,7 @@ body,
   justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem 1.1rem;
-  border-bottom: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--shell-chrome-border);
 }
 
 .shell-dock-header h2 {
@@ -3310,9 +3435,9 @@ body,
 .shell-dock-close {
   flex: none;
   padding: 0.3rem 0.7rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--shell-chrome-border-strong);
   border-radius: var(--radius-sm);
-  background: var(--surface-inset);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-muted);
   font-size: 0.8rem;
   font-weight: 600;
@@ -3324,14 +3449,14 @@ body,
 }
 
 .shell-dock-close:hover {
-  border-color: var(--border-strong);
+  border-color: var(--shell-chrome-border-strong);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text);
 }
 
 .shell-dock-close:focus-visible {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: var(--shadow-focus);
+  box-shadow: var(--shell-focus-ring);
 }
 
 .shell-dock-body {
@@ -3353,50 +3478,102 @@ body,
   display: none;
 }
 
-.shell-dock-pane .status-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
+/* === Vault HUD: a single flat status readout, not a stack of cards ========
+   Phase 28B correction pass 2. The Vault pane previously wrapped Backend
+   connection / API health / Vault summary in three separate `<section>`s,
+   each picking up the global opaque `--surface` card background — inside
+   the glass dock that read as a monitoring dashboard again. These rows now
+   share the dock's own single translucent glass panel directly; there is
+   exactly one HUD surface, not an outer glass card wrapping three opaque
+   inner ones. */
+.vault-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-/* Responsive: below the graph's two-pane breakpoint the rail collapses to a
-   slim horizontal strip and the dock becomes a bottom sheet, so the graph
-   keeps the majority of the viewport instead of competing with a side rail
-   on narrow screens. */
+.vault-hud-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.vault-hud-label {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-subtle);
+}
+
+.vault-hud-value {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.vault-hud-divider {
+  height: 1px;
+  margin: 0.1rem 0;
+  background: var(--shell-chrome-border);
+}
+
+.vault-hud-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: 0.7rem 1rem;
+  margin: 0;
+}
+
+.vault-hud-metrics dt {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-subtle);
+}
+
+.vault-hud-metrics dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.vault-hud-message {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* Responsive: the rail is already a bottom-center dock at every width; only
+   the contextual dock needs a narrow-screen adjustment. It becomes a bottom
+   tray rather than the top-right card (no room to float a card below a
+   masthead on a phone-width screen), but stays a margined, rounded-corner
+   overlay — not an edge-to-edge sheet — so the graph remains visible around
+   it on three sides. Anchored above the floating rail (not at the same
+   0.9rem bottom offset) so the rail never sits stacked over the open tray's
+   own content. */
 @media (max-width: 760px) {
-  .shell-body {
-    flex-direction: column;
-  }
-
-  .shell-rail {
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .shell-rail-list {
-    flex-direction: row;
-  }
-
-  .shell-rail-button {
-    width: auto;
-    white-space: nowrap;
-  }
-
   .shell-dock {
     top: auto;
-    bottom: 0;
-    right: 0;
-    width: 100%;
-    height: min(82vh, 100%);
-    border-left: none;
-    border-top: 1px solid var(--border);
-    transform: translateY(100%);
+    bottom: 4.75rem;
+    right: 0.9rem;
+    left: 0.9rem;
+    width: auto;
+    max-height: min(68vh, calc(100% - var(--shell-topbar-h) - 6.5rem));
+    opacity: 0;
+    transform: translateY(16px);
   }
 
   .shell-dock-open {
+    opacity: 1;
     transform: translateY(0);
   }
 }
@@ -3423,7 +3600,10 @@ body,
 
 :root {
   --viewfinder-topbar-h: 3.75rem;
-  --viewfinder-glass: rgba(20, 23, 31, 0.82);
+  /* Phase 28B: lowered from 0.82 toward true glass (Phase 28A §6.4 — a
+     95%+ opaque fill "in name only" still reads as a wall). The graph must
+     stay visibly legible through every floating pane. */
+  --viewfinder-glass: rgba(8, 9, 13, 0.58);
 }
 
 .graph-viewfinder {
@@ -3505,13 +3685,16 @@ body,
 }
 
 /* === Top bar: title + summary + actions, not a dashboard section header ===
-   Compact, translucent, pinned to the top edge — metadata chrome, not a
-   headline. The graph shows through beneath it. */
+   Compact, translucent, pinned just below the app masthead (--shell-topbar-h)
+   — not at the very top edge, which would stack it directly underneath the
+   masthead (both are absolute overlays anchored to the same containing
+   block). The graph shows through beneath both. */
 .viewfinder-topbar {
   position: absolute;
-  top: 0;
+  top: var(--shell-topbar-h);
   left: 0;
   right: 0;
+  box-sizing: border-box;
   height: var(--viewfinder-topbar-h);
   display: flex;
   align-items: center;
@@ -3591,31 +3774,83 @@ body,
   flex: none;
 }
 
-/* === Side panes: legend/lists and the inspector as glass trays =============
-   Float over the graph on either edge instead of stacking beneath the map in
-   a scrollable dashboard column. */
+/* === Panes: legend/lists and the inspector as floating glass cards ========
+   Phase 28B correction: these were previously always-visible, full-height
+   edge columns whenever the graph had data — which reads as a persistent
+   split-column dashboard (Phase 28A §1/§2 explicitly reject this), no
+   different in spirit from a permanent sidebar. Both panes are now summoned
+   overlays (the explorer opens from a topbar toggle; the inspector mounts
+   only once a node/edge is selected — see KnowledgeGraphPanel.tsx) rendered
+   as bounded, rounded, edge-margined cards with a capped height, not columns
+   spanning the full viewport edge. */
 .viewfinder-pane {
   position: absolute;
-  top: var(--viewfinder-topbar-h);
-  bottom: 0;
-  width: min(23rem, 88vw);
+  width: min(22rem, calc(100vw - 1.7rem));
+  max-height: min(
+    70vh,
+    calc(100% - var(--shell-topbar-h) - var(--viewfinder-topbar-h) - 1.7rem)
+  );
   overflow-y: auto;
   padding: 1rem;
   pointer-events: auto;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
   background: var(--viewfinder-glass);
-  backdrop-filter: saturate(1.2) blur(10px);
+  backdrop-filter: saturate(1.25) blur(16px);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.55);
+  animation: viewfinder-pane-in 0.14s ease;
 }
 
 .viewfinder-pane-explorer {
-  left: 0;
-  border-right: 1px solid var(--border-soft);
-  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.28);
+  top: calc(var(--shell-topbar-h) + var(--viewfinder-topbar-h) + 0.85rem);
+  left: 0.85rem;
 }
 
 .viewfinder-pane-inspector {
-  right: 0;
-  border-left: 1px solid var(--border-soft);
-  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.28);
+  top: calc(var(--shell-topbar-h) + var(--viewfinder-topbar-h) + 0.85rem);
+  right: 0.85rem;
+}
+
+/* Pane header row: title + close button, so each summoned pane is closable
+   on command in addition to Escape (Phase 28A §3 "closable"). */
+.viewfinder-pane-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.viewfinder-pane-head h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-subtle);
+}
+
+.viewfinder-pane-close {
+  flex: none;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--shell-chrome-border-strong, var(--border-strong));
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background-color 0.12s ease, color 0.12s ease;
+}
+
+.viewfinder-pane-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.viewfinder-pane-close:focus-visible {
+  outline: none;
+  box-shadow: var(--shell-focus-ring, var(--shadow-focus));
 }
 
 .viewfinder-pane-explorer .graph-legend {
@@ -3628,38 +3863,36 @@ body,
   margin-top: 0;
 }
 
-/* === Responsive: below the shell's two-pane breakpoint, fall back to a
-   single scrollable column so the overlay trays don't crowd a phone-width
-   screen. The graph keeps a fixed viewing height above the stacked chrome
-   rather than disappearing behind full-width panes. === */
+@keyframes viewfinder-pane-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === Responsive: panes shrink to fit narrow viewports but keep the same
+   floating-card treatment — no fallback to a full-width stacked column,
+   so a phone-width screen never turns the graph into a scrolled-past
+   header image. === */
 @media (max-width: 760px) {
-  .shell-graph-viewport {
-    overflow-y: auto;
-  }
-
-  .graph-viewfinder {
-    overflow: visible;
-    min-height: 100%;
-  }
-
-  .viewfinder-field {
-    position: relative;
-    inset: auto;
-    height: 60vh;
-    min-height: 20rem;
-  }
-
-  .viewfinder-chrome {
-    position: relative;
-    inset: auto;
-    pointer-events: auto;
+  /* The graph's own topbar wraps to three rows at phone widths (title,
+     actions, summary — see order:3 below). Redefining the shared height
+     variable here (rather than `height: auto`) keeps it a known, bounded
+     box so the panes anchored below it (which read this same variable)
+     never get positioned on top of its wrapped content. */
+  :root {
+    --viewfinder-topbar-h: 7rem;
   }
 
   .viewfinder-topbar {
-    position: relative;
-    height: auto;
+    height: var(--viewfinder-topbar-h);
     flex-wrap: wrap;
-    padding: 0.6rem 0.75rem;
+    align-content: center;
+    padding: 0.5rem 0.75rem;
   }
 
   .viewfinder-topbar .graph-summary {
@@ -3668,15 +3901,17 @@ body,
   }
 
   .viewfinder-pane {
-    position: relative;
-    top: auto;
-    bottom: auto;
-    width: 100%;
-    max-height: none;
-    box-shadow: none;
-    border-right: none;
-    border-left: none;
-    border-top: 1px solid var(--border-soft);
+    left: 0.6rem;
+    right: 0.6rem;
+    width: auto;
+    max-height: min(
+      55vh,
+      calc(100% - var(--shell-topbar-h) - var(--viewfinder-topbar-h) - 1.2rem)
+    );
+  }
+
+  .viewfinder-pane-inspector {
+    left: 0.6rem;
   }
 }
 
@@ -3684,6 +3919,7 @@ body,
   .viewfinder-pane,
   .viewfinder-chrome {
     transition: none;
+    animation: none;
   }
 }
 
