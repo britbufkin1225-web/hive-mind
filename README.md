@@ -96,20 +96,21 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 28A - True Graph-Primary Surface Planning + Overlay Contract`
-  (planning / documentation only). Phase 27E verified the connected,
-  full-viewfinder graph shell shipped in 27A–27D. Phase 28A tightens that
-  direction into a stricter contract — the graph as the full application
-  surface with every other panel treated strictly as a contextual overlay —
-  before any further layout implementation, so the next frontend pass
-  (Phase 28B) cannot drift back toward dashboard/sidebar framing. A **visual
-  correction lock addendum** further locks deep-black/metallic chrome with
-  color reserved almost entirely for the graph, a translucent hover/
-  command-triggered nav surface in place of any persistent sidebar,
-  glass-like non-occluding overlays, and a living/pulsing/aura/cluster graph
-  visual identity. See the
-  [Phase 28A True Graph-Primary Surface + Overlay Contract](docs/phase-28a-true-graph-primary-overlay-contract.md)
-  and the [full roadmap](docs/roadmap.md) for the complete 25B–27E history.
+- **Active phase:** `Phase 28C - True Graph-Primary Surface QA + Screenshot Evidence Refresh`
+  (QA / evidence / documentation only). Phase 28A tightened the graph-first
+  direction into a stricter true graph-primary contract; Phase 28B implemented
+  it — the Knowledge Graph fills the entire viewport edge-to-edge with no
+  persistent sidebar/dashboard-column framing, the masthead/rail/dock are
+  floating translucent glass overlays, and the graph gained a living-identity
+  groundwork (idle aura, per-type halo, selection glow, energy-flow edges).
+  Phase 28C is the evidence pass immediately after that implementation: it
+  re-runs the connected backend/frontend and captures visually re-verified
+  screenshots of the default full-viewport graph, the legend/lists overlay,
+  the selected-node inspector, each of the Vault/Sources/Intelligence/Console
+  overlays, and a narrow viewport. See the
+  [Phase 28C True Graph-Primary Surface QA + Screenshot Evidence](docs/demo/phase-28c-true-graph-primary-surface-qa-screenshot-evidence.md),
+  the [Phase 28A True Graph-Primary Surface + Overlay Contract](docs/phase-28a-true-graph-primary-overlay-contract.md),
+  and the [full roadmap](docs/roadmap.md) for the complete 25B–28C history.
   The remainder of this section (below) is preserved as the historical Phase
   25A-and-earlier narrative.
 - **Phase 25A** (planning / documentation only) defined a **buildable visual design
@@ -611,6 +612,7 @@ npm run dev:frontend
 - [Frontend Asset Contract + Icon Usage Planning](docs/frontend-asset-contract.md)
 - [Phase 27E Full-Viewfinder Graph Surface QA + Screenshot Evidence Refresh](docs/demo/phase-27e-full-viewfinder-graph-surface-qa-screenshot-evidence.md)
 - [Phase 28A True Graph-Primary Surface + Overlay Contract](docs/phase-28a-true-graph-primary-overlay-contract.md)
+- [Phase 28C True Graph-Primary Surface QA + Screenshot Evidence Refresh](docs/demo/phase-28c-true-graph-primary-surface-qa-screenshot-evidence.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script (earlier walkthrough)](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
