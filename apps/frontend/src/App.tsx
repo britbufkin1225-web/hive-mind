@@ -75,6 +75,13 @@ function App() {
   // Move focus into the dock when it opens, and let Escape close it from
   // anywhere — the dock is a contextual surface, not a modal, so the graph
   // underneath stays interactive while it's open.
+  //
+  // Phase 29B: Escape dismisses exactly one surface per press, topmost first
+  // (Phase 29A order: tertiary dock → explorer → selection/inspector). While
+  // the dock is open it is the topmost tier, so this listener runs in the
+  // capture phase and stops propagation — otherwise the same press would
+  // also reach the graph panel's Escape handling and close two surfaces at
+  // once (e.g. the dock and the selection).
   useEffect(() => {
     if (activePanel === null) {
       return;
@@ -82,11 +89,12 @@ function App() {
     dockRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.stopPropagation();
         closePanel();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [activePanel, closePanel]);
 
   return (

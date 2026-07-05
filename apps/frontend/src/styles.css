@@ -3923,3 +3923,102 @@ body,
   }
 }
 
+/* ============================================================================
+   Phase 29B — Graph interaction + overlay polish
+   Implements the Phase 29A interaction contract (docs/planning/
+   phase-29a-graph-interaction-overlay-polish-planning.md): the three-tier
+   selected > related > ambient emphasis model on the canvas, restrained
+   additive hover lifts for nodes and edges, and quiet focus treatment for
+   the summoned glass panes. Presentation only — no data change, no layout
+   reflow of the canvas, and the tiered animation budget is unchanged (idle
+   breathing < selection glow/energy edges; hover states add no animation).
+   ============================================================================ */
+
+/* Interaction states fade between tiers instead of snapping; only paint
+   properties transition, so the canvas never reflows. */
+.graph-canvas {
+  cursor: default;
+}
+
+.graph-canvas-node {
+  transition: opacity 0.16s ease;
+}
+
+.graph-canvas-edge {
+  transition:
+    stroke 0.1s ease,
+    stroke-opacity 0.14s ease,
+    stroke-width 0.14s ease,
+    opacity 0.16s ease;
+}
+
+/* --- Tier 2: related (direct neighbors of the selected node, or the two
+   endpoints of a selected edge). A steady, slightly heavier ring — brighter
+   than ambient, quieter than the pulsing selection — with stroke weight
+   keeping the cue non-color-only (Phase 29A accessibility expectations). */
+.graph-canvas-node-related .graph-canvas-node-circle {
+  animation: none;
+  stroke-opacity: 1;
+  stroke-width: 2.5;
+}
+
+/* --- Tier 3: ambient elements recede while a selection is active. Hover or
+   keyboard focus lifts a dimmed element back to full presence so nothing on
+   the canvas becomes unreadable or unreachable. */
+.graph-canvas-node-dimmed,
+.graph-canvas-edge-dimmed {
+  opacity: 0.35;
+}
+
+.graph-canvas-node-dimmed:hover,
+.graph-canvas-node-dimmed:focus {
+  opacity: 1;
+}
+
+/* --- Hover lifts: additive only — hover brightens the hovered element and
+   its direct neighbors and never dims or restyles the rest of the graph
+   (Phase 29A hover contract). Hovering a node lightens its incident edges;
+   hovering an edge lifts its stroke and brightens its two endpoints. The
+   [data-edge-type] prefix out-ranks the per-relationship resting-color
+   rules above, which carry (0,4,0) specificity. */
+[data-edge-type] .graph-canvas-edge.graph-canvas-edge-hover-lift:not(.graph-canvas-edge-selected),
+[data-edge-type] .graph-canvas-edge.graph-canvas-edge-hovered:not(.graph-canvas-edge-selected) {
+  opacity: 1;
+  stroke-opacity: 1;
+}
+
+/* The hovered edge itself also gains a modest stroke lift; edges already
+   carrying the selected or incident energy treatment keep it unchanged so
+   hover never fights the selection hierarchy. */
+[data-edge-type] .graph-canvas-edge.graph-canvas-edge-hovered:not(.graph-canvas-edge-selected):not(.graph-canvas-edge-incident) {
+  stroke-width: 2.25;
+}
+
+.graph-canvas-node-hover-endpoint .graph-canvas-node-circle {
+  animation: none;
+  stroke-opacity: 1;
+}
+
+/* --- Summoned panes take programmatic focus when opened (tabIndex -1); the
+   container needs no browser-default outline, and keyboard-visible focus
+   reads as a quiet edge lift on the existing glass treatment instead. */
+.viewfinder-pane:focus {
+  outline: none;
+}
+
+.viewfinder-pane:focus-visible {
+  outline: none;
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.55),
+    0 0 0 1px var(--border-strong);
+}
+
+/* Reduced motion: the tier hierarchy stays fully readable as static states;
+   only the fades are dropped. */
+@media (prefers-reduced-motion: reduce) {
+  .graph-canvas-node,
+  .graph-canvas-edge {
+    transition: none;
+  }
+}
+
