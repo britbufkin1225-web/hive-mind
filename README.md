@@ -8,13 +8,23 @@ Parent label: **devdevbuilds**
 
 ## Overview
 
-Hive|Mind is a **local-first developer knowledge and coordination tool**. It
-connects knowledge sources — starting with Obsidian vault content — into a
-normalized backend data model and presents that model through a focused web
-interface: a source registry, an import workflow, a query console, a read-only
-knowledge graph view, and an intelligence report whose four sections (Temporal
-Decay, Dreaming Suggestions, Provenance Chains, and Query Trails) are all
-backend-derived and read-only.
+Hive|Mind is a **local-first, graph-primary AI memory / intelligence workspace
+for developers**. It connects knowledge sources — starting with Obsidian vault
+content — into a normalized backend data model and presents that model with the
+**Knowledge Graph as the primary application surface**: the graph fills the
+viewport edge-to-edge like a viewfinder over an intelligence map, and the
+supporting tools — the Source Registry, the Obsidian import workflow, the query
+Console, and the Intelligence Report (Temporal Decay, Dreaming Suggestions,
+Provenance Chains, and Query Trails, all backend-derived and read-only) —
+appear as contextual overlays summoned over the graph rather than as permanent
+dashboard columns.
+
+The UI direction is dark, serious, and premium: a black/chrome/metal dev-tool
+shell in which the shell chrome carries almost no color, and the visual energy
+is concentrated in the graph itself — nodes, edges, groups, idle aura,
+selection pulse. Hive|Mind is deliberately **not dashboard-first, not
+card-grid-first, and not a SaaS sidebar shell**; there is no persistent sidebar
+as the default pattern.
 
 It is built to improve everyday development work — organization, data provenance,
 workflow speed, knowledge consistency, source tracking, and development
@@ -24,11 +34,12 @@ portfolio project, and the two goals reinforce each other: the discipline that
 makes it a credible portfolio piece (deterministic logic, read-only surfaces,
 honest scope) is the same discipline that makes it a trustworthy tool.
 
-> **What it is, in one line:** Hive|Mind is a local-first developer knowledge
-> intelligence dashboard that organizes imported knowledge sources, visualizes
-> their relationships, and derives deterministic, read-only intelligence signals —
-> temporal decay, dreaming suggestions, provenance chains, and query trails — from
-> existing structure rather than from any AI/LLM call.
+> **What it is, in one line:** Hive|Mind is a local-first, graph-primary
+> knowledge intelligence workspace that organizes imported knowledge sources,
+> presents them as a full-surface knowledge graph, and derives deterministic,
+> read-only intelligence signals — temporal decay, dreaming suggestions,
+> provenance chains, and query trails — from existing structure rather than
+> from any AI/LLM call.
 
 The conceptual model is deliberately simple:
 
@@ -49,44 +60,46 @@ humans decide what ships.
 
 ## Visual evidence
 
-These are real captures of the running dashboard — the local frontend (`5173`)
+These are real captures of the running app — the local frontend (`5173`)
 talking to the local backend (`8787`), not mockups. They were taken during the
-Phase 25C QA pass on the **premium dark-metallic visual system** shipped in Phase
-25B, so they show the current connected state. Three surfaces tell the whole story:
+Phase 28C QA pass on the **true graph-primary surface** shipped in Phase 28B,
+so they show the current connected state. Three views tell the whole story:
 
-**1. Connected dashboard** — the app talking to its backend.
+**1. The graph-primary surface** — the graph *is* the app.
 
-![Hive|Mind connected dashboard: header band, green "Connected" status pill, live API health (hivemind-backend 0.1.0), and the Vault summary metric grid](./docs/demo/screenshots/phase-25c-connected-ui-top.png)
+![Hive|Mind true graph-primary surface: the Knowledge Graph fills the entire viewport edge-to-edge on a dark black/chrome shell, with the masthead and icon dock as floating translucent overlays and no persistent sidebar](./docs/demo/screenshots/phase-28c-default-graph-primary-surface.png)
 
-The header band, the green **Connected** pill, live API health
-(`hivemind-backend` `0.1.0`), and the Vault summary — proof the frontend and
-backend are actually wired together, not a static page.
+The Knowledge Graph fills the viewport edge-to-edge on the dark black/chrome
+shell. The masthead and the compact bottom dock are floating translucent
+overlays — there is no persistent sidebar, no dashboard columns, and no
+card-grid framing. Color energy lives in the nodes and edges, not the chrome.
 
-**2. Knowledge Graph** — the core product surface.
+**2. Selection + inspector** — contextual, not permanent.
 
-![Hive|Mind Knowledge Graph: a summary band (7 nodes, 6 edges, 7 connected, 0 isolated), a type/relationship/status legend, and a deterministic SVG graph map of named nodes](./docs/demo/screenshots/phase-25c-connected-knowledge-graph.png)
+![Hive|Mind selected-node inspector: a selected graph node with a pulsing glow and energy-flow edges, with a floating glass inspector card showing the node's details and relationships](./docs/demo/screenshots/phase-28c-selected-node-inspector.png)
 
-A read-only, deterministic SVG view of the graph derived from the sources — the
-summary band (7 nodes / 6 edges), the type/relationship/status legend, and the
-graph map with named nodes. No physics, no editing, no mutation.
+Selecting a node summons a floating glass inspector card over the graph — the
+selected node glows, edges incident to it pick up the energy-flow dash
+treatment, and the detail view appears only when asked for. The graph stays
+read-only throughout.
 
-**3. Intelligence Report** — the differentiator.
+**3. Intelligence overlay** — the differentiator, summoned in context.
 
-![Hive|Mind Intelligence Report: read-only summary band (Suggestions 0, Decay 7, Provenance 7, Query Trails 7), Report version 0.1.0, Mode Read-only, and the backend-derived Temporal Decay section with a BACKEND-DERIVED badge](./docs/demo/screenshots/phase-25c-connected-intelligence-report.png)
+![Hive|Mind Intelligence overlay: the backend-derived Intelligence Report (Temporal Decay, Dreaming Suggestions, Provenance Chains, Query Trails) rendered as a contextual overlay above the full-viewport graph](./docs/demo/screenshots/phase-28c-intelligence-overlay.png)
 
-Four backend-derived, read-only sections (Temporal Decay, Dreaming Suggestions,
-Provenance Chains, Query Trails) with a `BACKEND-DERIVED` badge, `Mode Read-only`,
-and honest empty-states (Dreaming `0`). This is deterministic rule-based
-derivation over the store — **no AI/LLM** — which is what makes it auditable.
+The four backend-derived, read-only Intelligence sections (Temporal Decay,
+Dreaming Suggestions, Provenance Chains, Query Trails) open as a contextual
+overlay above the graph rather than a permanent dashboard section. This is
+deterministic rule-based derivation over the store — **no AI/LLM** — which is
+what makes it auditable.
 
-> The full end-to-end page capture and the Source Registry / Console surfaces are
-> kept in [`docs/demo/screenshots/`](docs/demo/screenshots/). The landing-page
-> selection rationale (why these three) is recorded in the
-> [Phase 24A Portfolio Screenshot + README Visual Lock](docs/demo/phase-24a-portfolio-screenshot-readme-visual-lock.md)
-> note, and the capture session behind the current dark-theme images is documented in
-> the [Phase 25C Premium Visual System QA + Screenshot Evidence Refresh](docs/demo/phase-25c-premium-visual-system-qa-screenshot-evidence.md).
-> The earlier light-theme `phase-23b-connected-*` captures are preserved in
-> `docs/demo/screenshots/` as history.
+> The Vault, Sources, Console, legend/lists, and narrow-viewport captures from
+> the same session are kept in
+> [`docs/demo/screenshots/`](docs/demo/screenshots/), and the capture session is
+> documented in the
+> [Phase 28C True Graph-Primary Surface QA + Screenshot Evidence](docs/demo/phase-28c-true-graph-primary-surface-qa-screenshot-evidence.md)
+> note. The earlier dashboard-era `phase-23b-*` / `phase-25c-*` capture sets are
+> preserved in `docs/demo/screenshots/` as history.
 
 ## Current status
 
@@ -96,21 +109,35 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 28C - True Graph-Primary Surface QA + Screenshot Evidence Refresh`
-  (QA / evidence / documentation only). Phase 28A tightened the graph-first
+- **Active phase:** `Phase 28D - README / Portfolio Visual Lock`
+  (documentation / portfolio only). Phase 28D locks the graph-primary
+  visual/product direction in the portfolio-facing docs after the Phase 28B
+  implementation and the Phase 28C evidence pass: the README now presents
+  Hive|Mind as a graph-primary AI memory / intelligence workspace — the
+  Knowledge Graph is the full application surface, supporting tools appear as
+  contextual overlays, and the shell stays dark black/chrome/metal with the
+  color energy concentrated in the graph. Docs-only: no
+  frontend/CSS/backend/API/schema/package/runtime change and no new
+  screenshots. The next planned sequence is:
+  - **Phase 28D** — README / portfolio visual lock *(this phase)*.
+  - **Phase 29A** — graph interaction + overlay polish planning (planning only,
+    before any implementation).
+  - **Phase 29B** — frontend polish implementation.
+  - **Phase 29C** — QA + screenshot evidence refresh.
+- **Preceding phases 28A–28C:** Phase 28A tightened the graph-first
   direction into a stricter true graph-primary contract; Phase 28B implemented
   it — the Knowledge Graph fills the entire viewport edge-to-edge with no
   persistent sidebar/dashboard-column framing, the masthead/rail/dock are
   floating translucent glass overlays, and the graph gained a living-identity
   groundwork (idle aura, per-type halo, selection glow, energy-flow edges).
-  Phase 28C is the evidence pass immediately after that implementation: it
-  re-runs the connected backend/frontend and captures visually re-verified
+  Phase 28C was the evidence pass immediately after that implementation: it
+  re-ran the connected backend/frontend and captured visually re-verified
   screenshots of the default full-viewport graph, the legend/lists overlay,
   the selected-node inspector, each of the Vault/Sources/Intelligence/Console
   overlays, and a narrow viewport. See the
   [Phase 28C True Graph-Primary Surface QA + Screenshot Evidence](docs/demo/phase-28c-true-graph-primary-surface-qa-screenshot-evidence.md),
   the [Phase 28A True Graph-Primary Surface + Overlay Contract](docs/phase-28a-true-graph-primary-overlay-contract.md),
-  and the [full roadmap](docs/roadmap.md) for the complete 25B–28C history.
+  and the [full roadmap](docs/roadmap.md) for the complete 25B–28D history.
   The remainder of this section (below) is preserved as the historical Phase
   25A-and-earlier narrative.
 - **Phase 25A** (planning / documentation only) defined a **buildable visual design
@@ -390,7 +417,13 @@ foundations should be stable and honest before they are clever.
 | Phase 24A | Complete | Portfolio screenshot selection + README visual lock (docs / README / demo presentation only); reviews the existing Phase 23B connected screenshot set, selects the three strongest README surfaces (connected dashboard top, Knowledge Graph, Intelligence Report), adds a **Visual evidence** README section with honest captions, and records the selection rationale (including intentionally-omitted screenshots) in the [Phase 24A Portfolio Screenshot + README Visual Lock](docs/demo/phase-24a-portfolio-screenshot-readme-visual-lock.md) note. Uses only existing real screenshots; no image fabrication and no UI/CSS/frontend/backend/API/schema/package/dependency/runtime behavior changes. |
 | Phase 25A | Complete | Premium visual design system / frontend presentation direction (planning / documentation only); defines a buildable premium dark-metallic intelligence-console visual system with a graph-forward identity before any UI/CSS change — current (light) visual baseline, target visual identity, design principles, a layered surface/panel system, typography/hierarchy direction, a graph-centered experience direction (node/edge language, canvas framing, inspector relationship, legend/status, and *planned* read-only overlay concepts for Temporal Decay / Dreaming / Provenance / Query Trails), the Intelligence-Report visual direction with a real-vs-planned visual contract, the navigation/demo-flow direction, the Phase 25B implementation boundaries, and the Phase 25C QA/evidence expectations. Graph stays read-only; nothing faked. See the [planning doc](docs/ui/phase-25a-premium-visual-system-planning.md). No code, contract, or behavior changes. |
 | Phase 25B | Complete | Premium visual system implementation pass (frontend presentation only); applies the Phase 25A direction as a token-driven reskin in `apps/frontend/src/styles.css` — a dark metallic palette plus elevation/spacing/type/glow tokens (token names preserved so token-driven rules re-theme automatically) and per-surface restyling of header/panels/cards/section nav/graph framing/inspector/Intelligence Report/console onto those tokens. Presentation-only over the existing token system and SVG view model; graph stays read-only; no backend/API/schema/contract/data-value/package/dependency or runtime behavior change. |
-| Phase 25B.5 | Active | Frontend asset contract + icon usage planning (planning / documentation only); audits current repo asset usage (clean baseline — only the approved `docs/assets/branding/hivemind-readme-banner.png` brand image plus `docs/demo/screenshots/*` evidence; the running app ships no favicon/logo/static asset and the sole SVG is the inline data-driven Knowledge Graph render) and creates the first Hive&#124;Mind [frontend asset contract](docs/frontend-asset-contract.md): approved source authority (devdevbuilds parent → Hive&#124;Mind lockup), allowed/forbidden asset categories (no icon-library dependency, no CDN, no generated/random or screenshot-derived assets), file-location and naming conventions, SVG safety, accessibility, dark-metallic theming (monochrome/duotone/glow/metallic/status treatments), the app-mark-vs-decorative-icon line, and how future asset phases must reference the contract. Adds no asset and no dependency; no UI/CSS/frontend/backend/API/schema/package or behavior change. |
+| Phase 25B.5 | Complete | Frontend asset contract + icon usage planning (planning / documentation only); audits current repo asset usage (clean baseline — only the approved `docs/assets/branding/hivemind-readme-banner.png` brand image plus `docs/demo/screenshots/*` evidence; the running app ships no favicon/logo/static asset and the sole SVG is the inline data-driven Knowledge Graph render) and creates the first Hive&#124;Mind [frontend asset contract](docs/frontend-asset-contract.md): approved source authority (devdevbuilds parent → Hive&#124;Mind lockup), allowed/forbidden asset categories (no icon-library dependency, no CDN, no generated/random or screenshot-derived assets), file-location and naming conventions, SVG safety, accessibility, dark-metallic theming (monochrome/duotone/glow/metallic/status treatments), the app-mark-vs-decorative-icon line, and how future asset phases must reference the contract. Adds no asset and no dependency; no UI/CSS/frontend/backend/API/schema/package or behavior change. |
+
+The later phases — 26A–26C (graph visual identity), 27A–27E (graph-first app
+shell / full-viewfinder surface), and 28A–28C (true graph-primary surface
+contract, implementation, and screenshot evidence) — are recorded in full in
+the [roadmap phase history](docs/roadmap.md#phase-history); Phase 28D (this
+README / portfolio visual lock) is the active documentation phase.
 
 ## Planned logic
 
@@ -456,6 +489,19 @@ The next wave of work should keep the intelligence layer honest and reviewable:
 contracts first, deterministic read-only derivation second, frontend surfaces
 third. See the [full roadmap](docs/roadmap.md) and the
 [Intelligence Surface Plan](docs/intelligence-surface-plan.md) for detail.
+
+The current phase sequence:
+
+| Phase | Status | Focus |
+| --- | ---: | --- |
+| Phase 28D | Active | README / portfolio visual lock (documentation only). |
+| Phase 29A | Planned | Graph interaction + overlay polish planning (planning only, before any implementation). |
+| Phase 29B | Planned | Frontend polish implementation. |
+| Phase 29C | Planned | QA + screenshot evidence refresh. |
+
+The historical planned-phase table below is preserved as recorded phase
+history; the [full roadmap](docs/roadmap.md) is the canonical, up-to-date
+version.
 
 | Planned / Active Phase | Focus |
 | --- | --- |
@@ -526,17 +572,27 @@ is "real." The full known-limitations and out-of-scope lists live in the
 For a reviewer, Hive|Mind is meant to read as a small, complete, honest system
 rather than a pile of half-features. What it demonstrates:
 
-- **End-to-end ownership.** A React/FastAPI app with a local data model, an import
-  pipeline, a graph visualization, and a derived intelligence layer — designed,
-  built, documented, and QA'd across a recorded phase history.
+- **End-to-end ownership.** A React/FastAPI app with a local data model, a
+  Source Registry and import pipeline, a graph-primary Knowledge Graph surface,
+  and a derived intelligence layer — designed, built, documented, and QA'd
+  across a recorded phase history.
+- **Deterministic, backend-derived intelligence surfaces.** Dreaming
+  Suggestions, Temporal Knowledge Decay, Provenance Chains, and Query Trails
+  are all computed by reviewable backend rules over real store state — read-only,
+  reproducible, and auditable, with honest empty states.
 - **Engineering judgment over feature count.** A bounded scope done well, with
   deferred work named explicitly instead of implied as present.
 - **Security reasoning, evidenced.** A threat model, a defensive API-hardening arc,
   and regression evidence — security treated as something to reason about and test,
   not decorate.
+- **Disciplined use of assisted development.** Hive|Mind is a human-directed
+  devdevbuilds project that uses assisted development tooling ethically:
+  agents may draft, but every change passes human review, validation, and
+  merge control, and no AI mutates the project — or its data — unreviewed.
 - **Honesty as a feature.** The deterministic, read-only, local-first framing is
-  precise about what the tool does and does not do, which is more credible than an
-  inflated "AI platform" claim.
+  precise about what the tool does and does not do — a tool-first demo project,
+  not a production platform — which is more credible than an inflated
+  "AI platform" claim.
 
 The per-surface evidence and overstatement guards behind this narrative live in the
 [Phase 20A Demo Release Candidate Planning](docs/release-readiness/phase-20a-demo-release-candidate-planning.md)
@@ -613,6 +669,7 @@ npm run dev:frontend
 - [Phase 27E Full-Viewfinder Graph Surface QA + Screenshot Evidence Refresh](docs/demo/phase-27e-full-viewfinder-graph-surface-qa-screenshot-evidence.md)
 - [Phase 28A True Graph-Primary Surface + Overlay Contract](docs/phase-28a-true-graph-primary-overlay-contract.md)
 - [Phase 28C True Graph-Primary Surface QA + Screenshot Evidence Refresh](docs/demo/phase-28c-true-graph-primary-surface-qa-screenshot-evidence.md)
+- [Phase 28D Visual Direction Lock](docs/portfolio/phase-28d-visual-direction-lock.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script (earlier walkthrough)](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
