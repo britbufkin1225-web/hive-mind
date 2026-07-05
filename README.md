@@ -113,15 +113,26 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 29C - Graph Interaction + Overlay Polish QA +
-  Screenshot Evidence Refresh` (QA / evidence / documentation only). Phase 29C
-  verifies the Phase 29B implementation against the connected local runtime
-  and refreshes the screenshot evidence trail — 28 scripted interaction checks
-  (hover lifts, three-tier selection emphasis, in-place selection switching,
-  edge selection, empty-canvas deselect, Escape dismissal order, overlay
-  exclusivity/persistence, focus management, narrow viewport) plus a
-  `phase-29c-connected-*` screenshot set, with no frontend/CSS/backend/API/
-  schema/package change and no implementation fixes. See the
+- **Current phase:** `Phase 30A - Post-Polish Interaction Triage + Next
+  Frontend Direction Planning` (planning / documentation only). Phase 30A
+  reviews the Phase 29C QA outcome, triages the two honestly-recorded
+  interaction rough edges (Escape focus-scoping after dock close; focused-rail
+  label overflow at ~420px) into a prioritized next wave, and locks a narrow
+  implementation contract for **Phase 30B — Interaction Recovery + Responsive
+  Rail Frontend Implementation Pass** (allowed: `KnowledgeGraphPanel.tsx`,
+  `styles.css`, and `App.tsx` only if focus/overlay wiring requires) — before
+  any frontend code is touched, with the graph-primary surface direction
+  re-locked. **Docs-only:** no frontend/CSS/backend/API/schema/package/runtime/
+  screenshot change and no implementation fixes. See the
+  [Phase 30A planning doc](docs/phase-30a-post-polish-interaction-triage.md).
+  The preceding **Phase 29C** (complete) verified the Phase 29B implementation
+  against the connected local runtime and refreshed the screenshot evidence
+  trail — 28 scripted interaction checks (hover lifts, three-tier selection
+  emphasis, in-place selection switching, edge selection, empty-canvas
+  deselect, Escape dismissal order, overlay exclusivity/persistence, focus
+  management, narrow viewport) plus a `phase-29c-connected-*` screenshot set,
+  with no frontend/CSS/backend/API/schema/package change and no implementation
+  fixes. See the
   [Phase 29C evidence doc](docs/demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md).
   The preceding **Phase 29B** (complete) implemented the Phase 29A interaction
   contract as a frontend-only pass: the graph canvas gained the three-tier
@@ -141,7 +152,9 @@ SVG visualization.
   - **Phase 29A** — graph interaction + overlay polish planning *(complete)*.
   - **Phase 29B** — graph interaction + overlay polish frontend
     implementation pass *(complete)*.
-  - **Phase 29C** — QA + screenshot evidence refresh *(this phase)*.
+  - **Phase 29C** — QA + screenshot evidence refresh *(complete)*.
+  - **Phase 30A** — post-polish interaction triage + next frontend direction
+    planning *(this phase)*.
 - **Preceding phases 28A–28C:** Phase 28A tightened the graph-first
   direction into a stricter true graph-primary contract; Phase 28B implemented
   it — the Knowledge Graph fills the entire viewport edge-to-edge with no
@@ -519,6 +532,9 @@ The current phase sequence:
 | Phase 29A | Complete | Graph interaction + overlay polish planning (planning only, before any implementation). |
 | Phase 29B | Complete | Graph interaction + overlay polish frontend implementation pass (screenshot evidence deferred to Phase 29C). |
 | Phase 29C | Complete | QA + screenshot evidence refresh; see the [evidence doc](docs/demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md). |
+| Phase 30A | Complete | Post-polish interaction triage + next frontend direction planning (planning only, before any implementation); triages the two Phase 29C interaction limitations and locks the narrow Phase 30B contract. See the [planning doc](docs/phase-30a-post-polish-interaction-triage.md). |
+| Phase 30B | Planned | Interaction Recovery + Responsive Rail Frontend Implementation Pass (frontend only, per the Phase 30A contract). |
+| Phase 30C | Planned | Interaction Recovery QA + Screenshot Evidence Refresh (QA / evidence only, after Phase 30B). |
 
 The historical planned-phase table below is preserved as recorded phase
 history; the [full roadmap](docs/roadmap.md) is the canonical, up-to-date
