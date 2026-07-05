@@ -32,24 +32,31 @@ and the [Phase 28A True Graph-Primary Surface + Overlay Contract](phase-28a-true
 
 ## Current status
 
-**Active phase:** Phase 28D — README / Portfolio Visual Lock (documentation /
-portfolio only). Phase 28D locks the post-28B/28C graph-primary direction in
-the portfolio-facing docs: the README now presents Hive|Mind as a
-graph-primary AI memory / intelligence workspace — the Knowledge Graph is the
-full application surface / viewfinder, the supporting tools (Vault, Sources,
-Intelligence, Console, legend/lists, inspector) appear as contextual overlays
-rather than permanent dashboard columns, and the shell stays dark
-black/chrome/metal with minimal non-graph color. **Docs-only:** no
-frontend/CSS/backend/API/schema/package/runtime behavior change and no new
-screenshots. See the
-[Phase 28D Visual Direction Lock](portfolio/phase-28d-visual-direction-lock.md).
+**Active phase:** Phase 29A — Graph Interaction + Overlay Polish Planning
+(planning / documentation only). Phase 29A defines the interaction and
+overlay polish contract for the next frontend wave — graph
+hover/select/deselect behavior, overlay hierarchy/stacking, inspector and
+utility/menu behavior, pulse/aura/group interaction rules, the
+keyboard/command-surface direction, and the exact Phase 29B
+allowed/forbidden scope — before any implementation. **Scope: docs/planning
+only** — no frontend/CSS/backend/API/schema/package/runtime behavior change
+and no new screenshots. See the
+[Phase 29A planning doc](planning/phase-29a-graph-interaction-overlay-polish-planning.md).
 
-The next planned sequence after Phase 28D:
+The sequence around Phase 29A:
 
-- **Phase 29A** — graph interaction + overlay polish planning (**planning
-  only**, before any implementation).
-- **Phase 29B** — frontend polish implementation.
-- **Phase 29C** — QA + screenshot evidence refresh.
+- **Phase 28D** — README / portfolio visual lock (**complete**); locked the
+  post-28B/28C graph-primary direction in the portfolio-facing docs — the
+  Knowledge Graph is the full application surface / viewfinder, supporting
+  tools (Vault, Sources, Intelligence, Console, legend/lists, inspector)
+  appear as contextual overlays rather than permanent dashboard columns, and
+  the shell stays dark black/chrome/metal with minimal non-graph color. See
+  the [Phase 28D Visual Direction Lock](portfolio/phase-28d-visual-direction-lock.md).
+- **Phase 29A** — graph interaction + overlay polish planning (**this
+  phase**; planning only).
+- **Phase 29B** — Graph Interaction + Overlay Polish Frontend Implementation
+  Pass (**not yet implemented**).
+- **Phase 29C** — QA + screenshot evidence refresh (**not yet started**).
 
 The preceding **Phase 28C** verified the connected runtime after the Phase
 28B implementation and captured fresh, visually re-verified screenshots of
@@ -432,14 +439,14 @@ Current non-capabilities:
 | 28A | Complete | True graph-primary surface planning + overlay contract (planning / documentation only); tightens the Phase 27A–27E graph-first shell direction into a stricter contract before further layout work — graph dominance rules (full-viewport, no sidebar/column/card-grid framing, explicit rejection list), an overlay hierarchy (primary graph canvas, secondary node inspector, tertiary Source Registry/Intelligence Report/Console/future intelligence overlays, utility rail/command/status), a per-surface panel behavior contract, a desired-vs-undesired visual-feel test, and a scoped Phase 28B handoff (True Graph-Primary Surface Frontend Implementation Pass) with explicit allowed/forbidden files and success criteria. A **visual correction lock addendum** (Section 6) further locks deep-black/metallic chrome with color reserved almost entirely for the graph itself, a translucent hover/command-triggered nav surface replacing any persistent sidebar, glass-like non-occluding overlays, and a living/pulsing/aura/cluster graph visual identity, and extends the Phase 28B handoff accordingly. See the [planning doc](phase-28a-true-graph-primary-overlay-contract.md). Implements no code and changes no behavior. |
 | 28B | Complete | True graph-primary surface frontend implementation pass (frontend presentation/structure only); implements the Phase 28A contract in `App.tsx`, `KnowledgeGraphPanel.tsx`, and `styles.css` — the graph now fills the entire viewport edge-to-edge at all breakpoints; the app masthead, the control rail, and the contextual dock are floating translucent glass overlays instead of flex-row layout siblings; the persistent control rail is replaced with a compact, icon-only, bottom-docked capsule that reveals labels on hover/focus; the graph explorer (legend/groups/node/edge lists) and node inspector are now summoned/selection-triggered floating glass cards (not always-visible edge columns); shell chrome carries no decorative accent color (Phase 28A §6.2); and the graph gained a living-identity groundwork — a subtle idle aura/breathing pulse on every node, a per-type resting halo, a stronger pulsing glow on the selected node, and an animated "energy flow" dash on edges incident to the selection. No backend/API/schema/dependency change, no graph mutation, no new runtime assets, no router/D3/Cytoscape/React Flow/3D. `npm run check:frontend` passes. |
 | 28C | Complete | True graph-primary surface QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the local backend (`8787`) and frontend (`5173`) after the Phase 28B implementation and captures honest, visually re-verified evidence of the true graph-primary shell — the default full-viewport graph (no sidebar/dashboard-column framing), the legend/lists overlay, the selected-node inspector, each of the Vault/Sources/Intelligence/Console overlays, and a narrow (~506px) viewport — with the directly exercised endpoints returning the same shapes/values as the established evidence trail (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a `phase-28c-*` screenshot set and an [evidence doc](demo/phase-28c-true-graph-primary-surface-qa-screenshot-evidence.md), including an honestly-recorded Sources-count discrepancy as a Known limitation rather than a fix. Implements no code and changes no behavior. |
-| 28D | Active | README / portfolio visual lock (documentation / portfolio only); locks the post-28B/28C graph-primary direction in the portfolio-facing docs — the README and roadmap now present Hive&#124;Mind as a graph-primary AI memory / intelligence workspace where the Knowledge Graph is the full application surface, supporting tools (Vault, Sources, Intelligence, Console, legend/lists, inspector) are contextual overlays, and the shell stays dark black/chrome/metal with minimal non-graph color — updates the README visual-evidence section to the existing Phase 28C captures, sharpens the portfolio narrative (deterministic backend-derived intelligence, human-directed assisted development with human review/merge control), and records the Phase 29A–29C sequence. **Docs-only:** no frontend/CSS/backend/API/schema/package/runtime behavior change and no new screenshots. See the [Phase 28D Visual Direction Lock](portfolio/phase-28d-visual-direction-lock.md). |
+| 28D | Complete | README / portfolio visual lock (documentation / portfolio only); locks the post-28B/28C graph-primary direction in the portfolio-facing docs — the README and roadmap now present Hive&#124;Mind as a graph-primary AI memory / intelligence workspace where the Knowledge Graph is the full application surface, supporting tools (Vault, Sources, Intelligence, Console, legend/lists, inspector) are contextual overlays, and the shell stays dark black/chrome/metal with minimal non-graph color — updates the README visual-evidence section to the existing Phase 28C captures, sharpens the portfolio narrative (deterministic backend-derived intelligence, human-directed assisted development with human review/merge control), and records the Phase 29A–29C sequence. **Docs-only:** no frontend/CSS/backend/API/schema/package/runtime behavior change and no new screenshots. See the [Phase 28D Visual Direction Lock](portfolio/phase-28d-visual-direction-lock.md). |
 
 ## Upcoming phases
 
 | Phase | Status | Notes |
 | --- | ---: | --- |
-| 29A | Planned | Graph interaction + overlay polish planning (**planning / documentation only**, before any implementation); scopes the next graph interaction + overlay polish pass against the Phase 28A contract — no code changes in this phase. |
-| 29B | Planned | Frontend polish implementation pass (frontend presentation only); implements the Phase 29A scope — graph interaction + overlay polish concentrated in nodes, edges, groups, aura, pulse, and selection; no backend/API/schema/package change; graph stays read-only. |
+| 29A | In progress | Graph interaction + overlay polish planning (**planning / documentation only**, before any implementation); scopes the next graph interaction + overlay polish pass against the Phase 28A contract — hover/select/deselect behavior, overlay hierarchy/stacking, inspector/utility behavior, pulse/aura/group rules, keyboard/command-surface direction, and the Phase 29B allowed/forbidden scope. **Scope: docs/planning only — no code changes in this phase.** See the [planning doc](planning/phase-29a-graph-interaction-overlay-polish-planning.md). |
+| 29B | Planned | Phase 29B — Graph Interaction + Overlay Polish Frontend Implementation Pass (frontend presentation only, **not yet implemented**); implements the Phase 29A contract — graph interaction + overlay polish concentrated in nodes, edges, groups, aura, pulse, and selection; no backend/API/schema/package change; graph stays read-only. |
 | 29C | Planned | QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the connected runtime after Phase 29B and refreshes the screenshot evidence trail while preserving history. |
 
 ## Future roadmap

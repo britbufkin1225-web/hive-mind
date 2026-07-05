@@ -109,20 +109,29 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 28D - README / Portfolio Visual Lock`
-  (documentation / portfolio only). Phase 28D locks the graph-primary
+- **Active phase:** `Phase 29A - Graph Interaction + Overlay Polish Planning`
+  (planning / documentation only). Phase 29A defines the interaction and
+  overlay polish contract for the next frontend wave — graph
+  hover/select/deselect behavior, overlay hierarchy and stacking, inspector
+  and utility/menu behavior, pulse/aura/group interaction rules, the
+  keyboard/command-surface direction, and the exact Phase 29B
+  allowed/forbidden scope — before any implementation. The app remains
+  graph-primary, read-only, and portfolio/demo-focused. Docs/planning only:
+  no frontend/CSS/backend/API/schema/package/runtime change and no new
+  screenshots. See the
+  [Phase 29A planning doc](docs/planning/phase-29a-graph-interaction-overlay-polish-planning.md).
+  The preceding **Phase 28D** (complete) locked the graph-primary
   visual/product direction in the portfolio-facing docs after the Phase 28B
   implementation and the Phase 28C evidence pass: the README now presents
   Hive|Mind as a graph-primary AI memory / intelligence workspace — the
   Knowledge Graph is the full application surface, supporting tools appear as
   contextual overlays, and the shell stays dark black/chrome/metal with the
-  color energy concentrated in the graph. Docs-only: no
-  frontend/CSS/backend/API/schema/package/runtime change and no new
-  screenshots. The next planned sequence is:
-  - **Phase 28D** — README / portfolio visual lock *(this phase)*.
-  - **Phase 29A** — graph interaction + overlay polish planning (planning only,
-    before any implementation).
-  - **Phase 29B** — frontend polish implementation.
+  color energy concentrated in the graph. The current phase sequence is:
+  - **Phase 28D** — README / portfolio visual lock *(complete)*.
+  - **Phase 29A** — graph interaction + overlay polish planning *(this
+    phase; planning only, before any implementation)*.
+  - **Phase 29B** — graph interaction + overlay polish frontend
+    implementation pass.
   - **Phase 29C** — QA + screenshot evidence refresh.
 - **Preceding phases 28A–28C:** Phase 28A tightened the graph-first
   direction into a stricter true graph-primary contract; Phase 28B implemented
@@ -422,8 +431,9 @@ foundations should be stable and honest before they are clever.
 The later phases — 26A–26C (graph visual identity), 27A–27E (graph-first app
 shell / full-viewfinder surface), and 28A–28C (true graph-primary surface
 contract, implementation, and screenshot evidence) — are recorded in full in
-the [roadmap phase history](docs/roadmap.md#phase-history); Phase 28D (this
-README / portfolio visual lock) is the active documentation phase.
+the [roadmap phase history](docs/roadmap.md#phase-history); Phase 28D (the
+README / portfolio visual lock) is complete, and Phase 29A (graph interaction
++ overlay polish planning) is the active planning phase.
 
 ## Planned logic
 
@@ -494,9 +504,9 @@ The current phase sequence:
 
 | Phase | Status | Focus |
 | --- | ---: | --- |
-| Phase 28D | Active | README / portfolio visual lock (documentation only). |
-| Phase 29A | Planned | Graph interaction + overlay polish planning (planning only, before any implementation). |
-| Phase 29B | Planned | Frontend polish implementation. |
+| Phase 28D | Complete | README / portfolio visual lock (documentation only). |
+| Phase 29A | Active | Graph interaction + overlay polish planning (planning only, before any implementation). |
+| Phase 29B | Planned | Graph interaction + overlay polish frontend implementation pass. |
 | Phase 29C | Planned | QA + screenshot evidence refresh. |
 
 The historical planned-phase table below is preserved as recorded phase
