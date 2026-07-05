@@ -32,18 +32,24 @@ and the [Phase 28A True Graph-Primary Surface + Overlay Contract](phase-28a-true
 
 ## Current status
 
-**Active phase:** Phase 29A — Graph Interaction + Overlay Polish Planning
-(planning / documentation only). Phase 29A defines the interaction and
-overlay polish contract for the next frontend wave — graph
-hover/select/deselect behavior, overlay hierarchy/stacking, inspector and
-utility/menu behavior, pulse/aura/group interaction rules, the
-keyboard/command-surface direction, and the exact Phase 29B
-allowed/forbidden scope — before any implementation. **Scope: docs/planning
-only** — no frontend/CSS/backend/API/schema/package/runtime behavior change
-and no new screenshots. See the
-[Phase 29A planning doc](planning/phase-29a-graph-interaction-overlay-polish-planning.md).
+**Current phase:** Phase 29C — Graph Interaction + Overlay Polish QA +
+Screenshot Evidence Refresh (QA / evidence / documentation only). Phase 29C
+re-runs the connected local runtime (backend `8787`, frontend `5173`) after
+the Phase 29B implementation and verifies the Phase 29A interaction contract
+against the real app — hover lifts, the three-tier selected > related >
+ambient emphasis model, in-place selection switching, edge selection,
+empty-canvas deselect, the Escape dismissal order, overlay
+exclusivity/persistence, focus management, and narrow-viewport behavior —
+capturing a fresh `phase-29c-connected-*` screenshot set while preserving
+prior evidence history. **Scope: QA/evidence/docs only** — no
+frontend/CSS/backend/API/schema/package/runtime behavior change and no
+implementation fixes. See the
+[Phase 29C evidence doc](demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md).
+Phase 29B (complete) implemented the
+[Phase 29A](planning/phase-29a-graph-interaction-overlay-polish-planning.md)
+interaction contract as a frontend-only presentation/interaction pass.
 
-The sequence around Phase 29A:
+The sequence around Phase 29C:
 
 - **Phase 28D** — README / portfolio visual lock (**complete**); locked the
   post-28B/28C graph-primary direction in the portfolio-facing docs — the
@@ -52,11 +58,12 @@ The sequence around Phase 29A:
   appear as contextual overlays rather than permanent dashboard columns, and
   the shell stays dark black/chrome/metal with minimal non-graph color. See
   the [Phase 28D Visual Direction Lock](portfolio/phase-28d-visual-direction-lock.md).
-- **Phase 29A** — graph interaction + overlay polish planning (**this
-  phase**; planning only).
+- **Phase 29A** — graph interaction + overlay polish planning (**complete**;
+  planning only).
 - **Phase 29B** — Graph Interaction + Overlay Polish Frontend Implementation
-  Pass (**not yet implemented**).
-- **Phase 29C** — QA + screenshot evidence refresh (**not yet started**).
+  Pass (**complete**).
+- **Phase 29C** — QA + screenshot evidence refresh (**this phase**;
+  QA/evidence/docs only).
 
 The preceding **Phase 28C** verified the connected runtime after the Phase
 28B implementation and captured fresh, visually re-verified screenshots of
@@ -447,7 +454,7 @@ Current non-capabilities:
 | --- | ---: | --- |
 | 29A | Complete | Graph interaction + overlay polish planning (**planning / documentation only**, before any implementation); scopes the next graph interaction + overlay polish pass against the Phase 28A contract — hover/select/deselect behavior, overlay hierarchy/stacking, inspector/utility behavior, pulse/aura/group rules, keyboard/command-surface direction, and the Phase 29B allowed/forbidden scope. **Scope: docs/planning only — no code changes in this phase.** See the [planning doc](planning/phase-29a-graph-interaction-overlay-polish-planning.md). |
 | 29B | Complete | Phase 29B — Graph Interaction + Overlay Polish Frontend Implementation Pass (frontend presentation/interaction only); implements the Phase 29A contract in `KnowledgeGraphPanel.tsx`, `App.tsx`, and `styles.css` — the canvas gains the three-tier selected > related > ambient emphasis model, additive hover lifts (hovered node lightens incident edges; hovered edge lifts its stroke and endpoints), empty-canvas click-to-deselect, the Phase 29A Escape dismissal order (tertiary dock → explorer → selection/inspector, one surface per press), and overlay focus management (summoned panes take focus and return it on dismissal). No backend/API/schema/package change; graph stays read-only; screenshots/evidence deferred to Phase 29C. |
-| 29C | Planned | QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the connected runtime after Phase 29B and refreshes the screenshot evidence trail while preserving history. |
+| 29C | Complete | QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the connected local runtime (backend `8787`, frontend `5173`) after the Phase 29B implementation and verifies the Phase 29A interaction contract against the real app via 28 scripted checks — additive hover lifts on nodes/edges, the three-tier selected > related > ambient/dimmed emphasis, flicker-free in-place selection switching, edge selection, empty-canvas deselect (and its no-op with nothing selected), the Escape dismissal order (tertiary dock → explorer → selection/inspector), one-tertiary-overlay-at-a-time exclusivity, deliberate-overlay persistence across deselection, summon/dismiss focus management, and narrow-viewport (420px) behavior — with the directly exercised endpoints returning the same shapes/values as the established evidence trail (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a visually re-verified `phase-29c-connected-*` screenshot set and an [evidence doc](demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md), including two honestly-recorded interaction rough edges (Escape focus scoping after dock close; focused-rail label overflow at very narrow widths) as Known limitations rather than fixes. Implements no code and changes no behavior. |
 
 ## Future roadmap
 
