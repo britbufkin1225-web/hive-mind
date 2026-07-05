@@ -98,6 +98,10 @@ what makes it auditable.
 > [`docs/demo/screenshots/`](docs/demo/screenshots/), and the capture session is
 > documented in the
 > [Phase 28C True Graph-Primary Surface QA + Screenshot Evidence](docs/demo/phase-28c-true-graph-primary-surface-qa-screenshot-evidence.md)
+> note. The Phase 29B interaction polish (hover lifts, three-tier selection
+> emphasis, edge selection, overlay behavior) is captured in the newer
+> `phase-29c-connected-*` set, documented in the
+> [Phase 29C Graph Interaction + Overlay Polish QA + Screenshot Evidence](docs/demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md)
 > note. The earlier dashboard-era `phase-23b-*` / `phase-25c-*` capture sets are
 > preserved in `docs/demo/screenshots/` as history.
 
@@ -109,18 +113,24 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 29B - Graph Interaction + Overlay Polish Frontend
-  Implementation Pass` (frontend presentation/interaction only). Phase 29B
-  implements the Phase 29A interaction contract: the graph canvas gains the
-  three-tier selected > related > ambient emphasis model, restrained additive
-  hover lifts for nodes and edges, empty-canvas click-to-deselect, the
-  Phase 29A Escape dismissal order (tertiary dock → explorer →
-  selection/inspector, one surface per press), and focus management for the
-  summoned overlays. The app remains graph-primary, read-only, and
-  portfolio/demo-focused: no backend/API/schema/package/runtime change and no
-  new screenshots (evidence refresh is Phase 29C). See the
+- **Current phase:** `Phase 29C - Graph Interaction + Overlay Polish QA +
+  Screenshot Evidence Refresh` (QA / evidence / documentation only). Phase 29C
+  verifies the Phase 29B implementation against the connected local runtime
+  and refreshes the screenshot evidence trail — 28 scripted interaction checks
+  (hover lifts, three-tier selection emphasis, in-place selection switching,
+  edge selection, empty-canvas deselect, Escape dismissal order, overlay
+  exclusivity/persistence, focus management, narrow viewport) plus a
+  `phase-29c-connected-*` screenshot set, with no frontend/CSS/backend/API/
+  schema/package change and no implementation fixes. See the
+  [Phase 29C evidence doc](docs/demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md).
+  The preceding **Phase 29B** (complete) implemented the Phase 29A interaction
+  contract as a frontend-only pass: the graph canvas gained the three-tier
+  selected > related > ambient emphasis model, restrained additive hover lifts
+  for nodes and edges, empty-canvas click-to-deselect, the Phase 29A Escape
+  dismissal order (tertiary dock → explorer → selection/inspector, one surface
+  per press), and focus management for the summoned overlays — see the
   [Phase 29A planning doc](docs/planning/phase-29a-graph-interaction-overlay-polish-planning.md).
-  The preceding **Phase 28D** (complete) locked the graph-primary
+  Before that, **Phase 28D** (complete) locked the graph-primary
   visual/product direction in the portfolio-facing docs after the Phase 28B
   implementation and the Phase 28C evidence pass: the README now presents
   Hive|Mind as a graph-primary AI memory / intelligence workspace — the
@@ -130,8 +140,8 @@ SVG visualization.
   - **Phase 28D** — README / portfolio visual lock *(complete)*.
   - **Phase 29A** — graph interaction + overlay polish planning *(complete)*.
   - **Phase 29B** — graph interaction + overlay polish frontend
-    implementation pass *(this phase)*.
-  - **Phase 29C** — QA + screenshot evidence refresh *(next)*.
+    implementation pass *(complete)*.
+  - **Phase 29C** — QA + screenshot evidence refresh *(this phase)*.
 - **Preceding phases 28A–28C:** Phase 28A tightened the graph-first
   direction into a stricter true graph-primary contract; Phase 28B implemented
   it — the Knowledge Graph fills the entire viewport edge-to-edge with no
@@ -431,9 +441,10 @@ The later phases — 26A–26C (graph visual identity), 27A–27E (graph-first a
 shell / full-viewfinder surface), and 28A–28C (true graph-primary surface
 contract, implementation, and screenshot evidence) — are recorded in full in
 the [roadmap phase history](docs/roadmap.md#phase-history); Phase 28D (the
-README / portfolio visual lock) and Phase 29A (graph interaction + overlay
-polish planning) are complete, and Phase 29B (the graph interaction + overlay
-polish frontend implementation pass) is the active phase.
+README / portfolio visual lock), Phase 29A (graph interaction + overlay
+polish planning), Phase 29B (the graph interaction + overlay polish frontend
+implementation pass), and Phase 29C (its QA + screenshot evidence refresh)
+are complete.
 
 ## Planned logic
 
@@ -506,8 +517,8 @@ The current phase sequence:
 | --- | ---: | --- |
 | Phase 28D | Complete | README / portfolio visual lock (documentation only). |
 | Phase 29A | Complete | Graph interaction + overlay polish planning (planning only, before any implementation). |
-| Phase 29B | Active | Graph interaction + overlay polish frontend implementation pass (screenshot evidence deferred to Phase 29C). |
-| Phase 29C | Planned | QA + screenshot evidence refresh. |
+| Phase 29B | Complete | Graph interaction + overlay polish frontend implementation pass (screenshot evidence deferred to Phase 29C). |
+| Phase 29C | Complete | QA + screenshot evidence refresh; see the [evidence doc](docs/demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md). |
 
 The historical planned-phase table below is preserved as recorded phase
 history; the [full roadmap](docs/roadmap.md) is the canonical, up-to-date
@@ -680,6 +691,7 @@ npm run dev:frontend
 - [Phase 28A True Graph-Primary Surface + Overlay Contract](docs/phase-28a-true-graph-primary-overlay-contract.md)
 - [Phase 28C True Graph-Primary Surface QA + Screenshot Evidence Refresh](docs/demo/phase-28c-true-graph-primary-surface-qa-screenshot-evidence.md)
 - [Phase 28D Visual Direction Lock](docs/portfolio/phase-28d-visual-direction-lock.md)
+- [Phase 29C Graph Interaction + Overlay Polish QA + Screenshot Evidence Refresh](docs/demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md)
 - [Demo Guide](docs/demo-guide.md)
 - [Demo Script (earlier walkthrough)](docs/demo-script.md)
 - [Screenshot Checklist](docs/screenshot-checklist.md)
