@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../api/client";
 import type { HiveMetadata, KnowledgeGraphResponse } from "../types/api";
 import {
@@ -444,15 +444,21 @@ function GraphCanvas({
   edges,
   selectedNodeId,
   selectedEdgeId,
+  relatedNodeIds,
+  hasSelection,
   onSelectNode,
   onSelectEdge,
+  onClearSelection,
 }: {
   nodes: GraphViewNode[];
   edges: GraphViewEdge[];
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
+  relatedNodeIds: Set<string>;
+  hasSelection: boolean;
   onSelectNode: (id: string) => void;
   onSelectEdge: (id: string) => void;
+  onClearSelection: () => void;
 }) {
   const layout = useMemo(
     () => computeGraphLayout(nodes, edges),
@@ -467,6 +473,18 @@ function GraphCanvas({
     return m;
   }, [edges]);
 
+  // Phase 29B hover affordance state, kept local to the canvas: hover is a
+  // transient presentation cue (it lifts the hovered element and its direct
+  // neighbors) and must never drive overlays, dimming, or data flow — so it
+  // deliberately never leaves this component (Phase 29A hover contract).
+  // Focus mirrors hover so keyboard traversal gets the same affordance.
+  const [hoverNodeId, setHoverNodeId] = useState<string | null>(null);
+  const [hoverEdge, setHoverEdge] = useState<{
+    id: string;
+    source: string;
+    target: string;
+  } | null>(null);
+
   if (layout.nodes.length === 0) {
     return null;
   }
@@ -479,6 +497,15 @@ function GraphCanvas({
         role="group"
         aria-label="Knowledge graph visualization"
         preserveAspectRatio="xMidYMid meet"
+        // Clicking empty canvas deselects; with nothing selected it does
+        // nothing (Phase 29A "clicking empty graph space"). Node/edge clicks
+        // land on painted child elements, so target === currentTarget is
+        // true only for genuinely empty space.
+        onClick={(event) => {
+          if (event.target === event.currentTarget && hasSelection) {
+            onClearSelection();
+          }
+        }}
       >
           <defs>
             <marker
@@ -501,13 +528,34 @@ function GraphCanvas({
                 selectedNodeId !== null &&
                 (edge.source === selectedNodeId ||
                   edge.target === selectedNodeId);
+              // Phase 29B three-tier emphasis: with a selection active, edges
+              // that are neither selected nor incident recede so the active
+              // context reads first. Hover lifts are purely additive.
+              const dimmed = hasSelection && !selected && !incident;
+              const hovered = hoverEdge?.id === edge.id;
+              const hoverLift =
+                hoverNodeId !== null &&
+                (edge.source === hoverNodeId || edge.target === hoverNodeId);
               const className = [
                 "graph-canvas-edge",
                 selected ? "graph-canvas-edge-selected" : "",
                 incident ? "graph-canvas-edge-incident" : "",
+                dimmed ? "graph-canvas-edge-dimmed" : "",
+                hovered ? "graph-canvas-edge-hovered" : "",
+                hoverLift ? "graph-canvas-edge-hover-lift" : "",
               ]
                 .filter(Boolean)
                 .join(" ");
+              const setHover = () =>
+                setHoverEdge({
+                  id: edge.id,
+                  source: edge.source,
+                  target: edge.target,
+                });
+              const clearHover = () =>
+                setHoverEdge((current) =>
+                  current?.id === edge.id ? null : current,
+                );
               return (
                 <g key={edge.id} data-edge-type={edgeTypeById.get(edge.id) ?? ""}>
                   <line
@@ -521,6 +569,7 @@ function GraphCanvas({
                   {/* Wider transparent line so thin edges are easy to click. */}
                   <line
                     className="graph-canvas-edge-hit"
+                    data-edge-id={edge.id}
                     x1={edge.x1}
                     y1={edge.y1}
                     x2={edge.x2}
@@ -536,6 +585,10 @@ function GraphCanvas({
                         onSelectEdge(edge.id);
                       }
                     }}
+                    onMouseEnter={setHover}
+                    onMouseLeave={clearHover}
+                    onFocus={setHover}
+                    onBlur={clearHover}
                   />
                 </g>
               );
@@ -545,13 +598,30 @@ function GraphCanvas({
           <g className="graph-canvas-nodes">
             {layout.nodes.map((node) => {
               const selected = node.id === selectedNodeId;
+              // Related nodes (direct neighbors of the selection, or the two
+              // endpoints of a selected edge) form the middle emphasis tier:
+              // brighter than dimmed ambient nodes, quieter than the
+              // selection itself (Phase 29A "exactly three tiers").
+              const isRelated = !selected && relatedNodeIds.has(node.id);
+              const dimmed = hasSelection && !selected && !isRelated;
+              const endpointLift =
+                hoverEdge !== null &&
+                (hoverEdge.source === node.id || hoverEdge.target === node.id);
+              const className = [
+                "graph-canvas-node",
+                selected ? "graph-canvas-node-selected" : "",
+                isRelated ? "graph-canvas-node-related" : "",
+                dimmed ? "graph-canvas-node-dimmed" : "",
+                endpointLift ? "graph-canvas-node-hover-endpoint" : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
               return (
                 <g
                   key={node.id}
-                  className={`graph-canvas-node${
-                    selected ? " graph-canvas-node-selected" : ""
-                  }`}
+                  className={className}
                   data-node-type={node.type}
+                  data-node-id={node.id}
                   transform={`translate(${node.x}, ${node.y})`}
                   role="button"
                   tabIndex={0}
@@ -566,6 +636,18 @@ function GraphCanvas({
                       onSelectNode(node.id);
                     }
                   }}
+                  onMouseEnter={() => setHoverNodeId(node.id)}
+                  onMouseLeave={() =>
+                    setHoverNodeId((current) =>
+                      current === node.id ? null : current,
+                    )
+                  }
+                  onFocus={() => setHoverNodeId(node.id)}
+                  onBlur={() =>
+                    setHoverNodeId((current) =>
+                      current === node.id ? null : current,
+                    )
+                  }
                 >
                   <circle className="graph-canvas-node-circle" r={node.radius} />
                   <text
@@ -596,6 +678,15 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
   // by default, rather than an always-visible side column — the graph alone
   // is the at-rest state (Phase 28A §1).
   const [explorerOpen, setExplorerOpen] = useState(false);
+
+  // Phase 29B focus management (Phase 29A "opening an overlay should move
+  // focus into it; dismissing it should return focus to the element that
+  // summoned it"): the explorer pane takes focus when summoned and hands it
+  // back to its toggle on dismissal; the inspector's close affordance hands
+  // focus back to the selected element on the canvas.
+  const panelRef = useRef<HTMLElement | null>(null);
+  const explorerRef = useRef<HTMLElement | null>(null);
+  const explorerToggleRef = useRef<HTMLButtonElement | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     setState("loading");
@@ -659,6 +750,42 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
   );
   const clearSelection = useCallback(() => setSelection(null), []);
 
+  /**
+   * Close the inspector from its explicit close affordance: clear the
+   * selection and return focus to the canvas element that anchored it, so
+   * keyboard users land back on the graph rather than on <body>. The canvas
+   * element stays mounted through the state change, so focusing it
+   * synchronously here is safe.
+   */
+  const closeInspector = useCallback(() => {
+    const host = panelRef.current;
+    const target =
+      host && selection
+        ? host.querySelector<SVGElement>(
+            selection.kind === "node"
+              ? `[data-node-id="${CSS.escape(selection.id)}"]`
+              : `[data-edge-id="${CSS.escape(selection.id)}"]`,
+          )
+        : null;
+    setSelection(null);
+    target?.focus();
+  }, [selection]);
+
+  /** Close the explorer and hand focus back to the toggle that summoned it. */
+  const closeExplorer = useCallback(() => {
+    setExplorerOpen(false);
+    explorerToggleRef.current?.focus();
+  }, []);
+
+  // Move focus into the explorer pane when it opens (it is a summoned
+  // surface, so focus follows the summons); closing paths return focus via
+  // closeExplorer above.
+  useEffect(() => {
+    if (explorerOpen) {
+      explorerRef.current?.focus();
+    }
+  }, [explorerOpen]);
+
   // Related elements drive the "focus + dim" hierarchy: with a selection
   // active, the selected record and anything connected to it stay prominent
   // while everything else is dimmed. Empty sets mean "nothing is related".
@@ -677,22 +804,23 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
 
   const hasSelection = selectedNode !== null || selectedEdge !== null;
 
-  // Escape closes whatever summoned overlay is topmost: the selection
-  // inspector first (it's the more specific, more recently opened context),
-  // then the explorer tray. Keyboard users can always back out to the bare
-  // graph without reaching for the mouse. Scoped to the panel via onKeyDown.
+  // Escape dismisses exactly one summoned surface per press, walking the
+  // Phase 29A stack order (tertiary dock → explorer → selection/inspector;
+  // the dock layer is handled in App.tsx before this handler can run). The
+  // explorer closes before the selection so repeated presses step down to a
+  // bare graph predictably. Scoped to the panel via onKeyDown.
   const handlePanelKeyDown = useCallback(
     (event: KeyboardEvent<HTMLElement>) => {
       if (event.key !== "Escape") {
         return;
       }
-      if (hasSelection) {
+      if (explorerOpen) {
+        closeExplorer();
+      } else if (hasSelection) {
         clearSelection();
-      } else if (explorerOpen) {
-        setExplorerOpen(false);
       }
     },
-    [hasSelection, clearSelection, explorerOpen],
+    [explorerOpen, closeExplorer, hasSelection, clearSelection],
   );
 
   const hasNodes = model.nodes.length > 0;
@@ -715,6 +843,7 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
 
   return (
     <section
+      ref={panelRef}
       className="knowledge-graph-panel graph-viewfinder"
       id={id}
       onKeyDown={handlePanelKeyDown}
@@ -754,8 +883,11 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
             edges={model.edges}
             selectedNodeId={selectedNode?.id ?? null}
             selectedEdgeId={selectedEdge?.id ?? null}
+            relatedNodeIds={related.nodeIds}
+            hasSelection={hasSelection}
             onSelectNode={selectNode}
             onSelectEdge={selectEdge}
+            onClearSelection={clearSelection}
           />
         )}
       </div>
@@ -786,6 +918,7 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
             {state === "success" && !isEmptyGraph && (
               <button
                 type="button"
+                ref={explorerToggleRef}
                 className={
                   explorerOpen
                     ? "source-refresh graph-explorer-toggle graph-explorer-toggle-active"
@@ -824,6 +957,10 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
         {state === "success" && !isEmptyGraph && explorerOpen && (
           <aside
             id="graph-explorer-pane"
+            ref={explorerRef}
+            // Focusable as a container so summoning it can move focus into
+            // the pane without adding it to the tab order.
+            tabIndex={-1}
             className="viewfinder-pane viewfinder-pane-explorer"
             aria-label="Graph legend, groups, and lists"
           >
@@ -832,7 +969,7 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
               <button
                 type="button"
                 className="viewfinder-pane-close"
-                onClick={() => setExplorerOpen(false)}
+                onClick={closeExplorer}
               >
                 Close
               </button>
@@ -940,7 +1077,7 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
               <button
                 type="button"
                 className="viewfinder-pane-close"
-                onClick={clearSelection}
+                onClick={closeInspector}
               >
                 Close
               </button>

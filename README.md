@@ -109,16 +109,16 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Active phase:** `Phase 29A - Graph Interaction + Overlay Polish Planning`
-  (planning / documentation only). Phase 29A defines the interaction and
-  overlay polish contract for the next frontend wave — graph
-  hover/select/deselect behavior, overlay hierarchy and stacking, inspector
-  and utility/menu behavior, pulse/aura/group interaction rules, the
-  keyboard/command-surface direction, and the exact Phase 29B
-  allowed/forbidden scope — before any implementation. The app remains
-  graph-primary, read-only, and portfolio/demo-focused. Docs/planning only:
-  no frontend/CSS/backend/API/schema/package/runtime change and no new
-  screenshots. See the
+- **Active phase:** `Phase 29B - Graph Interaction + Overlay Polish Frontend
+  Implementation Pass` (frontend presentation/interaction only). Phase 29B
+  implements the Phase 29A interaction contract: the graph canvas gains the
+  three-tier selected > related > ambient emphasis model, restrained additive
+  hover lifts for nodes and edges, empty-canvas click-to-deselect, the
+  Phase 29A Escape dismissal order (tertiary dock → explorer →
+  selection/inspector, one surface per press), and focus management for the
+  summoned overlays. The app remains graph-primary, read-only, and
+  portfolio/demo-focused: no backend/API/schema/package/runtime change and no
+  new screenshots (evidence refresh is Phase 29C). See the
   [Phase 29A planning doc](docs/planning/phase-29a-graph-interaction-overlay-polish-planning.md).
   The preceding **Phase 28D** (complete) locked the graph-primary
   visual/product direction in the portfolio-facing docs after the Phase 28B
@@ -128,11 +128,10 @@ SVG visualization.
   contextual overlays, and the shell stays dark black/chrome/metal with the
   color energy concentrated in the graph. The current phase sequence is:
   - **Phase 28D** — README / portfolio visual lock *(complete)*.
-  - **Phase 29A** — graph interaction + overlay polish planning *(this
-    phase; planning only, before any implementation)*.
+  - **Phase 29A** — graph interaction + overlay polish planning *(complete)*.
   - **Phase 29B** — graph interaction + overlay polish frontend
-    implementation pass.
-  - **Phase 29C** — QA + screenshot evidence refresh.
+    implementation pass *(this phase)*.
+  - **Phase 29C** — QA + screenshot evidence refresh *(next)*.
 - **Preceding phases 28A–28C:** Phase 28A tightened the graph-first
   direction into a stricter true graph-primary contract; Phase 28B implemented
   it — the Knowledge Graph fills the entire viewport edge-to-edge with no
@@ -432,8 +431,9 @@ The later phases — 26A–26C (graph visual identity), 27A–27E (graph-first a
 shell / full-viewfinder surface), and 28A–28C (true graph-primary surface
 contract, implementation, and screenshot evidence) — are recorded in full in
 the [roadmap phase history](docs/roadmap.md#phase-history); Phase 28D (the
-README / portfolio visual lock) is complete, and Phase 29A (graph interaction
-+ overlay polish planning) is the active planning phase.
+README / portfolio visual lock) and Phase 29A (graph interaction + overlay
+polish planning) are complete, and Phase 29B (the graph interaction + overlay
+polish frontend implementation pass) is the active phase.
 
 ## Planned logic
 
@@ -505,8 +505,8 @@ The current phase sequence:
 | Phase | Status | Focus |
 | --- | ---: | --- |
 | Phase 28D | Complete | README / portfolio visual lock (documentation only). |
-| Phase 29A | Active | Graph interaction + overlay polish planning (planning only, before any implementation). |
-| Phase 29B | Planned | Graph interaction + overlay polish frontend implementation pass. |
+| Phase 29A | Complete | Graph interaction + overlay polish planning (planning only, before any implementation). |
+| Phase 29B | Active | Graph interaction + overlay polish frontend implementation pass (screenshot evidence deferred to Phase 29C). |
 | Phase 29C | Planned | QA + screenshot evidence refresh. |
 
 The historical planned-phase table below is preserved as recorded phase
