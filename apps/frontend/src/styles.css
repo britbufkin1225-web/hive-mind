@@ -3576,6 +3576,30 @@ body,
     opacity: 1;
     transform: translateY(0);
   }
+
+  /* Phase 30B — responsive rail containment. The at-rest icon-only rail fits
+     at every width and is left untouched; the overflow only appears in the
+     focused/expanded state, where `:focus-within` reveals all four labels at
+     once and the widened labeled rail runs past a narrow viewport edge
+     (clipping the last label at ~420px). Below the narrow breakpoint, reveal
+     only the label of the button actually hovered/focused — not all four — and
+     clamp its width, so the expanded rail always stays on-screen. The label
+     text remains in the accessibility tree either way, so screen-reader naming
+     is unchanged; desktop (wider) rail behavior is untouched. */
+  .shell-rail:focus-within .shell-rail-label {
+    max-width: 0;
+    margin-left: 0;
+    padding-right: 0;
+    opacity: 0;
+  }
+
+  .shell-rail-button:hover .shell-rail-label,
+  .shell-rail-button:focus-visible .shell-rail-label {
+    max-width: min(8rem, 42vw);
+    margin-left: 0.55rem;
+    padding-right: 0.35rem;
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3609,6 +3633,15 @@ body,
 .graph-viewfinder {
   position: relative;
   overflow: hidden;
+}
+
+/* Phase 30B: the panel receives focus only programmatically (tabIndex={-1})
+   when the shell hands focus back after a dock closes — it is background
+   chrome, never a tab stop — so a focus ring on the full-viewport surface
+   would be visual noise. Suppressing it costs no keyboard affordance because
+   the inner controls keep their own focus-visible rings. */
+.graph-viewfinder:focus {
+  outline: none;
 }
 
 /* === Base layer: the canvas is the app background =========================
