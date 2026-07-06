@@ -113,17 +113,30 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 30A - Post-Polish Interaction Triage + Next
-  Frontend Direction Planning` (planning / documentation only). Phase 30A
-  reviews the Phase 29C QA outcome, triages the two honestly-recorded
-  interaction rough edges (Escape focus-scoping after dock close; focused-rail
-  label overflow at ~420px) into a prioritized next wave, and locks a narrow
-  implementation contract for **Phase 30B — Interaction Recovery + Responsive
-  Rail Frontend Implementation Pass** (allowed: `KnowledgeGraphPanel.tsx`,
-  `styles.css`, and `App.tsx` only if focus/overlay wiring requires) — before
-  any frontend code is touched, with the graph-primary surface direction
-  re-locked. **Docs-only:** no frontend/CSS/backend/API/schema/package/runtime/
-  screenshot change and no implementation fixes. See the
+- **Current phase:** `Phase 31A - Premium Graph Interaction + Portfolio Demo
+  Direction Planning` (planning / documentation only). Phase 31A defines the
+  next premium frontend direction — how Hive|Mind moves from a *functional
+  graph-primary interface* toward a *portfolio-grade premium graph intelligence
+  demo* — before any implementation. It specifies the premium interaction model
+  (calm at-rest state; additive hover/focus; selected-node storytelling via the
+  `selected > related > ambient` emphasis tiers; first-class edge/relationship
+  selection; predictable deselect/Escape; dim-not-delete de-emphasis; restrained
+  aura/pulse tied to real selection/type state; keyboard parity and
+  `prefers-reduced-motion` support), the overlay/command-surface direction (all
+  supporting tools stay summoned, bounded, exclusive glass overlays — never
+  sidebars/dashboards/columns), the portfolio demo story (a 30–90-second honest
+  walkthrough backed by real connected runtime states with six defined hero
+  screenshot states), and the scoped **Phase 31B** implementation pass and
+  **Phase 31C** QA/screenshot-evidence pass. **Docs-only:** no frontend/CSS/
+  backend/API/schema/package/runtime/screenshot change. See the
+  [Phase 31A planning doc](docs/planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md).
+  The preceding **Phase 30A** (complete) triaged the two Phase 29C interaction
+  rough edges and locked a narrow Phase 30B contract; **Phase 30B's
+  interaction-recovery fix then landed in code** (PR #109 — predictable
+  Escape/focus after dock close and a narrow-viewport responsive rail rule).
+  **Phase 30C (QA + screenshot evidence) has not yet run**, so the Phase 30B fix
+  is implemented but not yet independently QA-verified against the connected
+  runtime; the proposed Phase 31C absorbs that outstanding verification. See the
   [Phase 30A planning doc](docs/phase-30a-post-polish-interaction-triage.md).
   The preceding **Phase 29C** (complete) verified the Phase 29B implementation
   against the connected local runtime and refreshed the screenshot evidence
@@ -154,6 +167,11 @@ SVG visualization.
     implementation pass *(complete)*.
   - **Phase 29C** — QA + screenshot evidence refresh *(complete)*.
   - **Phase 30A** — post-polish interaction triage + next frontend direction
+    planning *(complete)*.
+  - **Phase 30B** — interaction recovery + responsive rail frontend
+    implementation *(landed in code, PR #109; not yet QA-verified)*.
+  - **Phase 30C** — interaction recovery QA + screenshot evidence *(not run)*.
+  - **Phase 31A** — premium graph interaction + portfolio demo direction
     planning *(this phase)*.
 - **Preceding phases 28A–28C:** Phase 28A tightened the graph-first
   direction into a stricter true graph-primary contract; Phase 28B implemented
@@ -533,8 +551,11 @@ The current phase sequence:
 | Phase 29B | Complete | Graph interaction + overlay polish frontend implementation pass (screenshot evidence deferred to Phase 29C). |
 | Phase 29C | Complete | QA + screenshot evidence refresh; see the [evidence doc](docs/demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md). |
 | Phase 30A | Complete | Post-polish interaction triage + next frontend direction planning (planning only, before any implementation); triages the two Phase 29C interaction limitations and locks the narrow Phase 30B contract. See the [planning doc](docs/phase-30a-post-polish-interaction-triage.md). |
-| Phase 30B | Planned | Interaction Recovery + Responsive Rail Frontend Implementation Pass (frontend only, per the Phase 30A contract). |
-| Phase 30C | Planned | Interaction Recovery QA + Screenshot Evidence Refresh (QA / evidence only, after Phase 30B). |
+| Phase 30B | Complete (code) | Interaction Recovery + Responsive Rail Frontend Implementation Pass (frontend only, per the Phase 30A contract); landed in code via PR #109. **Not yet independently QA-verified — Phase 30C has not run.** |
+| Phase 30C | Not run | Interaction Recovery QA + Screenshot Evidence Refresh (QA / evidence only, after Phase 30B); **not yet executed** — the proposed Phase 31C absorbs this outstanding Phase 30B verification. |
+| Phase 31A | Complete | Premium Graph Interaction + Portfolio Demo Direction Planning (planning only, before any implementation); defines the premium interaction model, overlay/command-surface direction, portfolio demo story, and the scoped Phase 31B / 31C passes; honestly records that Phase 30C has not run. See the [planning doc](docs/planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md). |
+| Phase 31B | Planned | Premium Graph Interaction Frontend Implementation Pass (frontend only, per the Phase 31A direction); premium emphasis/hover/selection/edge/aura interaction over the existing SVG view model. Graph read-only; no new graph library; screenshots deferred to Phase 31C. |
+| Phase 31C | Planned | Premium Graph Interaction QA + Portfolio Screenshot Evidence Refresh (QA / evidence only, after Phase 31B); verify the premium interaction, capture the six hero screenshot states, and also verify the still-unverified Phase 30B recovery fix. |
 
 The historical planned-phase table below is preserved as recorded phase
 history; the [full roadmap](docs/roadmap.md) is the canonical, up-to-date
