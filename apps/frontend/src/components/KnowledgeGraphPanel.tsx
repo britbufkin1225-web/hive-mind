@@ -846,6 +846,13 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
       ref={panelRef}
       className="knowledge-graph-panel graph-viewfinder"
       id={id}
+      // Phase 30B: the panel owns the explorer/selection Escape scope
+      // (handlePanelKeyDown). Making it programmatically focusable (but not
+      // tab-reachable) lets the shell return focus here after a dock closes,
+      // so the next Escape lands inside this scope and keeps peeling surfaces
+      // instead of dying on a rail button outside it. It never joins the tab
+      // order, so keyboard traversal of the inner controls is unchanged.
+      tabIndex={-1}
       onKeyDown={handlePanelKeyDown}
       data-has-selection={hasSelection ? "true" : "false"}
     >

@@ -33,6 +33,10 @@ const PANEL_LABELS: Record<PanelKey, string> = {
   console: "Console",
 };
 
+// The graph panel's section id, shared between the mount below and the
+// dock-close focus-return so the two stay in lockstep.
+const GRAPH_PANEL_ID = "knowledge-graph";
+
 function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [vault, setVault] = useState<VaultSummaryResponse | null>(null);
@@ -40,9 +44,6 @@ function App() {
   const [activePanel, setActivePanel] = useState<PanelKey | null>(null);
 
   const dockRef = useRef<HTMLElement | null>(null);
-  const railButtonRefs = useRef<Partial<Record<PanelKey, HTMLButtonElement | null>>>(
-    {},
-  );
 
   useEffect(() => {
     Promise.all([apiClient.getHealth(), apiClient.getVaultSummary()])
@@ -60,12 +61,16 @@ function App() {
   }, []);
 
   const closePanel = useCallback(() => {
-    setActivePanel((current) => {
-      if (current) {
-        railButtonRefs.current[current]?.focus();
-      }
-      return null;
-    });
+    setActivePanel(null);
+    // Phase 30B: return focus to the graph panel — which owns the
+    // explorer/selection Escape scope — rather than to the rail button that
+    // summoned the dock. The rail button sits outside that scope, so leaving
+    // focus there made the next Escape a dead key until the user re-entered
+    // the panel; landing focus inside the panel keeps the dismissal stack
+    // (dock → explorer → selection) working press-for-press. The panel stays
+    // mounted through the close, so focusing it synchronously here is safe and
+    // needs no timeout; it never traps focus since Tab still moves freely.
+    document.getElementById(GRAPH_PANEL_ID)?.focus();
   }, []);
 
   const togglePanel = useCallback((key: PanelKey) => {
@@ -134,7 +139,7 @@ function App() {
 
       <div className="shell-body">
         <main id="graph-viewport" className="shell-graph-viewport">
-          <KnowledgeGraphPanel id="knowledge-graph" />
+          <KnowledgeGraphPanel id={GRAPH_PANEL_ID} />
         </main>
 
         {/* Floating utility rail: a translucent icon dock that sits over the
@@ -147,9 +152,6 @@ function App() {
               <li key={item.key}>
                 <button
                   type="button"
-                  ref={(element) => {
-                    railButtonRefs.current[item.key] = element;
-                  }}
                   className={
                     activePanel === item.key
                       ? "shell-rail-button shell-rail-button-active"
