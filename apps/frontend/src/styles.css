@@ -4594,3 +4594,160 @@ body,
   }
 }
 
+/* ============================================================================
+   Phase 31F — Graph micro-interaction + command-surface refinement
+   Continues the graph-primary polish from 31B–31E without changing data, API,
+   graph logic, or layout. Two intents, both purely presentational: (1) make the
+   graph's hover/focus/selected/related state changes feel smoother and more
+   intentional — unify the easing so emphasis glides rather than snaps, let a
+   hovered node light up its own aura, and add a quiet tactile "press" on commit;
+   (2) refine the command/tool surface — clearer, more premium active/hover/
+   pressed states on the floating rail and the overlay controls — while keeping
+   overlays translucent and colour graph-owned (the same cool identity violet the
+   nodes/edges already use; no new decorative palette). Appended last so it wins
+   the cascade over earlier phase blocks without editing scattered legacy rules
+   (avoids the broad-cleanup this phase forbids). Every new transition/transform
+   is nulled under prefers-reduced-motion in the guard at the end of this block,
+   and the tiered animation budget is unchanged — nothing here adds a new looping
+   animation; the press/glow cues are transient, input-driven state changes only.
+   ============================================================================ */
+
+/* --- 1. Smoother node emphasis --------------------------------------------
+   The base node circle transitioned only fill/stroke at a snappy 0.1s, so
+   weight changes between tiers (stroke-width 2 -> 2.5) popped abruptly. Unify
+   the circle's paint + weight transition on one slightly longer, intentional
+   easing curve so moving through ambient -> hover -> related -> selected reads
+   as a deliberate glide. Scoped under the viewfinder host so only the full-
+   surface graph is affected and the (0,2,0) selector out-ranks the base rule. */
+.viewfinder-canvas-wrap .graph-canvas-node-circle {
+  transition:
+    fill 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke-width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hovered node's own aura: the node under the pointer/focus (never selected or
+   related — the TSX guards that) lifts a faint self-halo, so hover reads as
+   energy emanating from the node itself, not just its neighbours. Sits between
+   the hover-neighbour ring (0.24) and the related tier (0.42) so the hovered
+   node is clearly the local focus while never rivalling an active selection. */
+.graph-canvas-node-hover-primary .graph-canvas-node-aura {
+  opacity: 0.28;
+}
+
+/* --- 2. Tactile commit press ----------------------------------------------
+   A quiet pointer-press cue: the circle dips slightly on :active so selecting a
+   node feels like a deliberate commit rather than an instant state flip.
+   transform-box:fill-box keeps the scale centred on the circle regardless of
+   the group's translate, so nothing shifts position. Guarded to the hover-
+   capable pointer press only; keyboard activation (Enter/Space) is unaffected
+   and still routes through the existing focus + selection treatment. */
+.viewfinder-canvas-wrap .graph-canvas-node-circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.viewfinder-canvas-wrap .graph-canvas-node:active .graph-canvas-node-circle {
+  transform: scale(0.92);
+  transition: transform 0.09s ease;
+}
+
+/* --- 3. Edge emphasis timing ----------------------------------------------
+   Incident/selected edges pick up a drop-shadow glow (Phase 31E); add `filter`
+   to the edge transition so that glow fades in/out with the rest of the edge
+   emphasis instead of snapping on the moment a selection changes. Same scoping
+   rationale as the node circle above. */
+.viewfinder-canvas-wrap .graph-canvas-edge {
+  transition:
+    stroke 0.16s ease,
+    stroke-opacity 0.18s ease,
+    stroke-width 0.18s ease,
+    opacity 0.18s ease,
+    filter 0.2s ease;
+}
+
+/* --- 4. Command surface: floating rail ------------------------------------
+   Make the rail's control states read as premium, tactile affordances rather
+   than text that merely recolours.
+   - Hover: a faint neutral fill + brighter glyph so the whole button reads as a
+     target, not just the label.
+   - Pressed: the button dips a hair on :active for a physical "click" response.
+   - Active tool: the open-tool glyph gains the same faint graph-identity violet
+     underglow the explorer toggle uses (Phase 31D), so "which tool is open"
+     reads consistently across the entire command surface at a glance. */
+.shell-rail-button {
+  transition:
+    border-color 0.14s ease,
+    background-color 0.14s ease,
+    color 0.14s ease,
+    transform 0.1s ease;
+}
+
+.shell-rail-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.shell-rail-button:hover .shell-rail-glyph {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
+.shell-rail-button:active {
+  transform: translateY(0.5px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.shell-rail-button-active:not(:focus-visible) .shell-rail-glyph {
+  box-shadow:
+    0 0 0 1px var(--shell-chrome-border-strong),
+    0 0 10px rgba(139, 124, 240, 0.22);
+}
+
+/* --- 5. Command surface: overlay controls ---------------------------------
+   The summoned-pane controls (close buttons, the reset/refresh/explorer topbar
+   actions, and the dock close) share one premium press feel: a hairline dip on
+   :active so every command affordance answers a click physically. Kept subtle
+   so it never reads as a bouncy/novelty button — serious dev-tool, not toy. */
+.viewfinder-pane-close,
+.shell-dock-close,
+.source-refresh {
+  transition:
+    border-color 0.14s ease,
+    background-color 0.14s ease,
+    color 0.14s ease,
+    box-shadow 0.14s ease,
+    transform 0.1s ease;
+}
+
+.viewfinder-pane-close:active:not(:disabled),
+.shell-dock-close:active:not(:disabled),
+.source-refresh:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
+/* --- 6. Reduced-motion safety ---------------------------------------------
+   Drop every new transition/transform introduced above so reduced-motion users
+   get the same static hierarchy (smoother easing collapses to instant, the
+   press dip and glow-fade are removed) with no new movement. The static states
+   — self-aura opacity, rail hover fill, active-tool underglow — all remain. */
+@media (prefers-reduced-motion: reduce) {
+  .viewfinder-canvas-wrap .graph-canvas-node-circle,
+  .viewfinder-canvas-wrap .graph-canvas-node:active .graph-canvas-node-circle,
+  .viewfinder-canvas-wrap .graph-canvas-edge,
+  .shell-rail-button,
+  .viewfinder-pane-close,
+  .shell-dock-close,
+  .source-refresh {
+    transition: none;
+  }
+  .viewfinder-canvas-wrap .graph-canvas-node:active .graph-canvas-node-circle {
+    transform: none;
+  }
+  .shell-rail-button:active,
+  .viewfinder-pane-close:active:not(:disabled),
+  .shell-dock-close:active:not(:disabled),
+  .source-refresh:active:not(:disabled) {
+    transform: none;
+  }
+}
+

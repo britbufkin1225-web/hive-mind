@@ -640,6 +640,14 @@ function GraphCanvas({
                 hoverNodeId !== null &&
                 hoverNodeId !== node.id &&
                 (neighborsByNode.get(hoverNodeId)?.has(node.id) ?? false);
+              // Phase 31F: the node actually under the pointer/focus, when it
+              // is neither selected nor related. Lets the hovered node light up
+              // its *own* faint aura (not just its neighbours'), so hover reads
+              // as energy emanating from the node itself. Guarded off
+              // selected/related so this quiet cue never competes with — or
+              // overrides — the selection hierarchy's brighter aura tiers.
+              const hoverPrimary =
+                !selected && !isRelated && hoverNodeId === node.id;
               const className = [
                 "graph-canvas-node",
                 selected ? "graph-canvas-node-selected" : "",
@@ -647,6 +655,7 @@ function GraphCanvas({
                 dimmed ? "graph-canvas-node-dimmed" : "",
                 endpointLift ? "graph-canvas-node-hover-endpoint" : "",
                 hoverNeighbor ? "graph-canvas-node-hover-neighbor" : "",
+                hoverPrimary ? "graph-canvas-node-hover-primary" : "",
               ]
                 .filter(Boolean)
                 .join(" ");
