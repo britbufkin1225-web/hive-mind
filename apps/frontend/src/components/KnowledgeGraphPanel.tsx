@@ -708,8 +708,29 @@ function GraphCanvas({
             })}
           </g>
       </svg>
-      <p className="console-hint graph-canvas-hint viewfinder-canvas-hint">
-        Read-only map · select a node or relationship to inspect it.
+      {/* Phase 31D: the surface hint is contextual rather than static. With
+          nothing selected it explains the primary affordance; once a node or
+          edge is active it switches to "how to clear" guidance and surfaces the
+          Esc keyboard shortcut as a small chip, so the graph teaches its own
+          interaction model without a tutorial panel. Purely presentational —
+          it reads existing selection state and drives no data/selection flow. */}
+      <p
+        className={
+          hasSelection
+            ? "console-hint graph-canvas-hint viewfinder-canvas-hint graph-canvas-hint-active"
+            : "console-hint graph-canvas-hint viewfinder-canvas-hint"
+        }
+      >
+        {hasSelection ? (
+          <>
+            {selectedEdgeId !== null ? "Relationship selected" : "Node selected"}
+            {" · "}
+            <kbd className="graph-hint-key">Esc</kbd> or click empty space to
+            clear
+          </>
+        ) : (
+          "Read-only map · select a node or relationship to inspect it."
+        )}
       </p>
     </div>
   );
@@ -979,6 +1000,11 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
                 }
                 aria-pressed={explorerOpen}
                 aria-controls="graph-explorer-pane"
+                title={
+                  explorerOpen
+                    ? "Hide legend & lists (Esc)"
+                    : "Show the legend, groups, and node/edge lists"
+                }
                 onClick={() => setExplorerOpen((open) => !open)}
               >
                 {explorerOpen ? "Hide legend" : "Legend & lists"}
@@ -1022,6 +1048,8 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
               <button
                 type="button"
                 className="viewfinder-pane-close"
+                aria-label="Close legend and lists (Escape)"
+                title="Close (Esc)"
                 onClick={closeExplorer}
               >
                 Close
@@ -1130,6 +1158,8 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
               <button
                 type="button"
                 className="viewfinder-pane-close"
+                aria-label="Close inspector and return focus to the graph (Escape)"
+                title="Close (Esc)"
                 onClick={closeInspector}
               >
                 Close

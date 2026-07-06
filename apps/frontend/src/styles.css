@@ -4350,3 +4350,114 @@ body,
   }
 }
 
+/* ============================================================================
+   Phase 31D — Overlay tooling + graph-surface usability pass
+   Continues from 31B/31C (type-owned aura, selected/related tiers, directional
+   overlay motion, reactive rail glyph). Scope is deliberately narrow and
+   presentational: (1) the bottom-left surface hint becomes an interaction-aware
+   affordance that teaches "how to clear" and surfaces the Esc shortcut once a
+   selection is active; (2) the summoned overlays gain a clearer internal
+   structure (a hairline header divider) so header/content read as distinct
+   layers; (3) the active overlay toggle carries a faint graph-owned accent so
+   "which overlay is open" reads at a glance, matching the rail's active glyph;
+   (4) small focus/label/readability + narrow-viewport safeguards. No data, API,
+   layout, selection-behaviour, or graph-motion change; the graph stays the
+   dominant surface and colour stays graph-owned. Appended last so it wins the
+   cascade over earlier phase blocks without editing scattered rules (avoids the
+   broad-cleanup this phase forbids). Every new transition is nulled under
+   prefers-reduced-motion in the guard at the end of this block.
+   ============================================================================ */
+
+/* --- 1. Contextual graph-surface hint -------------------------------------
+   The hint is the graph's own quiet teaching affordance — no tutorial panel.
+   A max-width keeps its (now interaction-dependent) text from stretching across
+   the surface at wide viewports or crushing the graph at narrow ones. Border/
+   colour fade so the resting <-> active swap reads as a soft state change, not
+   a flicker. */
+.viewfinder-canvas-hint {
+  max-width: min(32rem, calc(100vw - 2rem));
+  transition:
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+
+/* Active (a node/edge is selected): the hint switches to clear-selection
+   guidance and picks up a faint graph-owned accent edge + brighter text, so it
+   reads as a live interaction cue rather than permanent chrome. The accent is
+   the same identity violet the selected node and active tool use — colour stays
+   graph-owned, no new decorative palette. */
+.viewfinder-canvas-hint.graph-canvas-hint-active {
+  border-color: rgba(139, 124, 240, 0.4);
+  color: var(--text);
+}
+
+/* Inline keyboard-key chip for Esc-style hints — compact, monospaced, chrome,
+   hueless. Gives keyboard affordances a recognisable "key" read without adding
+   a shortcut legend or crowding the surface. */
+.graph-hint-key {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.02rem 0.34rem;
+  border: 1px solid var(--shell-chrome-border-strong, var(--border-strong));
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+/* --- 2. Overlay internal structure ----------------------------------------
+   A hairline divider under each summoned pane's header separates the title +
+   close affordance from the pane body, so the overlay reads as a layered
+   instrument (chrome header over content) instead of one flat card. Depth only
+   — the translucent glass fill is unchanged, so the graph still shows through. */
+.viewfinder-pane-head {
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+/* --- 3. Clearer active overlay toggle -------------------------------------
+   The explorer toggle's open state already flips to a brighter neutral fill;
+   add a faint graph-accent underglow (matching the rail's active glyph) so the
+   "an overlay is open" signal is unmistakable at a glance and visually ties the
+   topbar tool to the panel it summons. `:not(:focus-visible)` yields to the
+   shared focus ring while the button is keyboard-focused, so the two cues never
+   fight. */
+.graph-explorer-toggle-active:not(:focus-visible) {
+  box-shadow:
+    0 0 0 1px var(--shell-chrome-border-strong, var(--border-strong)),
+    0 0 10px rgba(139, 124, 240, 0.22);
+}
+
+/* --- 4. Pane close affordance readability ---------------------------------
+   Nudge the close button's resting contrast up slightly so it reads as an
+   actionable control (not incidental text) the moment a pane is summoned, while
+   staying quieter than the pane title. Hover/focus treatments are unchanged. */
+.viewfinder-pane-close {
+  letter-spacing: 0.02em;
+}
+
+/* --- 5. Narrow-viewport safeguard -----------------------------------------
+   Keep the surface hint clear of the bottom-centre rail on the narrowest
+   screens by tightening its padding and clamping width to the viewport, so the
+   graph beneath it stays visible and the hint never overruns the edge. */
+@media (max-width: 480px) {
+  .viewfinder-canvas-hint {
+    left: 0.6rem;
+    right: auto;
+    max-width: calc(100vw - 1.2rem);
+    padding: 0.28rem 0.55rem;
+  }
+}
+
+/* --- 6. Reduced-motion safety ---------------------------------------------
+   The hint's resting/active states remain fully legible as static styles; only
+   the colour fade is dropped so no new motion is introduced. */
+@media (prefers-reduced-motion: reduce) {
+  .viewfinder-canvas-hint {
+    transition: none;
+  }
+}
+
