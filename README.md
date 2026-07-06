@@ -118,31 +118,30 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 30C - Interaction Recovery QA + Screenshot
-  Evidence Refresh` (QA / evidence / documentation only). Phase 30C verifies
-  the Phase 30B interaction-recovery + responsive-rail fixes against the
-  connected local runtime and refreshes the screenshot evidence trail — a
-  20-check scripted QA run confirming dock-close focus recovery into the graph
-  panel (`#knowledge-graph`), the dock → explorer → selection Escape stack
-  peeling press-for-press with no manual refocus and no page refresh,
-  graph-primary re-selection after recovery, three-tier selection + bounded
-  overlays, and narrow-viewport (420px) rail containment (one width-clamped
-  label, no overflow) — plus a `phase-30c-connected-*` screenshot set, with no
-  frontend/CSS/backend/API/schema/package change and no implementation fixes.
-  See the
-  [Phase 30C evidence doc](docs/demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md).
-  The preceding **Phase 30B** (complete) implemented the two Phase 30A-triaged
-  defects as a frontend-only pass: `closePanel` now returns focus into the
-  graph panel (`#knowledge-graph`, `tabIndex={-1}`) instead of the summoning
-  rail button so the Escape dismissal stack keeps working press-for-press, and
-  below the 760px breakpoint the rail reveals only the hovered/focused button's
-  label (width-clamped) so it no longer overflows a narrow viewport — touching
-  `App.tsx`, `KnowledgeGraphPanel.tsx`, and `styles.css` only (PR #109), with no
-  backend/API/schema/package change. The preceding **Phase 30A** (complete)
-  reviewed the Phase 29C QA outcome, triaged those two honestly-recorded
-  interaction rough edges (Escape focus-scoping after dock close; focused-rail
-  label overflow at ~420px), and locked the narrow Phase 30B implementation
-  contract. See the
+- **Current phase:** `Phase 31A - Premium Graph Interaction + Portfolio Demo
+  Direction Planning` (planning / documentation only). Phase 31A defines the
+  next premium frontend direction — how Hive|Mind moves from a *functional
+  graph-primary interface* toward a *portfolio-grade premium graph intelligence
+  demo* — before any implementation. It specifies the premium interaction model
+  (calm at-rest state; additive hover/focus; selected-node storytelling via the
+  `selected > related > ambient` emphasis tiers; first-class edge/relationship
+  selection; predictable deselect/Escape; dim-not-delete de-emphasis; restrained
+  aura/pulse tied to real selection/type state; keyboard parity and
+  `prefers-reduced-motion` support), the overlay/command-surface direction (all
+  supporting tools stay summoned, bounded, exclusive glass overlays — never
+  sidebars/dashboards/columns), the portfolio demo story (a 30–90-second honest
+  walkthrough backed by real connected runtime states with six defined hero
+  screenshot states), and the scoped **Phase 31B** implementation pass and
+  **Phase 31C** QA/screenshot-evidence pass. **Docs-only:** no frontend/CSS/
+  backend/API/schema/package/runtime/screenshot change. See the
+  [Phase 31A planning doc](docs/planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md).
+  The preceding **Phase 30A** (complete) triaged the two Phase 29C interaction
+  rough edges and locked a narrow Phase 30B contract; **Phase 30B's
+  interaction-recovery fix then landed in code** (PR #109 — predictable
+  Escape/focus after dock close and a narrow-viewport responsive rail rule).
+  **Phase 30C (QA + screenshot evidence) has not yet run**, so the Phase 30B fix
+  is implemented but not yet independently QA-verified against the connected
+  runtime; the proposed Phase 31C absorbs that outstanding verification. See the
   [Phase 30A planning doc](docs/phase-30a-post-polish-interaction-triage.md).
   The preceding **Phase 29C** (complete) verified the Phase 29B implementation
   against the connected local runtime and refreshed the screenshot evidence
@@ -175,9 +174,10 @@ SVG visualization.
   - **Phase 30A** — post-polish interaction triage + next frontend direction
     planning *(complete)*.
   - **Phase 30B** — interaction recovery + responsive rail frontend
-    implementation pass *(complete)*.
-  - **Phase 30C** — interaction recovery QA + screenshot evidence refresh
-    *(this phase)*.
+    implementation *(landed in code, PR #109; not yet QA-verified)*.
+  - **Phase 30C** — interaction recovery QA + screenshot evidence *(not run)*.
+  - **Phase 31A** — premium graph interaction + portfolio demo direction
+    planning *(this phase)*.
 - **Preceding phases 28A–28C:** Phase 28A tightened the graph-first
   direction into a stricter true graph-primary contract; Phase 28B implemented
   it — the Knowledge Graph fills the entire viewport edge-to-edge with no
@@ -559,8 +559,11 @@ The current phase sequence:
 | Phase 29B | Complete | Graph interaction + overlay polish frontend implementation pass (screenshot evidence deferred to Phase 29C). |
 | Phase 29C | Complete | QA + screenshot evidence refresh; see the [evidence doc](docs/demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md). |
 | Phase 30A | Complete | Post-polish interaction triage + next frontend direction planning (planning only, before any implementation); triages the two Phase 29C interaction limitations and locks the narrow Phase 30B contract. See the [planning doc](docs/phase-30a-post-polish-interaction-triage.md). |
-| Phase 30B | Complete | Interaction Recovery + Responsive Rail Frontend Implementation Pass (frontend only, per the Phase 30A contract, PR #109); dock close returns focus into the graph panel so the Escape stack keeps peeling press-for-press, and the narrow-viewport rail reveals only the hovered/focused label (width-clamped) so it no longer overflows. `App.tsx`, `KnowledgeGraphPanel.tsx`, `styles.css` only. |
-| Phase 30C | Complete | Interaction Recovery QA + Screenshot Evidence Refresh (QA / evidence only, after Phase 30B); a 20-check scripted run verified the recovery + rail fixes against the connected runtime and refreshed the `phase-30c-connected-*` screenshot set. See the [evidence doc](docs/demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md). |
+| Phase 30B | Complete (code) | Interaction Recovery + Responsive Rail Frontend Implementation Pass (frontend only, per the Phase 30A contract); landed in code via PR #109. **Not yet independently QA-verified — Phase 30C has not run.** |
+| Phase 30C | Not run | Interaction Recovery QA + Screenshot Evidence Refresh (QA / evidence only, after Phase 30B); **not yet executed** — the proposed Phase 31C absorbs this outstanding Phase 30B verification. |
+| Phase 31A | Complete | Premium Graph Interaction + Portfolio Demo Direction Planning (planning only, before any implementation); defines the premium interaction model, overlay/command-surface direction, portfolio demo story, and the scoped Phase 31B / 31C passes; honestly records that Phase 30C has not run. See the [planning doc](docs/planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md). |
+| Phase 31B | Planned | Premium Graph Interaction Frontend Implementation Pass (frontend only, per the Phase 31A direction); premium emphasis/hover/selection/edge/aura interaction over the existing SVG view model. Graph read-only; no new graph library; screenshots deferred to Phase 31C. |
+| Phase 31C | Planned | Premium Graph Interaction QA + Portfolio Screenshot Evidence Refresh (QA / evidence only, after Phase 31B); verify the premium interaction, capture the six hero screenshot states, and also verify the still-unverified Phase 30B recovery fix. |
 
 The historical planned-phase table below is preserved as recorded phase
 history; the [full roadmap](docs/roadmap.md) is the canonical, up-to-date
