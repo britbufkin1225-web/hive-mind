@@ -649,6 +649,18 @@ function GraphCanvas({
                     )
                   }
                 >
+                  {/* Phase 31B presentational aura ring: a concentric halo that
+                      sits behind the node circle. Invisible at rest, it fades in
+                      faintly for related neighbors and pulses for the selected
+                      node — a distinct "energy" cue outside the node's own glow
+                      that strengthens the selected/related hierarchy. pointer-
+                      events are disabled in CSS so it never intercepts clicks or
+                      changes selection/deselection behavior. */}
+                  <circle
+                    className="graph-canvas-node-aura"
+                    r={node.radius + 7}
+                    aria-hidden="true"
+                  />
                   <circle className="graph-canvas-node-circle" r={node.radius} />
                   <text
                     className="graph-canvas-node-label"
