@@ -4096,11 +4096,21 @@ body,
   transition: opacity 0.18s ease;
 }
 
-/* Related neighbors: a faint steady ring reinforces the tier-2 emphasis and
-   makes the selection's neighborhood read as an illuminated cluster (improves
-   node/edge relationship feedback and cluster readability). */
+/* Related neighbors (tier 2): a steady, slightly heavier ring so the
+   selection's neighbourhood reads as one illuminated cluster — brighter than
+   the ambient graph, quieter than the pulsing selected node. AUTHORITATIVE,
+   consolidated rule (Phase 31G). These values previously walked up across three
+   stacked same-specificity overrides that resolved only by source order —
+   31B opacity 0.30 -> 31C opacity 0.42 + ring 1.5 -> 31E opacity 0.48 + ring
+   1.6 + a 0.05s staged fade (so the cluster resolves a beat behind the selected
+   node). Merged here into one rule so the winning value is explicit and no
+   longer depends on cascade ordering. Note: the resting/base aura sets opacity
+   0 at lower (0,1,0) specificity, so it never zeroes this (0,2,0) related ring —
+   the related halo computes to 0.48, not 0. */
 .graph-canvas-node-related .graph-canvas-node-aura {
-  opacity: 0.3;
+  opacity: 0.48;
+  stroke-width: 1.6;
+  transition: opacity 0.22s ease 0.05s;
 }
 
 /* Selected node: a brighter, gently pulsing ring — the map's one active node.
@@ -4161,6 +4171,13 @@ body,
   .graph-canvas-node-aura {
     transition: none;
   }
+  /* The consolidated related-aura rule carries a (0,2,0) staged-fade transition;
+     the base guard above is only (0,1,0) and can't override it, so it needs its
+     own matching-specificity guard here. Consolidated from the far-away Phase
+     31E reduced-motion block (Phase 31G) and co-located with the rule it nulls. */
+  .graph-canvas-node-related .graph-canvas-node-aura {
+    transition: none;
+  }
   .graph-canvas-node-selected .graph-canvas-node-aura {
     animation: none;
     opacity: 0.8;
@@ -4214,35 +4231,23 @@ body,
 }
 
 /* --- 2/3. Selected node's neighbourhood reads as one cluster ---------------
-   Strengthen the related-tier aura a touch (0.30 -> 0.42) and give it a
-   slightly heavier ring than ambient so the ring of neighbours around the
-   selected node reads as a deliberate, illuminated group rather than a set of
-   unrelated dots — without dimming the ambient graph any further (unrelated
-   nodes must recede, not disappear). */
-.graph-canvas-node-related .graph-canvas-node-aura {
-  opacity: 0.42;
-  stroke-width: 1.5;
-}
+   The related-tier aura strengthening that lived here (opacity 0.42, ring 1.5)
+   was the second of three stacked overrides of the same selector. It has been
+   consolidated into the single authoritative
+   `.graph-canvas-node-related .graph-canvas-node-aura` rule in the Phase 31B
+   aura block above (Phase 31G cleanup) — no separate declaration here. */
 
 /* --- 4. Overlay motion + glass hierarchy ----------------------------------
    The summoned panes shared one short top-drop entrance that read a little
    flat. Each pane now enters directionally from its own edge (explorer from
-   the left, inspector from the right) with a gentle settle-scale and a
-   premium easing curve, so it reads as an instrument sliding in from its side
-   rather than a card popping in. A hairline top highlight + deeper shadow
-   strengthen the glass read without adding fill opacity, so the graph stays
-   visible behind the pane (graph first, tools second). */
-.viewfinder-pane {
-  background-image: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.05),
-    rgba(255, 255, 255, 0) 42%
-  );
-  box-shadow:
-    0 24px 56px rgba(0, 0, 0, 0.58),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
+   the left, inspector from the right) with a gentle settle-scale and a premium
+   easing curve, so it reads as an instrument sliding in from its side rather
+   than a card popping in.
+   (Phase 31G: the pane glass highlight + shadow that were also declared here
+   were fully superseded by the deeper `.viewfinder-pane` glass block in Phase
+   31E below — same two properties, heavier values — so the redundant copy was
+   removed. The directional-entrance rules that follow are the live part of
+   this section.) */
 .viewfinder-pane-explorer {
   transform-origin: left center;
   animation: viewfinder-pane-in-left 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -4537,18 +4542,12 @@ body,
 }
 
 /* --- 2. Node cluster depth ------------------------------------------------
-   Resting nodes already carry a type-owned halo; deepen the *field* read of a
-   selected cluster so the active neighbourhood looks illuminated with depth,
-   not just recoloured. The related-tier aura gains a touch more presence and a
-   staged fade-in (a small delay after the selection registers) so the ring of
-   neighbours resolves as a deliberate group a beat behind the selected node —
-   a subtle interaction-depth cue between the selected and related tiers. Still
-   well short of the selected node's own brightness so hierarchy is preserved. */
-.graph-canvas-node-related .graph-canvas-node-aura {
-  opacity: 0.48;
-  stroke-width: 1.6;
-  transition: opacity 0.22s ease 0.05s;
-}
+   This was the third and final override of the related-tier aura (opacity 0.48,
+   ring 1.6, plus the staged fade-in — a small delay so the neighbour ring
+   resolves a beat behind the selected node). Those winning values now live in
+   the single authoritative related-aura rule in the Phase 31B aura block above
+   (Phase 31G consolidation of the three stacked overrides). Left here only as a
+   pointer so this cluster-depth intent is still documented at its origin. */
 
 /* --- 3. Active-relationship edge depth ------------------------------------
    Edges touching the selection (incident) and the explicitly selected edge get
@@ -4584,15 +4583,10 @@ body,
 }
 
 /* --- 5. Reduced-motion safety ---------------------------------------------
-   The only new motion introduced above is the related-aura staged fade; drop it
-   so reduced-motion users get the deepened static hierarchy (denser field,
-   cluster aura, edge glow, overlay depth) with no new movement. The pre-existing
-   reduced-motion guards for the aura opacity/pulse still apply. */
-@media (prefers-reduced-motion: reduce) {
-  .graph-canvas-node-related .graph-canvas-node-aura {
-    transition: none;
-  }
-}
+   The related-aura staged fade is now nulled by the reduced-motion guard
+   co-located with the consolidated related-aura rule in the Phase 31B aura
+   block above (Phase 31G). The separate guard that lived here was an exact
+   duplicate of that and has been removed — no separate guard needed. */
 
 /* ============================================================================
    Phase 31F — Graph micro-interaction + command-surface refinement
