@@ -473,6 +473,28 @@ function GraphCanvas({
     return m;
   }, [edges]);
 
+  // Phase 31C: adjacency map (node id -> direct neighbor ids) so hovering a
+  // node can briefly illuminate the nodes at the far end of its edges, not
+  // just the edges themselves. Kept as a derived lookup here so the hover
+  // handlers stay O(1); it drives a purely presentational lift and never
+  // touches selection/data flow (Phase 29A hover contract preserved).
+  const neighborsByNode = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    const link = (a: string, b: string) => {
+      let set = m.get(a);
+      if (!set) {
+        set = new Set<string>();
+        m.set(a, set);
+      }
+      set.add(b);
+    };
+    for (const e of edges) {
+      link(e.source, e.target);
+      link(e.target, e.source);
+    }
+    return m;
+  }, [edges]);
+
   // Phase 29B hover affordance state, kept local to the canvas: hover is a
   // transient presentation cue (it lifts the hovered element and its direct
   // neighbors) and must never drive overlays, dimming, or data flow — so it
@@ -607,12 +629,24 @@ function GraphCanvas({
               const endpointLift =
                 hoverEdge !== null &&
                 (hoverEdge.source === node.id || hoverEdge.target === node.id);
+              // Phase 31C: a direct neighbor of the hovered node. Guarded off
+              // selected/related so this quiet "reveal local structure" lift is
+              // purely additive on ambient nodes and never competes with — or
+              // overrides — the selection hierarchy's own emphasis (hover must
+              // not overpower selected state).
+              const hoverNeighbor =
+                !selected &&
+                !isRelated &&
+                hoverNodeId !== null &&
+                hoverNodeId !== node.id &&
+                (neighborsByNode.get(hoverNodeId)?.has(node.id) ?? false);
               const className = [
                 "graph-canvas-node",
                 selected ? "graph-canvas-node-selected" : "",
                 isRelated ? "graph-canvas-node-related" : "",
                 dimmed ? "graph-canvas-node-dimmed" : "",
                 endpointLift ? "graph-canvas-node-hover-endpoint" : "",
+                hoverNeighbor ? "graph-canvas-node-hover-neighbor" : "",
               ]
                 .filter(Boolean)
                 .join(" ");

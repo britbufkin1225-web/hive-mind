@@ -4167,3 +4167,186 @@ body,
   }
 }
 
+/* ============================================================================
+   Phase 31C — Premium graph interaction expansion + overlay motion pass
+   Builds on the Phase 31B foundation (type-owned aura rings, selected/related
+   tiers, incident-edge energy). Scope: (1) hover now reveals *local structure*
+   — a hovered node briefly illuminates its direct neighbours, not only its
+   edges; (2) the selected node's neighbourhood reads more clearly as one
+   illuminated cluster; (3) the summoned overlays gain a more premium,
+   contextual entrance and a stronger glass read while staying translucent so
+   the graph shows through; (4) the utility rail's active-tool state is easier
+   to read. Presentation only — no data, API, layout, or selection-behaviour
+   change. Appended last so it wins the cascade over earlier phase blocks
+   without editing scattered rules (avoids the broad-cleanup this phase
+   forbids). Every new motion property is nulled under prefers-reduced-motion
+   in the guard at the end of this block, and the static states it leaves
+   behind still carry the full selected/related/hover hierarchy.
+   ============================================================================ */
+
+/* --- 1. Hover: reveal the local neighbourhood ------------------------------
+   Phase 31B lifted a hovered node's incident *edges* but left the nodes those
+   edges land on untouched, so hover hinted at connections without showing
+   where they went. `graph-canvas-node-hover-neighbor` (set only on ambient
+   nodes — never selected/related) gives each direct neighbour a quiet ring +
+   label lift, so hovering momentarily traces the surrounding structure. It is
+   deliberately fainter than the related tier so it can't be mistaken for, or
+   overpower, an active selection. */
+.graph-canvas-node-hover-neighbor .graph-canvas-node-circle {
+  animation: none;
+  stroke-opacity: 1;
+}
+
+.graph-canvas-node-hover-neighbor .graph-canvas-node-aura {
+  opacity: 0.24;
+}
+
+.graph-canvas-node-hover-neighbor .graph-canvas-node-label {
+  fill: #aeb6c6;
+}
+
+/* When a selection is active a hovered node's neighbours are usually dimmed
+   ambient nodes; lift them just enough to trace the hovered structure without
+   promoting them to the related tier's brightness (0.35 ambient -> 0.62, still
+   short of a related node's full presence). */
+.graph-canvas-node-dimmed.graph-canvas-node-hover-neighbor {
+  opacity: 0.62;
+}
+
+/* --- 2/3. Selected node's neighbourhood reads as one cluster ---------------
+   Strengthen the related-tier aura a touch (0.30 -> 0.42) and give it a
+   slightly heavier ring than ambient so the ring of neighbours around the
+   selected node reads as a deliberate, illuminated group rather than a set of
+   unrelated dots — without dimming the ambient graph any further (unrelated
+   nodes must recede, not disappear). */
+.graph-canvas-node-related .graph-canvas-node-aura {
+  opacity: 0.42;
+  stroke-width: 1.5;
+}
+
+/* --- 4. Overlay motion + glass hierarchy ----------------------------------
+   The summoned panes shared one short top-drop entrance that read a little
+   flat. Each pane now enters directionally from its own edge (explorer from
+   the left, inspector from the right) with a gentle settle-scale and a
+   premium easing curve, so it reads as an instrument sliding in from its side
+   rather than a card popping in. A hairline top highlight + deeper shadow
+   strengthen the glass read without adding fill opacity, so the graph stays
+   visible behind the pane (graph first, tools second). */
+.viewfinder-pane {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0) 42%
+  );
+  box-shadow:
+    0 24px 56px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.viewfinder-pane-explorer {
+  transform-origin: left center;
+  animation: viewfinder-pane-in-left 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.viewfinder-pane-inspector {
+  transform-origin: right center;
+  animation: viewfinder-pane-in-right 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes viewfinder-pane-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes viewfinder-pane-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Contextual dock: smoother, premium easing for the open/close transition
+   (applies at every width). The desktop dock also emerges slightly from its
+   own right edge with a faint settle-scale so it reads as sliding out of the
+   rail side rather than dropping from the top. Guarded to >=761px so the
+   narrow-screen bottom-tray entrance (translateY, defined above) is untouched. */
+.shell-dock {
+  transition:
+    transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.2s ease;
+}
+
+@media (min-width: 761px) {
+  .shell-dock {
+    transform: translateY(-8px) translateX(10px) scale(0.99);
+  }
+
+  .shell-dock-open {
+    transform: translateY(0) translateX(0) scale(1);
+  }
+}
+
+/* --- 5. Rail: clearer active-tool state, quiet reactive glyph --------------
+   The active tool now carries a faint graph-accent underglow on its glyph (the
+   same identity accent the selected node uses) so "which tool is open" reads at
+   a glance, and hovering any glyph brightens it — keeping the rail reactive and
+   graph-subordinate, never a persistent sidebar. Colour stays graph-owned; no
+   new decorative palette. */
+.shell-rail-glyph {
+  transition:
+    background-color 0.14s ease,
+    box-shadow 0.14s ease,
+    color 0.14s ease;
+}
+
+.shell-rail-button:hover .shell-rail-glyph {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.shell-rail-button-active .shell-rail-glyph {
+  box-shadow:
+    0 0 0 1px var(--shell-chrome-border-strong),
+    0 0 10px rgba(139, 124, 240, 0.3);
+}
+
+/* --- 6. Reduced-motion safety for every Phase 31C motion property ----------
+   All new transitions/animations collapse to their resolved static states, so
+   the hover-neighbour lift, cluster aura, overlay entrances, dock motion, and
+   rail glyph still convey their hierarchy without pulsing or sliding. */
+@media (prefers-reduced-motion: reduce) {
+  .viewfinder-pane-explorer,
+  .viewfinder-pane-inspector {
+    animation: none;
+  }
+
+  .shell-dock {
+    transition: none;
+  }
+
+  .shell-rail-glyph {
+    transition: none;
+  }
+
+  /* Keep the desktop dock's resolved open/closed positions crisp with no
+     in-between transform interpolation. */
+  @media (min-width: 761px) {
+    .shell-dock {
+      transform: translateX(10px) scale(0.99);
+    }
+
+    .shell-dock-open {
+      transform: translateX(0) scale(1);
+    }
+  }
+}
+
