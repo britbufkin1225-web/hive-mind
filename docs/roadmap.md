@@ -29,28 +29,41 @@ and the [Phase 26C Graph Visual QA + Screenshot Evidence Refresh](demo/phase-26c
 and the [Phase 27A Graph-First App Shell Planning](ui/phase-27a-graph-first-app-shell-planning.md),
 and the [Phase 27E Full-Viewfinder Graph Surface QA + Screenshot Evidence Refresh](demo/phase-27e-full-viewfinder-graph-surface-qa-screenshot-evidence.md),
 and the [Phase 28A True Graph-Primary Surface + Overlay Contract](phase-28a-true-graph-primary-overlay-contract.md),
-and the [Phase 30A Post-Polish Interaction Triage + Next Frontend Direction Planning](phase-30a-post-polish-interaction-triage.md).
+and the [Phase 30A Post-Polish Interaction Triage + Next Frontend Direction Planning](phase-30a-post-polish-interaction-triage.md),
+and the [Phase 30C Interaction Recovery QA + Screenshot Evidence Refresh](demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md).
 
 ## Current status
 
-**Current phase:** Phase 30A — Post-Polish Interaction Triage + Next Frontend
-Direction Planning (**planning / documentation only**). Phase 30A reviews the
-Phase 29C QA outcome, triages the two honestly-recorded interaction rough
-edges (Escape focus-scoping after dock close; focused-rail label overflow at
-~420px) into a prioritized next wave, and locks a narrow implementation
-contract for Phase 30B — before any frontend code is touched. It decides the
-next frontend wave targets exactly those two keyboard/responsive defects (and
-explicitly defers the interaction surfaces that already passed Phase 29C),
-defines what Phase 30B may and may not touch, and re-locks the graph-primary
-surface direction (graph as the full application surface; menus/panels as
-contextual overlays; visual energy graph-owned; dark black/chrome/metal shell;
-minimal non-graph color; no return to sidebar/dashboard/card-grid/SaaS
-patterns). **Docs-only:** no frontend/CSS/backend/API/schema/package/runtime/
-screenshot change and no implementation fixes. See the
-[Phase 30A planning doc](phase-30a-post-polish-interaction-triage.md). The
-recommended next sequence is Phase 30B — Interaction Recovery + Responsive
-Rail Frontend Implementation Pass, then Phase 30C — Interaction Recovery QA +
-Screenshot Evidence Refresh.
+**Current phase:** Phase 30C — Interaction Recovery QA + Screenshot Evidence
+Refresh (**QA / evidence / documentation only**). Phase 30C verifies the Phase
+30B interaction-recovery + responsive-rail fixes against the connected local
+runtime (backend `8787`, frontend `5173`) and refreshes the screenshot evidence
+trail. A 20-check scripted QA run confirmed: dock close returns focus into the
+graph panel (`#knowledge-graph`), the dock → explorer → selection Escape stack
+now peels press-for-press with no manual refocus and no page refresh, the graph
+stays the primary interaction target, and below the 760px breakpoint the
+focused/hovered rail reveals only one width-clamped label and stays within the
+viewport (no overflow). Endpoints returned the established trail (health
+`0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 /
+Provenance 7 / Query Trails 7), with zero console errors and zero failed
+requests, and `npm run check:frontend` passes. Records a
+`phase-30c-connected-*` screenshot set and an
+[evidence doc](demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md).
+**Docs/screenshots/evidence only:** no frontend/CSS/backend/API/schema/package
+change and no implementation fixes.
+
+The preceding **Phase 30B** (complete) implemented the two Phase 30A-triaged
+defects as a frontend-only pass: `closePanel` now returns focus into the graph
+panel (`#knowledge-graph`, `tabIndex={-1}`) instead of the summoning rail button
+so the Escape dismissal stack keeps working press-for-press, and below the 760px
+breakpoint `:focus-within` no longer reveals all four rail labels at once — only
+the hovered/focused button's label reveals, width-clamped — so the rail no
+longer overflows a narrow viewport. Touched `App.tsx`,
+`KnowledgeGraphPanel.tsx`, and `styles.css` only; no backend/API/schema/package
+change. The preceding **Phase 30A** (complete) reviewed the Phase 29C QA
+outcome, triaged those two interaction rough edges, and locked the narrow Phase
+30B contract. See the
+[Phase 30A planning doc](phase-30a-post-polish-interaction-triage.md).
 
 The preceding **Phase 29C** — Graph Interaction + Overlay Polish QA +
 Screenshot Evidence Refresh (QA / evidence / documentation only). Phase 29C
@@ -82,8 +95,14 @@ The sequence around Phase 29C:
   planning only).
 - **Phase 29B** — Graph Interaction + Overlay Polish Frontend Implementation
   Pass (**complete**).
-- **Phase 29C** — QA + screenshot evidence refresh (**this phase**;
+- **Phase 29C** — QA + screenshot evidence refresh (**complete**;
   QA/evidence/docs only).
+- **Phase 30A** — post-polish interaction triage + next frontend direction
+  planning (**complete**; planning only).
+- **Phase 30B** — interaction recovery + responsive rail frontend
+  implementation pass (**complete**).
+- **Phase 30C** — interaction recovery QA + screenshot evidence refresh
+  (**this phase**; QA/evidence/docs only).
 
 The preceding **Phase 28C** verified the connected runtime after the Phase
 28B implementation and captured fresh, visually re-verified screenshots of
@@ -476,8 +495,8 @@ Current non-capabilities:
 | 29B | Complete | Phase 29B — Graph Interaction + Overlay Polish Frontend Implementation Pass (frontend presentation/interaction only); implements the Phase 29A contract in `KnowledgeGraphPanel.tsx`, `App.tsx`, and `styles.css` — the canvas gains the three-tier selected > related > ambient emphasis model, additive hover lifts (hovered node lightens incident edges; hovered edge lifts its stroke and endpoints), empty-canvas click-to-deselect, the Phase 29A Escape dismissal order (tertiary dock → explorer → selection/inspector, one surface per press), and overlay focus management (summoned panes take focus and return it on dismissal). No backend/API/schema/package change; graph stays read-only; screenshots/evidence deferred to Phase 29C. |
 | 29C | Complete | QA + screenshot evidence refresh (QA / evidence / documentation only); re-runs the connected local runtime (backend `8787`, frontend `5173`) after the Phase 29B implementation and verifies the Phase 29A interaction contract against the real app via 28 scripted checks — additive hover lifts on nodes/edges, the three-tier selected > related > ambient/dimmed emphasis, flicker-free in-place selection switching, edge selection, empty-canvas deselect (and its no-op with nothing selected), the Escape dismissal order (tertiary dock → explorer → selection/inspector), one-tertiary-overlay-at-a-time exclusivity, deliberate-overlay persistence across deselection, summon/dismiss focus management, and narrow-viewport (420px) behavior — with the directly exercised endpoints returning the same shapes/values as the established evidence trail (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7) and `npm run check:frontend` passing. Records a visually re-verified `phase-29c-connected-*` screenshot set and an [evidence doc](demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md), including two honestly-recorded interaction rough edges (Escape focus scoping after dock close; focused-rail label overflow at very narrow widths) as Known limitations rather than fixes. Implements no code and changes no behavior. |
 | 30A | Complete | Post-polish interaction triage + next frontend direction planning (**planning / documentation only**, before any implementation); reviews the Phase 29C QA outcome (graph-primary surface confirmed, overlays/tools functioning, evidence captured, frontend check passed, backend untouched, remaining issues are interaction polish not foundational), triages the two known limitations — Escape/focus behavior after dock close and focused-rail label overflow at ~420px — each with current behavior / why it matters / user-facing effect / recommended fix direction / risk level, and locks a narrow contract for **Phase 30B — Interaction Recovery + Responsive Rail Frontend Implementation Pass** (allowed: `KnowledgeGraphPanel.tsx`, `styles.css`, graph helper/view-model files only if truly needed, `App.tsx` only if focus/overlay wiring requires; forbidden: backend/API/schema/package/dependency changes, new graph libs, fake data, graph mutation, new dashboard/card shell, persistent sidebar, asset dump, broad CSS rewrite, unplanned redesign, screenshots) plus the 30A→30B→30C sequence, per-decision rationale, and a guardrail lock re-affirming the graph-primary direction. **Scope: docs/planning only — no code changes in this phase.** See the [planning doc](phase-30a-post-polish-interaction-triage.md). |
-| 30B | Planned | Interaction Recovery + Responsive Rail Frontend Implementation Pass (frontend presentation/interaction only, per the Phase 30A contract); restore predictable Escape behavior after dock close and improve focus return without trapping the user, and add a narrow-viewport responsive rule so focused/expanded rail labels stay within the screen edge while preserving icon-only compact rail behavior — inside `KnowledgeGraphPanel.tsx` and `styles.css` (and `App.tsx` only if the focus/Escape wiring requires it). No backend/API/schema/package change; graph stays read-only; no screenshots (deferred to Phase 30C). |
-| 30C | Planned | Interaction Recovery QA + Screenshot Evidence Refresh (QA / evidence / documentation only, after Phase 30B); re-run the connected runtime, re-verify the Escape-after-dock-close stack and the narrow-viewport focused rail, confirm no regression across the Phase 29C interaction set, and refresh the screenshot evidence trail. Docs/screenshots/evidence only. |
+| 30B | Complete | Interaction Recovery + Responsive Rail Frontend Implementation Pass (frontend presentation/interaction only, per the Phase 30A contract); `closePanel` returns focus into the graph panel (`#knowledge-graph`, `tabIndex={-1}`) instead of the summoning rail button so the dock → explorer → selection Escape stack keeps peeling press-for-press, and below the 760px breakpoint `:focus-within` no longer reveals all four rail labels at once — only the hovered/focused button's label reveals, width-clamped (`min(8rem, 42vw)`) — so the expanded rail stays within a narrow viewport while at-rest icon-only and desktop behavior are unchanged. Touched `App.tsx`, `KnowledgeGraphPanel.tsx`, and `styles.css` only (PR #109); no backend/API/schema/package change; graph stays read-only. |
+| 30C | Complete | Interaction Recovery QA + Screenshot Evidence Refresh (QA / evidence / documentation only, after Phase 30B); re-ran the connected runtime (backend `8787`, frontend `5173`) and verified the Phase 30B fixes via a 20-check scripted QA run — dock-close focus recovery into the graph panel, the dock → explorer → selection Escape stack peeling press-for-press with no manual refocus and no page refresh, graph-primary re-selection after recovery, three-tier selection + bounded overlays, and narrow-viewport (420px) rail containment (one clamped label, no overflow) — with the endpoints returning the established trail (health `0.1.0`, graph 7 nodes / 6 edges, Intelligence Report Dreaming 0 / Decay 7 / Provenance 7 / Query Trails 7), zero console errors, zero failed requests, and `npm run check:frontend` passing. Records a `phase-30c-connected-*` screenshot set and an [evidence doc](demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md). Docs/screenshots/evidence only; no code or behavior change. |
 
 ## Future roadmap
 
