@@ -4055,3 +4055,115 @@ body,
   }
 }
 
+/* ============================================================================
+   Phase 31B — Premium graph interaction frontend pass
+   Implements the Phase 31A direction (docs/planning/phase-31a-premium-graph-
+   interaction-portfolio-demo-direction.md): a graph-first, dark/chrome
+   intelligence-console feel with a stronger selected-node hierarchy, a
+   subtle aura/energy language around active relationships, and readability
+   fixes for the selected label. Presentation only — no data, API, layout,
+   or selection-behavior change. Appended last so it wins the cascade over
+   earlier phase blocks without editing scattered rules (avoids the "broad
+   unrelated CSS cleanup" the phase forbids). All new motion is gated behind
+   prefers-reduced-motion, and only the single selected node ever animates a
+   new property, so the existing tiered animation budget is preserved.
+   ============================================================================ */
+
+/* Per-type accent token, set on the node group (<g data-node-type="…">) so it
+   inherits to both the aura ring and the circle. Mirrors the existing per-type
+   stroke palette above — declared once here as a variable so the aura can be
+   type-owned (graph owns the color) without repeating seven aura rules. */
+[data-node-type="root"] { --node-accent: #a99df8; }
+[data-node-type="source"] { --node-accent: #818cf8; }
+[data-node-type="concept"] { --node-accent: #fbbf24; }
+[data-node-type="file"] { --node-accent: #34d399; }
+[data-node-type="model"] { --node-accent: #38bdf8; }
+[data-node-type="note"] { --node-accent: #f472b6; }
+[data-node-type="folder"] { --node-accent: #60a5fa; }
+
+/* --- Selected/related aura ring ---
+   A concentric type-colored halo behind the node. Invisible at rest so the
+   resting graph stays calm; it is the strongest "this is the active focus"
+   cue for the selected node and a quiet cluster marker for its neighbors.
+   pointer-events:none guarantees it never becomes a click target, so node
+   selection, deselection, and the empty-canvas deselect check are untouched. */
+.graph-canvas-node-aura {
+  fill: none;
+  stroke: var(--node-accent, rgba(255, 255, 255, 0.7));
+  stroke-width: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+/* Related neighbors: a faint steady ring reinforces the tier-2 emphasis and
+   makes the selection's neighborhood read as an illuminated cluster (improves
+   node/edge relationship feedback and cluster readability). */
+.graph-canvas-node-related .graph-canvas-node-aura {
+  opacity: 0.3;
+}
+
+/* Selected node: a brighter, gently pulsing ring — the map's one active node.
+   The pulse is opacity + stroke-width only (both broadly animatable and cheap),
+   layered outside the node's existing selected glow for extra hierarchy. */
+.graph-canvas-node-selected .graph-canvas-node-aura {
+  opacity: 0.8;
+  stroke-width: 1.75;
+  animation: graph-node-aura-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes graph-node-aura-pulse {
+  0%,
+  100% {
+    opacity: 0.32;
+    stroke-width: 1.5;
+  }
+  50% {
+    opacity: 0.85;
+    stroke-width: 2.25;
+  }
+}
+
+/* --- Selected node label readability ---
+   Correction: an earlier block set the selected label fill to near-black
+   (#08090c) on the assumption it sits on the type-colored circle fill, but the
+   label renders *below* the node on the dark canvas, so it read dark-on-dark.
+   Restore a bright, higher-weight label so the selected node's identity is the
+   clearest text on the canvas — a stronger selected state that is not colour-
+   only (weight + brightness), satisfying the phase readability requirement. */
+.graph-canvas-node-selected .graph-canvas-node-label {
+  fill: #f4f6fb;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: rgba(8, 9, 13, 0.85);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* Related neighbor labels lift slightly above the ambient muted fill so the
+   active cluster's names stay legible while the rest of the graph recedes. */
+.graph-canvas-node-related .graph-canvas-node-label {
+  fill: #cfd6e6;
+}
+
+/* --- Incident edge readability ---
+   Edges touching the selection already carry the flowing energy dash; a small
+   stroke-width bump makes those active relationships easier to trace without
+   competing with the selected node. Guarded off the selected edge so the
+   explicit selection still reads as the heaviest edge. */
+.graph-canvas-edge-incident:not(.graph-canvas-edge-selected) {
+  stroke-width: 2.25;
+}
+
+/* New motion respects reduced-motion: the aura still conveys the hierarchy as
+   a static ring (selected brighter than related); only the pulse is dropped. */
+@media (prefers-reduced-motion: reduce) {
+  .graph-canvas-node-aura {
+    transition: none;
+  }
+  .graph-canvas-node-selected .graph-canvas-node-aura {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
