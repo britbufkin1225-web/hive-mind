@@ -4461,3 +4461,136 @@ body,
   }
 }
 
+/* ============================================================================
+   Phase 31E — Graph surface visual density + interaction depth
+   Continues the graph-primary polish from 31B/31C/31D (type-owned aura,
+   selected/related tiers, directional overlay motion, contextual hint). Scope
+   is deliberately narrow and presentational: give the graph *surface* more
+   density and depth so it reads as a living intelligence field rather than a
+   sparse diagram, and deepen the active-interaction hierarchy a step further —
+   without adding data, fake nodes, graph mutation, a new library, or any
+   dashboard/card-grid pattern. Everything here is CSS-only: the existing
+   presentational hooks (data-node-type accents, selected/related/incident state
+   classes, the aura ring element, and the .viewfinder-canvas-wrap host) already
+   carry enough structure, so no view-model or TSX change was needed. Appended
+   last so it wins the cascade over earlier phase blocks without editing
+   scattered rules (avoids the broad-cleanup this phase forbids). Colour stays
+   graph-owned (the same cool identity accents the nodes/edges already use); no
+   new decorative palette leaks outside graph-related affordances. Every new
+   transition is nulled under prefers-reduced-motion in the guard at the end of
+   this block, and the new depth is otherwise static (backgrounds + shadows),
+   so the tiered animation budget is unchanged.
+   ============================================================================ */
+
+/* --- 1. Ambient canvas density --------------------------------------------
+   The viewfinder canvas previously carried only a single faint 40px line grid
+   and one central glow, which read thin at full-viewport scale. This deepens
+   the field into a layered console surface: a deep-black base, a soft vignette
+   that concentrates focus toward the centre, a few large graph-owned region
+   glows so the space reads as an illuminated field rather than an empty plane,
+   and a dual-scale lattice (fine dots + a coarse major grid) for depth. The
+   lattice is a strictly regular repeat — unmistakably background texture, never
+   mistakable for real graph entities — and every layer is low-opacity so nodes,
+   edges, and labels stay fully legible on top. Scoped to the viewfinder host so
+   only the full-surface graph (never the legacy bounded canvas) is affected;
+   the (0,2,0) selector also out-ranks the earlier .graph-canvas field rule. */
+.viewfinder-canvas-wrap .graph-canvas {
+  background-color: #04050a;
+  background-image:
+    radial-gradient(130% 130% at 50% 44%, transparent 52%, rgba(0, 0, 0, 0.5) 100%),
+    radial-gradient(42% 40% at 26% 30%, rgba(129, 140, 248, 0.10), transparent 70%),
+    radial-gradient(40% 44% at 76% 70%, rgba(56, 189, 248, 0.08), transparent 72%),
+    radial-gradient(60% 55% at 50% 42%, rgba(139, 124, 240, 0.09), transparent 66%),
+    radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1.6px),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    26px 26px,
+    132px 132px,
+    132px 132px;
+  background-position: center;
+  background-repeat:
+    no-repeat,
+    no-repeat,
+    no-repeat,
+    no-repeat,
+    repeat,
+    repeat,
+    repeat;
+}
+
+/* The viewfinder host uses `viewfinder-canvas-wrap`, not the legacy
+   `graph-canvas-wrap`, so it never inherited that class's recessed console
+   frame. Give the full-surface graph its own quiet viewport depth: a soft inner
+   vignette shadow so the field feels recessed into the chrome, plus a hairline
+   accent inner edge (the same graph identity violet, very faint) so the surface
+   reads as a deliberate intelligence viewport rather than a flat rectangle.
+   Purely presentational and non-interactive. */
+.viewfinder-canvas-wrap {
+  box-shadow:
+    inset 0 0 130px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(139, 124, 240, 0.06);
+}
+
+/* --- 2. Node cluster depth ------------------------------------------------
+   Resting nodes already carry a type-owned halo; deepen the *field* read of a
+   selected cluster so the active neighbourhood looks illuminated with depth,
+   not just recoloured. The related-tier aura gains a touch more presence and a
+   staged fade-in (a small delay after the selection registers) so the ring of
+   neighbours resolves as a deliberate group a beat behind the selected node —
+   a subtle interaction-depth cue between the selected and related tiers. Still
+   well short of the selected node's own brightness so hierarchy is preserved. */
+.graph-canvas-node-related .graph-canvas-node-aura {
+  opacity: 0.48;
+  stroke-width: 1.6;
+  transition: opacity 0.22s ease 0.05s;
+}
+
+/* --- 3. Active-relationship edge depth ------------------------------------
+   Edges touching the selection (incident) and the explicitly selected edge get
+   a faint graph-owned glow so active relationships gain visual priority and a
+   sense of depth over the resting slate lines — making structure easier to
+   trace at a glance. The glow is static (independent of the incident energy-
+   flow dash), so it also survives reduced-motion as a still depth cue. Guarded
+   nothing away: incident/selected already sit at the top of the edge hierarchy,
+   this only lifts them off the field. */
+.graph-canvas-edge-incident,
+.graph-canvas-edge-selected {
+  filter: drop-shadow(0 0 3px rgba(139, 124, 240, 0.45));
+}
+
+/* --- 4. Overlay depth without dashboard drift -----------------------------
+   Deepen the summoned glass a further step so panes read as floating instruments
+   layered above the field, not opaque cards: a stronger, multi-stop drop shadow
+   plus a hairline inner ring for edge definition, a slightly heavier backdrop
+   blur/contrast for a cleaner glass read, and a faint graph-identity sheen along
+   the top edge tying the tool to the graph it summons. The translucent fill is
+   unchanged (still var(--viewfinder-glass)), so the graph stays visible and
+   dominant behind every pane — depth only, no new opacity wall. */
+.viewfinder-pane {
+  backdrop-filter: saturate(1.3) blur(20px) contrast(1.04);
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 42%),
+    radial-gradient(120% 60% at 50% 0%, rgba(139, 124, 240, 0.05), transparent 60%);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.6),
+    0 4px 14px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+/* --- 5. Reduced-motion safety ---------------------------------------------
+   The only new motion introduced above is the related-aura staged fade; drop it
+   so reduced-motion users get the deepened static hierarchy (denser field,
+   cluster aura, edge glow, overlay depth) with no new movement. The pre-existing
+   reduced-motion guards for the aura opacity/pulse still apply. */
+@media (prefers-reduced-motion: reduce) {
+  .graph-canvas-node-related .graph-canvas-node-aura {
+    transition: none;
+  }
+}
+
