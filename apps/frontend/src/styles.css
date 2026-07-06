@@ -2681,6 +2681,14 @@ section {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.01em;
+  /* Subtle dark text halo so every label stays legible over the denser 31E
+     canvas (region glows + dual-scale lattice) and the type-coloured aura rings
+     that sit behind related/hovered clusters. The selected label carries its own
+     heavier halo (Phase 31B block), so it stays the clearest text on the canvas. */
+  paint-order: stroke;
+  stroke: rgba(4, 5, 10, 0.72);
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
 }
 
 /* Selected label: dark fill so it reads on the type-color circle fill. */
@@ -3991,6 +3999,12 @@ body,
    keeping the cue non-color-only (Phase 29A accessibility expectations). */
 .graph-canvas-node-related .graph-canvas-node-circle {
   animation: none;
+  /* Lift the ring off the ambient neutral (#6a738a) onto a brighter cool-neutral
+     so the selected node's neighbours read as one illuminated cluster, not just
+     slightly-thicker ambient rings. Kept neutral (not a saturated accent) and
+     below the selected node's white stroke + type fill + glow, so related stays
+     clearly connected without overpowering the active selection. */
+  stroke: #8a94af;
   stroke-opacity: 1;
   stroke-width: 2.5;
 }
