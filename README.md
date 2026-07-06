@@ -99,9 +99,14 @@ what makes it auditable.
 > documented in the
 > [Phase 28C True Graph-Primary Surface QA + Screenshot Evidence](docs/demo/phase-28c-true-graph-primary-surface-qa-screenshot-evidence.md)
 > note. The Phase 29B interaction polish (hover lifts, three-tier selection
-> emphasis, edge selection, overlay behavior) is captured in the newer
+> emphasis, edge selection, overlay behavior) is captured in the
 > `phase-29c-connected-*` set, documented in the
 > [Phase 29C Graph Interaction + Overlay Polish QA + Screenshot Evidence](docs/demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md)
+> note, and the newest **Phase 30B interaction-recovery + responsive-rail fixes**
+> (dock-close focus recovery, the press-for-press Escape stack, and the
+> contained narrow-viewport rail) are captured in the `phase-30c-connected-*`
+> set, documented in the
+> [Phase 30C Interaction Recovery QA + Screenshot Evidence](docs/demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md)
 > note. The earlier dashboard-era `phase-23b-*` / `phase-25c-*` capture sets are
 > preserved in `docs/demo/screenshots/` as history.
 
@@ -474,8 +479,11 @@ contract, implementation, and screenshot evidence) — are recorded in full in
 the [roadmap phase history](docs/roadmap.md#phase-history); Phase 28D (the
 README / portfolio visual lock), Phase 29A (graph interaction + overlay
 polish planning), Phase 29B (the graph interaction + overlay polish frontend
-implementation pass), and Phase 29C (its QA + screenshot evidence refresh)
-are complete.
+implementation pass), Phase 29C (its QA + screenshot evidence refresh), Phase
+30A (post-polish interaction triage + next frontend direction planning), and
+Phase 30B (the interaction recovery + responsive rail frontend implementation
+pass) are complete, with Phase 30C (its QA + screenshot evidence refresh) the
+current phase.
 
 ## Planned logic
 
