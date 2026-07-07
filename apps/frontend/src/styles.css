@@ -4888,6 +4888,50 @@ body,
   font-size: 0.8125rem;
 }
 
+/* --- Phase 32M — camera + placement guidance -------------------------------
+   Copy-only block above the preview. Quiet key/value lines in the same inset
+   card idiom as the graph-control switch, so it reads as guidance rather than a
+   marketing panel. */
+.motion-sandbox-guidance {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.motion-sandbox-guidance-line {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem var(--space-2);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+/* Small mono key so each guidance line scans as label → value without a table. */
+.motion-sandbox-guidance-key {
+  flex: 0 0 auto;
+  min-width: 8.5rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  align-self: center;
+}
+
+.motion-sandbox-guidance-note {
+  margin: var(--space-1) 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--text-subtle);
+}
+
 /* Preview + motion-field sit side by side, wrapping on narrow docks. */
 .motion-sandbox-stage {
   display: flex;
@@ -4954,6 +4998,77 @@ body,
   display: block;
 }
 
+/* --- Phase 32M — control-zone guide ----------------------------------------
+   A centred rounded frame drawn over the live preview to show the ideal hand
+   placement. Decorative only (pointer-events: none); the accessible status is
+   carried by the cue pills below. The frame is a padded inset box with a thin
+   cool-neutral border and a soft inner ring, so it reads as a HUD reticle rather
+   than a solid mask — it never covers the centred hand. */
+.motion-sandbox-zone {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* The reticle itself: inset from the preview edges so the hand has margin, with
+   a faint inner ring (box-shadow inset) for the "bounds" cue without extra DOM. */
+.motion-sandbox-zone-frame {
+  position: absolute;
+  inset: 12% 16%;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  border-radius: var(--radius-md, 0.75rem);
+  box-shadow:
+    inset 0 0 0 1px rgba(15, 23, 42, 0.25),
+    inset 0 0 18px rgba(148, 163, 184, 0.12);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* In range → calm cyan/accent affirmation; out of range → amber caution. The
+   frame colour is the fastest "am I placed right?" signal, so it leads while the
+   pill text confirms. */
+.motion-sandbox-zone[data-range="in-range"] .motion-sandbox-zone-frame {
+  border-color: rgba(52, 211, 153, 0.7);
+  box-shadow:
+    inset 0 0 0 1px rgba(52, 211, 153, 0.25),
+    inset 0 0 20px rgba(52, 211, 153, 0.14);
+}
+
+.motion-sandbox-zone[data-range="too-close"] .motion-sandbox-zone-frame,
+.motion-sandbox-zone[data-range="too-far"] .motion-sandbox-zone-frame {
+  border-color: rgba(251, 191, 36, 0.75);
+  box-shadow:
+    inset 0 0 0 1px rgba(251, 191, 36, 0.25),
+    inset 0 0 20px rgba(251, 191, 36, 0.12);
+}
+
+/* Zone caption sits on the lower edge of the reticle over a glass chip so it
+   stays legible against any video. */
+.motion-sandbox-zone-label {
+  position: relative;
+  margin-bottom: 14%;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--shell-glass-strong);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-sandbox-zone-frame {
+    transition: none;
+  }
+}
+
 .motion-sandbox-preview-empty {
   position: absolute;
   inset: 0;
@@ -4988,6 +5103,96 @@ body,
 
 .motion-sandbox-detection .motion-sandbox-readout-title {
   margin-bottom: 0;
+}
+
+/* --- Phase 32M — live control cues -----------------------------------------
+   Range / confidence-quality / control-phase / pinch-hold pills under the
+   preview. Same card idiom as the detection/readout blocks; the pills reuse the
+   token palette (success/amber/error/neutral) so state reads by colour at a
+   glance without new colour tokens. */
+.motion-sandbox-control {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.motion-sandbox-control .motion-sandbox-readout-title {
+  margin: 0;
+}
+
+.motion-sandbox-cues {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: var(--space-2);
+}
+
+/* Each cue is a compact stacked chip: a mono key over a bolder value, tinted by
+   the `data-tone` set from the feedback classifier. */
+.motion-sandbox-cue {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.motion-sandbox-cue-key {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.motion-sandbox-cue-val {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.motion-sandbox-cue[data-tone="success"] {
+  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.motion-sandbox-cue[data-tone="success"] .motion-sandbox-cue-val {
+  color: var(--success);
+}
+
+.motion-sandbox-cue[data-tone="pending"] {
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.motion-sandbox-cue[data-tone="pending"] .motion-sandbox-cue-val {
+  color: var(--warn);
+}
+
+.motion-sandbox-cue[data-tone="error"] {
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.motion-sandbox-cue[data-tone="error"] .motion-sandbox-cue-val {
+  color: var(--error);
+}
+
+/* neutral tone keeps the resting inset look (no extra rule needed). */
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-sandbox-cue {
+    transition: none;
+  }
 }
 
 .motion-sandbox-readout {
