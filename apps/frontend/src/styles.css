@@ -4759,3 +4759,227 @@ body,
   }
 }
 
+/* ==========================================================================
+   Phase 32B — Standalone Webcam Motion Sandbox.
+   Scoped styles for the isolated motion-probe dock pane. It reuses the shared
+   token system (surfaces, accent, status pills, mono readout face) so it reads
+   as part of the same HUD family as the other overlays, but every selector is
+   namespaced under .motion-sandbox and touches nothing else. No graph, layout,
+   or shell chrome rules are modified here.
+   ========================================================================== */
+.motion-sandbox {
+  /* The pane lives inside the glass dock, which already provides the framing
+     surface — so this section stays transparent/borderless rather than drawing
+     a second nested card (matches the flattened vault-hud treatment). */
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.motion-sandbox-intro {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.motion-sandbox-statusrow {
+  display: flex;
+}
+
+.motion-sandbox-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.motion-sandbox-actions button {
+  padding: 0.45rem 0.95rem;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+.motion-sandbox-start {
+  border: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.motion-sandbox-start:not(:disabled):hover {
+  background: rgba(139, 124, 240, 0.2);
+  color: var(--text);
+}
+
+.motion-sandbox-stop {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.motion-sandbox-stop:not(:disabled):hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.motion-sandbox-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.motion-sandbox-actions button:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.motion-sandbox-error {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+/* Preview + motion-field sit side by side, wrapping on narrow docks. */
+.motion-sandbox-stage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.motion-sandbox-preview,
+.motion-sandbox-debug {
+  position: relative;
+  flex: 1 1 8rem;
+  min-width: 8rem;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+  overflow: hidden;
+}
+
+.motion-sandbox-preview-label {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.45rem;
+  z-index: 2;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--shell-glass-strong);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.motion-sandbox-video {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Mirror the preview so it behaves like a looking glass; the sampling canvas
+     mirrors to match (see MotionSandboxPanel.runFrame). */
+  transform: scaleX(-1);
+}
+
+.motion-sandbox-video[data-live="true"] {
+  display: block;
+}
+
+.motion-sandbox-preview-empty {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-subtle);
+  font-size: 0.75rem;
+}
+
+.motion-sandbox-debug-canvas {
+  width: 100%;
+  height: 100%;
+  /* Nearest-neighbour upscale keeps the low-res motion field crisp/blocky
+     rather than smearing it into an ambiguous blur. */
+  image-rendering: pixelated;
+  /* Match the mirrored preview so motion lines up left-to-right. */
+  transform: scaleX(-1);
+}
+
+.motion-sandbox-readout {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  padding: var(--space-3);
+}
+
+.motion-sandbox-readout-title {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.motion-sandbox-metrics {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem var(--space-4);
+}
+
+.motion-sandbox-metrics div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0.15rem 0;
+}
+
+.motion-sandbox-metrics dt {
+  width: auto;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.motion-sandbox-metrics dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.motion-sandbox-confidence {
+  margin-top: var(--space-3);
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-inset);
+  overflow: hidden;
+}
+
+.motion-sandbox-confidence-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+  transition: width 0.12s linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-sandbox-actions button,
+  .motion-sandbox-confidence-fill {
+    transition: none;
+  }
+}
+
