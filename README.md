@@ -118,31 +118,29 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 31A - Premium Graph Interaction + Portfolio Demo
-  Direction Planning` (planning / documentation only). Phase 31A defines the
-  next premium frontend direction — how Hive|Mind moves from a *functional
-  graph-primary interface* toward a *portfolio-grade premium graph intelligence
-  demo* — before any implementation. It specifies the premium interaction model
-  (calm at-rest state; additive hover/focus; selected-node storytelling via the
-  `selected > related > ambient` emphasis tiers; first-class edge/relationship
-  selection; predictable deselect/Escape; dim-not-delete de-emphasis; restrained
-  aura/pulse tied to real selection/type state; keyboard parity and
-  `prefers-reduced-motion` support), the overlay/command-surface direction (all
-  supporting tools stay summoned, bounded, exclusive glass overlays — never
-  sidebars/dashboards/columns), the portfolio demo story (a 30–90-second honest
-  walkthrough backed by real connected runtime states with six defined hero
-  screenshot states), and the scoped **Phase 31B** implementation pass and
-  **Phase 31C** QA/screenshot-evidence pass. **Docs-only:** no frontend/CSS/
-  backend/API/schema/package/runtime/screenshot change. See the
-  [Phase 31A planning doc](docs/planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md).
-  The preceding **Phase 30A** (complete) triaged the two Phase 29C interaction
-  rough edges and locked a narrow Phase 30B contract; **Phase 30B's
-  interaction-recovery fix then landed in code** (PR #109 — predictable
-  Escape/focus after dock close and a narrow-viewport responsive rail rule).
-  **Phase 30C (QA + screenshot evidence) has not yet run**, so the Phase 30B fix
-  is implemented but not yet independently QA-verified against the connected
-  runtime; the proposed Phase 31C absorbs that outstanding verification. See the
-  [Phase 30A planning doc](docs/phase-30a-post-polish-interaction-triage.md).
+- **Current phase:** `Phase 32A.6 - Roadmap 31-Series Status Refresh`
+  (**docs-only honesty pass**). Phase 32A.6 brings the roadmap/status record
+  current with the actual repository history before the experimental Phase 32B
+  track begins. The Phase 31 premium-graph-interaction frontend series — **31A
+  (planning) through 31H is complete and merged into `main`**: type-owned aura
+  rings and the `selected > related > ambient` emphasis tiers (31B); overlay
+  motion, overlay tooling, and graph-surface density/depth (31C–31E); the graph
+  micro-interaction + command-surface refinement (31F); a no-computed-style
+  CSS-cascade consolidation (31G); and related-node + label readability (31H).
+  **Phase 31I** (graph overlay legibility + command-surface final polish) is
+  **implemented on its feature branch but not yet merged into `main`**, so it is
+  tracked as pending. The preceding **Phase 30-series** is complete: Phase 30A
+  (planning) triaged the two Phase 29C interaction rough edges, **Phase 30B**
+  landed the interaction-recovery + responsive-rail fix in code (PR #109), and
+  **Phase 30C** completed the QA + screenshot-evidence pass (PR #110, the
+  `phase-30c-connected-*` set). This refresh also resolved the stale roadmap Git
+  conflict markers left when the earlier Phase 32A.5 cleanup never landed on
+  `main`. **Docs-only:** no frontend/CSS/backend/API/schema/package/runtime/
+  screenshot change. The next actual implementation phase is **Phase 32B —
+  Standalone Webcam Motion Sandbox**, which may begin only once this docs-only
+  refresh is complete. See the
+  [Phase 31A planning doc](docs/planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md)
+  and the [Phase 30A planning doc](docs/phase-30a-post-polish-interaction-triage.md).
   The preceding **Phase 29C** (complete) verified the Phase 29B implementation
   against the connected local runtime and refreshed the screenshot evidence
   trail — 28 scripted interaction checks (hover lifts, three-tier selection
@@ -174,10 +172,18 @@ SVG visualization.
   - **Phase 30A** — post-polish interaction triage + next frontend direction
     planning *(complete)*.
   - **Phase 30B** — interaction recovery + responsive rail frontend
-    implementation *(landed in code, PR #109; not yet QA-verified)*.
-  - **Phase 30C** — interaction recovery QA + screenshot evidence *(not run)*.
-  - **Phase 31A** — premium graph interaction + portfolio demo direction
-    planning *(this phase)*.
+    implementation *(complete, PR #109)*.
+  - **Phase 30C** — interaction recovery QA + screenshot evidence
+    *(complete, PR #110)*.
+  - **Phase 31A–31H** — premium graph interaction planning + frontend polish
+    *(complete and merged into `main`)*.
+  - **Phase 31I** — graph overlay legibility + command-surface final polish
+    *(implemented on branch; not yet merged into `main`)*.
+  - **Phase 32A / 32A.5** — motion/orbital feasibility planning and roadmap
+    conflict-marker cleanup *(docs-only)*.
+  - **Phase 32A.6** — roadmap 31-series status refresh *(this phase, docs-only)*.
+  - **Phase 32B** — standalone webcam motion sandbox *(next; begins after this
+    refresh)*.
 - **Preceding phases 28A–28C:** Phase 28A tightened the graph-first
   direction into a stricter true graph-primary contract; Phase 28B implemented
   it — the Knowledge Graph fills the entire viewport edge-to-edge with no
@@ -482,8 +488,11 @@ polish planning), Phase 29B (the graph interaction + overlay polish frontend
 implementation pass), Phase 29C (its QA + screenshot evidence refresh), Phase
 30A (post-polish interaction triage + next frontend direction planning), and
 Phase 30B (the interaction recovery + responsive rail frontend implementation
-pass) are complete, with Phase 30C (its QA + screenshot evidence refresh) the
-current phase.
+pass), and Phase 30C (its QA + screenshot evidence refresh) are complete; the
+Phase 31 premium-graph-interaction series (31A–31H) is complete and merged into
+`main`, with Phase 31I implemented on a feature branch but not yet merged. The
+current phase is the docs-only **Phase 32A.6 — Roadmap 31-Series Status
+Refresh**.
 
 ## Planned logic
 
@@ -559,11 +568,21 @@ The current phase sequence:
 | Phase 29B | Complete | Graph interaction + overlay polish frontend implementation pass (screenshot evidence deferred to Phase 29C). |
 | Phase 29C | Complete | QA + screenshot evidence refresh; see the [evidence doc](docs/demo/phase-29c-graph-interaction-overlay-polish-qa-screenshot-evidence.md). |
 | Phase 30A | Complete | Post-polish interaction triage + next frontend direction planning (planning only, before any implementation); triages the two Phase 29C interaction limitations and locks the narrow Phase 30B contract. See the [planning doc](docs/phase-30a-post-polish-interaction-triage.md). |
-| Phase 30B | Complete (code) | Interaction Recovery + Responsive Rail Frontend Implementation Pass (frontend only, per the Phase 30A contract); landed in code via PR #109. **Not yet independently QA-verified — Phase 30C has not run.** |
-| Phase 30C | Not run | Interaction Recovery QA + Screenshot Evidence Refresh (QA / evidence only, after Phase 30B); **not yet executed** — the proposed Phase 31C absorbs this outstanding Phase 30B verification. |
-| Phase 31A | Complete | Premium Graph Interaction + Portfolio Demo Direction Planning (planning only, before any implementation); defines the premium interaction model, overlay/command-surface direction, portfolio demo story, and the scoped Phase 31B / 31C passes; honestly records that Phase 30C has not run. See the [planning doc](docs/planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md). |
-| Phase 31B | Planned | Premium Graph Interaction Frontend Implementation Pass (frontend only, per the Phase 31A direction); premium emphasis/hover/selection/edge/aura interaction over the existing SVG view model. Graph read-only; no new graph library; screenshots deferred to Phase 31C. |
-| Phase 31C | Planned | Premium Graph Interaction QA + Portfolio Screenshot Evidence Refresh (QA / evidence only, after Phase 31B); verify the premium interaction, capture the six hero screenshot states, and also verify the still-unverified Phase 30B recovery fix. |
+| Phase 30B | Complete | Interaction Recovery + Responsive Rail Frontend Implementation Pass (frontend only, per the Phase 30A contract); landed in code via PR #109. |
+| Phase 30C | Complete | Interaction Recovery QA + Screenshot Evidence Refresh (QA / evidence only, after Phase 30B); re-ran the connected runtime and verified the Phase 30B fixes (PR #110). See the [evidence doc](docs/demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md). |
+| Phase 31A | Complete | Premium Graph Interaction + Portfolio Demo Direction Planning (planning only); defines the premium interaction model, overlay/command-surface direction, and portfolio demo story. Merged into `main` (PR #111). See the [planning doc](docs/planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md). |
+| Phase 31B | Complete | Premium graph interaction frontend pass; type-owned aura rings and the `selected > related > ambient` emphasis tiers over the existing SVG view model. Merged into `main` (PR #112). Graph read-only. |
+| Phase 31C | Complete | Premium graph interaction expansion + overlay motion pass (frontend CSS-only, merged into `main`); hover reveals local structure and the summoned overlays gain a premium contextual entrance. Reduced-motion guarded. |
+| Phase 31D | Complete | Overlay tooling + graph-surface usability pass (frontend CSS-only, merged into `main`); interaction-aware Esc hint, clearer overlay structure, and a graph-owned active-overlay accent. |
+| Phase 31E | Complete | Graph surface visual density + interaction depth (frontend CSS-only, merged into `main`); region glows + lattice and a deeper active-interaction hierarchy. Colour stays graph-owned. |
+| Phase 31F | Complete | Graph micro-interaction + command-surface refinement (frontend only); unified node transition easing and a faint hovered-node aura tier. Merged into `main` (PR #116). |
+| Phase 31G | Complete | Consolidate graph aura/overlay CSS cascade overrides (frontend only, merged into `main`); merges the stacked 31B–31F declarations into authoritative rules with **no computed-style change**. |
+| Phase 31H | Complete | Improve graph related-node + label readability (frontend only); a brighter related-node ring and a subtle label halo. Merged into `main` (PR #117); current `main` HEAD. |
+| Phase 31I | Pending (not merged) | Graph overlay legibility + command-surface final polish (frontend only); **implemented on branch `phase-31i-graph-overlay-legibility-command-surface-final-polish` (commit `6bba994`) but not yet merged into `main`.** |
+| Phase 32A | Complete (docs) | Motion input + orbital graph feasibility planning (research / documentation only) for the future experimental track. Completed on its planning branch. |
+| Phase 32A.5 | Complete (docs) | Roadmap conflict-marker cleanup (docs-only, commit `cd0fefc`); did not land on `main`, so the markers persisted until Phase 32A.6. |
+| Phase 32A.6 | Complete | Roadmap 31-series status refresh (docs-only, this phase); reconciles the roadmap/README with actual repository history and resolves the stale roadmap conflict markers. |
+| Phase 32B | Planned (next) | Standalone Webcam Motion Sandbox — the next experimental implementation phase; begins only once this docs-only refresh is complete. |
 
 The historical planned-phase table below is preserved as recorded phase
 history; the [full roadmap](docs/roadmap.md) is the canonical, up-to-date
