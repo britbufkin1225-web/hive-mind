@@ -118,9 +118,24 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 32J - Orbital Graph Control System-Camera Recovery
-  Planning + Deferred Evidence Track` (**planning / documentation only**). Phase
-  32J changes no code. It honestly records that the opt-in orbital graph control
+- **Current phase:** `Phase 32K Path B - Orbital Graph Control Camera-Blocked
+  Stabilization + Evidence Deferral` (**planning / documentation only**). Phase 32K
+  changes no code. It resolves the Phase 32J decision: the host camera **remains
+  blocked** (native Windows Camera still cannot produce a live preview), so 32J's
+  Path A is closed and **Path B** is selected. The opt-in orbital graph control is
+  implemented experimentally, but **live hand-motion feel remains unverified** —
+  local live camera verification is still blocked. This docs-only pass records the
+  camera-blocked state honestly, keeps all evidence **deferred** (no screenshot,
+  video, or live-demo capture until the system camera works), confirms the blocker
+  sits **outside Hive|Mind app logic** (native Windows Camera also fails), and
+  defines a **blocker decision tree**, a non-destructive **system-level recovery
+  checklist**, and an **evidence policy** (no fake or simulated gesture evidence; no
+  live-gesture success claim until a real camera session verifies it). The
+  recommended next phase while the camera stays blocked is **Phase 32L Path B —
+  External USB Webcam Validation Pass**. See the
+  [Phase 32K Path B planning doc](docs/planning/phase-32k-path-b-camera-blocked-stabilization-evidence-deferral.md).
+  The preceding **Phase 32J** (**planning / documentation only**) changed no code. It
+  honestly recorded that the opt-in orbital graph control
   feature is wired, hardened, and still **experimental / opt-in / read-only**,
   while the **local camera stack remains blocked outside the Hive|Mind app** —
   native Windows Camera still cannot produce a live preview, so **no live
