@@ -31,24 +31,30 @@ and the [Phase 27E Full-Viewfinder Graph Surface QA + Screenshot Evidence Refres
 and the [Phase 28A True Graph-Primary Surface + Overlay Contract](phase-28a-true-graph-primary-overlay-contract.md),
 and the [Phase 30A Post-Polish Interaction Triage + Next Frontend Direction Planning](phase-30a-post-polish-interaction-triage.md),
 and the [Phase 30C Interaction Recovery QA + Screenshot Evidence Refresh](demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md),
-and the [Phase 31A Premium Graph Interaction + Portfolio Demo Direction Planning](planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md).
+and the [Phase 31A Premium Graph Interaction + Portfolio Demo Direction Planning](planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md),
+and the [Motion Sandbox Control Contract + Phase 32C QA](motion-sandbox-control-contract.md).
 
 ## Current status
 
-**Current phase:** Phase 32A.6 — Roadmap 31-Series Status Refresh (**docs-only
-honesty pass**). Phase 32A.6 brings the roadmap/status record current with the
-actual repository history before the experimental Phase 32B track begins. It
-reconciles this roadmap with `main`: the Phase 31 premium-graph-interaction
-frontend series (31A planning through 31H) is **complete and merged**, Phase 31I
-is **implemented on its feature branch but not yet merged into `main`**, and the
-Phase 30-series interaction-recovery work — including the Phase 30C QA +
-screenshot-evidence pass (PR #110) — is complete. It also resolves the stale Git
-merge-conflict markers that survived in this file because the earlier Phase 32A.5
-roadmap conflict-marker cleanup never landed on `main`. **Docs-only:** no
-frontend/CSS/backend/API/schema/package/runtime/screenshot change; `docs/roadmap.md`
-(and, if needed for consistency, the README) are the only files touched. The
-next actual implementation phase is **Phase 32B — Standalone Webcam Motion
-Sandbox**, which may begin only once this docs-only status refresh is complete.
+**Current phase:** Phase 32C — Motion Sandbox QA + Control Contract Hardening
+(**frontend-only**). Phase 32C runtime-QAs the Phase 32B webcam motion sandbox,
+hardens the local `MotionCommand` contract — explicit `active` / `source` /
+`timestamp` fields plus a pitch-sign fix so the sandbox output matches its
+documented yaw/pitch/zoom semantics — and captures the whole thing in a new
+[Motion Sandbox Control Contract + QA doc](motion-sandbox-control-contract.md).
+The QA recommendation: frame-difference is a good dependency-free signal
+visualiser / fallback but cannot infer depth or a pinch gesture, so graph control
+should wait for a hand-landmark model. **No graph control wiring and no MediaPipe
+were added.** The preceding **Phase 32B** (PR #118) landed the standalone webcam
+motion sandbox, and the earlier **Phase 32A.6** (docs-only) reconciled this
+roadmap with `main`: the Phase 31 premium-graph-interaction frontend series (31A
+planning through 31H) is **complete and merged**, Phase 31I is **implemented on
+its feature branch but not yet merged into `main`**, and the Phase 30-series
+interaction-recovery work — including the Phase 30C QA + screenshot-evidence pass
+(PR #110) — is complete. The next phase is **Phase 32D — MediaPipe / Hand-Landmark
+Motion Detection** (feasibility or implementation), which Phase 32C's QA
+recommends to add the depth/zoom and pinch signals frame-difference cannot
+provide.
 
 The preceding **Phase 31-series** delivered the premium graph-interaction
 frontend polish, and **Phases 31A through 31H are complete and merged into
@@ -521,8 +527,10 @@ Current non-capabilities:
 | 31I | Pending (not merged) | Graph overlay legibility + command-surface final polish (frontend only); darkens the frosted backdrop behind each floating overlay for text contrast without raising fill opacity, and brightens the keyboard-focused rail label to full contrast. **Implemented on branch `phase-31i-graph-overlay-legibility-command-surface-final-polish` (commit `6bba994`) but not yet merged into `main`** — tracked as pending rather than complete until it lands on `main`. |
 | 32A | Complete (docs) | Motion input + orbital graph feasibility planning (**research / documentation only**); explores webcam/MediaPipe motion-input and orbital-graph feasibility for the future experimental track. Docs/research-only, no implementation. Completed on its planning branch (not yet on `main`). |
 | 32A.5 | Complete (docs) | Roadmap conflict-marker cleanup (**docs-only**); resolved roadmap Git conflict markers on branch `phase-32a-5-roadmap-conflict-marker-cleanup` (commit `cd0fefc`). That cleanup did **not** land on `main`, so the markers persisted in `main`'s roadmap until Phase 32A.6 resolved them here. |
-| 32A.6 | Complete | Roadmap 31-series status refresh (**docs-only**, this phase); reconciles the roadmap with actual repository history — marks 31A–31H complete/merged and 31I pending (branch-only, not merged), records the completed Phase 30-series and the Phase 32A / 32A.5 docs work, and resolves the stale roadmap conflict markers. No frontend/backend/source/package/API/schema/config change; no screenshots. |
-| 32B | Planned (next) | Standalone Webcam Motion Sandbox — the next actual experimental implementation phase; **may begin only once this docs-only status refresh (Phase 32A.6) is complete.** |
+| 32A.6 | Complete | Roadmap 31-series status refresh (**docs-only**); reconciles the roadmap with actual repository history — marks 31A–31H complete/merged and 31I pending (branch-only, not merged), records the completed Phase 30-series and the Phase 32A / 32A.5 docs work, and resolves the stale roadmap conflict markers. No frontend/backend/source/package/API/schema/config change; no screenshots. |
+| 32B | Complete | Standalone Webcam Motion Sandbox (frontend-only, merged into `main` via **PR #118**); an isolated "Motion" dock pane that requests the webcam only on explicit user action and derives a normalized `MotionCommand` from a dependency-free `getUserMedia` + canvas frame-difference loop, purely for inspection. Never touches the knowledge graph; no MediaPipe, no package/dependency/backend/API/schema change. |
+| 32C | Complete | Motion Sandbox QA + Control Contract Hardening (**frontend-only**, this phase); runtime-QAs the Phase 32B sandbox (camera lifecycle, permission/no-device error paths, teardown, sign conventions) and hardens the local `MotionCommand` contract — adds explicit `active` / `source` / `timestamp` fields, fixes the pitch sign so upward motion reads positive, and adds an Idle/Active chip + per-axis direction hints. New [Motion Sandbox Control Contract + QA doc](motion-sandbox-control-contract.md). **No graph control wiring, no MediaPipe, no package/dependency/backend/API/schema change.** |
+| 32D | Planned (next) | MediaPipe / Hand-Landmark Motion Detection — feasibility or implementation pass recommended by Phase 32C QA; would populate the same hardened `MotionCommand` shape (using `source` as the estimator discriminator) to add the depth/zoom and pinch/grab signals frame-difference structurally cannot provide, with frame-difference retained as a dependency-free fallback / debug visualiser. Any dependency decision belongs to this phase. Graph control wiring remains gated behind a later phase. |
 
 ## Future roadmap
 

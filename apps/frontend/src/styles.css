@@ -4922,14 +4922,54 @@ body,
   padding: var(--space-3);
 }
 
+.motion-sandbox-readout-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
 .motion-sandbox-readout-title {
-  margin: 0 0 var(--space-2);
+  margin: 0;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text-muted);
   text-transform: uppercase;
+}
+
+/* Idle/active chip — reuses the status-pill hues so the readout state reads at a
+   glance without introducing new colour tokens. */
+.motion-sandbox-state {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.motion-sandbox-state.is-active {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.motion-sandbox-state.is-idle {
+  background: var(--surface-inset);
+  color: var(--text-subtle);
+}
+
+/* Small right-aligned direction cue after each delta value. */
+.motion-sandbox-hint {
+  margin-left: var(--space-2);
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
 }
 
 .motion-sandbox-metrics {
