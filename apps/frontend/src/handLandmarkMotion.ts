@@ -205,3 +205,205 @@ export function deriveHandCommand(
     timestamp,
   };
 }
+
+/* Phase 32M — Gesture-recognition stability + control-zone feedback helpers.
+
+   The pieces below stay in this module for the same reason the derivation does:
+   they are pure, deterministic, and side-effect free, so the thresholds and the
+   small temporal state machines that make the control feel intentional (instead
+   of flickering on single-frame noise) are auditable and testable in one place.
+   The panel owns the timing/rendering; this file owns the classification math and
+   the transition rules. None of it reads a clock — every time-based helper takes
+   an explicit `now`, so the same inputs always produce the same output. */
+
+// --- Hand range (too close / in range / too far) ---------------------------
+
+/** Where the detected hand sits relative to the usable control band, derived
+    from its apparent size (see `handBoundingSpan`). Informational only — the
+    caller decides whether to surface it; `no-hand` is the caller's concern. */
+export type HandRange = "too-far" | "in-range" | "too-close";
+
+// Range-band edges on the bounding-box span (max of the box's normalized width
+// and height, 0..1). Below TOO_FAR the hand is a small speck the tracker resolves
+// poorly; above TOO_CLOSE it overflows the frame and the palm-span / pinch ratio
+// get noisy. Between them tracking is comfortable. These sit inside the phase's
+// suggested band, tuned toward the conservative end so the hint stays a calm cue
+// rather than a nag.
+export const HAND_RANGE_TOO_FAR = 0.18;
+export const HAND_RANGE_TOO_CLOSE = 0.6;
+
+/** Largest normalized extent of the hand's bounding box (max of width and height
+    across all landmarks). A single-camera scale proxy for distance: a small box →
+    hand far away; a box approaching 1 → hand filling the frame. Returns 0 for an
+    empty landmark set so the caller reads it as "no hand". */
+export function handBoundingSpan(landmarks: Landmark[]): number {
+  if (landmarks.length === 0) return 0;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of landmarks) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return Math.max(maxX - minX, maxY - minY);
+}
+
+/** Classify a bounding-box span into the usable-range band. Conservative edges
+    keep the hint calm: only a clearly tiny or clearly frame-filling hand trips
+    "too far" / "too close". */
+export function classifyHandRange(span: number): HandRange {
+  if (span < HAND_RANGE_TOO_FAR) return "too-far";
+  if (span > HAND_RANGE_TOO_CLOSE) return "too-close";
+  return "in-range";
+}
+
+// --- Confidence quality tier ------------------------------------------------
+
+/** Coarse tracking-confidence tier for the readout. `no-hand` whenever there is
+    no usable hand this frame; otherwise Strong/Okay/Weak by the thresholds
+    below, so a viewer can judge tracking strength without reading the raw
+    number. */
+export type ConfidenceQuality = "strong" | "okay" | "weak" | "no-hand";
+
+export const CONFIDENCE_STRONG = 0.75;
+export const CONFIDENCE_OKAY = 0.55;
+
+/** Map a 0..1 confidence to a quality tier. `hasHand=false` (or a non-positive
+    confidence) is always `no-hand`, so an idle frame reads as "no hand" rather
+    than a misleading "weak". */
+export function classifyConfidence(
+  confidence: number,
+  hasHand: boolean,
+): ConfidenceQuality {
+  if (!hasHand || !(confidence > 0)) return "no-hand";
+  if (confidence >= CONFIDENCE_STRONG) return "strong";
+  if (confidence >= CONFIDENCE_OKAY) return "okay";
+  return "weak";
+}
+
+// --- Active/idle hysteresis -------------------------------------------------
+//
+// Raw confidence crosses any single threshold many times a second on a hand held
+// near it, so gating "active" directly on it strobes the readout (and the graph
+// camera). This small deterministic gate adds hysteresis: it enters active only
+// after confidence stays at/above ENTER for ENTER_HOLD_MS, and leaves only after
+// it stays below EXIT for EXIT_HOLD_MS. The band between EXIT and ENTER is a
+// sticky zone where the current state simply persists — no flicker. A vanished
+// hand (`hasSignal=false`) always takes the exit path so control can never latch
+// on nothing.
+
+export const ACTIVE_ENTER_CONFIDENCE = 0.6;
+export const ACTIVE_EXIT_CONFIDENCE = 0.42;
+export const ACTIVE_ENTER_HOLD_MS = 120;
+export const ACTIVE_EXIT_HOLD_MS = 180;
+
+/** Coarse control phase for display: warming up toward active, actively
+    controlling, briefly uncertain while confidence drops, or idle. */
+export type ControlPhase = "idle" | "warming" | "active" | "uncertain";
+
+/** Hysteresis accumulator. `active` is the debounced gate a consumer reads;
+    `phase` is the display tier; `pendingSince` timestamps an in-progress enter
+    (from idle) or exit (from active) transition, or is null when settled. */
+export type ControlGate = {
+  active: boolean;
+  phase: ControlPhase;
+  pendingSince: number | null;
+};
+
+export function createControlGate(): ControlGate {
+  return { active: false, phase: "idle", pendingSince: null };
+}
+
+/** Advance the gate one frame. `confidence` is the (smoothed) 0..1 signal;
+    `hasSignal` is false when there is no usable hand — which forces the exit
+    path, since a hand that left the frame must not stay latched active. Returns a
+    fresh gate; never mutates the input. */
+export function advanceControlGate(
+  gate: ControlGate,
+  confidence: number,
+  hasSignal: boolean,
+  now: number,
+): ControlGate {
+  if (!gate.active) {
+    // Idle → warming → active. Only a present hand at/above ENTER can arm/enter.
+    if (hasSignal && confidence >= ACTIVE_ENTER_CONFIDENCE) {
+      const since = gate.pendingSince ?? now;
+      if (now - since >= ACTIVE_ENTER_HOLD_MS) {
+        return { active: true, phase: "active", pendingSince: null };
+      }
+      return { active: false, phase: "warming", pendingSince: since };
+    }
+    // Below ENTER (or no hand): drop the arming timer, hold idle.
+    return { active: false, phase: "idle", pendingSince: null };
+  }
+
+  // Active → uncertain → idle. A missing hand or confidence below EXIT starts the
+  // exit timer; anything at/above EXIT with a hand present re-confirms active.
+  const dropping = !hasSignal || confidence < ACTIVE_EXIT_CONFIDENCE;
+  if (dropping) {
+    const since = gate.pendingSince ?? now;
+    if (now - since >= ACTIVE_EXIT_HOLD_MS) {
+      return { active: false, phase: "idle", pendingSince: null };
+    }
+    return { active: true, phase: "uncertain", pendingSince: since };
+  }
+  return { active: true, phase: "active", pendingSince: null };
+}
+
+// --- Pinch hold debounce ----------------------------------------------------
+//
+// Raw pinch (thumb/index gap under PINCH_RATIO_THRESHOLD) flickers on single
+// noisy frames. This gate promotes it to a stable "held" only after the raw pinch
+// persists for PINCH_HOLD_MS, and releases only after it stays open for
+// PINCH_RELEASE_GRACE_MS — so a one-frame dropout doesn't drop the hold, but a
+// deliberate release still lands promptly. Same pure, `now`-driven shape as the
+// control gate above.
+
+export const PINCH_HOLD_MS = 180;
+export const PINCH_RELEASE_GRACE_MS = 120;
+
+/** Pinch display tier: actively held, raw-detected but not yet held long enough,
+    or idle. */
+export type PinchPhase = "idle" | "ready" | "holding";
+
+export type PinchGate = {
+  held: boolean;
+  phase: PinchPhase;
+  pendingSince: number | null;
+};
+
+export function createPinchGate(): PinchGate {
+  return { held: false, phase: "idle", pendingSince: null };
+}
+
+/** Advance the pinch gate one frame from the raw per-frame pinch flag. Returns a
+    fresh gate; never mutates the input. */
+export function advancePinchGate(
+  gate: PinchGate,
+  rawPinch: boolean,
+  now: number,
+): PinchGate {
+  if (!gate.held) {
+    // Idle → ready → holding once the raw pinch persists past the hold window.
+    if (rawPinch) {
+      const since = gate.pendingSince ?? now;
+      if (now - since >= PINCH_HOLD_MS) {
+        return { held: true, phase: "holding", pendingSince: null };
+      }
+      return { held: false, phase: "ready", pendingSince: since };
+    }
+    return { held: false, phase: "idle", pendingSince: null };
+  }
+  // Held: a sustained open releases; a brief single-frame dropout is tolerated.
+  if (!rawPinch) {
+    const since = gate.pendingSince ?? now;
+    if (now - since >= PINCH_RELEASE_GRACE_MS) {
+      return { held: false, phase: "idle", pendingSince: null };
+    }
+    return { held: true, phase: "holding", pendingSince: since };
+  }
+  return { held: true, phase: "holding", pendingSince: null };
+}

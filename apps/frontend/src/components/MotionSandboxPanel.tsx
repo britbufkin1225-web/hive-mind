@@ -4,13 +4,25 @@ import type {
   HandLandmarkerResult,
 } from "@mediapipe/tasks-vision";
 import {
+  advanceControlGate,
+  advancePinchGate,
+  classifyConfidence,
+  classifyHandRange,
+  createControlGate,
+  createPinchGate,
   deriveHandCommand,
+  handBoundingSpan,
   HAND_CONNECTIONS,
   LM,
-  PINCH_RATIO_THRESHOLD,
   ZERO_MOTION,
+  type ConfidenceQuality,
+  type ControlGate,
+  type ControlPhase,
+  type HandRange,
   type Landmark,
   type MotionCommand,
+  type PinchGate,
+  type PinchPhase,
 } from "../handLandmarkMotion";
 
 /* Phase 32D — Standalone Webcam Motion Sandbox (MediaPipe hand landmarks).
@@ -249,6 +261,83 @@ const MEDIAPIPE_IDLE: MotionCommand = {
   source: "mediapipe-hand-landmarker",
 };
 
+/* Phase 32M — live control-feedback readout.
+
+   The throttled snapshot of the "is my hand doing the right thing" cues: where
+   the hand sits in range, how strong tracking is, whether control is
+   warming/active/uncertain/idle (post-hysteresis), and whether a pinch is being
+   held intentionally. Kept as one object so the ~12Hz readout updates in a single
+   batched setState alongside the existing HandInfo/MotionCommand pushes. */
+type ControlFeedback = {
+  range: HandRange | "no-hand";
+  quality: ConfidenceQuality;
+  controlPhase: ControlPhase;
+  pinchPhase: PinchPhase;
+};
+
+const NEUTRAL_FEEDBACK: ControlFeedback = {
+  range: "no-hand",
+  quality: "no-hand",
+  controlPhase: "idle",
+  pinchPhase: "idle",
+};
+
+// UI copy + status-pill class for each feedback dimension. Kept as small pure
+// maps (not scattered ternaries in JSX) so the honest, concise labels live in one
+// place. `neutral`/`pending`/`success`/`error` reuse the existing status-pill
+// hues — no new colour tokens.
+type PillTone = "neutral" | "pending" | "success" | "error";
+
+function rangeLabel(range: ControlFeedback["range"]): { label: string; tone: PillTone } {
+  switch (range) {
+    case "in-range":
+      return { label: "Hand in range", tone: "success" };
+    case "too-close":
+      return { label: "Hand too close", tone: "pending" };
+    case "too-far":
+      return { label: "Hand too far", tone: "pending" };
+    default:
+      return { label: "No hand", tone: "neutral" };
+  }
+}
+
+function qualityLabel(quality: ConfidenceQuality): { label: string; tone: PillTone } {
+  switch (quality) {
+    case "strong":
+      return { label: "Strong", tone: "success" };
+    case "okay":
+      return { label: "Okay", tone: "pending" };
+    case "weak":
+      return { label: "Weak", tone: "error" };
+    default:
+      return { label: "No hand", tone: "neutral" };
+  }
+}
+
+function controlPhaseLabel(phase: ControlPhase): { label: string; tone: PillTone } {
+  switch (phase) {
+    case "active":
+      return { label: "Active", tone: "success" };
+    case "warming":
+      return { label: "Warming up", tone: "pending" };
+    case "uncertain":
+      return { label: "Uncertain", tone: "pending" };
+    default:
+      return { label: "Idle", tone: "neutral" };
+  }
+}
+
+function pinchPhaseLabel(phase: PinchPhase): { label: string; tone: PillTone } {
+  switch (phase) {
+    case "holding":
+      return { label: "Holding", tone: "success" };
+    case "ready":
+      return { label: "Ready", tone: "pending" };
+    default:
+      return { label: "Idle", tone: "neutral" };
+  }
+}
+
 /* Phase 32G — optional wiring props.
 
    The panel is still self-contained: with none of these passed (or graph control
@@ -280,6 +369,9 @@ function MotionSandboxPanel({
   const [motion, setMotion] = useState<MotionCommand>(ZERO_MOTION);
   const [mpStatus, setMpStatus] = useState<MediaPipeStatus>("idle");
   const [handInfo, setHandInfo] = useState<HandInfo>(NO_HAND);
+  // Phase 32M — throttled live control-feedback cues (range / quality / control
+  // phase / pinch phase). MediaPipe mode only; frame-difference has no hand model.
+  const [feedback, setFeedback] = useState<ControlFeedback>(NEUTRAL_FEEDBACK);
 
   // Live-object refs: none of these should trigger a re-render when they change.
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -292,6 +384,12 @@ function MotionSandboxPanel({
   // Smoothed command carried across frames (the value we EMA toward).
   const smoothedRef = useRef<MotionCommand>(ZERO_MOTION);
   const lastReadoutRef = useRef<number>(0);
+  // Phase 32M — temporal gates carried across frames. `controlGate` debounces
+  // active/idle (hysteresis); `pinchGate` debounces the pinch hold. Both are pure
+  // reducers advanced with `performance.now()`; they live in refs so the RAF loop
+  // updates them without re-rendering.
+  const controlGateRef = useRef<ControlGate>(createControlGate());
+  const pinchGateRef = useRef<PinchGate>(createPinchGate());
 
   // Phase 32G: keep the (optional) command sink in a ref so the detection loop
   // can forward every frame without `publishReadout`/`teardown` re-binding when
@@ -378,6 +476,10 @@ function MotionSandboxPanel({
     prevGrayRef.current = null;
     smoothedRef.current = ZERO_MOTION;
     lastVideoTimeRef.current = -1;
+    // Phase 32M — reset the temporal gates so a new session starts idle rather
+    // than inheriting a previous run's latched active/pinch state.
+    controlGateRef.current = createControlGate();
+    pinchGateRef.current = createPinchGate();
     // Phase 32G: forward a final idle command so a graph consumer decays to
     // stillness the moment the camera stops (no frozen last-frame deltas).
     onMotionCommandRef.current?.(ZERO_MOTION);
@@ -433,13 +535,24 @@ function MotionSandboxPanel({
   // (unthrottled) so a graph consumer gets per-frame motion; only the on-screen
   // readout stays throttled. The forward is a ref write in App, so it never
   // re-renders anything here regardless of whether graph control is on.
-  const publishReadout = useCallback((smoothed: MotionCommand, now: number) => {
-    onMotionCommandRef.current?.(smoothed);
-    if (now - lastReadoutRef.current >= READOUT_INTERVAL_MS) {
-      lastReadoutRef.current = now;
-      setMotion(smoothed);
-    }
-  }, []);
+  //
+  // Returns true on the frames where the throttle actually fired, so callers can
+  // batch their own readout setStates (hand detection, control feedback) onto the
+  // same ~12Hz tick. Phase 32M: this also fixes a latent throttle bug — the old
+  // code re-checked `lastReadoutRef` *after* this method had already advanced it,
+  // so those secondary setStates could never run.
+  const publishReadout = useCallback(
+    (smoothed: MotionCommand, now: number): boolean => {
+      onMotionCommandRef.current?.(smoothed);
+      if (now - lastReadoutRef.current >= READOUT_INTERVAL_MS) {
+        lastReadoutRef.current = now;
+        setMotion(smoothed);
+        return true;
+      }
+      return false;
+    },
+    [],
+  );
 
   // --- Frame-difference estimator (Phase 32B/32C, preserved) -----------------
   // Reads the (mirrored) video into the tiny proc canvas, diffs it against the
@@ -536,6 +649,46 @@ function MotionSandboxPanel({
     publishReadout(smoothed, now);
   }, [publishReadout]);
 
+  // Phase 32M — emit one MediaPipe idle frame: no usable hand this tick (detector
+  // still loading, or hand out of frame). The confidence eases toward zero and
+  // both gates are advanced with "no signal", so a hand that blinks out doesn't
+  // instantly drop control (hysteresis) but a sustained absence decays it to idle.
+  // `active` follows the debounced gate, not a hard false, for the same reason.
+  const emitIdleFrame = useCallback(
+    (now: number) => {
+      const prevCmd = smoothedRef.current;
+      const decayedConfidence = prevCmd.confidence + (0 - prevCmd.confidence) * SMOOTHING;
+      const controlGate = advanceControlGate(
+        controlGateRef.current,
+        decayedConfidence,
+        false,
+        now,
+      );
+      controlGateRef.current = controlGate;
+      const pinchGate = advancePinchGate(pinchGateRef.current, false, now);
+      pinchGateRef.current = pinchGate;
+
+      const smoothed: MotionCommand = {
+        ...MEDIAPIPE_IDLE,
+        confidence: decayedConfidence,
+        active: controlGate.active,
+        timestamp: now,
+      };
+      smoothedRef.current = smoothed;
+
+      const published = publishReadout(smoothed, now);
+      if (!published) return;
+      setHandInfo(NO_HAND);
+      setFeedback({
+        range: "no-hand",
+        quality: "no-hand",
+        controlPhase: controlGate.phase,
+        pinchPhase: pinchGate.phase,
+      });
+    },
+    [publishReadout],
+  );
+
   // --- MediaPipe hand-landmarker estimator (Phase 32D) -----------------------
   // Runs the detector on the raw video (never mirrored input; x is mirrored in
   // the derivation to match the preview). Skips stalled/duplicate frames and
@@ -544,16 +697,10 @@ function MotionSandboxPanel({
     const video = videoRef.current;
     const landmarker = handLandmarkerRef.current;
     // Detector not ready (still loading or failed) — emit a tagged idle command
-    // so the readout stays honest instead of freezing on stale values.
+    // so the readout stays honest instead of freezing on stale values. Advance
+    // the gates with no signal so any latched active/pinch decays out too.
     if (!video || !landmarker) {
-      const prevCmd = smoothedRef.current;
-      const smoothed: MotionCommand = {
-        ...MEDIAPIPE_IDLE,
-        confidence: prevCmd.confidence + (0 - prevCmd.confidence) * SMOOTHING,
-        timestamp: now,
-      };
-      smoothedRef.current = smoothed;
-      publishReadout(smoothed, now);
+      emitIdleFrame(now);
       return;
     }
 
@@ -581,17 +728,8 @@ function MotionSandboxPanel({
     const hasHand = result.landmarks.length > 0 && result.landmarks[0].length > 0;
 
     if (!hasHand) {
-      const prevCmd = smoothedRef.current;
-      const smoothed: MotionCommand = {
-        ...MEDIAPIPE_IDLE,
-        confidence: prevCmd.confidence + (0 - prevCmd.confidence) * SMOOTHING,
-        timestamp: now,
-      };
-      smoothedRef.current = smoothed;
-      publishReadout(smoothed, now);
+      emitIdleFrame(now);
       drawOverlay([], false);
-      if (now - lastReadoutRef.current < READOUT_INTERVAL_MS) return;
-      setHandInfo(NO_HAND);
       return;
     }
 
@@ -602,32 +740,55 @@ function MotionSandboxPanel({
 
     const target = deriveHandCommand(landmarks, score, now);
 
-    // Smooth the continuous fields; keep the discrete pinch/active from target so
-    // the "grab" flag stays crisp rather than smearing across the threshold.
+    // Smooth the continuous fields; the discrete pinch/active come from the
+    // temporal gates below (not straight from `target`) so both are debounced.
     const prevCmd = smoothedRef.current;
+    const smoothedConfidence =
+      prevCmd.confidence + (target.confidence - prevCmd.confidence) * SMOOTHING;
+
+    // Phase 32M — hysteresis on active/idle and debounce on pinch. The control
+    // gate reads the *smoothed* confidence (steadier than the raw score); the
+    // pinch gate reads the raw per-frame pinch and promotes it to a held state.
+    const controlGate = advanceControlGate(
+      controlGateRef.current,
+      smoothedConfidence,
+      true,
+      now,
+    );
+    controlGateRef.current = controlGate;
+    const pinchGate = advancePinchGate(pinchGateRef.current, target.pinchActive, now);
+    pinchGateRef.current = pinchGate;
+
     const smoothed: MotionCommand = {
       yawDelta: prevCmd.yawDelta + (target.yawDelta - prevCmd.yawDelta) * SMOOTHING,
       pitchDelta: prevCmd.pitchDelta + (target.pitchDelta - prevCmd.pitchDelta) * SMOOTHING,
       zoomDelta: prevCmd.zoomDelta + (target.zoomDelta - prevCmd.zoomDelta) * SMOOTHING,
-      pinchActive: target.pinchActive,
-      confidence: prevCmd.confidence + (target.confidence - prevCmd.confidence) * SMOOTHING,
-      active: target.active,
+      pinchActive: pinchGate.held,
+      confidence: smoothedConfidence,
+      active: controlGate.active,
       source: "mediapipe-hand-landmarker",
       timestamp: now,
     };
     smoothedRef.current = smoothed;
 
-    drawOverlay(landmarks, target.pinchActive);
-    publishReadout(smoothed, now);
+    // Overlay highlights the pinch on the debounced hold, so it stops strobing.
+    drawOverlay(landmarks, pinchGate.held);
 
-    if (now - lastReadoutRef.current < READOUT_INTERVAL_MS) return;
+    const published = publishReadout(smoothed, now);
+    if (!published) return;
     setHandInfo({
       handDetected: true,
       handedness,
       landmarkCount: landmarks.length,
       score,
     });
-  }, [drawOverlay, publishReadout]);
+    setFeedback({
+      range: classifyHandRange(handBoundingSpan(landmarks)),
+      quality: classifyConfidence(smoothedConfidence, true),
+      controlPhase: controlGate.phase,
+      pinchPhase: pinchGate.phase,
+    });
+  }, [drawOverlay, emitIdleFrame, publishReadout]);
 
   // The single RAF loop. Dispatches to the active estimator each frame and
   // reschedules itself. Guards against running before video metadata is ready.
@@ -664,8 +825,11 @@ function MotionSandboxPanel({
     setStatus("requesting");
     setMotion(activeMode === "mediapipe-hand-landmarker" ? MEDIAPIPE_IDLE : ZERO_MOTION);
     setHandInfo(NO_HAND);
+    setFeedback(NEUTRAL_FEEDBACK);
     smoothedRef.current =
       activeMode === "mediapipe-hand-landmarker" ? MEDIAPIPE_IDLE : ZERO_MOTION;
+    controlGateRef.current = createControlGate();
+    pinchGateRef.current = createPinchGate();
     prevGrayRef.current = null;
     lastVideoTimeRef.current = -1;
 
@@ -749,6 +913,7 @@ function MotionSandboxPanel({
     setStatus("stopped");
     setMotion(mode === "mediapipe-hand-landmarker" ? MEDIAPIPE_IDLE : ZERO_MOTION);
     setHandInfo(NO_HAND);
+    setFeedback(NEUTRAL_FEEDBACK);
     if (mpStatus === "loading") {
       setMpStatus(handLandmarkerRef.current ? "ready" : "idle");
     }
@@ -800,6 +965,12 @@ function MotionSandboxPanel({
         return { className: "status-pill-pending", label: "MediaPipe idle" };
     }
   })();
+
+  // Phase 32M — resolve the live control cues to copy + tone for the readout.
+  const rangeCue = rangeLabel(feedback.range);
+  const qualityCue = qualityLabel(feedback.quality);
+  const controlCue = controlPhaseLabel(feedback.controlPhase);
+  const pinchCue = pinchPhaseLabel(feedback.pinchPhase);
 
   return (
     <section className="motion-sandbox" id={id}>
@@ -873,6 +1044,30 @@ function MotionSandboxPanel({
         </button>
       </div>
 
+      {/* Phase 32M — practical camera + placement guidance. Copy only: it never
+          selects or forces a device (the browser's own picker still applies once
+          permission is granted), and it stays honest about what has actually been
+          validated versus what remains experimental. */}
+      <div className="motion-sandbox-guidance">
+        <p className="motion-sandbox-guidance-line">
+          <span className="motion-sandbox-guidance-key">Recommended camera</span>
+          <span>HD Pro Webcam C920 — validated for live graph-control testing.</span>
+        </p>
+        <p className="motion-sandbox-guidance-line">
+          <span className="motion-sandbox-guidance-key">Backup camera</span>
+          <span>iC1200 2K QUAD HD.</span>
+        </p>
+        <p className="motion-sandbox-guidance-line">
+          <span className="motion-sandbox-guidance-key">Recommended distance</span>
+          <span>12–30 inches — keep your hand inside the control zone.</span>
+        </p>
+        <p className="motion-sandbox-guidance-note">
+          Experimental. A built-in laptop camera may be unavailable; pick your
+          webcam in the browser prompt after granting access. No camera frames are
+          stored.
+        </p>
+      </div>
+
       {/* Phase 32G — explicit, opt-in graph wiring. Off by default; the webcam
           never drives the graph just because this panel is open. Enabling it
           routes the derived MotionCommand to the Knowledge Graph's camera as a
@@ -926,6 +1121,26 @@ function MotionSandboxPanel({
             height={OVERLAY_H}
             data-live={isActive && isMediaPipe ? "true" : "false"}
           />
+          {/* Phase 32M — control-zone guide. A centred, rounded frame with inner
+              bounds that reads over live video without covering the hand. Its
+              tint follows the live range cue (in-range vs too close/far) so the
+              frame itself signals whether the hand is well placed. Purely
+              decorative (pointer-events none, aria-hidden) — the pills below carry
+              the accessible status. */}
+          {isActive && isMediaPipe && (
+            <div
+              className="motion-sandbox-zone"
+              data-range={feedback.range}
+              aria-hidden="true"
+            >
+              <span className="motion-sandbox-zone-frame" />
+              <span className="motion-sandbox-zone-label">
+                {feedback.range === "no-hand"
+                  ? "Control zone"
+                  : rangeCue.label}
+              </span>
+            </div>
+          )}
           {!isActive && (
             <p className="motion-sandbox-preview-empty">
               {status === "inactive"
@@ -952,6 +1167,35 @@ function MotionSandboxPanel({
           </div>
         )}
       </div>
+
+      {/* Phase 32M — live control cues. Sits directly under the preview so the
+          "is my hand doing the right thing" feedback is next to the video: hand
+          range, tracking-confidence quality, the debounced control phase
+          (warming/active/uncertain/idle), and the debounced pinch hold. MediaPipe
+          mode only — the frame-difference fallback has no hand model. */}
+      {isMediaPipe && (
+        <div className="motion-sandbox-control" aria-live="polite">
+          <h3 className="motion-sandbox-readout-title">Control status</h3>
+          <div className="motion-sandbox-cues">
+            <div className="motion-sandbox-cue" data-tone={rangeCue.tone}>
+              <span className="motion-sandbox-cue-key">Range</span>
+              <span className="motion-sandbox-cue-val">{rangeCue.label}</span>
+            </div>
+            <div className="motion-sandbox-cue" data-tone={qualityCue.tone}>
+              <span className="motion-sandbox-cue-key">Confidence</span>
+              <span className="motion-sandbox-cue-val">{qualityCue.label}</span>
+            </div>
+            <div className="motion-sandbox-cue" data-tone={controlCue.tone}>
+              <span className="motion-sandbox-cue-key">Control</span>
+              <span className="motion-sandbox-cue-val">{controlCue.label}</span>
+            </div>
+            <div className="motion-sandbox-cue" data-tone={pinchCue.tone}>
+              <span className="motion-sandbox-cue-key">Pinch</span>
+              <span className="motion-sandbox-cue-val">{pinchCue.label}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Off-DOM sampling buffer — never displayed, just read from. */}
       <canvas
