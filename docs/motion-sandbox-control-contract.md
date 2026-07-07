@@ -410,4 +410,53 @@ of the palm (wrist→middle-MCP span) relative to a fixed neutral. This is:
   motion-to-graph mapping rules, the engagement/safety model, and the
   implementation boundaries — is defined (planning only, no wiring) in the
   [Phase 32E Orbital Graph Control Contract + Motion-to-Graph Wiring Planning](planning/phase-32e-orbital-graph-control-contract-motion-wiring.md)
-  doc. The first real wiring is deferred to Phase 32G.
+  doc, and the first typed helper stub from that plan landed in Phase 32F (§21).
+  The first real wiring is deferred to Phase 32G.
+
+---
+
+# Phase 32F — Orbital Graph Control Contract Types + Helper Stub
+
+**Status:** Implemented. Frontend-only, types + pure helper. **No graph wiring, no
+dependency change, no runtime behaviour change.**
+
+## 21. Orbital graph control bridge layer
+
+Phase 32F implements the first typed piece of the Phase 32E plan: a small,
+deterministic, side-effect-free bridge module,
+`apps/frontend/src/orbitalGraphControl.ts`. It is a contract + helper stub only —
+nothing consumes it yet, and it does not touch React, the DOM, the camera,
+MediaPipe, graph rendering, or app state.
+
+- **`MotionCommand` stays the camera/motion-layer contract.** It is still the
+  detector output (`handLandmarkMotion.ts`), describing *what the camera saw*, and
+  is unchanged by 32F.
+- **`OrbitalGraphControlCommand` is a separate future graph-control contract.** It
+  describes *what the graph should do* after gating/conditioning. Keeping the two
+  apart stops the graph from ever depending on detector internals (landmark
+  indices, centroids, `pinchActive` semantics) and lets future input sources be
+  added without rewriting graph controls. It refines the Phase 32E §4 sketch:
+  32F keeps the shorter `yawDelta`/`pitchDelta` axis names and encodes
+  engagement/trust as explicit `active` + `orbitActive`/`zoomActive` flags plus a
+  single `intent` (`idle` / `orbit` / `zoom` / `orbit-and-zoom`) discriminator.
+- **Phase 32F does not wire motion into the graph.** The helper is defined and
+  (independently) testable; no graph code imports it. First real wiring is Phase
+  32G.
+- **Future graph wiring must consume the orbital helper output, not raw
+  camera/MediaPipe data.** The graph should read `OrbitalGraphControlCommand`, not
+  reach back into `MotionCommand` or landmark math.
+- **The helper clamps and deadzones deltas before any future graph use.**
+  `clampOrbitalDelta` zeroes non-finite values, suppresses anything inside the
+  deadzone, and clamps to `±1` (sign preserved).
+  `mapMotionCommandToOrbitalGraphControlCommand` fails *safe* toward stillness:
+  missing input, an inactive command, or confidence below the trust threshold all
+  return the stable idle command from
+  `createIdleOrbitalGraphControlCommand`, and a trusted frame whose every axis sits
+  inside the deadzone is likewise idle.
+
+**Constants** track the Phase 32E §6 planning defaults where that doc defined them:
+`ORBITAL_GRAPH_CONTROL_DEADZONE = 0.08` (32E yaw/pitch deadzone),
+`ORBITAL_GRAPH_CONTROL_MIN_CONFIDENCE = 0.55` (32E minimum-confidence threshold),
+and `ORBITAL_GRAPH_CONTROL_MAX_DELTA = 1` (32E defined no max, so the normalized
+range is kept). They remain conservative, tunable placeholders — final tuning is a
+later implementation + QA pass.

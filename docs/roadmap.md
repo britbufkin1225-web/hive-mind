@@ -37,22 +37,31 @@ and the [Phase 32E Orbital Graph Control Contract + Motion-to-Graph Wiring Plann
 
 ## Current status
 
-**Current phase:** Phase 32E — Orbital Graph Control Contract + Motion-to-Graph
-Wiring Planning (**documentation only**, on branch
-`phase-32e-orbital-graph-control-contract-planning`). Phase 32E defines — as
-**planning only, with no wiring** — how the existing Motion Sandbox output could
-eventually control the knowledge graph as an orbital / 3D-feeling surface. It
-documents the existing `MotionCommand` contract, proposes a **separate**
-graph-intent contract (`OrbitalGraphControlCommand`), the motion-to-graph mapping
-rules, a strict opt-in/off-by-default engagement + safety model (confidence,
-deadzone, and staleness gating; Escape/Stop kill path; read-only, no graph
-mutation), the UI/UX activation contract, a future helper/module architecture, and
-the next-phase sequence. **Motion does not control the graph today** — this phase
-implements no graph control and changes no runtime/source/package/backend files.
-The first real wiring is deferred to Phase 32G. Next likely phase: **Phase 32F —
-Orbital Graph Control Contract Types + Helper Stub**. Full detail in the
+**Current phase:** Phase 32F — Orbital Graph Control Contract Types + Helper Stub
+(**frontend-only**, types + pure helper, on branch
+`phase-32f-orbital-graph-control-contract-types-helper-stub`). Phase 32F implements
+the first typed piece of the Phase 32E plan: a small, deterministic, side-effect-free
+bridge module (`apps/frontend/src/orbitalGraphControl.ts`) that defines the
+**separate** `OrbitalGraphControlCommand` graph-intent contract and a pure
+`MotionCommand` → graph-intent mapping helper (deadzone / confidence gating / clamp,
+failing safe toward stillness). It is a **contract + helper stub only** — nothing
+consumes it, so **motion still does not control the graph**, and it touches no
+React, DOM, camera, MediaPipe, graph rendering, or app state, and adds no
+dependency, backend, API, schema, or CSS change. The first real wiring stays
+deferred to Phase 32G. Full detail in the
+[Motion Sandbox Control Contract + 32F doc](motion-sandbox-control-contract.md)
+(§21) and the
 [Phase 32E Orbital Graph Control Contract + Motion-to-Graph Wiring Planning](planning/phase-32e-orbital-graph-control-contract-motion-wiring.md)
 doc.
+
+The preceding **Phase 32E** (documentation only, merged into `main` via PR #121)
+defined — as **planning only, with no wiring** — how the existing Motion Sandbox
+output could eventually control the knowledge graph as an orbital / 3D-feeling
+surface: the existing `MotionCommand` contract, a **separate** graph-intent contract
+(`OrbitalGraphControlCommand`), the motion-to-graph mapping rules, a strict
+opt-in/off-by-default engagement + safety model (confidence, deadzone, and staleness
+gating; Escape/Stop kill path; read-only, no graph mutation), the UI/UX activation
+contract, a future helper/module architecture, and the next-phase sequence.
 
 The preceding **Phase 32D** (frontend-only, complete and merged into `main`)
 added a **MediaPipe Hand Landmarker** estimator to the Motion Sandbox as the
@@ -557,8 +566,9 @@ Current non-capabilities:
 | 32A.6 | Complete | Roadmap 31-series status refresh (**docs-only**); reconciles the roadmap with actual repository history — marks 31A–31H complete/merged and 31I pending (branch-only, not merged), records the completed Phase 30-series and the Phase 32A / 32A.5 docs work, and resolves the stale roadmap conflict markers. No frontend/backend/source/package/API/schema/config change; no screenshots. |
 | 32B | Complete | Standalone Webcam Motion Sandbox (frontend-only, merged into `main` via **PR #118**); an isolated "Motion" dock pane that requests the webcam only on explicit user action and derives a normalized `MotionCommand` from a dependency-free `getUserMedia` + canvas frame-difference loop, purely for inspection. Never touches the knowledge graph; no MediaPipe, no package/dependency/backend/API/schema change. |
 | 32C | Complete | Motion Sandbox QA + Control Contract Hardening (**frontend-only**, this phase); runtime-QAs the Phase 32B sandbox (camera lifecycle, permission/no-device error paths, teardown, sign conventions) and hardens the local `MotionCommand` contract — adds explicit `active` / `source` / `timestamp` fields, fixes the pitch sign so upward motion reads positive, and adds an Idle/Active chip + per-axis direction hints. New [Motion Sandbox Control Contract + QA doc](motion-sandbox-control-contract.md). **No graph control wiring, no MediaPipe, no package/dependency/backend/API/schema change.** |
-| 32D | In progress | MediaPipe / Hand-Landmark Motion Detection (**frontend-only**, this phase); adds a MediaPipe Hand Landmarker estimator to the Motion Sandbox as the primary detector, populating the same hardened `MotionCommand` shape (with `source` as the discriminator) so `zoomDelta` (approximate single-camera proxy) and `pinchActive` (thumb/index distance) become live. Keeps frame-difference as a zero-dependency fallback / debug visualiser; adds a landmark overlay + hand-detection readout and a small typed landmark-math helper. Adds one **pinned** dependency (`@mediapipe/tasks-vision@0.10.35`); wasm/model fetched from version-pinned URLs, never committed/transmitted. Camera stays explicit-start, local-only, no-storage, no-backend. **No graph control wiring.** See [Motion Sandbox Control Contract + 32D doc](motion-sandbox-control-contract.md). |
-| 32E | Planned (next) | Orbital Graph Control Contract + Motion-to-Graph Wiring Planning — define how the hardened `MotionCommand` maps to graph camera/orbit behaviour and plan the first real motion-to-graph wiring. |
+| 32D | Complete | MediaPipe / Hand-Landmark Motion Detection (**frontend-only**, merged into `main`); adds a MediaPipe Hand Landmarker estimator to the Motion Sandbox as the primary detector, populating the same hardened `MotionCommand` shape (with `source` as the discriminator) so `zoomDelta` (approximate single-camera proxy) and `pinchActive` (thumb/index distance) become live. Keeps frame-difference as a zero-dependency fallback / debug visualiser; adds a landmark overlay + hand-detection readout and a small typed landmark-math helper. Adds one **pinned** dependency (`@mediapipe/tasks-vision@0.10.35`); wasm/model fetched from version-pinned URLs, never committed/transmitted. Camera stays explicit-start, local-only, no-storage, no-backend. **No graph control wiring.** See [Motion Sandbox Control Contract + 32D doc](motion-sandbox-control-contract.md). |
+| 32E | Complete (docs) | Orbital Graph Control Contract + Motion-to-Graph Wiring Planning (**documentation only**, merged into `main` via **PR #121**); defines — with **no wiring** — how the hardened `MotionCommand` could drive an orbital/3D-feeling graph surface: a **separate** `OrbitalGraphControlCommand` graph-intent contract, the motion-to-graph mapping rules, a strict opt-in/off-by-default engagement + safety model, the UI/UX activation contract, and the future phase sequence. **Motion does not control the graph today.** |
+| 32F | Complete | Orbital Graph Control Contract Types + Helper Stub (**frontend-only**, this phase); adds `apps/frontend/src/orbitalGraphControl.ts` — the typed `OrbitalGraphControlCommand` graph-intent contract (kept **separate** from `MotionCommand`) plus a deterministic, side-effect-free `MotionCommand` → graph-intent mapping helper with `clampOrbitalDelta` (non-finite → 0, deadzone, ±1 clamp) and a fail-safe idle mapping (missing/inactive/low-confidence/deadzoned → idle). Constants track the Phase 32E §6 defaults (deadzone `0.08`, min confidence `0.55`). **No graph wiring, no React/state integration, no dependency/backend/API/schema/CSS change, no MediaPipe/webcam change.** See [Motion Sandbox Control Contract + 32F doc](motion-sandbox-control-contract.md) (§21). |
 
 ## Future roadmap
 
