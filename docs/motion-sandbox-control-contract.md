@@ -1,16 +1,25 @@
-# Motion Sandbox Control Contract + Phase 32C QA
+# Motion Sandbox Control Contract + Phase 32C QA + Phase 32D MediaPipe
 
-**Phase:** Phase 32C — Motion Sandbox QA + Control Contract Hardening
-**Scope:** Frontend-only. No backend, API, schema, package, dependency, or
-persistence change. **No graph control wiring.** No MediaPipe. No hand-landmark
-dependency.
+**Phase:** Phase 32D — MediaPipe / Hand Landmark Motion Detection (builds on the
+Phase 32C contract hardening below).
+**Scope:** Frontend-only. No backend, API, schema, or persistence change. **No
+graph control wiring.** Phase 32D adds one pinned frontend dependency
+(`@mediapipe/tasks-vision`); Phase 32C added none.
 **Surface:** `apps/frontend/src/components/MotionSandboxPanel.tsx` (the isolated
-"Motion" dock pane), plus scoped readability styles in
+"Motion" dock pane), the landmark-math helper
+`apps/frontend/src/handLandmarkMotion.ts`, and scoped styles in
 `apps/frontend/src/styles.css`.
 
-This document is the durable home for the local `MotionCommand` contract and the
-Phase 32C runtime-QA record. It complements the [roadmap](roadmap.md) and the
-[README](../README.md) phase table.
+This document is the durable home for the local `MotionCommand` contract, the
+Phase 32C runtime-QA record, and the Phase 32D MediaPipe hand-landmark mode. It
+complements the [roadmap](roadmap.md) and the [README](../README.md) phase table.
+
+> **Phase 32D at a glance.** The frame-difference estimator is preserved as a
+> zero-dependency fallback / debug visualiser; MediaPipe Hand Landmarker is added
+> as the primary estimator. Both fill the *same* `MotionCommand` contract, with
+> `source` as the discriminator. `zoomDelta` and `pinchActive` — structurally
+> impossible under frame-difference — become live under the landmark estimator.
+> The Phase 32D specifics live in §13–§17; §1–§12 remain the Phase 32C record.
 
 ---
 
@@ -79,7 +88,8 @@ Its shape is fixed here so a later phase can lift it straight into a controller
 without a translation layer.
 
 ```ts
-type MotionSource = "frame-difference"; // union: extend for future estimators
+// Phase 32D extends the union with the hand-landmark estimator.
+type MotionSource = "frame-difference" | "mediapipe-hand-landmarker";
 
 type MotionCommand = {
   yawDelta: number;      // -1..1 horizontal rotation intent
@@ -254,3 +264,145 @@ package/dependency.
 - Connecting the contract to graph behaviour remains **future work**, gated
   behind a later phase — and deliberately kept out of 32C so the graph is not
   turned into a webcam-driven feedback loop before the detector is trustworthy.
+
+---
+
+# Phase 32D — MediaPipe / Hand Landmark Motion Detection
+
+**Status:** Implemented. Frontend-only. Adds one pinned dependency
+(`@mediapipe/tasks-vision`). **No graph control wiring.**
+
+## 13. What Phase 32D adds
+
+- A **MediaPipe Hand Landmarker** estimator running on the webcam stream, added
+  as the *primary* detector and selectable via a **Detector** toggle in the
+  panel. The Phase 32B/32C **frame-difference** estimator is preserved unchanged
+  as a zero-dependency fallback / debug visualiser.
+- A small, deterministic, side-effect-free landmark-math helper
+  (`apps/frontend/src/handLandmarkMotion.ts`) that owns the shared
+  `MotionCommand` contract and the geometry that turns 21 hand landmarks into a
+  normalized command. The panel keeps camera lifecycle, the detection loop, and
+  rendering; the helper keeps the math auditable in one place.
+- A lightweight **landmark overlay** (a mirrored canvas skeleton over the
+  preview) and a **Hand detection** readout block (MediaPipe status, hand
+  detected, handedness, landmark count, score).
+- The estimator populates the *same* `MotionCommand` shape hardened in 32C, so a
+  future graph controller can consume either source without a translation layer.
+
+## 14. Source values
+
+`source` (the `MotionSource` union) is the discriminator between estimators:
+
+- `"frame-difference"` — Phase 32B/32C 2-D motion-centroid estimator. No depth,
+  no hand model → `zoomDelta` always `0`, `pinchActive` always `false`.
+- `"mediapipe-hand-landmarker"` — Phase 32D hand-landmark estimator. Drives
+  `zoomDelta` (approximate) and `pinchActive` (real) from hand geometry.
+
+Existing readouts are unchanged; only the set of possible `source` values grew.
+
+## 15. Landmark-derived command mapping
+
+MediaPipe returns 21 normalized landmarks per hand (`x`,`y` in `0..1`, origin
+top-left; `z` a relative depth). Detection runs on the **raw** (un-mirrored)
+video; the derivation mirrors `x` (`mx = 1 − x`) so signs match the mirrored
+preview and the 32C conventions. All math lives in `handLandmarkMotion.ts`:
+
+| Field | Derivation | Convention |
+|-------|-----------|------------|
+| `yawDelta` | Palm-centre `mx`, re-centred: `(mx − 0.5) · 2`, clamped | user's right → **positive** |
+| `pitchDelta` | Palm-centre `y`, inverted: `(0.5 − y) · 2`, clamped | hand-up → **positive** (matches 32C) |
+| `zoomDelta` | `(palmSpan − NEUTRAL_PALM_SPAN) · ZOOM_GAIN`, clamped | hand closer/bigger → **positive** (zoom in) |
+| `pinchActive` | `pinchRatio < PINCH_RATIO_THRESHOLD` | thumb-tip↔index-tip close → **true** |
+| `confidence` | MediaPipe handedness score, clamped `0..1` | — |
+| `active` | `confidence ≥ ACTIVE_CONFIDENCE` (0.5) | idle/active gate |
+
+- **Palm centre** is the mean of the wrist + the four finger MCP joints
+  (indices 0, 5, 9, 13, 17) — a subset that barely moves as fingers flex, so the
+  centre stays stable during a pinch.
+- **Palm span** is the wrist→middle-MCP distance (indices 0→9): rotation-stable,
+  flexion-stable, and used both as the pinch denominator and the depth proxy.
+- Continuous fields (`yaw`/`pitch`/`zoom`/`confidence`) are EMA-smoothed in the
+  panel; the discrete `pinchActive` is passed through un-smoothed so the "grab"
+  flag stays crisp instead of smearing across the threshold.
+
+## 16. Threshold rationale
+
+- **`PINCH_RATIO_THRESHOLD = 0.4`.** Pinch fires when the thumb-tip↔index-tip gap
+  is below 0.4 × the reference palm length. Normalizing by palm length makes the
+  threshold **distance-invariant** — a pinch reads the same whether the hand is
+  near or far. A deliberate thumb/index touch drives the ratio well under 0.4,
+  while a relaxed open hand sits comfortably above (typically > 0.8), giving a
+  clean margin against false triggers.
+- **`NEUTRAL_PALM_SPAN = 0.22`, `ZOOM_GAIN = 4`.** These map the apparent palm
+  size to a zoom intent around a neutral arm's-length pose. They are **coarse and
+  uncalibrated** (see §17) — a first-pass proxy, not metric depth.
+- **`ACTIVE_CONFIDENCE = 0.5`.** A hand must clear a 0.5 handedness score to mark
+  the command `active`; below it the readout stays idle even if landmarks came
+  back.
+
+## 17. Push/pull zoom limitation (single-camera depth)
+
+`zoomDelta` under the landmark estimator is an **approximation**. A single webcam
+has no true depth; the estimator infers "closer/farther" from the *apparent size*
+of the palm (wrist→middle-MCP span) relative to a fixed neutral. This is:
+
+- **Uncalibrated** — the neutral span assumes a typical hand at arm's length; a
+  larger or smaller hand, or a different seating distance, shifts the zero point.
+- **Orientation-sensitive** — tilting the palm away from the camera foreshortens
+  the span and reads as "farther" even without moving.
+- **Good enough to *visualise* a push/pull tendency**, not to drive a metric
+  zoom. A future phase could calibrate against a captured neutral pose or use the
+  landmark `z` channel; Phase 32D deliberately keeps it simple and documented.
+
+## 18. Privacy model (unchanged, restated for 32D)
+
+- **Local-only.** All detection — frame-difference and MediaPipe — runs in the
+  browser. The MediaPipe wasm runtime and model execute client-side.
+- **Explicit camera start.** `getUserMedia` is only ever called from the Start
+  handler; nothing starts on mount.
+- **No recording, no storage.** No video, frames, or landmarks are persisted;
+  landmarks are derived per-frame and discarded.
+- **No backend transmission.** Nothing from the camera or the detector leaves the
+  browser. There is no network call carrying camera-derived data.
+- **Model/runtime fetch.** The one network fetch is the MediaPipe wasm runtime
+  (version-pinned CDN) and the hand-landmarker model (versioned Google model
+  path) — code/weights *in*, no user data *out*. The wasm (~a few hundred KB) and
+  model (~7 MB) are intentionally not committed to the repo, so they are fetched
+  from a pinned URL rather than bundled. The CDN/model URLs are pinned to the
+  installed `@mediapipe/tasks-vision` version and a versioned model path.
+
+## 19. Performance & lifecycle guardrails (32D)
+
+- **Single detector instance.** The Hand Landmarker is created once (cached in a
+  ref) and reused across Start/Stop; it is `close()`d on unmount. Dynamic
+  `import()` keeps the wasm glue out of the initial bundle until MediaPipe mode is
+  used (it builds as a separate `vision_bundle` chunk).
+- **GPU→CPU fallback.** Detector creation tries the GPU delegate, then falls back
+  to CPU, so the sandbox still runs without WebGL2.
+- **Frame guards.** Detection is skipped until `video.readyState ≥ 2`, skipped on
+  an unchanged `video.currentTime` (stalled/throttled frames), and always called
+  with a strictly-increasing millisecond timestamp (`detectForVideo` requires it).
+- **Clean teardown.** Stop / error / unmount cancel the RAF loop, stop every
+  track, clear `srcObject`, reset smoothing, and clear the overlay canvas.
+- **No post-unmount state.** A `mounted` ref gates every state update after the
+  async model load, and start aborts if the stream was replaced mid-load.
+- **Error handling.** Permission denial, no-device, in-use, missing
+  `getUserMedia`, missing WebAssembly (unsupported), and model/wasm load failure
+  all surface plain-language messages; a MediaPipe load failure is non-fatal (the
+  loop reports idle and suggests the frame-difference fallback).
+
+## 20. Known limitations (32D)
+
+- **Lighting/background sensitivity.** Landmark detection degrades in low light,
+  heavy backlight, or busy backgrounds.
+- **Webcam angle sensitivity.** Steep camera angles and palm tilt distort the
+  derived yaw/pitch/zoom.
+- **Single-camera depth approximation.** `zoomDelta` is an uncalibrated apparent-
+  size proxy (see §17), not true depth.
+- **Possible main-thread blocking.** `detectForVideo` runs synchronously on the
+  main thread; heavy frames can cost frame time. Mitigated by single-hand
+  detection, stalled-frame skipping, and the readState guard, but not moved to a
+  worker in this phase.
+- **Single hand.** The detector is configured for `numHands: 1` (MVP).
+- **No graph wiring yet.** The `MotionCommand` is derived and displayed only;
+  nothing steers the graph. Graph wiring is Phase 32E.

@@ -9,6 +9,7 @@
     "preview": "vite preview --host 0.0.0.0 --port 5173"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "0.10.35",
     "react": "19.1.1",
     "react-dom": "19.1.1"
   },
