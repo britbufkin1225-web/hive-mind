@@ -128,7 +128,31 @@ const MEDIAPIPE_IDLE: MotionCommand = {
   source: "mediapipe-hand-landmarker",
 };
 
-function MotionSandboxPanel({ id }: { id?: string }) {
+/* Phase 32G — optional wiring props.
+
+   The panel is still self-contained: with none of these passed (or graph control
+   left off) it behaves exactly as the Phase 32D sandbox. `onMotionCommand` is a
+   pure sink — the panel forwards its already-derived MotionCommand to it every
+   frame so an opt-in consumer (the Knowledge Graph camera) can read live motion
+   without this panel knowing anything about the graph. The toggle only reflects
+   and flips a boolean owned by App; this panel never controls the graph itself. */
+type MotionSandboxPanelProps = {
+  id?: string;
+  /** Sink for the freshest derived MotionCommand, called once per detection
+      frame. Ref-write only in App — safe to call at frame rate. */
+  onMotionCommand?: (command: MotionCommand) => void;
+  /** Whether the user has opted the graph camera into motion control. */
+  graphControlEnabled?: boolean;
+  /** Flip the opt-in graph-control switch (owned by App). */
+  onToggleGraphControl?: (enabled: boolean) => void;
+};
+
+function MotionSandboxPanel({
+  id,
+  onMotionCommand,
+  graphControlEnabled = false,
+  onToggleGraphControl,
+}: MotionSandboxPanelProps) {
   const [mode, setMode] = useState<DetectorMode>("mediapipe-hand-landmarker");
   const [status, setStatus] = useState<CameraStatus>("inactive");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -147,6 +171,14 @@ function MotionSandboxPanel({ id }: { id?: string }) {
   // Smoothed command carried across frames (the value we EMA toward).
   const smoothedRef = useRef<MotionCommand>(ZERO_MOTION);
   const lastReadoutRef = useRef<number>(0);
+
+  // Phase 32G: keep the (optional) command sink in a ref so the detection loop
+  // can forward every frame without `publishReadout`/`teardown` re-binding when
+  // the prop identity changes. Ref-write only — never a React re-render here.
+  const onMotionCommandRef = useRef(onMotionCommand);
+  useEffect(() => {
+    onMotionCommandRef.current = onMotionCommand;
+  }, [onMotionCommand]);
 
   // MediaPipe detector, cached so we never re-initialise it (guard against the
   // costly wasm+model load on every Start). `modeRef` lets the RAF loop read the
@@ -225,6 +257,9 @@ function MotionSandboxPanel({ id }: { id?: string }) {
     prevGrayRef.current = null;
     smoothedRef.current = ZERO_MOTION;
     lastVideoTimeRef.current = -1;
+    // Phase 32G: forward a final idle command so a graph consumer decays to
+    // stillness the moment the camera stops (no frozen last-frame deltas).
+    onMotionCommandRef.current?.(ZERO_MOTION);
     // Clear the landmark overlay so a stale skeleton doesn't linger.
     const overlay = overlayCanvasRef.current;
     const octx = overlay?.getContext("2d") ?? null;
@@ -272,8 +307,13 @@ function MotionSandboxPanel({ id }: { id?: string }) {
     [],
   );
 
-  // Push a smoothed command to the throttled React readout (~12Hz).
+  // Push a smoothed command to the throttled React readout (~12Hz). Phase 32G:
+  // the freshest command is also forwarded to the optional sink every frame
+  // (unthrottled) so a graph consumer gets per-frame motion; only the on-screen
+  // readout stays throttled. The forward is a ref write in App, so it never
+  // re-renders anything here regardless of whether graph control is on.
   const publishReadout = useCallback((smoothed: MotionCommand, now: number) => {
+    onMotionCommandRef.current?.(smoothed);
     if (now - lastReadoutRef.current >= READOUT_INTERVAL_MS) {
       lastReadoutRef.current = now;
       setMotion(smoothed);
@@ -703,6 +743,30 @@ function MotionSandboxPanel({ id }: { id?: string }) {
         >
           Stop Camera
         </button>
+      </div>
+
+      {/* Phase 32G — explicit, opt-in graph wiring. Off by default; the webcam
+          never drives the graph just because this panel is open. Enabling it
+          routes the derived MotionCommand to the Knowledge Graph's camera as a
+          read-only, visual-only transform (the graph's nodes, edges, data, and
+          selection are never touched). */}
+      <div className="motion-sandbox-graphctrl">
+        <label className="motion-sandbox-graphctrl-toggle">
+          <input
+            type="checkbox"
+            checked={graphControlEnabled}
+            onChange={(event) =>
+              onToggleGraphControl?.(event.target.checked)
+            }
+            disabled={!onToggleGraphControl}
+          />
+          <span>Motion controls graph</span>
+        </label>
+        <p className="motion-sandbox-graphctrl-hint">
+          {graphControlEnabled
+            ? "Enabled — hand motion orbits, tilts, and zooms the graph camera only. The graph stays read-only; it recentres when motion stops."
+            : "Off — the graph ignores motion entirely. Enable to let hand motion move the graph camera (visual only)."}
+        </p>
       </div>
 
       {errorMessage && (

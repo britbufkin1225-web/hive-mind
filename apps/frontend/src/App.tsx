@@ -9,6 +9,7 @@ import SourceRegistryPanel from "./components/SourceRegistryPanel";
 import KnowledgeGraphPanel from "./components/KnowledgeGraphPanel";
 import IntelligenceReportPanel from "./components/IntelligenceReportPanel";
 import MotionSandboxPanel from "./components/MotionSandboxPanel";
+import { ZERO_MOTION, type MotionCommand } from "./handLandmarkMotion";
 
 /* Phase 27B — graph-first app shell; corrected by Phase 28B (see
    docs/phase-28a-true-graph-primary-overlay-contract.md). The Knowledge Graph
@@ -47,6 +48,21 @@ function App() {
   const [vault, setVault] = useState<VaultSummaryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<PanelKey | null>(null);
+
+  // Phase 32G — first opt-in Motion Sandbox → Knowledge Graph wiring.
+  //
+  // The bridge is a single ref, not React state: the Motion Sandbox writes the
+  // freshest MotionCommand into it every frame, and the graph's own animation
+  // loop reads it — so per-frame motion never triggers an app-wide re-render.
+  // Graph control is disabled by default and only takes effect once the user
+  // explicitly enables it below (opt-in); until then the graph ignores the ref
+  // entirely, and the Motion Sandbox behaves exactly as before.
+  const motionCommandRef = useRef<MotionCommand>(ZERO_MOTION);
+  const [graphControlEnabled, setGraphControlEnabled] = useState(false);
+
+  const handleMotionCommand = useCallback((command: MotionCommand) => {
+    motionCommandRef.current = command;
+  }, []);
 
   const dockRef = useRef<HTMLElement | null>(null);
 
@@ -144,7 +160,11 @@ function App() {
 
       <div className="shell-body">
         <main id="graph-viewport" className="shell-graph-viewport">
-          <KnowledgeGraphPanel id={GRAPH_PANEL_ID} />
+          <KnowledgeGraphPanel
+            id={GRAPH_PANEL_ID}
+            graphControlEnabled={graphControlEnabled}
+            motionCommandRef={motionCommandRef}
+          />
         </main>
 
         {/* Floating utility rail: a translucent icon dock that sits over the
@@ -309,7 +329,12 @@ function App() {
               className="shell-dock-pane"
               hidden={activePanel !== "motion"}
             >
-              <MotionSandboxPanel id="motion-sandbox" />
+              <MotionSandboxPanel
+                id="motion-sandbox"
+                onMotionCommand={handleMotionCommand}
+                graphControlEnabled={graphControlEnabled}
+                onToggleGraphControl={setGraphControlEnabled}
+              />
             </div>
           </div>
         </aside>

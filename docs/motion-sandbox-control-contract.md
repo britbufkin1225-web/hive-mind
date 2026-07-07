@@ -460,3 +460,132 @@ MediaPipe, graph rendering, or app state.
 and `ORBITAL_GRAPH_CONTROL_MAX_DELTA = 1` (32E defined no max, so the normalized
 range is kept). They remain conservative, tunable placeholders — final tuning is a
 later implementation + QA pass.
+
+---
+
+# Phase 32G — First Opt-In Orbital Graph Control Wiring
+
+**Status:** Implemented. Frontend-only. **No backend, API, schema, package, or
+dependency change. No graph data mutation.** This is the first phase in which
+motion can move anything on the graph — and it moves **only the camera/view**.
+
+## 22. What Phase 32G wires
+
+Phase 32G connects the existing Motion Sandbox output to the Knowledge Graph for
+the first time, through the Phase 32F helper, along this exact path:
+
+```text
+MotionCommand (detector output)
+  → mapMotionCommandToOrbitalGraphControlCommand()   [32F gating/deadzone/clamp]
+  → integrateOrbitalCamera()                          [32G pose accumulation]
+  → CSS transform on the graph's camera wrapper       [visual, read-only]
+```
+
+The graph stays **read-only**. Motion adjusts only a presentation transform on a
+wrapper element around the SVG; it never touches nodes, edges, source data,
+intelligence records, layout data, selection state, or API data.
+
+## 23. Opt-in model (disabled by default)
+
+- Graph control is **off by default.** A webcam being open in the Motion Sandbox
+  never moves the graph on its own.
+- A single explicit switch — **“Motion controls graph”** in the Motion Sandbox —
+  turns it on. The enabled boolean is owned by `App.tsx` and shared with both the
+  sandbox (the toggle) and the graph (the consumer).
+- When disabled, the graph ignores the motion bridge entirely and behaves exactly
+  as before; the camera is held neutral and no animation loop runs.
+
+## 24. The motion bridge (per-frame, no re-render)
+
+- `App.tsx` holds a single `motionCommandRef` (a React ref, **not** state). The
+  Motion Sandbox writes its freshest `MotionCommand` into it every detection frame
+  via an `onMotionCommand` sink; the graph reads it from its own animation loop.
+- Because the bridge is a ref, per-frame motion causes **zero** React re-renders
+  in either panel — the graph transform is written directly to the DOM node. The
+  `MotionCommand` contract (§4) is unchanged; the sandbox behaves identically when
+  graph control is off.
+- On camera stop / teardown the sandbox pushes a final `ZERO_MOTION` command, so a
+  consumer decays to stillness immediately rather than freezing on the last frame.
+
+## 25. Camera pose integration (`integrateOrbitalCamera`)
+
+A small, deterministic, side-effect-free extension of the 32F helper turns the
+per-frame orbital *intent* into an accumulated *camera pose*:
+
+```ts
+type OrbitalGraphCameraTransform = { yaw: number; pitch: number; zoom: number };
+// yaw   → horizontal orbit (rotateY, degrees)
+// pitch → vertical tilt   (rotateX, degrees)
+// zoom  → scale multiplier (1 = neutral)
+```
+
+- **Active frame:** each clamped delta (already deadzoned/clamped by 32F) is added
+  to the running pose, scaled by `confidence` so a less-certain frame nudges more
+  gently, then clamped to the pose bounds.
+- **Inactive / low-confidence frame:** every axis eases toward neutral by
+  `1 − DECAY` and snaps to rest once close enough — the pose **decays safely to
+  stillness** and the graph rights itself when motion stops.
+- The function is pure (`(prev pose, command) → next pose`), reads nothing but its
+  arguments, and touches no graph data. Non-finite input fails safe to neutral.
+
+**Pose constants** (conservative first-pass, tunable in a later QA phase):
+`YAW_GAIN = 0.9` / `MAX_YAW = 32°`, `PITCH_GAIN = 0.7` / `MAX_PITCH = 24°`,
+`ZOOM_GAIN = 0.012` / `ZOOM ∈ [0.65, 1.7]`, `DECAY = 0.88` (retained fraction per
+idle frame).
+
+## 26. Safety, fallback, and accessibility
+
+- **Safe fallback.** If the motion stream is inactive, unavailable, blocked,
+  errored, or low-confidence, the mapped command is idle → the camera decays to
+  neutral and holds. The graph stays fully usable, manual selection/hover/keyboard
+  interactions are unaffected, no render loop breaks, and there is no console error
+  spam and no “motion required” behaviour.
+- **Everything is clamped.** Deltas are deadzoned + clamped in 32F; the integrated
+  pose is clamped to the bounds above, so the graph can never be spun end-over-end
+  or scaled off-screen.
+- **Reduced motion respected.** When the OS reports
+  `prefers-reduced-motion: reduce`, the camera is held neutral, the animation loop
+  does not run, and the readout shows a **Reduced motion** state — the opt-in
+  simply has no visual effect rather than introducing continuous motion. A CSS
+  guard (`transform: none !important`) backs this up.
+- **Contained.** No new state/graph/physics libraries, no new global document
+  listeners, no backend/persistence/telemetry, no camera recording, and no
+  screenshot/evidence capture were added.
+
+## 27. UI feedback
+
+While graph control is enabled, a compact **Motion camera** readout floats over
+the graph surface (glass chrome, matching the viewfinder vocabulary). It reports:
+enabled/idle/live/reduced-motion state, the live yaw/pitch/zoom pose, and a
+control-intensity (confidence) meter. It is presentational only and drives no data
+or selection flow; the dashboard/sidebar/card layout is unchanged.
+
+## 28. Graph-wiring boundary (32G, explicit)
+
+- Motion may adjust **only** the graph camera/view transform.
+- The graph's nodes, edges, source data, layout, selection, and API data are
+  **never** mutated by motion.
+- The consumer reads `OrbitalGraphControlCommand` (via the 32F helper) and the
+  32G `OrbitalGraphCameraTransform`, never raw `MotionCommand` or landmark math.
+- Deeper interaction (motion-driven selection, navigation, or data changes) is
+  explicitly **not** in scope and remains future work.
+
+## 29. Validation (32G)
+
+- `npm run check:frontend` (`tsc -b && vite build`) passes.
+- Verified live in the browser preview (frontend + backend running, 7-node graph):
+  toggle is **off by default** and the readout is hidden; enabling it reveals the
+  **Motion camera** readout; with no webcam the mapped command stays idle and the
+  camera holds **neutral** (yaw 0.0°, pitch 0.0°, zoom 1.00×) — the safe fallback.
+- The `integrateOrbitalCamera` path was exercised against the live module with a
+  synthetic trusted frame: an active right/up/zoom-in command integrates and
+  **clamps to bounds** (yaw 32°, pitch 24°, zoom rising toward 1.7×, intent
+  `orbit-and-zoom`); 60 idle frames **decay it back to neutral** (~0°, 1.00×); a
+  confidence of 0.3 (< 0.55) **gates to idle** (no motion).
+- Node selection/inspection still works through the camera wrapper (the transform
+  is on a view wrapper, not the SVG coordinate system), confirming the graph stays
+  interactive and read-only. No console errors or warnings.
+
+Full webcam-driven behaviour (a real hand orbiting/tilting/zooming the live graph)
+cannot be exercised in the headless preview and is deferred to the Phase 32H QA +
+usability hardening pass.
