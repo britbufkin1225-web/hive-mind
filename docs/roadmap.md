@@ -32,26 +32,41 @@ and the [Phase 28A True Graph-Primary Surface + Overlay Contract](phase-28a-true
 and the [Phase 30A Post-Polish Interaction Triage + Next Frontend Direction Planning](phase-30a-post-polish-interaction-triage.md),
 and the [Phase 30C Interaction Recovery QA + Screenshot Evidence Refresh](demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md),
 and the [Phase 31A Premium Graph Interaction + Portfolio Demo Direction Planning](planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md),
-and the [Motion Sandbox Control Contract + 32C QA + 32D MediaPipe](motion-sandbox-control-contract.md).
+and the [Motion Sandbox Control Contract + 32C QA + 32D MediaPipe](motion-sandbox-control-contract.md),
+and the [Phase 32E Orbital Graph Control Contract + Motion-to-Graph Wiring Planning](planning/phase-32e-orbital-graph-control-contract-motion-wiring.md).
 
 ## Current status
 
-**Current phase:** Phase 32D — MediaPipe / Hand-Landmark Motion Detection
-(**frontend-only**, in progress on branch
-`phase-32d-mediapipe-hand-landmark-motion-detection`). Phase 32D adds a **MediaPipe
-Hand Landmarker** estimator to the Motion Sandbox as the primary detector while
-preserving the Phase 32B/32C **frame-difference** estimator as a zero-dependency
-fallback / debug visualiser. Both fill the *same* hardened `MotionCommand`
-contract, with `source` as the discriminator; the landmark estimator makes
-`zoomDelta` (approximate, single-camera scale proxy) and `pinchActive` (real,
-thumb/index distance) live. A small typed helper
+**Current phase:** Phase 32E — Orbital Graph Control Contract + Motion-to-Graph
+Wiring Planning (**documentation only**, on branch
+`phase-32e-orbital-graph-control-contract-planning`). Phase 32E defines — as
+**planning only, with no wiring** — how the existing Motion Sandbox output could
+eventually control the knowledge graph as an orbital / 3D-feeling surface. It
+documents the existing `MotionCommand` contract, proposes a **separate**
+graph-intent contract (`OrbitalGraphControlCommand`), the motion-to-graph mapping
+rules, a strict opt-in/off-by-default engagement + safety model (confidence,
+deadzone, and staleness gating; Escape/Stop kill path; read-only, no graph
+mutation), the UI/UX activation contract, a future helper/module architecture, and
+the next-phase sequence. **Motion does not control the graph today** — this phase
+implements no graph control and changes no runtime/source/package/backend files.
+The first real wiring is deferred to Phase 32G. Next likely phase: **Phase 32F —
+Orbital Graph Control Contract Types + Helper Stub**. Full detail in the
+[Phase 32E Orbital Graph Control Contract + Motion-to-Graph Wiring Planning](planning/phase-32e-orbital-graph-control-contract-motion-wiring.md)
+doc.
+
+The preceding **Phase 32D** (frontend-only, complete and merged into `main`)
+added a **MediaPipe Hand Landmarker** estimator to the Motion Sandbox as the
+primary detector while preserving the Phase 32B/32C **frame-difference** estimator
+as a zero-dependency fallback / debug visualiser. Both fill the *same* hardened
+`MotionCommand` contract, with `source` as the discriminator; the landmark
+estimator makes `zoomDelta` (approximate, single-camera scale proxy) and
+`pinchActive` (real, thumb/index distance) live. A small typed helper
 (`apps/frontend/src/handLandmarkMotion.ts`) owns the deterministic landmark math,
-and a lightweight landmark overlay + hand-detection readout were added. This phase
-adds one **pinned** dependency (`@mediapipe/tasks-vision@0.10.35`); the wasm
-runtime and model are fetched from version-pinned URLs, never committed or
-transmitted. The camera stays explicit-start, local-only, no-storage,
-no-backend-transmission. **No graph control wiring was added** — that remains
-gated behind Phase 32E. Full detail in the
+and a lightweight landmark overlay + hand-detection readout were added. It added
+one **pinned** dependency (`@mediapipe/tasks-vision@0.10.35`); the wasm runtime and
+model are fetched from version-pinned URLs, never committed or transmitted. The
+camera stays explicit-start, local-only, no-storage, no-backend-transmission. **No
+graph control wiring was added.** Full detail in the
 [Motion Sandbox Control Contract + 32D doc](motion-sandbox-control-contract.md)
 (§13–§20).
 
@@ -64,8 +79,9 @@ because frame-difference cannot infer depth or a pinch. The earlier **Phase 32B*
 interaction frontend series (31A planning through 31H) is **complete and merged**,
 Phase 31I is **implemented on its feature branch but not yet merged into `main`**,
 and the Phase 30-series interaction-recovery work — including the Phase 30C QA +
-screenshot-evidence pass (PR #110) — is complete. The next phase is **Phase 32E —
-Orbital Graph Control Contract + Motion-to-Graph Wiring Planning**.
+screenshot-evidence pass (PR #110) — is complete. With Phase 32E (this planning
+phase) defining the orbital graph-control contract, the next phase is **Phase 32F —
+Orbital Graph Control Contract Types + Helper Stub**.
 
 The preceding **Phase 31-series** delivered the premium graph-interaction
 frontend polish, and **Phases 31A through 31H are complete and merged into
