@@ -16,14 +16,53 @@ import { useCallback, useEffect, useRef, useState } from "react";
    follows the Phase 32A planning contract so a later phase can lift the same
    object straight into a graph controller without reshaping it. */
 
-/** Phase 32A planning contract shape — kept verbatim so downstream phases can
-    consume the same object without a translation layer. */
+/** The detection backend that produced a command. Phase 32B/32C ship only the
+    dependency-free frame-difference estimator, but the field is modelled as a
+    union so a later phase (e.g. MediaPipe hand landmarks) can tag its own output
+    without breaking the consumer contract. */
+type MotionSource = "frame-difference";
+
+/** Phase 32C hardened motion-control contract.
+
+    This is the single object a future graph controller will consume, so its
+    semantics are fixed here. Phase 32C DEFINES the contract; it deliberately
+    does NOT wire it to any graph behaviour — every field below describes intent
+    only, and nothing in this file mutates the knowledge graph.
+
+    Directional deltas are normalized to -1..1 and expressed as *intent*, not as
+    applied transforms:
+
+      yawDelta    Horizontal rotation intent.
+                    Negative → rotate graph left.
+                    Positive → rotate graph right.
+                    Zero     → no horizontal rotation intent.
+      pitchDelta  Vertical rotation intent.
+                    Negative → rotate graph downward / backward.
+                    Positive → rotate graph upward / forward.
+                    Zero     → no vertical rotation intent.
+      zoomDelta   Depth / zoom intent.
+                    Negative → pull graph outward / zoom out.
+                    Positive → push graph inward / zoom in.
+                    Zero     → no zoom intent.
+                  Frame-difference cannot infer depth, so this stays 0 in 32C.
+
+      pinchActive Discrete "grab" gesture flag. No hand model in 32C → always
+                  false; reserved for a landmark-based phase.
+      confidence  0..1 strength of the detected motion signal.
+      active      Idle/active bit: true once confidence clears MOTION_GATE. A
+                  consumer would gate on this before applying any delta.
+      source      Which estimator produced this command (frame-difference).
+      timestamp   performance.now() of the frame this command was derived from,
+                  so a consumer can rate-limit or measure staleness. */
 type MotionCommand = {
   yawDelta: number;
   pitchDelta: number;
   zoomDelta: number;
   pinchActive: boolean;
   confidence: number;
+  active: boolean;
+  source: MotionSource;
+  timestamp: number;
 };
 
 /** Lifecycle of the camera, surfaced to the user as a status chip. */
@@ -40,7 +79,14 @@ const ZERO_MOTION: MotionCommand = {
   zoomDelta: 0,
   pinchActive: false,
   confidence: 0,
+  active: false,
+  source: "frame-difference",
+  timestamp: 0,
 };
+
+// Direction hints in the readout only render once a delta clears this small
+// magnitude, so near-zero jitter reads as "—" instead of flickering left/right.
+const DIRECTION_HINT_EPS = 0.05;
 
 // Downscaled processing resolution. Frame-difference is O(pixels) per frame, so
 // we sample a tiny 4:3 buffer rather than the full preview — cheap enough for a
@@ -72,6 +118,19 @@ const READOUT_INTERVAL_MS = 80;
 
 function clamp(value: number, min: number, max: number): number {
   return value < min ? min : value > max ? max : value;
+}
+
+// Human-readable direction hint for the readout, so a viewer can sanity-check
+// the sign convention without decoding the raw number. Returns "—" inside the
+// dead zone so idle jitter doesn't flicker between the two labels.
+function describeDelta(
+  value: number,
+  negativeLabel: string,
+  positiveLabel: string,
+): string {
+  if (value <= -DIRECTION_HINT_EPS) return negativeLabel;
+  if (value >= DIRECTION_HINT_EPS) return positiveLabel;
+  return "—";
 }
 
 function MotionSandboxPanel({ id }: { id?: string }) {
@@ -194,37 +253,55 @@ function MotionSandboxPanel({ id }: { id?: string }) {
     let yawDelta = 0;
     let pitchDelta = 0;
     if (motionSum > 0 && confidence >= MOTION_GATE) {
-      // Centroid of motion in 0..1, then re-centered to -1..1. Left/up = negative.
+      // Centroid of motion in 0..1, then re-centered to -1..1.
       const cx = weightX / motionSum / PROC_W;
       const cy = weightY / motionSum / PROC_H;
+      // Preview + sampling canvas are both mirrored, so a larger cx is the
+      // user's right → positive yaw (matches the MotionCommand contract).
       yawDelta = clamp((cx - 0.5) * 2, -1, 1);
-      pitchDelta = clamp((cy - 0.5) * 2, -1, 1);
+      // Image y grows downward, but the contract defines positive pitch as
+      // "up". Invert here so upward hand motion (motion concentrated near the
+      // top of the frame, small cy) reports as a positive pitchDelta — keeping
+      // the sandbox output faithful to the documented semantics.
+      pitchDelta = clamp((0.5 - cy) * 2, -1, 1);
     }
 
-    // Phase 32B contract: zoom stays 0 (no depth proxy yet) and pinch is always
-    // false (no landmark/hand model). Only yaw/pitch/confidence are live.
+    const now = performance.now();
+
+    // Phase 32C contract: zoom stays 0 (frame-difference has no depth proxy) and
+    // pinch is always false (no landmark/hand model). Only yaw/pitch/confidence
+    // are live signals; active/source/timestamp are metadata for a future
+    // consumer. Nothing here touches the graph.
     const target: MotionCommand = {
       yawDelta,
       pitchDelta,
       zoomDelta: 0,
       pinchActive: false,
       confidence,
+      active: confidence >= MOTION_GATE,
+      source: "frame-difference",
+      timestamp: now,
     };
 
     const prevCmd = smoothedRef.current;
+    const smoothedConfidence =
+      prevCmd.confidence + (target.confidence - prevCmd.confidence) * SMOOTHING;
     const smoothed: MotionCommand = {
       yawDelta: prevCmd.yawDelta + (target.yawDelta - prevCmd.yawDelta) * SMOOTHING,
       pitchDelta:
         prevCmd.pitchDelta + (target.pitchDelta - prevCmd.pitchDelta) * SMOOTHING,
       zoomDelta: 0,
       pinchActive: false,
-      confidence:
-        prevCmd.confidence + (target.confidence - prevCmd.confidence) * SMOOTHING,
+      confidence: smoothedConfidence,
+      // Metadata is discrete, not smoothed. `active` tracks the SMOOTHED
+      // confidence so it agrees with the value shown in the readout.
+      active: smoothedConfidence >= MOTION_GATE,
+      source: "frame-difference",
+      timestamp: now,
     };
     smoothedRef.current = smoothed;
 
     // Throttle the React readout so we render ~12Hz, not 60Hz.
-    const now = performance.now();
     if (now - lastReadoutRef.current >= READOUT_INTERVAL_MS) {
       lastReadoutRef.current = now;
       setMotion(smoothed);
@@ -333,10 +410,11 @@ function MotionSandboxPanel({ id }: { id?: string }) {
     <section className="motion-sandbox" id={id}>
       <h2>Motion Sandbox</h2>
       <p className="motion-sandbox-intro">
-        Standalone webcam motion probe (Phase 32B). Nothing starts until you
-        press <strong>Start Camera</strong>, and this surface never touches the
-        knowledge graph — it only derives and displays a normalized motion
-        command for inspection.
+        Standalone webcam motion probe (Phase 32B, contract hardened in 32C).
+        Nothing starts until you press <strong>Start Camera</strong>, and this
+        surface never touches the knowledge graph — it only derives and displays
+        a normalized <code>MotionCommand</code> for inspection. Source estimator:{" "}
+        <code>frame-difference</code>.
       </p>
 
       <div className="motion-sandbox-statusrow">
@@ -417,19 +495,43 @@ function MotionSandboxPanel({ id }: { id?: string }) {
       />
 
       <div className="motion-sandbox-readout" aria-live="polite">
-        <h3 className="motion-sandbox-readout-title">MotionCommand</h3>
+        <div className="motion-sandbox-readout-head">
+          <h3 className="motion-sandbox-readout-title">MotionCommand</h3>
+          <span
+            className={`motion-sandbox-state ${
+              motion.active ? "is-active" : "is-idle"
+            }`}
+          >
+            {motion.active ? "Active" : "Idle"}
+          </span>
+        </div>
         <dl className="motion-sandbox-metrics">
           <div>
             <dt>yawDelta</dt>
-            <dd>{motion.yawDelta.toFixed(3)}</dd>
+            <dd>
+              {motion.yawDelta.toFixed(3)}
+              <span className="motion-sandbox-hint">
+                {describeDelta(motion.yawDelta, "← left", "right →")}
+              </span>
+            </dd>
           </div>
           <div>
             <dt>pitchDelta</dt>
-            <dd>{motion.pitchDelta.toFixed(3)}</dd>
+            <dd>
+              {motion.pitchDelta.toFixed(3)}
+              <span className="motion-sandbox-hint">
+                {describeDelta(motion.pitchDelta, "down", "up")}
+              </span>
+            </dd>
           </div>
           <div>
             <dt>zoomDelta</dt>
-            <dd>{motion.zoomDelta.toFixed(3)}</dd>
+            <dd>
+              {motion.zoomDelta.toFixed(3)}
+              <span className="motion-sandbox-hint">
+                {describeDelta(motion.zoomDelta, "out", "in")}
+              </span>
+            </dd>
           </div>
           <div>
             <dt>pinchActive</dt>
@@ -438,6 +540,10 @@ function MotionSandboxPanel({ id }: { id?: string }) {
           <div>
             <dt>confidence</dt>
             <dd>{motion.confidence.toFixed(3)}</dd>
+          </div>
+          <div>
+            <dt>source</dt>
+            <dd>{motion.source}</dd>
           </div>
         </dl>
         {/* A tiny confidence meter so the value is legible at a glance. */}
