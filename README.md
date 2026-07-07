@@ -118,25 +118,50 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 32G - First Opt-In Orbital Graph Control Wiring`
-  (**frontend-only**). Phase 32G is the first phase in which motion can move
-  anything on the graph — and it moves **only the camera/view**. It wires the
-  Motion Sandbox output to the Knowledge Graph through the Phase 32F helper
-  (`MotionCommand` → `mapMotionCommandToOrbitalGraphControlCommand` → new pure
-  `integrateOrbitalCamera` → a CSS transform on a view wrapper around the graph
-  SVG). A single **“Motion controls graph”** switch in the Motion Sandbox (owned
-  by `App.tsx`, **off by default**) opts in; a shared `motionCommandRef` carries
-  per-frame motion with **zero** React re-renders. The graph stays **read-only** —
-  nodes, edges, source data, layout, selection, and API data are never mutated;
-  only the orbital camera moves (yaw→rotateY, pitch→rotateX, zoom→scale) and it
-  decays safely to neutral when motion stops. Inactive/low-confidence input is
-  gated to idle, the pose is clamped, `prefers-reduced-motion` holds the camera
-  neutral, and a compact **Motion camera** readout reports state. Adds **no**
-  backend, API, schema, package, or dependency change, and no new graph/state/
-  physics library. `npm run check:frontend` passes; verified live in the browser
-  preview (toggle off by default; enabling reveals the readout; no webcam → idle →
-  neutral camera; node selection still works through the camera wrapper). Next:
-  **Phase 32H — Orbital Graph Control QA + Usability Hardening.** See the
+- **Current phase:** `Phase 32J - Orbital Graph Control System-Camera Recovery
+  Planning + Deferred Evidence Track` (**planning / documentation only**). Phase
+  32J changes no code. It honestly records that the opt-in orbital graph control
+  feature is wired, hardened, and still **experimental / opt-in / read-only**,
+  while the **local camera stack remains blocked outside the Hive|Mind app** —
+  native Windows Camera still cannot produce a live preview, so **no live
+  hand-motion evidence exists yet**. It classifies the blocker as a **host/system
+  camera stack issue** (not proven to be a Hive|Mind frontend bug), defines a
+  graded, non-destructive **camera recovery checklist**, locks an **evidence gate**
+  that must be satisfied before any screenshot/video capture resumes, defines the
+  **deferred evidence track** to capture *later*, restates the feature guardrails
+  and the approved **portfolio wording**, and sets the two next tracks — **Phase
+  32K Path A** (evidence capture if the camera works) or **Phase 32K Path B**
+  (alternate camera input / fallback planning if it stays blocked). No source,
+  runtime, package, API, schema, or MediaPipe change; no screenshots or fabricated
+  evidence. See the
+  [Phase 32J planning doc](docs/planning/phase-32j-orbital-graph-control-system-camera-recovery-planning-deferred-evidence.md).
+  The preceding **Phase 32I** (**frontend-only**, merged into `main` via **PR
+  #125**) **hardened camera startup diagnostics and retry handling** in the Motion
+  Sandbox: a constraint fallback (explicit resolution → bare `video: true`), a
+  retry classifier that only relaxes for "device wouldn't start" failures, a
+  post-acquire readiness watchdog that waits for a decodable frame before declaring
+  the camera active, cause-specific actionable error copy, and a clean *Retry
+  camera* affordance. The failure-and-retry lifecycle is verified; a *successful*
+  live camera start with a real hand was **not** verified (no webcam in the build
+  environment). No graph gains/dead-zone/smoothing/orbital math changed; no
+  backend/API/schema/package/dependency/MediaPipe/Vite change.
+  The preceding **Phase 32H** (**frontend-only**, merged into `main` via **PR
+  #124**) was a QA/usability pass over the 32G wiring: gentler yaw/pitch/zoom
+  gains and a wider dead zone, a staleness guard (stale active command decays to
+  neutral instead of drifting), an explicit **Recenter camera** control, and
+  sharper *experimental / opt-in / read-only* copy. It added no new control surface
+  and no backend/API/schema/package/dependency or MediaPipe/webcam change.
+  The preceding **Phase 32G** (**frontend-only**, merged into `main` via **PR
+  #123**) wired the **first opt-in orbital graph control**: the Motion Sandbox
+  output routes through the Phase 32F helper (`MotionCommand` →
+  `mapMotionCommandToOrbitalGraphControlCommand` → pure `integrateOrbitalCamera` →
+  a CSS transform on a view wrapper around the graph SVG). A single **“Motion
+  controls graph”** switch (owned by `App.tsx`, **off by default**) opts in; a
+  shared `motionCommandRef` carries per-frame motion with **zero** React
+  re-renders. The graph stays **read-only** — only the orbital camera moves
+  (yaw→rotateY, pitch→rotateX, zoom→scale), decaying safely to neutral on
+  stillness. No backend/API/schema/package/dependency change and no new
+  graph/state/physics library. See the
   [Motion Sandbox Control Contract + 32G doc](docs/motion-sandbox-control-contract.md)
   (§22–§29).
   The preceding **Phase 32F** (**frontend-only**, types + pure helper, merged into
@@ -650,6 +675,9 @@ The current phase sequence:
 | Phase 32E | Complete (docs) | Orbital Graph Control Contract + Motion-to-Graph Wiring Planning (**documentation only**, merged into `main` via **PR #121**); defines — with **no wiring** — how the hardened `MotionCommand` could eventually drive an orbital/3D-feeling graph surface: a **separate** `OrbitalGraphControlCommand` graph-intent contract, the motion-to-graph mapping rules, a strict opt-in/off-by-default engagement + safety model, the UI/UX activation contract, and the future phase sequence. **Motion does not control the graph today.** See [Phase 32E planning doc](docs/planning/phase-32e-orbital-graph-control-contract-motion-wiring.md). |
 | Phase 32F | Complete | Orbital Graph Control Contract Types + Helper Stub (**frontend-only**, merged into `main` via **PR #122**); adds `apps/frontend/src/orbitalGraphControl.ts` — the typed `OrbitalGraphControlCommand` graph-intent contract (kept **separate** from `MotionCommand`) plus a deterministic, side-effect-free `MotionCommand` → graph-intent mapping helper: `clampOrbitalDelta` (non-finite → 0, deadzone, ±1 clamp) and a fail-safe idle mapping (missing/inactive/low-confidence/deadzoned → idle). Constants track the Phase 32E §6 defaults (deadzone `0.08`, min confidence `0.55`). **No graph wiring, no React/state integration, no dependency/backend/API/schema/CSS change, no MediaPipe/webcam change.** See [Motion Sandbox Control Contract + 32F doc](docs/motion-sandbox-control-contract.md) (§21). |
 | Phase 32G | Complete | First Opt-In Orbital Graph Control Wiring (**frontend-only**, this phase); wires the Motion Sandbox output to the Knowledge Graph camera through the 32F helper (`MotionCommand` → `mapMotionCommandToOrbitalGraphControlCommand` → new pure `integrateOrbitalCamera` → CSS transform on a view wrapper around the graph SVG). A single **“Motion controls graph”** switch (owned by `App.tsx`, **off by default**) opts in; a shared `motionCommandRef` carries per-frame motion with **zero** React re-renders. Motion adjusts **only** the orbital camera (yaw→rotateY, pitch→rotateX, zoom→scale); the graph stays **read-only** (no node/edge/data/layout/selection/API mutation). Idle/low-confidence gates to idle, pose is clamped, camera decays to neutral on stillness, `prefers-reduced-motion` holds it neutral, and a compact **Motion camera** readout reports state. **No backend/API/schema/package/dependency change; no new graph/state/physics library; no telemetry/recording/screenshot pass.** See [Motion Sandbox Control Contract + 32G doc](docs/motion-sandbox-control-contract.md) (§22–§29). |
+| Phase 32H | Complete | Orbital Graph Control QA + Usability Hardening (**frontend-only**, merged into `main` via **PR #124**); QA/tuning pass over the 32G wiring with **no** new control surface — gentler yaw/pitch/zoom gains and a wider dead zone, a staleness guard (an active-but-stale command decays to neutral instead of drifting to the clamp), an explicit **Recenter camera** control, and sharpened *experimental / opt-in / read-only* copy. Motion-to-graph control stays opt-in, off by default, visual-only, and read-only. **No backend/API/schema/package/dependency change; no MediaPipe/webcam/Vite/routing change.** |
+| Phase 32I | Complete | Orbital Graph Control Live Stabilization + Evidence Decision (**frontend-only**, merged into `main` via **PR #125**); the first live webcam/hand test was blocked by a camera-startup failure, so this pass hardened the **startup lifecycle** instead of graph feel: a constraint fallback (explicit resolution → bare `video: true`), a retry classifier that only relaxes for "device wouldn't start" failures, a post-acquire readiness watchdog (waits for a decodable frame before declaring the camera active), cause-specific actionable error copy, and a clean *Retry camera* affordance. The **failure-and-retry** lifecycle is verified; a **successful** live camera start with a real hand was **not** verified (no webcam in the build environment). **No graph gains/dead-zone/smoothing/orbital math changed; no backend/API/schema/package/dependency/MediaPipe/Vite change.** |
+| Phase 32J | Complete (docs) | Orbital Graph Control System-Camera Recovery Planning + Deferred Evidence Track (**planning / documentation only**, this phase); honestly records that the opt-in orbital graph control feature is wired, hardened, and still **experimental / opt-in / read-only** while the **local camera stack remains blocked outside the app** (native Windows Camera still cannot produce a live preview; **no live hand-motion evidence exists yet**). Classifies the blocker as a **host/system camera stack issue**, defines a graded non-destructive **recovery checklist**, locks the **evidence gate** and the **deferred evidence track**, restates guardrails + approved portfolio wording, and sets **Phase 32K Path A** (evidence capture if the camera works) vs **Path B** (alternate camera input / fallback planning if it stays blocked). **No source/runtime/package/API/schema/MediaPipe change; no screenshots or fabricated evidence.** See [Phase 32J planning doc](docs/planning/phase-32j-orbital-graph-control-system-camera-recovery-planning-deferred-evidence.md). |
 
 The historical planned-phase table below is preserved as recorded phase
 history; the [full roadmap](docs/roadmap.md) is the canonical, up-to-date
