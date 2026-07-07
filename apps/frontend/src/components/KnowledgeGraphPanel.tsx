@@ -481,6 +481,7 @@ const GraphCanvas = memo(function GraphCanvas({
   graphControlEnabled,
   motionCommandRef,
   onCameraStatus,
+  recenterSignal,
 }: {
   nodes: GraphViewNode[];
   edges: GraphViewEdge[];
@@ -494,6 +495,7 @@ const GraphCanvas = memo(function GraphCanvas({
   graphControlEnabled: boolean;
   motionCommandRef: RefObject<MotionCommand>;
   onCameraStatus: (status: GraphControlStatus) => void;
+  recenterSignal: number;
 }) {
   const layout = useMemo(
     () => computeGraphLayout(nodes, edges),
@@ -597,7 +599,9 @@ const GraphCanvas = memo(function GraphCanvas({
       const command = mapMotionCommandToOrbitalGraphControlCommand(
         motionCommandRef.current,
       );
-      const pose = integrateOrbitalCamera(cameraPoseRef.current, command);
+      // Pass `now` so the integrator can drop a stale active command (e.g. the
+      // sandbox loop stalled mid-motion) to neutral instead of drifting on it.
+      const pose = integrateOrbitalCamera(cameraPoseRef.current, command, now);
       cameraPoseRef.current = pose;
 
       const el = cameraRef.current;
@@ -629,6 +633,21 @@ const GraphCanvas = memo(function GraphCanvas({
       resetTransform();
     };
   }, [graphControlEnabled, motionCommandRef, onCameraStatus]);
+
+  // Phase 32H — explicit recenter. Bumping `recenterSignal` from the panel snaps
+  // the accumulated camera pose straight back to neutral, so the user never has
+  // to wait out the idle decay to get a face-on view again. It resets ONLY the
+  // visual transform — never nodes, edges, source data, or selection — and is
+  // safe whether or not the rAF loop is running: when control is live the next
+  // frame simply re-integrates from neutral; when it is disabled or reduced-
+  // motion (no loop) this is the only writer and the reset sticks. The `=== 0`
+  // guard skips the initial mount so we never fight the first render.
+  useEffect(() => {
+    if (recenterSignal === 0) return;
+    cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
+    const el = cameraRef.current;
+    if (el) el.style.transform = "";
+  }, [recenterSignal]);
 
   if (layout.nodes.length === 0) {
     return null;
@@ -902,6 +921,15 @@ function KnowledgeGraphPanel({
     setControlStatus(status);
   }, []);
 
+  // Phase 32H: a monotonic "recenter" signal. Bumping it tells GraphCanvas to
+  // snap the orbital camera pose back to neutral. It carries no data of its own —
+  // it only resets the visual transform, never selection or graph data — so the
+  // user always has an obvious, instant way back to a face-on view after motion.
+  const [recenterSignal, setRecenterSignal] = useState(0);
+  const recenterCamera = useCallback(() => {
+    setRecenterSignal((n) => n + 1);
+  }, []);
+
   // The motion bridge is owned by App; keep a local idle fallback so the panel
   // (and its GraphCanvas) still type-check and run standalone when no bridge is
   // wired in. With no motion source, the fallback stays idle → camera neutral.
@@ -1127,6 +1155,7 @@ function KnowledgeGraphPanel({
             graphControlEnabled={graphControlEnabled}
             motionCommandRef={activeMotionRef}
             onCameraStatus={handleCameraStatus}
+            recenterSignal={recenterSignal}
           />
         )}
       </div>
@@ -1259,10 +1288,24 @@ function KnowledgeGraphPanel({
                   />
                 </div>
                 <p className="graph-control-readout-note">
-                  Read-only camera · lower or still hands recentre it.
+                  Visual-only camera — it moves the view, never your graph data.
+                  Still hands let it recentre on its own.
                 </p>
               </>
             )}
+            {/* Phase 32H — explicit recenter. Always available while control is on
+                (even under reduced motion), needs no webcam, and only snaps the
+                visual camera back to face-on — selection and data are untouched. */}
+            <div className="graph-control-readout-actions">
+              <button
+                type="button"
+                className="graph-control-recenter"
+                onClick={recenterCamera}
+                title="Snap the graph camera back to a face-on, level view"
+              >
+                Recenter camera
+              </button>
+            </div>
           </div>
         )}
 
