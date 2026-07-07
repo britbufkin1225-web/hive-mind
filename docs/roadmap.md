@@ -37,11 +37,54 @@ and the [Phase 32E Orbital Graph Control Contract + Motion-to-Graph Wiring Plann
 
 ## Current status
 
-**Current phase:** Phase 32H — Orbital Graph Control QA + Usability Hardening
-(**frontend-only**, on branch `phase-32h-orbital-graph-control-qa-usability-hardening`).
-Phase 32H is a QA/tuning pass over the Phase 32G wiring — it adds **no** new
-control surface and keeps motion-to-graph control **opt-in, off by default,
-visual-only, and read-only**. It (1) calms the camera: gentler yaw/pitch/zoom
+**Current phase:** Phase 32I — Orbital Graph Control Live Stabilization +
+Evidence Decision (**frontend-only**, on branch
+`phase-32i-orbital-graph-control-live-stabilization-evidence-decision`).
+Phase 32I set out to run the **first real webcam/hand feel test** of the opt-in
+orbital control and then either capture portfolio evidence (if smooth) or
+stabilize (if rough). The live test was **blocked before any hand-feel testing
+could happen**: the Motion Sandbox failed to start the camera with a raw browser
+error — *"Timeout starting video source"* — landing in a *Camera error* state
+with an *Unavailable* preview, so opt-in graph control was never reached. Per the
+decision gate this is **Path A — Stabilization**, but deliberately scoped to
+**camera/video startup reliability and diagnostics first, not graph tuning** — you
+cannot honestly tune the feel of a feature that will not start. The 32I pass
+hardens the startup lifecycle in `MotionSandboxPanel.tsx`: (1) a **constraint
+fallback** — try an explicit `640×480` source, then retry once with bare
+`video: true`, since some webcams/drivers stall on a specific resolution but start
+unconstrained; (2) a **retry classifier** so only "device wouldn't start" failures
+(`NotReadableError`/`AbortError`/`TimeoutError`/`OverconstrainedError`) fall through
+to that relaxed retry, while permission/no-device failures surface immediately;
+(3) a **post-acquire readiness watchdog** (`waitForVideoReady`) that waits for an
+actual decodable frame (`loadeddata`/`canplay`) before declaring the camera
+active, so a stream that resolves but never delivers frames now fails cleanly with
+a clear error instead of a permanently black preview and a loop spinning on a
+never-ready video; (4) **cause-specific, actionable error copy** for permission
+denied, no device, device busy, timeout, and over-constrained cases (replacing the
+raw browser string); and (5) a **clean retry affordance** — the button relabels to
+*Retry camera* and the panel returns to a usable state after any failure, with no
+stale streams left attached. Both detectors (frame-difference fallback and
+MediaPipe hand landmarks) share this hardened path; MediaPipe still loads *after*
+video start, so it never blocks or races the preview. **No graph gains, dead zone,
+smoothing, or orbital-control math were changed**, and there is **no** backend,
+API, schema, package, dependency, MediaPipe-model, or Vite/routing change.
+**Honesty note (no faked evidence):** the *failure-and-retry* lifecycle is
+verified — in a headless browser with permission denied, startup now yields a
+clear, classified, retryable *Camera error* instead of a stuck state — but a
+*successful* live camera start with a real hand **could not be verified in the
+build agent's environment** (no webcam available to it). The real webcam/hand
+feel test, and any portfolio evidence capture, therefore remain **pending a human
+retry** on a machine with a working camera; nothing here should be read as a
+claim that live hand-motion control was observed working. Next: re-run the live
+webcam/hand test now that startup is hardened — if the camera starts and the feel
+is smooth enough, proceed to **evidence capture**; if the graph feel is rough,
+a follow-up **graph-tuning** stabilization pass (gains / dead zone / smoothing).
+
+The preceding **Phase 32H** — Orbital Graph Control QA + Usability Hardening
+(**frontend-only**, merged into `main` via PR #124) — was a QA/tuning pass over
+the Phase 32G wiring — it added **no** new
+control surface and kept motion-to-graph control **opt-in, off by default,
+visual-only, and read-only**. It (1) calmed the camera: gentler yaw/pitch/zoom
 integration gains and a slightly wider dead zone so a lightly off-centre hand no
 longer makes the graph creep or feel twitchy; (2) adds a **staleness guard** —
 `integrateOrbitalCamera` now optionally takes `now` and treats an *active but
@@ -57,9 +100,7 @@ dependency change, and **no** MediaPipe/webcam/Vite/routing change. Full detail 
 the [Motion Sandbox Control Contract + 32G doc](motion-sandbox-control-contract.md)
 (§22–§29) and the
 [Phase 32E Orbital Graph Control Contract + Motion-to-Graph Wiring Planning](planning/phase-32e-orbital-graph-control-contract-motion-wiring.md)
-doc. Next: **Phase 32I — Orbital Graph Control Evidence + Portfolio Demo Capture**
-(if live webcam motion proves stable enough to immortalise), otherwise
-**Phase 32I — Orbital Graph Control Stabilization Pass**.
+doc.
 
 The preceding **Phase 32F** (frontend-only, types + pure helper, merged into
 `main` via PR #122) implemented the first typed piece of the Phase 32E plan: a

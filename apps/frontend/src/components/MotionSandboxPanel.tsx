@@ -104,8 +104,129 @@ const READOUT_INTERVAL_MS = 80;
 const OVERLAY_W = 320;
 const OVERLAY_H = 240;
 
+// Video-source constraints, tried in order. A modest explicit resolution first
+// (keeps the preview + downscaled sampling cheap and predictable), then a bare
+// `video: true` fallback — some webcams/drivers stall or reject a specific
+// resolution yet start fine when left unconstrained.
+const CAMERA_CONSTRAINTS: MediaStreamConstraints[] = [
+  {
+    video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+    audio: false,
+  },
+  { video: true, audio: false },
+];
+
+// How long (ms) to wait for an acquired stream to actually deliver a decodable
+// frame before treating startup as failed. getUserMedia can resolve with a
+// stream that never produces frames (wedged driver, or a privacy shutter that
+// engaged mid-start) — the classic "camera on, preview black, no error" trap.
+// Deliberately generous: a healthy local webcam fires `loadeddata` in well under
+// a second, so this only ever trips on a real stall. It starts counting AFTER
+// permission is granted, so it never races the user deciding on the prompt.
+const VIDEO_READY_TIMEOUT_MS = 10000;
+
+// getUserMedia failures worth retrying with a looser constraint set: the device
+// was found and permitted but would not start (busy, over-constrained, or a
+// transient driver timeout). Permission denials and "no device" are NOT here — a
+// looser request cannot recover them, so they surface immediately.
+const RETRYABLE_CAMERA_ERRORS = new Set<string>([
+  "NotReadableError",
+  "TrackStartError",
+  "AbortError",
+  "TimeoutError",
+  "OverconstrainedError",
+]);
+
 function clamp(value: number, min: number, max: number): number {
   return value < min ? min : value > max ? max : value;
+}
+
+// DOMException name for a camera failure, or "" for a non-DOMException throw.
+function cameraErrorName(error: unknown): string {
+  return error instanceof DOMException ? error.name : "";
+}
+
+// Map a raw getUserMedia / readiness failure to actionable, cause-specific copy.
+// Every branch says what to do next (retry, free the device, grant permission, or
+// switch detector) instead of leaking a terse browser string like "Timeout
+// starting video source".
+function describeCameraError(error: unknown): string {
+  switch (cameraErrorName(error)) {
+    case "NotAllowedError":
+    case "SecurityError":
+      return "Camera permission was denied. Allow camera access for this site (the camera icon in the address bar), then press Start Camera again.";
+    case "NotFoundError":
+    case "DevicesNotFoundError":
+      return "No camera was found. Connect a webcam — and check it isn't disabled in your OS camera/privacy settings — then try again.";
+    case "OverconstrainedError":
+      return "No camera matched the requested video settings. Press Start Camera again to retry with default settings.";
+    case "NotReadableError":
+    case "TrackStartError":
+      return "The camera could not start — it is usually held by another app (Zoom, Teams, Meet, OBS) or a privacy shutter. Close anything else using the webcam, then press Start Camera again.";
+    case "AbortError":
+    case "TimeoutError":
+      return "Timed out starting the camera. This is usually transient — press Start Camera again. If it keeps happening, close other apps using the webcam, unplug/replug it, or reload the page.";
+    default:
+      return error instanceof Error && error.message
+        ? `Could not start the camera: ${error.message}. Press Start Camera to retry, or switch detectors.`
+        : "Could not start the camera. Press Start Camera to retry, or switch detectors.";
+  }
+}
+
+// Resolve once the attached stream has produced a decodable frame, or reject with
+// a TimeoutError after `ms`. Listens for both `loadeddata` and `canplay` (browsers
+// disagree on which fires first for a live MediaStream) and short-circuits if the
+// element is already ready. Always detaches its listeners/timer so it cannot leak.
+function waitForVideoReady(video: HTMLVideoElement, ms: number): Promise<void> {
+  if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+    return Promise.resolve();
+  }
+  return new Promise<void>((resolve, reject) => {
+    let done = false;
+    const finish = (ok: boolean) => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(timer);
+      video.removeEventListener("loadeddata", onReady);
+      video.removeEventListener("canplay", onReady);
+      if (ok) {
+        resolve();
+      } else {
+        reject(
+          new DOMException(
+            "The camera stream did not produce a frame in time.",
+            "TimeoutError",
+          ),
+        );
+      }
+    };
+    const onReady = () => finish(true);
+    const timer = window.setTimeout(() => finish(false), ms);
+    video.addEventListener("loadeddata", onReady);
+    video.addEventListener("canplay", onReady);
+  });
+}
+
+// Acquire a camera stream, trying each constraint set in turn. A retryable
+// "device wouldn't start" failure on the first (specific) request falls through
+// to the bare `video: true` request; a permission / no-device failure throws
+// immediately, since a looser request cannot recover it. The first request
+// triggers the permission prompt; once granted, the fallback reuses that grant
+// without re-prompting.
+async function openCameraStream(): Promise<MediaStream> {
+  let lastError: unknown;
+  for (let i = 0; i < CAMERA_CONSTRAINTS.length; i += 1) {
+    try {
+      return await navigator.mediaDevices.getUserMedia(CAMERA_CONSTRAINTS[i]);
+    } catch (error) {
+      lastError = error;
+      const isLast = i === CAMERA_CONSTRAINTS.length - 1;
+      if (isLast || !RETRYABLE_CAMERA_ERRORS.has(cameraErrorName(error))) {
+        throw error;
+      }
+    }
+  }
+  throw lastError;
 }
 
 // Human-readable direction hint for the readout, so a viewer can sanity-check
@@ -550,28 +671,12 @@ function MotionSandboxPanel({
 
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
-        audio: false,
-      });
+      stream = await openCameraStream();
     } catch (streamError: unknown) {
       teardown();
       if (!mountedRef.current) return;
       setStatus("error");
-      const name = streamError instanceof DOMException ? streamError.name : "";
-      if (name === "NotAllowedError" || name === "SecurityError") {
-        setErrorMessage(
-          "Camera permission was denied. Allow camera access and try again.",
-        );
-      } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
-        setErrorMessage("No camera device was found on this machine.");
-      } else if (name === "NotReadableError") {
-        setErrorMessage("The camera is already in use by another application.");
-      } else {
-        setErrorMessage(
-          streamError instanceof Error ? streamError.message : "Could not start the camera.",
-        );
-      }
+      setErrorMessage(describeCameraError(streamError));
       return;
     }
 
@@ -592,6 +697,25 @@ function MotionSandboxPanel({
     } catch {
       // Autoplay can reject if the element isn't ready; the RAF loop tolerates a
       // not-yet-playing video (readyState guard) and picks up once it decodes.
+    }
+
+    // A Stop/unmount during play() must abort startup cleanly — don't leave a
+    // stream on, and don't flip to "active".
+    if (!mountedRef.current || streamRef.current !== stream) return;
+
+    // Confirm the stream actually delivers a frame before declaring the camera
+    // active. This closes the "getUserMedia resolved but no frames ever arrive"
+    // gap (wedged driver / privacy shutter mid-start): on timeout we tear down
+    // and surface a clear, retryable error instead of a permanently black preview
+    // and a loop spinning on a never-ready video.
+    try {
+      await waitForVideoReady(video, VIDEO_READY_TIMEOUT_MS);
+    } catch (readyError: unknown) {
+      teardown();
+      if (!mountedRef.current) return;
+      setStatus("error");
+      setErrorMessage(describeCameraError(readyError));
+      return;
     }
 
     if (!mountedRef.current || streamRef.current !== stream) return;
@@ -733,7 +857,11 @@ function MotionSandboxPanel({
           onClick={startCamera}
           disabled={isBusy || isActive}
         >
-          {isBusy ? "Starting…" : "Start Camera"}
+          {isBusy
+            ? "Starting…"
+            : status === "error"
+              ? "Retry camera"
+              : "Start Camera"}
         </button>
         <button
           type="button"
