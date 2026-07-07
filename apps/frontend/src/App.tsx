@@ -8,6 +8,7 @@ import ConsolePanel from "./components/ConsolePanel";
 import SourceRegistryPanel from "./components/SourceRegistryPanel";
 import KnowledgeGraphPanel from "./components/KnowledgeGraphPanel";
 import IntelligenceReportPanel from "./components/IntelligenceReportPanel";
+import MotionSandboxPanel from "./components/MotionSandboxPanel";
 
 /* Phase 27B — graph-first app shell; corrected by Phase 28B (see
    docs/phase-28a-true-graph-primary-overlay-contract.md). The Knowledge Graph
@@ -17,13 +18,16 @@ import IntelligenceReportPanel from "./components/IntelligenceReportPanel";
    sidebar column. All panes stay mounted (just hidden) so toggling between
    them never re-triggers their data fetch — only the active pane is
    visible/focusable at a time. */
-type PanelKey = "vault" | "sources" | "intelligence" | "console";
+type PanelKey = "vault" | "sources" | "intelligence" | "console" | "motion";
 
 const RAIL_ITEMS: Array<{ key: PanelKey; label: string; glyph: string }> = [
   { key: "vault", label: "Vault", glyph: "V" },
   { key: "sources", label: "Sources", glyph: "S" },
   { key: "intelligence", label: "Intelligence", glyph: "I" },
   { key: "console", label: "Console", glyph: "C" },
+  // Phase 32B — Motion Sandbox: an isolated webcam-motion probe opened from the
+  // same contextual rail as every other overlay. It never touches the graph.
+  { key: "motion", label: "Motion", glyph: "M" },
 ];
 
 const PANEL_LABELS: Record<PanelKey, string> = {
@@ -31,6 +35,7 @@ const PANEL_LABELS: Record<PanelKey, string> = {
   sources: "Source Registry",
   intelligence: "Intelligence Report",
   console: "Console",
+  motion: "Motion Sandbox",
 };
 
 // The graph panel's section id, shared between the mount below and the
@@ -294,6 +299,17 @@ function App() {
               hidden={activePanel !== "console"}
             >
               <ConsolePanel id="console" />
+            </div>
+
+            {/* Phase 32B — isolated webcam Motion Sandbox. Stays mounted (just
+                hidden) like the other panes, but it requests no camera and
+                starts no stream until the user explicitly presses Start inside
+                it, so a closed/hidden pane keeps the device untouched. */}
+            <div
+              className="shell-dock-pane"
+              hidden={activePanel !== "motion"}
+            >
+              <MotionSandboxPanel id="motion-sandbox" />
             </div>
           </div>
         </aside>
