@@ -4789,6 +4789,48 @@ body,
 
 .motion-sandbox-statusrow {
   display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Detector picker (MediaPipe vs frame-difference). Disabled while the camera is
+   live so the estimator can't swap mid-stream. */
+.motion-sandbox-modes {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+
+.motion-sandbox-modes legend {
+  padding: 0 var(--space-1);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.motion-sandbox-modes label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.motion-sandbox-modes:disabled label {
+  cursor: not-allowed;
+  color: var(--text-muted);
+}
+
+.motion-sandbox-modes input {
+  accent-color: var(--accent);
 }
 
 .motion-sandbox-actions {
@@ -4894,6 +4936,24 @@ body,
   display: block;
 }
 
+/* Landmark overlay — sits over the mirrored preview and mirrors to match, so the
+   drawn skeleton lines up with the hand the user sees. Only shown in MediaPipe
+   mode while live. */
+.motion-sandbox-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  transform: scaleX(-1);
+}
+
+.motion-sandbox-overlay[data-live="true"] {
+  display: block;
+}
+
 .motion-sandbox-preview-empty {
   position: absolute;
   inset: 0;
@@ -4913,6 +4973,21 @@ body,
   image-rendering: pixelated;
   /* Match the mirrored preview so motion lines up left-to-right. */
   transform: scaleX(-1);
+}
+
+/* MediaPipe hand-detection info block — mirrors the readout card styling. */
+.motion-sandbox-detection {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.motion-sandbox-detection .motion-sandbox-readout-title {
+  margin-bottom: 0;
 }
 
 .motion-sandbox-readout {

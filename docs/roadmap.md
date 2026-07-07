@@ -32,29 +32,40 @@ and the [Phase 28A True Graph-Primary Surface + Overlay Contract](phase-28a-true
 and the [Phase 30A Post-Polish Interaction Triage + Next Frontend Direction Planning](phase-30a-post-polish-interaction-triage.md),
 and the [Phase 30C Interaction Recovery QA + Screenshot Evidence Refresh](demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md),
 and the [Phase 31A Premium Graph Interaction + Portfolio Demo Direction Planning](planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md),
-and the [Motion Sandbox Control Contract + Phase 32C QA](motion-sandbox-control-contract.md).
+and the [Motion Sandbox Control Contract + 32C QA + 32D MediaPipe](motion-sandbox-control-contract.md).
 
 ## Current status
 
-**Current phase:** Phase 32C — Motion Sandbox QA + Control Contract Hardening
-(**frontend-only**). Phase 32C runtime-QAs the Phase 32B webcam motion sandbox,
-hardens the local `MotionCommand` contract — explicit `active` / `source` /
-`timestamp` fields plus a pitch-sign fix so the sandbox output matches its
-documented yaw/pitch/zoom semantics — and captures the whole thing in a new
-[Motion Sandbox Control Contract + QA doc](motion-sandbox-control-contract.md).
-The QA recommendation: frame-difference is a good dependency-free signal
-visualiser / fallback but cannot infer depth or a pinch gesture, so graph control
-should wait for a hand-landmark model. **No graph control wiring and no MediaPipe
-were added.** The preceding **Phase 32B** (PR #118) landed the standalone webcam
-motion sandbox, and the earlier **Phase 32A.6** (docs-only) reconciled this
-roadmap with `main`: the Phase 31 premium-graph-interaction frontend series (31A
-planning through 31H) is **complete and merged**, Phase 31I is **implemented on
-its feature branch but not yet merged into `main`**, and the Phase 30-series
-interaction-recovery work — including the Phase 30C QA + screenshot-evidence pass
-(PR #110) — is complete. The next phase is **Phase 32D — MediaPipe / Hand-Landmark
-Motion Detection** (feasibility or implementation), which Phase 32C's QA
-recommends to add the depth/zoom and pinch signals frame-difference cannot
-provide.
+**Current phase:** Phase 32D — MediaPipe / Hand-Landmark Motion Detection
+(**frontend-only**, in progress on branch
+`phase-32d-mediapipe-hand-landmark-motion-detection`). Phase 32D adds a **MediaPipe
+Hand Landmarker** estimator to the Motion Sandbox as the primary detector while
+preserving the Phase 32B/32C **frame-difference** estimator as a zero-dependency
+fallback / debug visualiser. Both fill the *same* hardened `MotionCommand`
+contract, with `source` as the discriminator; the landmark estimator makes
+`zoomDelta` (approximate, single-camera scale proxy) and `pinchActive` (real,
+thumb/index distance) live. A small typed helper
+(`apps/frontend/src/handLandmarkMotion.ts`) owns the deterministic landmark math,
+and a lightweight landmark overlay + hand-detection readout were added. This phase
+adds one **pinned** dependency (`@mediapipe/tasks-vision@0.10.35`); the wasm
+runtime and model are fetched from version-pinned URLs, never committed or
+transmitted. The camera stays explicit-start, local-only, no-storage,
+no-backend-transmission. **No graph control wiring was added** — that remains
+gated behind Phase 32E. Full detail in the
+[Motion Sandbox Control Contract + 32D doc](motion-sandbox-control-contract.md)
+(§13–§20).
+
+The preceding **Phase 32C** (frontend-only) runtime-QA'd the Phase 32B sandbox and
+hardened the `MotionCommand` contract (explicit `active` / `source` / `timestamp`
+fields plus a pitch-sign fix); its QA recommended exactly this hand-landmark work
+because frame-difference cannot infer depth or a pinch. The earlier **Phase 32B**
+(PR #118) landed the standalone webcam motion sandbox, and **Phase 32A.6**
+(docs-only) reconciled this roadmap with `main`: the Phase 31 premium-graph-
+interaction frontend series (31A planning through 31H) is **complete and merged**,
+Phase 31I is **implemented on its feature branch but not yet merged into `main`**,
+and the Phase 30-series interaction-recovery work — including the Phase 30C QA +
+screenshot-evidence pass (PR #110) — is complete. The next phase is **Phase 32E —
+Orbital Graph Control Contract + Motion-to-Graph Wiring Planning**.
 
 The preceding **Phase 31-series** delivered the premium graph-interaction
 frontend polish, and **Phases 31A through 31H are complete and merged into
@@ -530,7 +541,8 @@ Current non-capabilities:
 | 32A.6 | Complete | Roadmap 31-series status refresh (**docs-only**); reconciles the roadmap with actual repository history — marks 31A–31H complete/merged and 31I pending (branch-only, not merged), records the completed Phase 30-series and the Phase 32A / 32A.5 docs work, and resolves the stale roadmap conflict markers. No frontend/backend/source/package/API/schema/config change; no screenshots. |
 | 32B | Complete | Standalone Webcam Motion Sandbox (frontend-only, merged into `main` via **PR #118**); an isolated "Motion" dock pane that requests the webcam only on explicit user action and derives a normalized `MotionCommand` from a dependency-free `getUserMedia` + canvas frame-difference loop, purely for inspection. Never touches the knowledge graph; no MediaPipe, no package/dependency/backend/API/schema change. |
 | 32C | Complete | Motion Sandbox QA + Control Contract Hardening (**frontend-only**, this phase); runtime-QAs the Phase 32B sandbox (camera lifecycle, permission/no-device error paths, teardown, sign conventions) and hardens the local `MotionCommand` contract — adds explicit `active` / `source` / `timestamp` fields, fixes the pitch sign so upward motion reads positive, and adds an Idle/Active chip + per-axis direction hints. New [Motion Sandbox Control Contract + QA doc](motion-sandbox-control-contract.md). **No graph control wiring, no MediaPipe, no package/dependency/backend/API/schema change.** |
-| 32D | Planned (next) | MediaPipe / Hand-Landmark Motion Detection — feasibility or implementation pass recommended by Phase 32C QA; would populate the same hardened `MotionCommand` shape (using `source` as the estimator discriminator) to add the depth/zoom and pinch/grab signals frame-difference structurally cannot provide, with frame-difference retained as a dependency-free fallback / debug visualiser. Any dependency decision belongs to this phase. Graph control wiring remains gated behind a later phase. |
+| 32D | In progress | MediaPipe / Hand-Landmark Motion Detection (**frontend-only**, this phase); adds a MediaPipe Hand Landmarker estimator to the Motion Sandbox as the primary detector, populating the same hardened `MotionCommand` shape (with `source` as the discriminator) so `zoomDelta` (approximate single-camera proxy) and `pinchActive` (thumb/index distance) become live. Keeps frame-difference as a zero-dependency fallback / debug visualiser; adds a landmark overlay + hand-detection readout and a small typed landmark-math helper. Adds one **pinned** dependency (`@mediapipe/tasks-vision@0.10.35`); wasm/model fetched from version-pinned URLs, never committed/transmitted. Camera stays explicit-start, local-only, no-storage, no-backend. **No graph control wiring.** See [Motion Sandbox Control Contract + 32D doc](motion-sandbox-control-contract.md). |
+| 32E | Planned (next) | Orbital Graph Control Contract + Motion-to-Graph Wiring Planning — define how the hardened `MotionCommand` maps to graph camera/orbit behaviour and plan the first real motion-to-graph wiring. |
 
 ## Future roadmap
 
