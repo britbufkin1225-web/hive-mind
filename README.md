@@ -118,17 +118,38 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 32F - Orbital Graph Control Contract Types + Helper
-  Stub` (**frontend-only**, types + pure helper). Phase 32F implements the first
-  typed piece of the Phase 32E plan: a small, deterministic, side-effect-free bridge
-  module (`apps/frontend/src/orbitalGraphControl.ts`) that defines the **separate**
+- **Current phase:** `Phase 32G - First Opt-In Orbital Graph Control Wiring`
+  (**frontend-only**). Phase 32G is the first phase in which motion can move
+  anything on the graph — and it moves **only the camera/view**. It wires the
+  Motion Sandbox output to the Knowledge Graph through the Phase 32F helper
+  (`MotionCommand` → `mapMotionCommandToOrbitalGraphControlCommand` → new pure
+  `integrateOrbitalCamera` → a CSS transform on a view wrapper around the graph
+  SVG). A single **“Motion controls graph”** switch in the Motion Sandbox (owned
+  by `App.tsx`, **off by default**) opts in; a shared `motionCommandRef` carries
+  per-frame motion with **zero** React re-renders. The graph stays **read-only** —
+  nodes, edges, source data, layout, selection, and API data are never mutated;
+  only the orbital camera moves (yaw→rotateY, pitch→rotateX, zoom→scale) and it
+  decays safely to neutral when motion stops. Inactive/low-confidence input is
+  gated to idle, the pose is clamped, `prefers-reduced-motion` holds the camera
+  neutral, and a compact **Motion camera** readout reports state. Adds **no**
+  backend, API, schema, package, or dependency change, and no new graph/state/
+  physics library. `npm run check:frontend` passes; verified live in the browser
+  preview (toggle off by default; enabling reveals the readout; no webcam → idle →
+  neutral camera; node selection still works through the camera wrapper). Next:
+  **Phase 32H — Orbital Graph Control QA + Usability Hardening.** See the
+  [Motion Sandbox Control Contract + 32G doc](docs/motion-sandbox-control-contract.md)
+  (§22–§29).
+  The preceding **Phase 32F** (**frontend-only**, types + pure helper, merged into
+  `main` via PR #122) implemented the first typed piece of the Phase 32E plan: a
+  small, deterministic, side-effect-free bridge module
+  (`apps/frontend/src/orbitalGraphControl.ts`) that defines the **separate**
   `OrbitalGraphControlCommand` graph-intent contract and a pure `MotionCommand` →
   graph-intent mapping helper (deadzone / confidence gating / clamp, failing safe
-  toward stillness). It is a **contract + helper stub only** — nothing consumes it,
-  so **motion still does not control the graph**, and it touches no React, DOM,
-  camera, MediaPipe, graph rendering, or app state and adds no dependency, backend,
-  API, schema, or CSS change. The first real wiring stays deferred to Phase 32G. See
-  the [Motion Sandbox Control Contract + 32F doc](docs/motion-sandbox-control-contract.md)
+  toward stillness). It was a **contract + helper stub only** — nothing consumed it
+  yet — and touched no React, DOM, camera, MediaPipe, graph rendering, or app state
+  and added no dependency, backend, API, schema, or CSS change; Phase 32G is its
+  first consumer. See the
+  [Motion Sandbox Control Contract + 32F doc](docs/motion-sandbox-control-contract.md)
   (§21).
   The preceding **Phase 32E** (**documentation only**, merged into `main` via PR
   #121) defined — as **planning only, with no wiring** — how the existing Motion
@@ -627,7 +648,8 @@ The current phase sequence:
 | Phase 32C | Complete | Motion Sandbox QA + Control Contract Hardening (frontend-only); runtime-QAs the sandbox and hardens the local `MotionCommand` contract (explicit `active` / `source` / `timestamp` fields, pitch-sign fix, Idle/Active chip + direction hints). See [Motion Sandbox Control Contract + QA](docs/motion-sandbox-control-contract.md). **No graph wiring, no MediaPipe.** |
 | Phase 32D | Complete | MediaPipe / Hand-Landmark Motion Detection (frontend-only, merged into `main`); adds a MediaPipe Hand Landmarker estimator as the primary detector, populating the same hardened `MotionCommand` shape (`source` discriminates) so `zoomDelta` (approximate single-camera proxy) and `pinchActive` (thumb/index distance) go live. Frame-difference kept as a zero-dependency fallback; adds a landmark overlay + hand-detection readout and a small typed landmark-math helper. One **pinned** dependency (`@mediapipe/tasks-vision@0.10.35`); wasm/model fetched from version-pinned URLs, never committed/transmitted; camera stays explicit-start, local-only, no-storage, no-backend. **No graph control wiring.** |
 | Phase 32E | Complete (docs) | Orbital Graph Control Contract + Motion-to-Graph Wiring Planning (**documentation only**, merged into `main` via **PR #121**); defines — with **no wiring** — how the hardened `MotionCommand` could eventually drive an orbital/3D-feeling graph surface: a **separate** `OrbitalGraphControlCommand` graph-intent contract, the motion-to-graph mapping rules, a strict opt-in/off-by-default engagement + safety model, the UI/UX activation contract, and the future phase sequence. **Motion does not control the graph today.** See [Phase 32E planning doc](docs/planning/phase-32e-orbital-graph-control-contract-motion-wiring.md). |
-| Phase 32F | Complete | Orbital Graph Control Contract Types + Helper Stub (**frontend-only**, this phase); adds `apps/frontend/src/orbitalGraphControl.ts` — the typed `OrbitalGraphControlCommand` graph-intent contract (kept **separate** from `MotionCommand`) plus a deterministic, side-effect-free `MotionCommand` → graph-intent mapping helper: `clampOrbitalDelta` (non-finite → 0, deadzone, ±1 clamp) and a fail-safe idle mapping (missing/inactive/low-confidence/deadzoned → idle). Constants track the Phase 32E §6 defaults (deadzone `0.08`, min confidence `0.55`). **No graph wiring, no React/state integration, no dependency/backend/API/schema/CSS change, no MediaPipe/webcam change.** See [Motion Sandbox Control Contract + 32F doc](docs/motion-sandbox-control-contract.md) (§21). |
+| Phase 32F | Complete | Orbital Graph Control Contract Types + Helper Stub (**frontend-only**, merged into `main` via **PR #122**); adds `apps/frontend/src/orbitalGraphControl.ts` — the typed `OrbitalGraphControlCommand` graph-intent contract (kept **separate** from `MotionCommand`) plus a deterministic, side-effect-free `MotionCommand` → graph-intent mapping helper: `clampOrbitalDelta` (non-finite → 0, deadzone, ±1 clamp) and a fail-safe idle mapping (missing/inactive/low-confidence/deadzoned → idle). Constants track the Phase 32E §6 defaults (deadzone `0.08`, min confidence `0.55`). **No graph wiring, no React/state integration, no dependency/backend/API/schema/CSS change, no MediaPipe/webcam change.** See [Motion Sandbox Control Contract + 32F doc](docs/motion-sandbox-control-contract.md) (§21). |
+| Phase 32G | Complete | First Opt-In Orbital Graph Control Wiring (**frontend-only**, this phase); wires the Motion Sandbox output to the Knowledge Graph camera through the 32F helper (`MotionCommand` → `mapMotionCommandToOrbitalGraphControlCommand` → new pure `integrateOrbitalCamera` → CSS transform on a view wrapper around the graph SVG). A single **“Motion controls graph”** switch (owned by `App.tsx`, **off by default**) opts in; a shared `motionCommandRef` carries per-frame motion with **zero** React re-renders. Motion adjusts **only** the orbital camera (yaw→rotateY, pitch→rotateX, zoom→scale); the graph stays **read-only** (no node/edge/data/layout/selection/API mutation). Idle/low-confidence gates to idle, pose is clamped, camera decays to neutral on stillness, `prefers-reduced-motion` holds it neutral, and a compact **Motion camera** readout reports state. **No backend/API/schema/package/dependency change; no new graph/state/physics library; no telemetry/recording/screenshot pass.** See [Motion Sandbox Control Contract + 32G doc](docs/motion-sandbox-control-contract.md) (§22–§29). |
 
 The historical planned-phase table below is preserved as recorded phase
 history; the [full roadmap](docs/roadmap.md) is the canonical, up-to-date

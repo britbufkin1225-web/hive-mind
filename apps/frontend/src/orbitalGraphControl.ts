@@ -202,3 +202,118 @@ export function mapMotionCommandToOrbitalGraphControlCommand(
     confidence,
   };
 }
+
+// --- Phase 32G — orbital camera integration ---------------------------------
+//
+// The first opt-in graph wiring (Phase 32G) needs to turn the per-frame
+// orbital-control *intent* above into an accumulated *camera pose* the graph can
+// render as a pure visual transform. That integration is deterministic and
+// side-effect free, so it lives here beside the contract it consumes rather than
+// inside the React graph component — keeping the gains, bounds, and idle-decay
+// behaviour testable and auditable in one place. Nothing here touches React, the
+// DOM, or graph data; it maps (previous pose, control command) → next pose.
+
+/** An accumulated, neutral-relative orbital camera pose. The graph applies this
+    as a presentation-only transform (yaw → horizontal orbit, pitch → vertical
+    tilt, zoom → scale). It never describes or mutates graph data.
+
+      yaw    Degrees of horizontal orbit. 0 = face-on; signed.
+      pitch  Degrees of vertical tilt. 0 = level; signed.
+      zoom   Scale multiplier. 1 = neutral; >1 closer, <1 further. */
+export type OrbitalGraphCameraTransform = Readonly<{
+  yaw: number;
+  pitch: number;
+  zoom: number;
+}>;
+
+/** The rest pose: face-on, level, unscaled. The camera decays back to this
+    whenever there is no trusted, active control. */
+export const ORBITAL_GRAPH_CAMERA_NEUTRAL: OrbitalGraphCameraTransform = {
+  yaw: 0,
+  pitch: 0,
+  zoom: 1,
+};
+
+// Per-frame integration gains: how much one active frame's clamped delta nudges
+// the pose. Tuned for a visible-but-calm response at ~60fps (holding an axis
+// off-centre orbits/zooms at a steady rate until it hits the bound below).
+export const ORBITAL_GRAPH_CAMERA_YAW_GAIN = 0.9;
+export const ORBITAL_GRAPH_CAMERA_PITCH_GAIN = 0.7;
+export const ORBITAL_GRAPH_CAMERA_ZOOM_GAIN = 0.012;
+
+// Absolute pose bounds. The orbit stays a gentle presentation tilt (never a
+// full spin), and zoom is clamped so the graph can never be scaled off-screen or
+// inverted. Every integrated axis is clamped to these each frame.
+export const ORBITAL_GRAPH_CAMERA_MAX_YAW = 32;
+export const ORBITAL_GRAPH_CAMERA_MAX_PITCH = 24;
+export const ORBITAL_GRAPH_CAMERA_MIN_ZOOM = 0.65;
+export const ORBITAL_GRAPH_CAMERA_MAX_ZOOM = 1.7;
+
+/** Retained fraction of the pose per idle frame. On any inactive/low-confidence
+    frame the pose eases toward neutral by `1 - DECAY`, so the graph settles to
+    stillness (and rights itself) when motion stops — the safe fallback. */
+export const ORBITAL_GRAPH_CAMERA_DECAY = 0.88;
+
+/** Snap a value that is within `epsilon` of `target` to `target`, so an easing
+    pose settles exactly at rest instead of asymptotically hovering near it. */
+function settle(value: number, target: number, epsilon: number): number {
+  return Math.abs(value - target) <= epsilon ? target : value;
+}
+
+function clampRange(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+  if (value < min) return min;
+  if (value > max) return max;
+  return value;
+}
+
+/** Integrate one orbital-control command into the running camera pose.
+
+    Pure and deterministic: `(previous pose, command) → next pose`. It reads
+    nothing but its arguments and touches no graph data — the graph stays
+    read-only; only its visual camera moves.
+
+    - Inactive/low-confidence command → ease every axis toward
+      `ORBITAL_GRAPH_CAMERA_NEUTRAL` by `1 - DECAY` (decay safely to stillness).
+    - Active command → add each clamped delta (scaled by `confidence`, so a less
+      certain frame nudges more gently) and clamp the result to the pose bounds.
+
+    Non-finite fields in `prev` fail safe: they are treated as neutral via the
+    clamps, so a corrupted pose can never leak into the transform. */
+export function integrateOrbitalCamera(
+  prev: OrbitalGraphCameraTransform,
+  command: OrbitalGraphControlCommand,
+): OrbitalGraphCameraTransform {
+  const yawNow = Number.isFinite(prev.yaw) ? prev.yaw : 0;
+  const pitchNow = Number.isFinite(prev.pitch) ? prev.pitch : 0;
+  const zoomNow = Number.isFinite(prev.zoom) ? prev.zoom : 1;
+
+  if (!command.active) {
+    // Ease toward neutral; snap once close enough so the loop can rest.
+    return {
+      yaw: settle(yawNow * ORBITAL_GRAPH_CAMERA_DECAY, 0, 0.01),
+      pitch: settle(pitchNow * ORBITAL_GRAPH_CAMERA_DECAY, 0, 0.01),
+      zoom: settle(1 + (zoomNow - 1) * ORBITAL_GRAPH_CAMERA_DECAY, 1, 0.001),
+    };
+  }
+
+  const gain = command.confidence; // already 0..1, gates ensure >= MIN_CONFIDENCE
+
+  return {
+    yaw: clampRange(
+      yawNow + command.yawDelta * ORBITAL_GRAPH_CAMERA_YAW_GAIN * gain,
+      -ORBITAL_GRAPH_CAMERA_MAX_YAW,
+      ORBITAL_GRAPH_CAMERA_MAX_YAW,
+    ),
+    pitch: clampRange(
+      pitchNow + command.pitchDelta * ORBITAL_GRAPH_CAMERA_PITCH_GAIN * gain,
+      -ORBITAL_GRAPH_CAMERA_MAX_PITCH,
+      ORBITAL_GRAPH_CAMERA_MAX_PITCH,
+    ),
+    zoom: clampRange(
+      zoomNow + command.zoomDelta * ORBITAL_GRAPH_CAMERA_ZOOM_GAIN * gain,
+      ORBITAL_GRAPH_CAMERA_MIN_ZOOM,
+      ORBITAL_GRAPH_CAMERA_MAX_ZOOM,
+    ),
+  };
+}

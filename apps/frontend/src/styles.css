@@ -5098,3 +5098,178 @@ body,
   }
 }
 
+/* --- Phase 32G — Motion Sandbox opt-in graph control -----------------------
+   The switch that routes the Motion Sandbox's derived MotionCommand to the
+   Knowledge Graph camera. Deliberately quiet and off by default; the copy makes
+   clear the graph stays read-only (camera/view only). */
+.motion-sandbox-graphctrl {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+}
+
+.motion-sandbox-graphctrl-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.motion-sandbox-graphctrl-toggle input {
+  cursor: pointer;
+}
+
+.motion-sandbox-graphctrl-hint {
+  margin: var(--space-2) 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-subtle);
+}
+
+/* --- Phase 32G — orbital graph camera stage + readout ----------------------
+   `.graph-camera` is the transform stage: the opt-in orbital pose is written to
+   this wrapper's `transform`, never to the SVG's coordinate system, so node
+   positions, hit-testing, and selection are untouched. It fills the viewfinder
+   and is clipped by the wrap's own `overflow: hidden`, so the tilt/zoom can
+   never spill outside the viewport. */
+.graph-camera {
+  position: absolute;
+  inset: 0;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Belt-and-suspenders: even if the JS loop is mid-flight when the preference
+   flips, never let the camera hold a transform under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .graph-camera {
+    transform: none !important;
+  }
+}
+
+/* Compact, floating status readout for the read-only camera. Sits over the
+   field as glass chrome (matching the viewfinder vocabulary), reports state
+   only, and never reads as a restored dashboard panel. */
+.graph-control-readout {
+  position: absolute;
+  right: 1rem;
+  bottom: 0.85rem;
+  z-index: 3;
+  width: 12.5rem;
+  max-width: calc(100% - 2rem);
+  padding: var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--viewfinder-glass);
+  backdrop-filter: saturate(1.2) blur(6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.graph-control-readout-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.graph-control-readout-title {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.graph-control-state {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.graph-control-state.is-live {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.graph-control-state.is-idle {
+  background: var(--surface-inset);
+  color: var(--text-subtle);
+}
+
+.graph-control-state.is-reduced {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.graph-control-metrics {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.2rem var(--space-2);
+}
+
+.graph-control-metrics div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.graph-control-metrics dt {
+  font-size: 0.625rem;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.graph-control-metrics dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.graph-control-confidence {
+  margin-top: var(--space-3);
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-inset);
+  overflow: hidden;
+}
+
+.graph-control-confidence-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+  transition: width 0.12s linear;
+}
+
+.graph-control-readout-note {
+  margin: var(--space-2) 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  color: var(--text-subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .graph-control-confidence-fill {
+    transition: none;
+  }
+}
+

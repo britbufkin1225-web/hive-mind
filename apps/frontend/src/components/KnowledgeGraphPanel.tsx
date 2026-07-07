@@ -1,7 +1,14 @@
-import type { KeyboardEvent, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { KeyboardEvent, ReactNode, RefObject } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../api/client";
 import type { HiveMetadata, KnowledgeGraphResponse } from "../types/api";
+import { ZERO_MOTION, type MotionCommand } from "../handLandmarkMotion";
+import {
+  integrateOrbitalCamera,
+  mapMotionCommandToOrbitalGraphControlCommand,
+  ORBITAL_GRAPH_CAMERA_NEUTRAL,
+  type OrbitalGraphCameraTransform,
+} from "../orbitalGraphControl";
 import {
   buildGraphViewModel,
   edgeTypeColor,
@@ -54,6 +61,28 @@ function handleListArrowKeys(event: KeyboardEvent<HTMLUListElement>): void {
 }
 
 type PanelState = "loading" | "success" | "error";
+
+/**
+ * Phase 32G — compact snapshot the graph camera loop hands back to the panel for
+ * its small status readout. Purely informational: it reflects what the read-only
+ * camera is doing (opt-in state, live motion trust, and the current pose) and
+ * drives no data or selection flow.
+ */
+type GraphControlStatus = {
+  enabled: boolean;
+  active: boolean;
+  confidence: number;
+  reducedMotion: boolean;
+  camera: OrbitalGraphCameraTransform;
+};
+
+const GRAPH_CONTROL_STATUS_OFF: GraphControlStatus = {
+  enabled: false,
+  active: false,
+  confidence: 0,
+  reducedMotion: false,
+  camera: ORBITAL_GRAPH_CAMERA_NEUTRAL,
+};
 
 /**
  * The panel holds a single selection that is either a node or an edge (or
@@ -439,7 +468,7 @@ function truncateLabel(label: string, max = 22): string {
  * existing inspector stays the single source of selection truth. Purely
  * presentational: it draws from the prepared view model and mutates nothing.
  */
-function GraphCanvas({
+const GraphCanvas = memo(function GraphCanvas({
   nodes,
   edges,
   selectedNodeId,
@@ -449,6 +478,9 @@ function GraphCanvas({
   onSelectNode,
   onSelectEdge,
   onClearSelection,
+  graphControlEnabled,
+  motionCommandRef,
+  onCameraStatus,
 }: {
   nodes: GraphViewNode[];
   edges: GraphViewEdge[];
@@ -459,6 +491,9 @@ function GraphCanvas({
   onSelectNode: (id: string) => void;
   onSelectEdge: (id: string) => void;
   onClearSelection: () => void;
+  graphControlEnabled: boolean;
+  motionCommandRef: RefObject<MotionCommand>;
+  onCameraStatus: (status: GraphControlStatus) => void;
 }) {
   const layout = useMemo(
     () => computeGraphLayout(nodes, edges),
@@ -507,12 +542,105 @@ function GraphCanvas({
     target: string;
   } | null>(null);
 
+  // Phase 32G — opt-in orbital camera. When graph motion control is enabled, a
+  // ref-driven rAF loop reads the shared MotionCommand, maps it through the
+  // Phase 32F control contract, integrates it into an accumulated camera pose,
+  // and writes that pose as a CSS transform on the SVG wrapper. This is a
+  // *visual, read-only* camera: it never touches nodes, edges, source data,
+  // layout, or selection. Driving it through refs (not state) keeps it entirely
+  // off React's render path, so no graph re-renders happen per motion frame.
+  const cameraRef = useRef<HTMLDivElement | null>(null);
+  const cameraPoseRef = useRef<OrbitalGraphCameraTransform>(
+    ORBITAL_GRAPH_CAMERA_NEUTRAL,
+  );
+
+  useEffect(() => {
+    const resetTransform = () => {
+      const el = cameraRef.current;
+      if (el) el.style.transform = "";
+    };
+
+    // Disabled: hold the camera neutral and mark the readout off. No loop runs,
+    // so motion is fully ignored and the graph behaves exactly as before.
+    if (!graphControlEnabled) {
+      cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
+      resetTransform();
+      onCameraStatus(GRAPH_CONTROL_STATUS_OFF);
+      return;
+    }
+
+    // Respect the OS reduced-motion preference: keep the camera neutral and say
+    // why, rather than introduce continuous orbital motion the user has asked
+    // the system to avoid. (Re-read whenever control is toggled.)
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReducedMotion) {
+      cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
+      resetTransform();
+      onCameraStatus({
+        enabled: true,
+        active: false,
+        confidence: 0,
+        reducedMotion: true,
+        camera: ORBITAL_GRAPH_CAMERA_NEUTRAL,
+      });
+      return;
+    }
+
+    let frame = 0;
+    let lastStatus = 0;
+
+    const tick = (now: number) => {
+      const command = mapMotionCommandToOrbitalGraphControlCommand(
+        motionCommandRef.current,
+      );
+      const pose = integrateOrbitalCamera(cameraPoseRef.current, command);
+      cameraPoseRef.current = pose;
+
+      const el = cameraRef.current;
+      if (el) {
+        el.style.transform =
+          `perspective(1200px) rotateX(${pose.pitch.toFixed(3)}deg) ` +
+          `rotateY(${pose.yaw.toFixed(3)}deg) scale(${pose.zoom.toFixed(4)})`;
+      }
+
+      // The transform updates every frame above; the React-facing readout is
+      // throttled to ~10Hz so the status text stays legible and cheap.
+      if (now - lastStatus >= 100) {
+        lastStatus = now;
+        onCameraStatus({
+          enabled: true,
+          active: command.active,
+          confidence: command.confidence,
+          reducedMotion: false,
+          camera: pose,
+        });
+      }
+
+      frame = requestAnimationFrame(tick);
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(frame);
+      resetTransform();
+    };
+  }, [graphControlEnabled, motionCommandRef, onCameraStatus]);
+
   if (layout.nodes.length === 0) {
     return null;
   }
 
   return (
     <div className="viewfinder-canvas-wrap">
+      {/* Phase 32G camera stage: the opt-in orbital transform is written to this
+          wrapper (never to the SVG's own coordinate system), so the graph's node
+          positions, hit-testing, and selection stay untouched — the camera moves
+          the *view*, not the data. */}
+      <div className="graph-camera" ref={cameraRef}>
       <svg
         className="graph-canvas"
         viewBox={`0 0 ${layout.width} ${layout.height}`}
@@ -717,6 +845,7 @@ function GraphCanvas({
             })}
           </g>
       </svg>
+      </div>
       {/* Phase 31D: the surface hint is contextual rather than static. With
           nothing selected it explains the primary affordance; once a node or
           edge is active it switches to "how to clear" guidance and surfaces the
@@ -743,9 +872,17 @@ function GraphCanvas({
       </p>
     </div>
   );
-}
+});
 
-function KnowledgeGraphPanel({ id }: { id?: string }) {
+function KnowledgeGraphPanel({
+  id,
+  graphControlEnabled = false,
+  motionCommandRef,
+}: {
+  id?: string;
+  graphControlEnabled?: boolean;
+  motionCommandRef?: RefObject<MotionCommand>;
+}) {
   const [state, setState] = useState<PanelState>("loading");
   const [graph, setGraph] = useState<KnowledgeGraphResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -754,6 +891,22 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
   // by default, rather than an always-visible side column — the graph alone
   // is the at-rest state (Phase 28A §1).
   const [explorerOpen, setExplorerOpen] = useState(false);
+
+  // Phase 32G: live snapshot of the opt-in orbital camera, fed (throttled) from
+  // the camera loop inside GraphCanvas so the panel can show a small readout.
+  // Purely presentational — it drives no data or selection flow.
+  const [controlStatus, setControlStatus] = useState<GraphControlStatus>(
+    GRAPH_CONTROL_STATUS_OFF,
+  );
+  const handleCameraStatus = useCallback((status: GraphControlStatus) => {
+    setControlStatus(status);
+  }, []);
+
+  // The motion bridge is owned by App; keep a local idle fallback so the panel
+  // (and its GraphCanvas) still type-check and run standalone when no bridge is
+  // wired in. With no motion source, the fallback stays idle → camera neutral.
+  const localMotionRef = useRef<MotionCommand>(ZERO_MOTION);
+  const activeMotionRef = motionCommandRef ?? localMotionRef;
 
   // Phase 29B focus management (Phase 29A "opening an overlay should move
   // focus into it; dismissing it should return focus to the element that
@@ -971,6 +1124,9 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
             onSelectNode={selectNode}
             onSelectEdge={selectEdge}
             onClearSelection={clearSelection}
+            graphControlEnabled={graphControlEnabled}
+            motionCommandRef={activeMotionRef}
+            onCameraStatus={handleCameraStatus}
           />
         )}
       </div>
@@ -1038,6 +1194,77 @@ function KnowledgeGraphPanel({ id }: { id?: string }) {
             </button>
           </div>
         </header>
+
+        {/* Phase 32G — opt-in orbital camera readout. Rendered only while the
+            user has motion control enabled (from the Motion Sandbox). Compact
+            and informational: it never redesigns the dashboard and never mutates
+            graph data — it just reports what the read-only camera is doing. */}
+        {graphControlEnabled && (
+          <div
+            className="graph-control-readout"
+            aria-live="polite"
+            aria-label="Orbital motion control status"
+          >
+            <div className="graph-control-readout-head">
+              <span className="graph-control-readout-title">Motion camera</span>
+              <span
+                className={
+                  controlStatus.reducedMotion
+                    ? "graph-control-state is-reduced"
+                    : controlStatus.active
+                      ? "graph-control-state is-live"
+                      : "graph-control-state is-idle"
+                }
+              >
+                {controlStatus.reducedMotion
+                  ? "Reduced motion"
+                  : controlStatus.active
+                    ? "Live"
+                    : "Idle"}
+              </span>
+            </div>
+            {controlStatus.reducedMotion ? (
+              <p className="graph-control-readout-note">
+                Camera held neutral — your system prefers reduced motion.
+              </p>
+            ) : (
+              <>
+                <dl className="graph-control-metrics">
+                  <div>
+                    <dt>yaw</dt>
+                    <dd>{controlStatus.camera.yaw.toFixed(1)}°</dd>
+                  </div>
+                  <div>
+                    <dt>pitch</dt>
+                    <dd>{controlStatus.camera.pitch.toFixed(1)}°</dd>
+                  </div>
+                  <div>
+                    <dt>zoom</dt>
+                    <dd>{controlStatus.camera.zoom.toFixed(2)}×</dd>
+                  </div>
+                </dl>
+                <div
+                  className="graph-control-confidence"
+                  role="meter"
+                  aria-valuemin={0}
+                  aria-valuemax={1}
+                  aria-valuenow={Number(controlStatus.confidence.toFixed(2))}
+                  aria-label="Motion control intensity"
+                >
+                  <span
+                    className="graph-control-confidence-fill"
+                    style={{
+                      width: `${Math.max(0, Math.min(1, controlStatus.confidence)) * 100}%`,
+                    }}
+                  />
+                </div>
+                <p className="graph-control-readout-note">
+                  Read-only camera · lower or still hands recentre it.
+                </p>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Explorer tray: summoned from the topbar toggle rather than a
             permanently mounted side column (Phase 28A §1/§2 — a graph-loaded
