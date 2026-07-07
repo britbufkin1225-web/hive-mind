@@ -33,13 +33,35 @@ and the [Phase 30A Post-Polish Interaction Triage + Next Frontend Direction Plan
 and the [Phase 30C Interaction Recovery QA + Screenshot Evidence Refresh](demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md),
 and the [Phase 31A Premium Graph Interaction + Portfolio Demo Direction Planning](planning/phase-31a-premium-graph-interaction-portfolio-demo-direction.md),
 and the [Motion Sandbox Control Contract + 32C QA + 32D MediaPipe](motion-sandbox-control-contract.md),
-and the [Phase 32E Orbital Graph Control Contract + Motion-to-Graph Wiring Planning](planning/phase-32e-orbital-graph-control-contract-motion-wiring.md).
+and the [Phase 32E Orbital Graph Control Contract + Motion-to-Graph Wiring Planning](planning/phase-32e-orbital-graph-control-contract-motion-wiring.md),
+and the [Phase 32J Orbital Graph Control System-Camera Recovery Planning + Deferred Evidence Track](planning/phase-32j-orbital-graph-control-system-camera-recovery-planning-deferred-evidence.md).
 
 ## Current status
 
-**Current phase:** Phase 32I — Orbital Graph Control Live Stabilization +
-Evidence Decision (**frontend-only**, on branch
-`phase-32i-orbital-graph-control-live-stabilization-evidence-decision`).
+**Current phase:** Phase 32J — Orbital Graph Control System-Camera Recovery
+Planning + Deferred Evidence Track (**planning / documentation only**, on branch
+`phase-32j-orbital-graph-control-system-camera-recovery-planning-deferred-evidence`).
+Phase 32J is a **planning-only recovery/evidence-track phase** after Phase 32I. It
+does not change any code. It honestly records that the opt-in orbital graph
+control feature is wired, hardened, and still **experimental / opt-in / read-only**,
+while the **local camera stack remains blocked outside the Hive|Mind app**: native
+Windows Camera still cannot produce a live preview, so no live hand-motion evidence
+exists yet. The phase classifies the blocker as a **host/system camera stack
+issue** (not proven to be a Hive|Mind frontend bug), defines a graded, non-
+destructive **camera recovery checklist**, locks an **evidence gate** that must be
+satisfied before any screenshot/video capture resumes, defines the **deferred
+evidence track** to capture *later*, restates the feature guardrails and the
+approved **portfolio wording**, and sets the two possible next tracks — **Phase 32K
+Path A** (evidence capture, if the camera works) or **Phase 32K Path B** (alternate
+camera input / fallback planning, if it stays blocked). The recommendation is to
+**pause implementation changes** until the host camera is restored or an alternate
+path is tested; the app is already hardened enough for this blocker. No source,
+runtime, package, API, schema, or MediaPipe change; no screenshots or fabricated
+evidence. See the
+[Phase 32J planning doc](planning/phase-32j-orbital-graph-control-system-camera-recovery-planning-deferred-evidence.md).
+
+The preceding **Phase 32I** — Orbital Graph Control Live Stabilization +
+Evidence Decision (**frontend-only**, merged into `main` via PR #125).
 Phase 32I set out to run the **first real webcam/hand feel test** of the opt-in
 orbital control and then either capture portfolio evidence (if smooth) or
 stabilize (if rough). The live test was **blocked before any hand-feel testing
@@ -75,10 +97,12 @@ clear, classified, retryable *Camera error* instead of a stuck state — but a
 build agent's environment** (no webcam available to it). The real webcam/hand
 feel test, and any portfolio evidence capture, therefore remain **pending a human
 retry** on a machine with a working camera; nothing here should be read as a
-claim that live hand-motion control was observed working. Next: re-run the live
-webcam/hand test now that startup is hardened — if the camera starts and the feel
-is smooth enough, proceed to **evidence capture**; if the graph feel is rough,
-a follow-up **graph-tuning** stabilization pass (gains / dead zone / smoothing).
+claim that live hand-motion control was observed working. Phase 32J (this planning
+phase) records the resulting deferred-evidence posture and the host-camera recovery
+plan. The next executable phase is **Phase 32K**, whose track depends on the host
+camera: **Path A — Camera Recovery Verification + Evidence Capture** if the system
+camera works again, or **Path B — Alternate Camera Input / Fallback Feasibility
+Planning** if it remains blocked.
 
 The preceding **Phase 32H** — Orbital Graph Control QA + Usability Hardening
 (**frontend-only**, merged into `main` via PR #124) — was a QA/tuning pass over
