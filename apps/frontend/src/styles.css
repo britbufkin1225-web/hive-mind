@@ -5110,6 +5110,14 @@ body,
   background: var(--surface-inset);
 }
 
+.motion-sandbox-graphctrl-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 .motion-sandbox-graphctrl-toggle {
   display: flex;
   align-items: center;
@@ -5118,6 +5126,21 @@ body,
   font-weight: 600;
   color: var(--text);
   cursor: pointer;
+}
+
+/* Small "experimental / off by default" pill so the opt-in nature reads at a
+   glance next to the switch, without leaning on the hint copy alone. */
+.motion-sandbox-graphctrl-tag {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--warn);
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--warn);
+  white-space: nowrap;
 }
 
 .motion-sandbox-graphctrl-toggle input {
@@ -5267,8 +5290,44 @@ body,
   color: var(--text-subtle);
 }
 
+/* Phase 32H — explicit recenter affordance in the readout footer. Full-width so
+   it is an obvious, always-available "snap back to face-on" control while motion
+   control is on; it is purely visual and touches no graph data or selection. */
+.graph-control-readout-actions {
+  margin-top: var(--space-3);
+}
+
+.graph-control-recenter {
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  background: var(--surface-inset);
+  color: var(--text);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.graph-control-recenter:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.graph-control-recenter:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .graph-control-confidence-fill {
+    transition: none;
+  }
+
+  .graph-control-recenter {
     transition: none;
   }
 }

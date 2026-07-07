@@ -79,9 +79,14 @@ export type OrbitalGraphControlCommand = Readonly<{
 // idle rather than trusted. Values track the Phase 32E §6 planning defaults where
 // that doc defined them.
 
-/** Yaw/pitch/zoom magnitude at or below which motion is ignored. Matches the
-    Phase 32E §6 yaw/pitch deadzone default. */
-export const ORBITAL_GRAPH_CONTROL_DEADZONE = 0.08;
+/** Yaw/pitch/zoom magnitude at or below which motion is ignored. Phase 32H
+    usability pass widened this from the Phase 32E §6 default of 0.08 to 0.10:
+    live testing of the 32G wiring showed a lightly off-centre / trembling hand
+    still leaked a small constant rate command, so the camera crept when the user
+    believed they were holding still. A slightly larger dead zone trades a hair of
+    low-end sensitivity for a much steadier "hands roughly centred = no drift"
+    feel, which matters more for a read-only demo camera. */
+export const ORBITAL_GRAPH_CONTROL_DEADZONE = 0.1;
 
 /** Absolute clamp bound for every orbital delta; deltas live in `-1..1`. Phase
     32E did not define a max-delta, so this keeps the stub's normalized range. */
@@ -235,11 +240,16 @@ export const ORBITAL_GRAPH_CAMERA_NEUTRAL: OrbitalGraphCameraTransform = {
 };
 
 // Per-frame integration gains: how much one active frame's clamped delta nudges
-// the pose. Tuned for a visible-but-calm response at ~60fps (holding an axis
-// off-centre orbits/zooms at a steady rate until it hits the bound below).
-export const ORBITAL_GRAPH_CAMERA_YAW_GAIN = 0.9;
-export const ORBITAL_GRAPH_CAMERA_PITCH_GAIN = 0.7;
-export const ORBITAL_GRAPH_CAMERA_ZOOM_GAIN = 0.012;
+// the pose. Phase 32H trimmed these from the 32G values (yaw 0.9 / pitch 0.7 /
+// zoom 0.012) after the first live pass read as twitchy — a small hand move
+// swung the view faster than the eye could track, so the graph felt jumpy rather
+// than steered. The lower gains keep a held axis orbiting/zooming at a calmer,
+// more legible rate while still reaching the bounds below within a second or two.
+// Pitch stays below yaw (vertical tilt is more disorienting than a horizontal
+// orbit) and zoom stays deliberately gentle so depth changes never lurch.
+export const ORBITAL_GRAPH_CAMERA_YAW_GAIN = 0.62;
+export const ORBITAL_GRAPH_CAMERA_PITCH_GAIN = 0.48;
+export const ORBITAL_GRAPH_CAMERA_ZOOM_GAIN = 0.009;
 
 // Absolute pose bounds. The orbit stays a gentle presentation tilt (never a
 // full spin), and zoom is clamped so the graph can never be scaled off-screen or
@@ -253,6 +263,18 @@ export const ORBITAL_GRAPH_CAMERA_MAX_ZOOM = 1.7;
     frame the pose eases toward neutral by `1 - DECAY`, so the graph settles to
     stillness (and rights itself) when motion stops — the safe fallback. */
 export const ORBITAL_GRAPH_CAMERA_DECAY = 0.88;
+
+/** How old (ms) an *active* command may be before it is no longer trusted to
+    drive the camera. Phase 32H safety guard: the graph camera loop reads the
+    latest command from a ref every frame, but the Motion Sandbox only refreshes
+    that ref while its own detection loop runs. If that loop ever stalls mid-motion
+    (tab throttling, a wedged decode, the sandbox being torn down without pushing a
+    final idle), a frozen *active* command would otherwise be re-integrated every
+    frame and drift the camera to its clamp on its own. Treating a command older
+    than this as idle makes the camera decay to neutral instead of running away —
+    and stops a stale active frame from causing a jump when control is toggled back
+    on. ~4 dropped frames at 60fps; normal operation refreshes every ~16–33ms. */
+export const ORBITAL_GRAPH_CAMERA_STALE_MS = 250;
 
 /** Snap a value that is within `epsilon` of `target` to `target`, so an easing
     pose settles exactly at rest instead of asymptotically hovering near it. */
@@ -269,26 +291,44 @@ function clampRange(value: number, min: number, max: number): number {
 
 /** Integrate one orbital-control command into the running camera pose.
 
-    Pure and deterministic: `(previous pose, command) → next pose`. It reads
+    Pure and deterministic: `(previous pose, command, now?) → next pose`. It reads
     nothing but its arguments and touches no graph data — the graph stays
     read-only; only its visual camera moves.
 
     - Inactive/low-confidence command → ease every axis toward
       `ORBITAL_GRAPH_CAMERA_NEUTRAL` by `1 - DECAY` (decay safely to stillness).
-    - Active command → add each clamped delta (scaled by `confidence`, so a less
-      certain frame nudges more gently) and clamp the result to the pose bounds.
+    - Active but *stale* command (see below) → treated exactly like inactive, so a
+      frozen input decays to neutral rather than driving a runaway orbit.
+    - Active, fresh command → add each clamped delta (scaled by `confidence`, so a
+      less certain frame nudges more gently) and clamp the result to the bounds.
+
+    `now` (optional, ms on the same `performance.now()` clock as
+    `command.timestamp`) enables the staleness guard: when supplied and the command
+    is older than `ORBITAL_GRAPH_CAMERA_STALE_MS`, the command is not trusted for
+    integration. Omitting `now` preserves the original deterministic behaviour
+    (staleness never triggers), keeping existing callers/tests stable.
 
     Non-finite fields in `prev` fail safe: they are treated as neutral via the
     clamps, so a corrupted pose can never leak into the transform. */
 export function integrateOrbitalCamera(
   prev: OrbitalGraphCameraTransform,
   command: OrbitalGraphControlCommand,
+  now?: number,
 ): OrbitalGraphCameraTransform {
   const yawNow = Number.isFinite(prev.yaw) ? prev.yaw : 0;
   const pitchNow = Number.isFinite(prev.pitch) ? prev.pitch : 0;
   const zoomNow = Number.isFinite(prev.zoom) ? prev.zoom : 1;
 
-  if (!command.active) {
+  // A command is stale when we were given a clock, the command carries a finite
+  // source timestamp, and that timestamp is older than the trust window. Stale
+  // input falls through to the same decay path as an inactive command.
+  const stale =
+    typeof now === "number" &&
+    Number.isFinite(now) &&
+    Number.isFinite(command.timestamp) &&
+    now - command.timestamp > ORBITAL_GRAPH_CAMERA_STALE_MS;
+
+  if (!command.active || stale) {
     // Ease toward neutral; snap once close enough so the loop can rest.
     return {
       yaw: settle(yawNow * ORBITAL_GRAPH_CAMERA_DECAY, 0, 0.01),

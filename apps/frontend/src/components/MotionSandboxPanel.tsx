@@ -751,21 +751,24 @@ function MotionSandboxPanel({
           read-only, visual-only transform (the graph's nodes, edges, data, and
           selection are never touched). */}
       <div className="motion-sandbox-graphctrl">
-        <label className="motion-sandbox-graphctrl-toggle">
-          <input
-            type="checkbox"
-            checked={graphControlEnabled}
-            onChange={(event) =>
-              onToggleGraphControl?.(event.target.checked)
-            }
-            disabled={!onToggleGraphControl}
-          />
-          <span>Motion controls graph</span>
-        </label>
+        <div className="motion-sandbox-graphctrl-head">
+          <label className="motion-sandbox-graphctrl-toggle">
+            <input
+              type="checkbox"
+              checked={graphControlEnabled}
+              onChange={(event) =>
+                onToggleGraphControl?.(event.target.checked)
+              }
+              disabled={!onToggleGraphControl}
+            />
+            <span>Motion controls graph</span>
+          </label>
+          <span className="motion-sandbox-graphctrl-tag">Experimental · off by default</span>
+        </div>
         <p className="motion-sandbox-graphctrl-hint">
           {graphControlEnabled
-            ? "Enabled — hand motion orbits, tilts, and zooms the graph camera only. The graph stays read-only; it recentres when motion stops."
-            : "Off — the graph ignores motion entirely. Enable to let hand motion move the graph camera (visual only)."}
+            ? "Enabled — hand motion orbits, tilts, and zooms the graph camera only (visual, read-only). Your nodes, edges, and data are never changed. Uncheck to disable instantly; still hands recentre it, or use Recenter on the graph."
+            : "Off — the graph ignores webcam motion entirely. Enable to let hand motion move the graph camera as a visual-only, read-only view; it changes no graph data and can be turned off at any time."}
         </p>
       </div>
 
