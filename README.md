@@ -118,18 +118,32 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 32D - MediaPipe / Hand-Landmark Motion Detection`
-  (**frontend-only**). Phase 32D adds a **MediaPipe Hand Landmarker** estimator to
+- **Current phase:** `Phase 32E - Orbital Graph Control Contract + Motion-to-Graph
+  Wiring Planning` (**documentation only**). Phase 32E defines — as **planning
+  only, with no wiring** — how the existing Motion Sandbox output could eventually
+  control the knowledge graph as an orbital / 3D-feeling surface. It documents the
+  existing `MotionCommand` contract, proposes a **separate** graph-intent contract
+  (`OrbitalGraphControlCommand`), the motion-to-graph mapping rules, a strict
+  opt-in / off-by-default engagement + safety model (confidence, deadzone, and
+  staleness gating; an Escape/Stop kill path; read-only, no graph mutation), the
+  UI/UX activation contract, a future helper/module architecture, and the
+  next-phase sequence. **Motion does not control the graph today** — this phase
+  implements no graph control and changes no runtime/source/package/backend files.
+  The first real wiring is deferred to Phase 32G. Next likely phase: **Phase 32F —
+  Orbital Graph Control Contract Types + Helper Stub**. See the
+  [Phase 32E planning doc](docs/planning/phase-32e-orbital-graph-control-contract-motion-wiring.md).
+  The preceding **Phase 32D** (**frontend-only**, complete and merged into `main`)
+  added a **MediaPipe Hand Landmarker** estimator to
   the Motion Sandbox as the primary detector, keeping the Phase 32B/32C
   **frame-difference** estimator as a zero-dependency fallback / debug visualiser.
   Both fill the *same* hardened `MotionCommand` contract (`source` discriminates),
   so `zoomDelta` (approximate single-camera proxy) and `pinchActive` (thumb/index
   distance) become live. A small typed helper owns the landmark math; a lightweight
-  landmark overlay + hand-detection readout were added. It adds one **pinned**
+  landmark overlay + hand-detection readout were added. It added one **pinned**
   dependency (`@mediapipe/tasks-vision@0.10.35`) whose wasm/model are fetched from
   version-pinned URLs — never committed or transmitted — and the camera stays
-  explicit-start, local-only, no-storage, no-backend. **No graph control wiring**
-  (that is Phase 32E). See the
+  explicit-start, local-only, no-storage, no-backend. **No graph control wiring.**
+  See the
   [Motion Sandbox Control Contract + 32D doc](docs/motion-sandbox-control-contract.md).
   The preceding **Phase 32C** runtime-QA'd the sandbox and hardened the
   `MotionCommand` contract (explicit `active` / `source` / `timestamp` fields + a
@@ -603,8 +617,9 @@ The current phase sequence:
 | Phase 32A.6 | Complete | Roadmap 31-series status refresh (docs-only); reconciles the roadmap/README with actual repository history and resolves the stale roadmap conflict markers. |
 | Phase 32B | Complete | Standalone Webcam Motion Sandbox (frontend-only, merged into `main` via **PR #118**); an isolated "Motion" dock pane that requests the webcam only on explicit user action and derives a normalized `MotionCommand` from a dependency-free frame-difference loop, purely for inspection. Never touches the graph; no MediaPipe/dependency/backend change. |
 | Phase 32C | Complete | Motion Sandbox QA + Control Contract Hardening (frontend-only); runtime-QAs the sandbox and hardens the local `MotionCommand` contract (explicit `active` / `source` / `timestamp` fields, pitch-sign fix, Idle/Active chip + direction hints). See [Motion Sandbox Control Contract + QA](docs/motion-sandbox-control-contract.md). **No graph wiring, no MediaPipe.** |
-| Phase 32D | In progress | MediaPipe / Hand-Landmark Motion Detection (frontend-only, this phase); adds a MediaPipe Hand Landmarker estimator as the primary detector, populating the same hardened `MotionCommand` shape (`source` discriminates) so `zoomDelta` (approximate single-camera proxy) and `pinchActive` (thumb/index distance) go live. Frame-difference kept as a zero-dependency fallback; adds a landmark overlay + hand-detection readout and a small typed landmark-math helper. One **pinned** dependency (`@mediapipe/tasks-vision@0.10.35`); wasm/model fetched from version-pinned URLs, never committed/transmitted; camera stays explicit-start, local-only, no-storage, no-backend. **No graph control wiring.** |
-| Phase 32E | Planned (next) | Orbital Graph Control Contract + Motion-to-Graph Wiring Planning — define how the hardened `MotionCommand` maps to graph orbit/zoom behaviour and plan the first real motion-to-graph wiring. |
+| Phase 32D | Complete | MediaPipe / Hand-Landmark Motion Detection (frontend-only, merged into `main`); adds a MediaPipe Hand Landmarker estimator as the primary detector, populating the same hardened `MotionCommand` shape (`source` discriminates) so `zoomDelta` (approximate single-camera proxy) and `pinchActive` (thumb/index distance) go live. Frame-difference kept as a zero-dependency fallback; adds a landmark overlay + hand-detection readout and a small typed landmark-math helper. One **pinned** dependency (`@mediapipe/tasks-vision@0.10.35`); wasm/model fetched from version-pinned URLs, never committed/transmitted; camera stays explicit-start, local-only, no-storage, no-backend. **No graph control wiring.** |
+| Phase 32E | Active (planning) | Orbital Graph Control Contract + Motion-to-Graph Wiring Planning (**documentation only**, this phase); defines — with **no wiring** — how the hardened `MotionCommand` could eventually drive an orbital/3D-feeling graph surface: a **separate** `OrbitalGraphControlCommand` graph-intent contract, the motion-to-graph mapping rules, a strict opt-in/off-by-default engagement + safety model, the UI/UX activation contract, and the future phase sequence. **Motion does not control the graph today.** See [Phase 32E planning doc](docs/planning/phase-32e-orbital-graph-control-contract-motion-wiring.md). |
+| Phase 32F | Planned (next) | Orbital Graph Control Contract Types + Helper Stub — add the typed `OrbitalGraphControlCommand` and a deterministic `MotionCommand` → graph-intent helper (deadzone / gating / clamp / staleness), testable in isolation, with **no graph wiring**. |
 
 The historical planned-phase table below is preserved as recorded phase
 history; the [full roadmap](docs/roadmap.md) is the canonical, up-to-date

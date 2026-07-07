@@ -405,4 +405,9 @@ of the palm (wrist→middle-MCP span) relative to a fixed neutral. This is:
   worker in this phase.
 - **Single hand.** The detector is configured for `numHands: 1` (MVP).
 - **No graph wiring yet.** The `MotionCommand` is derived and displayed only;
-  nothing steers the graph. Graph wiring is Phase 32E.
+  nothing steers the graph. The graph-control contract that will eventually
+  consume this command — the proposed `OrbitalGraphControlCommand`, the
+  motion-to-graph mapping rules, the engagement/safety model, and the
+  implementation boundaries — is defined (planning only, no wiring) in the
+  [Phase 32E Orbital Graph Control Contract + Motion-to-Graph Wiring Planning](planning/phase-32e-orbital-graph-control-contract-motion-wiring.md)
+  doc. The first real wiring is deferred to Phase 32G.
