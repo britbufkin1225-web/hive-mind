@@ -772,8 +772,18 @@ const GraphCanvas = memo(function GraphCanvas({
       {/* Phase 32G camera stage: the opt-in orbital transform is written to this
           wrapper (never to the SVG's own coordinate system), so the graph's node
           positions, hit-testing, and selection stay untouched — the camera moves
-          the *view*, not the data. */}
-      <div className="graph-camera" ref={cameraRef}>
+          the *view*, not the data.
+          Phase 33D: expose whether orbital control is live as a data attribute so
+          the compositing-layer promotion (will-change) can be scoped to when the
+          camera actually moves. The common motionless case then no longer pins a
+          permanent GPU layer for the whole SVG, and the layer is created exactly
+          when control turns on — a motion-compatibility/perf refinement only; it
+          changes no transform math and no data. */}
+      <div
+        className="graph-camera"
+        ref={cameraRef}
+        data-graph-control={graphControlEnabled ? "on" : "off"}
+      >
       <svg
         className="graph-canvas"
         viewBox={`0 0 ${layout.width} ${layout.height}`}
