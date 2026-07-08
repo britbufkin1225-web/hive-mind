@@ -45,7 +45,33 @@ and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-co
 
 ## Current status
 
-**Current phase:** Phase 35A — Spatial Hive Interaction State Planning
+**Current phase:** Phase 35C — Spatial Hive Interaction State UX Hardening / CSS
+Consolidation Pass (**frontend / CSS only**, on branch
+`phase-35c-spatial-hive-interaction-state-ux-hardening-css-consolidation`).
+Phase 35C hardens the Phase 35B interaction-state surface and consolidates the
+CSS the recent Spatial Hive passes added, without changing behavior or data
+contracts. The core fix: the resting surface vignette is published once as a
+`--hive-surface-base` custom property on `.viewfinder-canvas-wrap`, and the
+hover / motion cues now *compose* on top of it instead of each setting a
+standalone `box-shadow` that silently dropped the vignette (which had flattened
+the field on hover and in idle). Idle needs no rule — it is exactly the base
+surface — and the single `box-shadow` transition now lives on the authoritative
+base rule, so idle ↔ hover ↔ motion and selection all fade rather than snap. The
+mode progression is calmer and more legible (idle → faint hover ring → slightly
+brighter motion ring, all sharing one vignette; selection stays the strongest,
+untouched surface). No `KnowledgeGraphPanel.tsx` logic change was required — the
+transient, in-memory, reload-resettable interaction-state model was reviewed and
+kept as-is. **No backend / API / schema / package / dependency change, no
+persistence, no `localStorage` / `sessionStorage`, no graph mutation, no new
+dependency, no MediaPipe / webcam / orbital-control retuning, and no screenshot /
+evidence refresh** (that pass stays deferred). `npm run check:frontend` passes.
+
+The preceding **Phase 35B — Spatial Hive Interaction State Frontend Pass**
+(**frontend-only**, merged into `main` via **PR #137**) implemented the Level 1
+transient interaction-mode layer (`idle` / `hover` / `focus` / `inspect` /
+`motion`) that Phase 35C hardens.
+
+The preceding **Phase 35A** — Spatial Hive Interaction State Planning
 (**docs / planning only**, on branch
 `phase-35a-spatial-hive-interaction-state-planning`). Phase 35A changes no code and
 adds no screenshots; the **screenshot / evidence refresh remains deferred** (a

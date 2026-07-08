@@ -123,9 +123,30 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 35B - Spatial Hive Interaction State Frontend Pass`
-  (**frontend-only**). Phase 35B implements the first **Level 1 interaction-state
-  layer** over the read-only 2.5D Spatial Hive — a small, typed, **transient
+- **Current phase:** `Phase 35C - Spatial Hive Interaction State UX Hardening /
+  CSS Consolidation Pass` (**frontend / CSS only**). Phase 35C hardens the Phase
+  35B interaction-state surface and consolidates the CSS the recent Spatial Hive
+  passes added, **without** changing behavior, data contracts, or the 2.5D
+  direction. The core cascade fix: the resting-surface vignette is now published
+  once as a `--hive-surface-base` custom property on `.viewfinder-canvas-wrap`,
+  and the hover / motion cues **compose** on top of it instead of each setting a
+  standalone `box-shadow` that silently dropped that vignette — which had
+  flattened the field on hover and in idle. Idle needs no rule (it is exactly the
+  base surface), the single `box-shadow` transition now lives on the
+  authoritative base rule so idle ↔ hover ↔ motion and selection all fade rather
+  than snap, and the mode progression is deliberately calmer (idle → faint hover
+  ring → slightly brighter motion ring, all sharing one vignette; the selection
+  surface stays the strongest and is left untouched). No `KnowledgeGraphPanel.tsx`
+  logic change was required — the transient, in-memory, reload-resettable
+  interaction-state model was reviewed and kept as-is. Boundaries hold: **no
+  persistence** (no `localStorage` / `sessionStorage` / IndexedDB / URL / backend),
+  **no graph mutation**, no backend/API/schema/package/dependency change, no
+  webcam/MediaPipe/orbital-control retuning, no new dependency or graph library,
+  and **no screenshot / evidence** work (that refresh stays deferred).
+  `npm run check:frontend` passes. The preceding **Phase 35B — Spatial Hive
+  Interaction State Frontend Pass** (**frontend-only**, merged via **PR #137**)
+  implemented the first **Level 1 interaction-state layer** over the read-only
+  2.5D Spatial Hive — a small, typed, **transient
   in-memory** interaction mode (`idle` / `hover` / `focus` / `inspect` / `motion`)
   derived every render from existing selection, canvas-local hover, and
   orbital-control availability by a pure `resolveInteractionMode` helper (no new
