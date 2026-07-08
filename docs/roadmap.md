@@ -45,10 +45,63 @@ and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-co
 
 ## Current status
 
-**Current phase:** Phase 35C — Spatial Hive Interaction State UX Hardening / CSS
-Consolidation Pass (**frontend / CSS only**, on branch
-`phase-35c-spatial-hive-interaction-state-ux-hardening-css-consolidation`).
-Phase 35C hardens the Phase 35B interaction-state surface and consolidates the
+**Current phase:** Phase 36B — Spatial Hive Energy Field UX Hardening / Visual
+Balance Pass (**frontend-only, CSS visual-balance pass**, on branch
+`phase-36b-spatial-hive-energy-field-ux-hardening-visual-balance`). Phase 36B
+hardens the Phase 36A atmosphere in place — tuning existing values, adding no
+new visual system — so the energy field supports rather than competes with node
+labels, selected-node focus, and graph topology: the idle veil quiets
+(0.6 → 0.52) while staying dimensional; the hover delta narrows so pointer
+entry/exit reads as attention rather than a lighting change; selection
+compression eases (0.88 → 0.78) so peripheral fog stops fighting related/far
+labels at the frame edge while **selection remains the strongest state** in a
+clean monotone hierarchy (hover 0.44 < idle 0.52 < motion 0.6 < selected 0.78);
+the veil's clear core widens (58% → 63%) to keep fog off the populated middle
+band; the canvas centre glow eases (0.10 → 0.07) and the deep-space floor
+falloff starts later and lands lighter (44%/0.5 → 52%/0.42) so corner-region
+nodes and labels stay legible; far-tier aerial muting is bounded tighter
+(saturate 0.88 / brightness 0.97 — it had stacked with the veil, double-charging
+far labels for one distance cue) with near/mid/far ordering intact; and the
+selected-incident-edge bloom tightens (3px/0.35 → 2px/0.4) into a denser,
+narrower halo. Reduced-motion behavior is preserved unchanged, nothing animated
+is added, `KnowledgeGraphPanel.tsx` is untouched, the Phase 35C
+`--hive-surface-base` vignette/elevation model is untouched, motion control
+remains opt-in, and the **screenshot / evidence refresh stays deferred** to a
+later phase (live webcam hand-motion evidence is still not claimed — it requires
+separate verification on working camera hardware). `npm run check:frontend`
+passes.
+
+The preceding **Phase 36A — Spatial Hive Energy Field / Depth-Atmosphere
+Frontend Pass** (**frontend-only, CSS-led**, on branch
+`phase-36a-spatial-hive-energy-field-depth-atmosphere`) added a
+presentation-only energy-field / depth-atmosphere layer around the existing 2.5D
+Spatial Hive, after the merged Phase 35C consolidation. Three coordinated
+pieces, all riding existing state: (1) an **ambient depth floor** — the dark
+graph-canvas background gains a deep-space falloff beneath the nodes so the
+plotting grid recedes at the edges while nodes stay lit; (2) an **atmosphere
+veil** — a single `::after` pseudo-element on `.viewfinder-canvas-wrap` (zero
+markup, zero React change) lays edge-weighted fog over the field, driven through
+one opacity dial by the existing interaction attributes: hover gently thins the
+fog, motion-armed holds fractionally more pressure than idle, and an active
+selection **compresses the field** (deeper periphery around the lit selected
+neighbourhood) while every established selected/related/dimmed rule — and the
+Phase 35C compose-not-replace `--hive-surface-base` box-shadow model — stays
+untouched, so selection remains the strongest state; edges incident to the
+selection also carry a soft static identity-violet bloom; and (3)
+**aerial-perspective far-depth recession** — the resting far tier desaturates
+and dims fractionally, mid stays near-neutral, near reads fractionally crisper,
+and far labels remain readable. Reduced motion keeps the full static atmosphere
+hierarchy and drops only the cross-state fade — nothing pulsing or shimmering is
+added. **No backend / API / schema / contract change, no persistence, no
+`localStorage` / `sessionStorage`, no graph mutation, no new graph data, no new
+dependency, no Three.js / R3F / WebGL / D3 / Cytoscape / React Flow, no webcam /
+MediaPipe / orbital-control tuning (motion control remains opt-in and
+unchanged), and no screenshot / evidence refresh** (that pass stays deferred).
+`npm run check:frontend` passes.
+
+The preceding **Phase 35C — Spatial Hive Interaction State UX Hardening / CSS
+Consolidation Pass** (**frontend / CSS only**, merged into `main` via **PR
+#138**) hardened the Phase 35B interaction-state surface and consolidated the
 CSS the recent Spatial Hive passes added, without changing behavior or data
 contracts. The core fix: the resting surface vignette is published once as a
 `--hive-surface-base` custom property on `.viewfinder-canvas-wrap`, and the

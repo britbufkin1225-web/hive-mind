@@ -2415,9 +2415,19 @@ section {
 }
 
 .graph-canvas {
+  /* Phase 36A: a deep-space falloff layer (second gradient) darkens the plotting
+     floor toward the edges *beneath* the nodes, so the grid recedes into depth
+     while nodes/edges — painted above this background — stay fully lit. Floor
+     recession, not content dimming; the veil above the graph is a separate,
+     lighter layer (see the Phase 36A atmosphere block).
+     Phase 36B balance: the centre glow eases (0.10 -> 0.07) so the brightest
+     point of the resting canvas is a node, never the empty centre; the falloff
+     starts later and lands lighter (44%/0.5 -> 52%/0.42) so corner-region nodes
+     and labels stay legible while the grid still recedes. */
   background:
-    radial-gradient(circle at 50% 42%, rgba(139, 124, 240, 0.10),
+    radial-gradient(circle at 50% 42%, rgba(139, 124, 240, 0.07),
       transparent 60%),
+    radial-gradient(circle at 50% 45%, transparent 52%, rgba(3, 4, 9, 0.42) 100%),
     linear-gradient(0deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px) 0 0 /
       100% 40px,
     linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px) 0 0 /
@@ -3704,6 +3714,10 @@ body,
   border-radius: var(--radius-sm);
   background: var(--viewfinder-glass);
   backdrop-filter: saturate(1.2) blur(6px);
+  /* Phase 36A: keep the glass hint above the wrap's ::after atmosphere veil
+     (the veil paints last among the wrap's children), so readout text never
+     sits under the fog. */
+  z-index: 1;
 }
 
 .viewfinder-state {
@@ -5709,16 +5723,32 @@ body,
    [data-has-selection="false"]) so the instant a selection exists the sharp,
    opacity-dimmed Focus-State hierarchy owns clarity and nothing double-softens.
    It is a *static* depth cue, so it is intentionally preserved under reduced
-   motion (visual contract §7 keeps static depth cues; only movement is dropped). */
+   motion (visual contract §7 keeps static depth cues; only movement is dropped).
+   Phase 36A extends the same rules in place with aerial perspective: far-tier
+   colour desaturates and cools fractionally (as real distance mutes colour
+   through atmosphere), mid stays near-neutral, and near gains a whisper of
+   saturation so the front of the field reads fractionally crisper. All static,
+   all resting-only, all bounded so far labels stay readable. The keyboard-focus
+   rule below (intent 3) still forces `filter: none` at higher specificity, so a
+   focused far node always snaps clear of the atmosphere. Phase 36B balance:
+   far-tier muting is bounded a step tighter (saturate 0.85 -> 0.88, brightness
+   0.95 -> 0.97) — under the 36A veil the two effects stacked, and far labels
+   were paying twice for the same distance cue. Near eases 1.05 -> 1.03 so the
+   resting field is quieter overall; the near > mid > far ordering is intact. */
 .graph-viewfinder[data-has-selection="false"]
   .graph-depth-tier-far
   .graph-node-depth {
-  filter: blur(0.4px);
+  filter: blur(0.4px) saturate(0.88) brightness(0.97);
 }
 .graph-viewfinder[data-has-selection="false"]
   .graph-depth-tier-mid
   .graph-node-depth {
-  filter: blur(0.15px);
+  filter: blur(0.15px) saturate(0.97);
+}
+.graph-viewfinder[data-has-selection="false"]
+  .graph-depth-tier-near
+  .graph-node-depth {
+  filter: saturate(1.03);
 }
 
 /* --- 2. Selected-node spatial priority ------------------------------------
@@ -5838,6 +5868,111 @@ body,
    animates under the user's stated preference. */
 @media (prefers-reduced-motion: reduce) {
   .viewfinder-canvas-wrap {
+    transition: none;
+  }
+}
+
+/* ============================================================================
+   Phase 36A — Spatial Hive energy field / depth atmosphere (frontend-only)
+
+   A presentation-only atmospheric layer that makes the graph read as suspended
+   inside a deep, pressurized space rather than printed on a flat panel. Three
+   coordinated pieces, all riding *existing* state:
+
+     1. A depth floor beneath the nodes (edited in place on the dark
+        `.graph-canvas` background) so the plotting grid recedes at the edges.
+     2. The atmosphere veil below — one `::after` pseudo-element on the canvas
+        wrap (zero markup, zero React change) whose edge-weighted fog breathes
+        with the Phase 35B/35C interaction attributes through a single opacity
+        dial.
+     3. Aerial-perspective desaturation on the resting far tier (edited in
+        place on the Phase 33D depth rules) so distance mutes colour, not just
+        sharpness.
+
+   Deliberately separate channels from the Phase 35C elevation model: the veil
+   is a *background* layer, so the compose-not-replace `--hive-surface-base`
+   box-shadow cascade is untouched and selection keeps its established
+   strongest surface. Everything here is deterministic, static-or-fading (no
+   pulsing, no shimmer), and clipped by the wrap's `overflow: hidden`.
+   ============================================================================ */
+
+/* The atmosphere veil. Painted last among the wrap's children (pointer-events
+   off, hint lifted above via z-index), it lays three edge-weighted fog fields
+   over the graph: a high haze, floor pressure, and a peripheral ring. Every
+   gradient is transparent through the centre, so the single `opacity` dial
+   below reads as *peripheral pressure* — turning it up compresses the field
+   inward without ever fogging the graph's populated core.
+   Phase 36B balance: each fog field lands a touch lighter and the peripheral
+   ring's clear core widens (58% -> 63%), pulling the veil further off the
+   populated middle band where labels live; the idle dial drops 0.6 -> 0.52 so
+   rest reads dimensional-but-quiet instead of weather. */
+.viewfinder-canvas-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 150% 100% at 50% -35%, rgba(10, 12, 20, 0.26), transparent 52%),
+    radial-gradient(ellipse 130% 85% at 50% 120%, rgba(3, 4, 9, 0.32), transparent 55%),
+    radial-gradient(ellipse 95% 78% at 50% 47%, transparent 63%, rgba(2, 3, 8, 0.4) 100%);
+  opacity: 0.52;
+  /* Slow, single-property fade — pressure change, not animation. Nulled under
+     reduced motion below. */
+  transition: opacity 0.45s ease;
+}
+
+/* Hover (nothing selected): the fog thins slightly, so exploring the field
+   feels like it gently opens toward the pointer — a lighter, temporary read
+   that matches hover's secondary rank in the interaction hierarchy.
+   Phase 36B balance: the hover delta narrows (was 0.6 -> 0.42, now
+   0.52 -> 0.44) so pointer entry/exit reads as attention, not a lighting
+   change flickering as the cursor crosses the field. */
+.viewfinder-canvas-wrap[data-interaction-mode="hover"]::after {
+  opacity: 0.44;
+}
+
+/* Motion armed (nothing selected): fractionally more pressure than idle — the
+   space reads "held" while camera control is available — still calm, and well
+   short of the selection compression below. (Phase 36B: 0.68 -> 0.6, keeping
+   the same +0.08 step over the quieter idle.) */
+.viewfinder-canvas-wrap[data-interaction-mode="motion"]::after {
+  opacity: 0.6;
+}
+
+/* Selection active (focus/inspect): the field compresses. Peripheral fog
+   deepens so the lit selected neighbourhood — already carrying the strongest
+   aura/scale/edge emphasis from the established Focus-State rules — reads as
+   the pressurized centre of a local field. Additive atmosphere only: none of
+   the selected/related/dimmed element rules change, so selection legibility is
+   exactly what it was, framed by deeper space.
+   Phase 36B balance: compression eases 0.88 -> 0.78 — at 0.88 the peripheral
+   ring was strong enough to fight related/far labels near the frame edge. The
+   selected state still holds the deepest fog by a wide margin (+0.26 over
+   idle), so selection remains the unambiguous top of the hierarchy:
+   hover 0.44 < idle 0.52 < motion 0.6 < selected 0.78. */
+.viewfinder-canvas-wrap[data-has-selection="true"]::after {
+  opacity: 0.78;
+}
+
+/* Selected-node energy field: edges incident to the selection carry a soft
+   identity-violet bloom under the existing accent + marching dash, so the
+   connections into the selected node read as energized conduits rather than
+   recoloured hairlines. Static (the glow itself does not animate) and scoped
+   to incident edges only — never the whole edge set — so it strengthens local
+   field coherence without brightening the canvas at large.
+   Phase 36B balance: the bloom tightens (3px/0.35 -> 2px/0.4) — a denser,
+   narrower halo keeps the energized-conduit read while spreading less haze
+   over labels the incident edges pass under. */
+.graph-canvas-edge-incident {
+  filter: drop-shadow(0 0 2px rgba(139, 124, 240, 0.4));
+}
+
+/* Reduced motion: the atmosphere is a still pressure gradient per state — only
+   its cross-state fade is motion, so null that. The incident-edge bloom and the
+   aerial-perspective tier filters are static cues and stay (visual contract §7:
+   keep static depth hierarchy, drop movement). */
+@media (prefers-reduced-motion: reduce) {
+  .viewfinder-canvas-wrap::after {
     transition: none;
   }
 }
