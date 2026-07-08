@@ -1157,27 +1157,20 @@ const GraphCanvas = memo(function GraphCanvas({
             clear
           </>
         ) : hoverNodeLabel !== null ? (
-          // Phase 35B/35D: transient hover context. "Previewing" reads as a
-          // lighter, momentary cue than the committed "… selected" line above,
-          // and it only appears with nothing selected (selection copy wins), so
-          // hover informs exploration without ever mimicking the selected copy.
+          // Phase 35B: transient hover context. It only appears with nothing
+          // selected (selection copy above wins), so hover informs exploration
+          // without ever replacing the selected-node inspection line.
           <>
-            Previewing{" "}
+            Hovering{" "}
             <span className="graph-hint-focus">
               {truncateLabel(hoverNodeLabel, 28)}
             </span>
             {" · select to inspect"}
           </>
         ) : hoverEdge !== null ? (
-          <>Previewing relationship · select to inspect</>
-        ) : interactionMode === "motion" ? (
-          // Motion control is armed (opt-in) but nothing is selected or hovered.
-          // The canvas only knows control is *available* here — whether it is
-          // live/active is reported separately by the Motion camera readout — so
-          // this copy stays "available" and never claims movement it can't see.
-          "Motion control available · select a node or relationship to inspect it."
+          <>Hovering a relationship · select to inspect</>
         ) : (
-          "Spatial hive idle · select a node or relationship to inspect it."
+          "Read-only map · select a node or relationship to inspect it."
         )}
       </p>
     </div>
