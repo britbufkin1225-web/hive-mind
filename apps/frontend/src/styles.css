@@ -2749,13 +2749,17 @@ section {
    graph reads as alive rather than static geometry (§6.5 "living/breathing
    feel"). Disabled the instant a node is hovered/selected, which take over
    with their own stronger, purposeful pulse below. */
+/* Phase 34B: shallower resting dip (0.68 -> 0.76). The deeper trough made the
+   idle colony's rings visibly throb; a gentler swing still reads as "alive and
+   breathing" but stops the resting graph from twitching, especially where it
+   overlaps the near-tier aura breathing (motion-restraint intent). */
 @keyframes graph-node-idle-breathe {
   0%,
   100% {
     stroke-opacity: 1;
   }
   50% {
-    stroke-opacity: 0.68;
+    stroke-opacity: 0.76;
   }
 }
 
@@ -2870,7 +2874,12 @@ section {
 }
 
 .graph-canvas-node-selected .graph-canvas-node-circle {
-  animation: graph-node-selected-pulse 1.7s ease-in-out infinite;
+  /* Phase 34B: 1.7s -> 2s so it shares one rhythm with the selected aura ring
+     (also retuned to 2s below). The circle glow and the aura previously beat at
+     1.7s vs 2.4s, drifting in and out of phase into a busy shimmer; a single
+     shared 2s breath reads as one intentional, focused organism rather than two
+     competing pulses (selected-focus + motion-restraint intents). */
+  animation: graph-node-selected-pulse 2s ease-in-out infinite;
 }
 
 /* === Per-relationship edge colors ===
@@ -2906,7 +2915,11 @@ section {
 .graph-canvas-edge-incident {
   stroke-opacity: 1;
   stroke-dasharray: 7 6;
-  animation: graph-edge-energy-flow 0.9s linear infinite;
+  /* Phase 34B: slowed 0.9s -> 1.5s. The fast marching-ants dash read as twitchy
+     and pulled the eye harder than the selected node itself; a calmer flow still
+     shows relationship "energy" travelling along active links but keeps the
+     selected node as the primary focus (motion-restraint intent). */
+  animation: graph-edge-energy-flow 1.5s linear infinite;
 }
 
 @keyframes graph-edge-energy-flow {
@@ -4139,7 +4152,9 @@ body,
 .graph-canvas-node-selected .graph-canvas-node-aura {
   opacity: 0.8;
   stroke-width: 1.75;
-  animation: graph-node-aura-pulse 2.4s ease-in-out infinite;
+  /* Phase 34B: 2.4s -> 2s to match the selected circle's retuned pulse above, so
+     the halo and the glow breathe as one unified beat (see rationale there). */
+  animation: graph-node-aura-pulse 2s ease-in-out infinite;
 }
 
 @keyframes graph-node-aura-pulse {
