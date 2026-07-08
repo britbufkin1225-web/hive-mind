@@ -45,9 +45,41 @@ and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-co
 
 ## Current status
 
-**Current phase:** Phase 36D — Full Hand Landmark Overlay + Gesture Tracking
-Readability (**frontend-only**, on branch
-`phase-36d-full-hand-landmark-overlay-gesture-readability`). Phase 36D upgrades
+**Current phase:** Phase 36E — Gesture Tracking Super-Tuning + Control Feel
+Readiness (**frontend-only**, on branch
+`phase-36e-gesture-tracking-super-tuning-control-feel-readiness`). Phase 36E is
+a diagnostic-readability and conservative-tuning pass preparing the Motion
+Sandbox for a serious live camera validation session. Three bounded changes to
+the gesture pipeline's *presentation and raw-input conditioning* (never the
+`MotionCommand` contract): (1) the raw pinch gains **ratio hysteresis** in
+`handLandmarkMotion.ts` — engage below 0.40 (unchanged), release only above
+0.52 (`PINCH_RELEASE_RATIO_THRESHOLD` + pure `resolveRawPinch` helper) — so a
+thumb/index gap hovering at the old single threshold can no longer strobe the
+pinch gate's hold/release timers (the 32M temporal debounce is unchanged);
+(2) the overlay's **palm-centroid marker is display-smoothed** (EMA,
+display-only — the command math still reads raw landmarks through the existing
+SMOOTHING path) and redrawn as an amber crosshair ring so the one point that
+drives yaw/pitch is unmistakable against the cyan diagnostic skeleton, and
+marker jitter can't be misread as tracking jitter; (3) the **pinch line has
+three states** — dashed cyan open, brighter dashed green while the raw pinch
+registers and the hold timer arms, solid green once held — so the debounce is
+visible during live testing. New diagnostics: a numeric **Gesture diagnostics**
+card (pinch ratio, palm span, mirrored palm x/y, hand span, each annotated with
+the threshold it is judged against) and a **Graph link** cue pill surfacing the
+opt-in graph-control state beside the other live cues. Tuning constants gained
+live-tuning guidance comments so a camera session can adjust them safely.
+`orbitalGraphControl.ts` is deliberately untouched — its deadzone/gains were
+tuned against live feel in Phase 32H, and re-tuning them without working camera
+hardware would be unjustified. Opt-in/off-by-default graph control, Phase 36C
+reduced-motion behavior, the Phase 36D overlay layering, and the no-camera /
+no-hand idle states are all preserved; no backend / API / schema / package /
+dependency / persistence surface is touched. **Live webcam hand tracking
+remains untested** (camera hardware still unavailable) and the **screenshot /
+evidence refresh remains deferred**. `npm run check:frontend` passes.
+
+The preceding **Phase 36D — Full Hand Landmark Overlay + Gesture Tracking
+Readability** (**frontend-only**, on branch
+`phase-36d-full-hand-landmark-overlay-gesture-readability`) upgraded
 the Motion Sandbox's hand-tracking overlay into a full-hand landmark
 diagnostic: all 21 MediaPipe hand landmarks render as small faint cyan dots
 joined by thin translucent skeleton lines (the overlay canvas doubled to

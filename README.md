@@ -123,8 +123,36 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 36D - Full Hand Landmark Overlay + Gesture
-  Tracking Readability` (**frontend-only**). Phase 36D upgrades the Motion
+- **Current phase:** `Phase 36E - Gesture Tracking Super-Tuning + Control Feel
+  Readiness` (**frontend-only**). Phase 36E is a diagnostic-readability and
+  conservative-tuning pass that prepares the Motion Sandbox for a serious live
+  camera validation session. Three bounded tuning/readability changes: (1) the
+  raw pinch gains **ratio hysteresis** — it engages below 0.40 (unchanged) but
+  now releases only above 0.52, so a thumb/index gap hovering at the old single
+  threshold can no longer strobe the pinch gate's hold/release timers (the
+  temporal debounce itself is unchanged); (2) the overlay's **palm-centroid
+  marker is display-smoothed** (EMA, display-only — command math untouched) and
+  redrawn as an amber crosshair ring, so the one point that actually drives
+  yaw/pitch is visually distinct from the cyan diagnostic skeleton and its
+  jitter is no longer misread as tracking jitter; (3) the **pinch line now has
+  three states** — dashed cyan open, brighter dashed green while the raw pinch
+  registers and the hold timer arms, solid green once held — so a tester can
+  watch the debounce work. New diagnostics for live evaluation: a numeric
+  **Gesture diagnostics** card (pinch ratio, palm span, mirrored palm x/y, hand
+  span, each annotated with the threshold it is judged against) and a **Graph
+  link** cue pill making the opt-in graph-control state visible beside the
+  other live cues. Tuning constants gained live-tuning guidance comments.
+  The `MotionCommand` contract, opt-in/off-by-default graph control, Phase 36C
+  reduced-motion behavior, the Phase 36D full-hand overlay layering, and the
+  no-camera / no-hand idle states are all preserved; `orbitalGraphControl.ts`
+  is deliberately untouched (its deadzone/gains were tuned against live feel in
+  Phase 32H — re-tuning them without a camera would be unjustified). **Live
+  webcam hand tracking remains untested** (camera hardware still unavailable)
+  and the **screenshot / evidence refresh remains deferred**.
+  `npm run check:frontend` passes.
+
+  The preceding **Phase 36D - Full Hand Landmark Overlay + Gesture
+  Tracking Readability** (**frontend-only**) upgraded the Motion
   Sandbox's hand-tracking overlay from a single-purpose debug sketch into a
   full-hand landmark diagnostic: all 21 MediaPipe hand landmarks now render as
   small faint cyan dots joined by thin translucent skeleton lines, so it is

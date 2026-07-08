@@ -15,6 +15,9 @@ import {
   HAND_CONNECTIONS,
   LM,
   palmCenter,
+  palmSpan,
+  pinchRatio,
+  resolveRawPinch,
   ZERO_MOTION,
   type ConfidenceQuality,
   type ControlGate,
@@ -106,7 +109,20 @@ const MOTION_GATE = 0.06;
 
 // Exponential-moving-average factor for the emitted command. Lower = smoother /
 // laggier. Keeps the inspected values readable instead of strobing each frame.
+// Live-tuning note (Phase 36E): 0.28 was acceptable in bench testing; if live
+// hands feel laggy raise toward 0.35, if readouts strobe lower toward 0.2.
+// Change in small steps — this smooths every continuous MotionCommand field.
 const SMOOTHING = 0.28;
+
+// Phase 36E — display-only EMA for the palm-centroid overlay marker. The
+// command pipeline already smooths yaw/pitch via SMOOTHING, but the overlay
+// ring was drawn from RAW per-frame landmarks, so it jittered even while the
+// derived command held steady — reading (falsely) as unstable tracking during
+// live evaluation. This factor smooths only the drawn marker; it feeds nothing
+// back into the command math. Higher than SMOOTHING on purpose: the marker
+// should trail the hand closely (it is a diagnostic, not a control), just with
+// single-frame noise knocked off.
+const PALM_DISPLAY_SMOOTHING = 0.45;
 
 // React re-render throttle for the readout. The RAF loop runs every frame, but
 // pushing 60 setState/sec is wasteful and unreadable; ~12Hz is plenty.
@@ -285,6 +301,40 @@ const NEUTRAL_FEEDBACK: ControlFeedback = {
   pinchPhase: "idle",
 };
 
+/* Phase 36E — numeric gesture diagnostics.
+
+   The raw derivation inputs a live tester needs to see as numbers, next to the
+   thresholds they are judged against: is the pinch ratio actually crossing
+   0.40/0.52, is the palm span near the 0.22 zoom-neutral, is the centroid
+   stable while the hand holds still. All nulls when no hand is in frame so the
+   readout shows an honest "—" instead of stale values. Updated on the same
+   ~12Hz throttled tick as the other readouts. */
+type GestureDiagnostics = {
+  /** thumb↔index gap / palm length — pinch engages < 0.40, releases > 0.52. */
+  pinchRatio: number | null;
+  /** wrist→middle-MCP length (zoom proxy) — neutral ≈ 0.22. */
+  palmSpan: number | null;
+  /** Palm centroid, mirrored x (0 = user's left edge of the preview). */
+  palmX: number | null;
+  palmY: number | null;
+  /** Hand bounding-box span driving the range bands (0.18 far / 0.60 close). */
+  handSpan: number | null;
+};
+
+const NO_DIAGNOSTICS: GestureDiagnostics = {
+  pinchRatio: null,
+  palmSpan: null,
+  palmX: null,
+  palmY: null,
+  handSpan: null,
+};
+
+// Format a 0..1 diagnostic for the readout: three decimals, or "—" when there
+// is no hand to measure.
+function formatDiagnostic(value: number | null): string {
+  return value === null ? "—" : value.toFixed(3);
+}
+
 // UI copy + status-pill class for each feedback dimension. Kept as small pure
 // maps (not scattered ternaries in JSX) so the honest, concise labels live in one
 // place. `neutral`/`pending`/`success`/`error` reuse the existing status-pill
@@ -375,6 +425,10 @@ function MotionSandboxPanel({
   // Phase 32M — throttled live control-feedback cues (range / quality / control
   // phase / pinch phase). MediaPipe mode only; frame-difference has no hand model.
   const [feedback, setFeedback] = useState<ControlFeedback>(NEUTRAL_FEEDBACK);
+  // Phase 36E — throttled numeric gesture diagnostics (pinch ratio, palm span,
+  // palm centroid, hand span) for live threshold evaluation.
+  const [diagnostics, setDiagnostics] =
+    useState<GestureDiagnostics>(NO_DIAGNOSTICS);
 
   // Live-object refs: none of these should trigger a re-render when they change.
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -393,6 +447,14 @@ function MotionSandboxPanel({
   // updates them without re-rendering.
   const controlGateRef = useRef<ControlGate>(createControlGate());
   const pinchGateRef = useRef<PinchGate>(createPinchGate());
+  // Phase 36E — previous frame's raw pinch, carried for the ratio hysteresis
+  // (engage < 0.40, release > 0.52; see resolveRawPinch). One bit of state so a
+  // boundary-hovering gap can't strobe the pinch gate's hold/release timers.
+  const rawPinchRef = useRef<boolean>(false);
+  // Phase 36E — display-smoothed palm centroid for the overlay marker only.
+  // Null when no hand, so a re-appearing hand snaps to its real position
+  // instead of easing in from a stale one. Never feeds the command math.
+  const palmDisplayRef = useRef<{ x: number; y: number } | null>(null);
 
   // Phase 32G: keep the (optional) command sink in a ref so the detection loop
   // can forward every frame without `publishReadout`/`teardown` re-binding when
@@ -483,6 +545,10 @@ function MotionSandboxPanel({
     // than inheriting a previous run's latched active/pinch state.
     controlGateRef.current = createControlGate();
     pinchGateRef.current = createPinchGate();
+    // Phase 36E — reset the pinch hysteresis and the display-smoothed centroid
+    // for the same reason: a new session must not inherit stale gesture state.
+    rawPinchRef.current = false;
+    palmDisplayRef.current = null;
     // Phase 32G: forward a final idle command so a graph consumer decays to
     // stillness the moment the camera stops (no frozen last-frame deltas).
     onMotionCommandRef.current?.(ZERO_MOTION);
@@ -494,7 +560,7 @@ function MotionSandboxPanel({
     }
   }, []);
 
-  /* Phase 36D — full-hand landmark diagnostic overlay.
+  /* Phase 36D — full-hand landmark diagnostic overlay (36E readability pass).
 
      Draw the complete 21-landmark MediaPipe hand model onto the overlay canvas,
      layered so the diagnostic skeleton stays subtle while the control-relevant
@@ -502,11 +568,18 @@ function MotionSandboxPanel({
 
        1. bones            very thin translucent cyan lines (full skeleton)
        2. landmark dots    small faint cyan dots — every detected landmark
-       3. wrist ring       hollow ring: the skeleton's anchor joint
-       4. palm-centre ring smaller ring at the derived palm centroid — the point
-                           yaw/pitch actually track (see deriveHandCommand)
-       5. pinch line       thumb-tip↔index-tip gesture line: faint dashed while
-                           open, solid bright green while the debounced hold is on
+       3. wrist ring       hollow cyan ring: the skeleton's anchor joint
+       4. palm-centre mark amber crosshair ring at the DISPLAY-SMOOTHED palm
+                           centroid — the point yaw/pitch actually track. Amber
+                           (36E) so the one control-driving point can never be
+                           confused with the cyan diagnostic skeleton, and
+                           smoothed so marker jitter isn't misread as tracking
+                           jitter (see PALM_DISPLAY_SMOOTHING)
+       5. pinch line       thumb-tip↔index-tip gesture line, three states (36E):
+                           faint dashed cyan while open, brighter dashed green
+                           while the raw pinch is registering (gate arming),
+                           solid bright green while the debounced hold is on —
+                           so a live tester can see the hold timer working
        6. thumb/index tips always brighter + larger than the diagnostic dots;
                            green while pinch-held, cyan otherwise
 
@@ -514,7 +587,11 @@ function MotionSandboxPanel({
      already produced and feeds nothing back into it. Coords are normalized; the
      canvas is CSS-mirrored to match the mirrored preview. */
   const drawOverlay = useCallback(
-    (landmarks: Landmark[], pinchActive: boolean) => {
+    (
+      landmarks: Landmark[],
+      pinchPhase: PinchPhase,
+      palmDisplay: { x: number; y: number } | null,
+    ) => {
       const overlay = overlayCanvasRef.current;
       const octx = overlay?.getContext("2d") ?? null;
       if (!overlay || !octx) return;
@@ -551,9 +628,8 @@ function MotionSandboxPanel({
         octx.fill();
       }
 
-      // 3./4. Orientation anchors — hollow rings so they mark position without
-      // covering pixels: the wrist joint, and the palm centroid the yaw/pitch
-      // derivation actually follows. Diagnostic only; commands are unchanged.
+      // 3. Wrist anchor — hollow cyan ring marking the skeleton's root joint
+      //    without covering pixels. Diagnostic only; commands are unchanged.
       const wrist = landmarks[LM.WRIST];
       if (wrist) {
         octx.lineWidth = 1.5;
@@ -562,26 +638,50 @@ function MotionSandboxPanel({
         octx.arc(wrist.x * w, wrist.y * h, 8, 0, Math.PI * 2);
         octx.stroke();
       }
-      if (landmarks.length > LM.PINKY_MCP) {
-        const palm = palmCenter(landmarks);
-        octx.lineWidth = 1.25;
-        octx.strokeStyle = "rgba(103, 232, 249, 0.5)";
+
+      // 4. Palm-centroid control marker (36E) — the display-smoothed point the
+      //    yaw/pitch derivation follows, drawn as an amber ring with a small
+      //    crosshair. Amber separates "the point driving the camera" from every
+      //    cyan diagnostic element at a glance; the crosshair makes sub-ring
+      //    drift visible when judging centroid stability live.
+      if (palmDisplay) {
+        const px = palmDisplay.x * w;
+        const py = palmDisplay.y * h;
+        octx.lineWidth = 1.5;
+        octx.strokeStyle = "rgba(251, 191, 36, 0.85)";
         octx.beginPath();
-        octx.arc(palm.x * w, palm.y * h, 5, 0, Math.PI * 2);
+        octx.arc(px, py, 6, 0, Math.PI * 2);
+        octx.stroke();
+        octx.lineWidth = 1;
+        octx.beginPath();
+        octx.moveTo(px - 10, py);
+        octx.lineTo(px - 3, py);
+        octx.moveTo(px + 3, py);
+        octx.lineTo(px + 10, py);
+        octx.moveTo(px, py - 10);
+        octx.lineTo(px, py - 3);
+        octx.moveTo(px, py + 3);
+        octx.lineTo(px, py + 10);
         octx.stroke();
       }
 
-      // 5. Pinch gesture line between the two control tips: dashed and faint
-      //    while open (the gap the pinch ratio measures), solid bright green
-      //    while the debounced hold is engaged.
+      // 5. Pinch gesture line between the two control tips, three states:
+      //    faint dashed cyan while open (the gap the pinch ratio measures),
+      //    brighter dashed green while the raw pinch is registering but the
+      //    hold timer is still arming ("ready"), solid bright green once the
+      //    debounced hold is engaged.
+      const pinchHeld = pinchPhase === "holding";
+      const pinchArming = pinchPhase === "ready";
       const thumbTip = landmarks[LM.THUMB_TIP];
       const indexTip = landmarks[LM.INDEX_TIP];
       if (thumbTip && indexTip) {
-        octx.lineWidth = pinchActive ? 2.5 : 1.25;
-        octx.strokeStyle = pinchActive
+        octx.lineWidth = pinchHeld ? 2.5 : pinchArming ? 1.75 : 1.25;
+        octx.strokeStyle = pinchHeld
           ? "rgba(122, 240, 170, 0.9)"
-          : "rgba(165, 243, 252, 0.5)";
-        octx.setLineDash(pinchActive ? [] : [5, 5]);
+          : pinchArming
+            ? "rgba(122, 240, 170, 0.65)"
+            : "rgba(165, 243, 252, 0.5)";
+        octx.setLineDash(pinchHeld ? [] : pinchArming ? [3, 3] : [5, 5]);
         octx.beginPath();
         octx.moveTo(thumbTip.x * w, thumbTip.y * h);
         octx.lineTo(indexTip.x * w, indexTip.y * h);
@@ -591,7 +691,7 @@ function MotionSandboxPanel({
 
       // 6. Active control tips — always brighter and larger than the diagnostic
       //    dots, with a dark outline so they hold up over bright video.
-      const tipFill = pinchActive
+      const tipFill = pinchHeld
         ? "rgba(122, 240, 170, 0.95)"
         : "rgba(165, 243, 252, 0.95)";
       for (const tip of [thumbTip, indexTip]) {
@@ -745,6 +845,10 @@ function MotionSandboxPanel({
       controlGateRef.current = controlGate;
       const pinchGate = advancePinchGate(pinchGateRef.current, false, now);
       pinchGateRef.current = pinchGate;
+      // Phase 36E — a vanished hand drops the pinch hysteresis and the display
+      // centroid immediately, so a re-appearing hand starts from live geometry.
+      rawPinchRef.current = false;
+      palmDisplayRef.current = null;
 
       const smoothed: MotionCommand = {
         ...MEDIAPIPE_IDLE,
@@ -763,6 +867,7 @@ function MotionSandboxPanel({
         controlPhase: controlGate.phase,
         pinchPhase: pinchGate.phase,
       });
+      setDiagnostics(NO_DIAGNOSTICS);
     },
     [publishReadout],
   );
@@ -807,7 +912,7 @@ function MotionSandboxPanel({
 
     if (!hasHand) {
       emitIdleFrame(now);
-      drawOverlay([], false);
+      drawOverlay([], "idle", null);
       return;
     }
 
@@ -834,8 +939,27 @@ function MotionSandboxPanel({
       now,
     );
     controlGateRef.current = controlGate;
-    const pinchGate = advancePinchGate(pinchGateRef.current, target.pinchActive, now);
+    // Phase 36E — the raw pinch fed to the gate now carries ratio hysteresis
+    // (engage < 0.40, release > 0.52) instead of the single-threshold
+    // `target.pinchActive`, so a gap hovering at the boundary can't strobe the
+    // gate's hold/release timers. The gate's temporal debounce is unchanged.
+    const ratio = pinchRatio(landmarks);
+    const rawPinch = resolveRawPinch(ratio, rawPinchRef.current);
+    rawPinchRef.current = rawPinch;
+    const pinchGate = advancePinchGate(pinchGateRef.current, rawPinch, now);
     pinchGateRef.current = pinchGate;
+
+    // Phase 36E — display-only EMA on the palm centroid marker (snaps to the
+    // raw point on the first frame a hand appears). Command math is untouched.
+    const palm = palmCenter(landmarks);
+    const prevPalm = palmDisplayRef.current;
+    const palmDisplay = prevPalm
+      ? {
+          x: prevPalm.x + (palm.x - prevPalm.x) * PALM_DISPLAY_SMOOTHING,
+          y: prevPalm.y + (palm.y - prevPalm.y) * PALM_DISPLAY_SMOOTHING,
+        }
+      : palm;
+    palmDisplayRef.current = palmDisplay;
 
     const smoothed: MotionCommand = {
       yawDelta: prevCmd.yawDelta + (target.yawDelta - prevCmd.yawDelta) * SMOOTHING,
@@ -849,8 +973,9 @@ function MotionSandboxPanel({
     };
     smoothedRef.current = smoothed;
 
-    // Overlay highlights the pinch on the debounced hold, so it stops strobing.
-    drawOverlay(landmarks, pinchGate.held);
+    // Overlay renders the debounced pinch phase (idle/ready/holding) and the
+    // display-smoothed centroid, so neither strobes on single-frame noise.
+    drawOverlay(landmarks, pinchGate.phase, palmDisplay);
 
     const published = publishReadout(smoothed, now);
     if (!published) return;
@@ -865,6 +990,16 @@ function MotionSandboxPanel({
       quality: classifyConfidence(smoothedConfidence, true),
       controlPhase: controlGate.phase,
       pinchPhase: pinchGate.phase,
+    });
+    // Phase 36E — numeric derivation inputs for live threshold evaluation.
+    // palmX is mirrored to match the mirrored preview (and the yaw derivation),
+    // so moving the hand toward the user's right increases it.
+    setDiagnostics({
+      pinchRatio: ratio,
+      palmSpan: palmSpan(landmarks),
+      palmX: 1 - palmDisplay.x,
+      palmY: palmDisplay.y,
+      handSpan: handBoundingSpan(landmarks),
     });
   }, [drawOverlay, emitIdleFrame, publishReadout]);
 
@@ -904,10 +1039,13 @@ function MotionSandboxPanel({
     setMotion(activeMode === "mediapipe-hand-landmarker" ? MEDIAPIPE_IDLE : ZERO_MOTION);
     setHandInfo(NO_HAND);
     setFeedback(NEUTRAL_FEEDBACK);
+    setDiagnostics(NO_DIAGNOSTICS);
     smoothedRef.current =
       activeMode === "mediapipe-hand-landmarker" ? MEDIAPIPE_IDLE : ZERO_MOTION;
     controlGateRef.current = createControlGate();
     pinchGateRef.current = createPinchGate();
+    rawPinchRef.current = false;
+    palmDisplayRef.current = null;
     prevGrayRef.current = null;
     lastVideoTimeRef.current = -1;
 
@@ -992,6 +1130,7 @@ function MotionSandboxPanel({
     setMotion(mode === "mediapipe-hand-landmarker" ? MEDIAPIPE_IDLE : ZERO_MOTION);
     setHandInfo(NO_HAND);
     setFeedback(NEUTRAL_FEEDBACK);
+    setDiagnostics(NO_DIAGNOSTICS);
     if (mpStatus === "loading") {
       setMpStatus(handLandmarkerRef.current ? "ready" : "idle");
     }
@@ -1049,6 +1188,11 @@ function MotionSandboxPanel({
   const qualityCue = qualityLabel(feedback.quality);
   const controlCue = controlPhaseLabel(feedback.controlPhase);
   const pinchCue = pinchPhaseLabel(feedback.pinchPhase);
+  // Phase 36E — surface the opt-in graph wiring in the same cue row, so a live
+  // tester sees "is my hand about to move the graph?" next to the other state.
+  const graphCue: { label: string; tone: PillTone } = graphControlEnabled
+    ? { label: "Linked", tone: "success" }
+    : { label: "Off", tone: "neutral" };
 
   return (
     <section className="motion-sandbox" id={id}>
@@ -1271,6 +1415,10 @@ function MotionSandboxPanel({
               <span className="motion-sandbox-cue-key">Pinch</span>
               <span className="motion-sandbox-cue-val">{pinchCue.label}</span>
             </div>
+            <div className="motion-sandbox-cue" data-tone={graphCue.tone}>
+              <span className="motion-sandbox-cue-key">Graph link</span>
+              <span className="motion-sandbox-cue-val">{graphCue.label}</span>
+            </div>
           </div>
         </div>
       )}
@@ -1302,6 +1450,55 @@ function MotionSandboxPanel({
             <div>
               <dt>score</dt>
               <dd>{handInfo.score ? handInfo.score.toFixed(3) : "—"}</dd>
+            </div>
+          </dl>
+        </div>
+      )}
+
+      {/* Phase 36E — numeric gesture diagnostics. The raw derivation inputs
+          shown next to the thresholds they are judged against, so a live camera
+          session can verify each rule is firing where the constants say it
+          should (pinch engages < 0.40 / releases > 0.52; palm span vs the 0.22
+          zoom-neutral; hand span vs the 0.18/0.60 range band; palm x/y
+          steadiness while the hand holds still). Read-only, MediaPipe only. */}
+      {isMediaPipe && (
+        <div className="motion-sandbox-diagnostics" aria-live="polite">
+          <h3 className="motion-sandbox-readout-title">Gesture diagnostics</h3>
+          <dl className="motion-sandbox-metrics">
+            <div>
+              <dt>pinch ratio</dt>
+              <dd>
+                {formatDiagnostic(diagnostics.pinchRatio)}
+                <span className="motion-sandbox-hint">grab &lt; 0.40</span>
+              </dd>
+            </div>
+            <div>
+              <dt>palm span</dt>
+              <dd>
+                {formatDiagnostic(diagnostics.palmSpan)}
+                <span className="motion-sandbox-hint">zoom 0 ≈ 0.22</span>
+              </dd>
+            </div>
+            <div>
+              <dt>palm x</dt>
+              <dd>
+                {formatDiagnostic(diagnostics.palmX)}
+                <span className="motion-sandbox-hint">yaw 0 ≈ 0.50</span>
+              </dd>
+            </div>
+            <div>
+              <dt>palm y</dt>
+              <dd>
+                {formatDiagnostic(diagnostics.palmY)}
+                <span className="motion-sandbox-hint">pitch 0 ≈ 0.50</span>
+              </dd>
+            </div>
+            <div>
+              <dt>hand span</dt>
+              <dd>
+                {formatDiagnostic(diagnostics.handSpan)}
+                <span className="motion-sandbox-hint">range 0.18–0.60</span>
+              </dd>
             </div>
           </dl>
         </div>

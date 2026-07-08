@@ -5143,8 +5143,11 @@ body,
   transform: scaleX(-1);
 }
 
-/* MediaPipe hand-detection info block — mirrors the readout card styling. */
-.motion-sandbox-detection {
+/* MediaPipe hand-detection info block — mirrors the readout card styling.
+   Phase 36E: the numeric gesture-diagnostics card shares the same idiom, so
+   both live-test info cards read as one family with zero new visual system. */
+.motion-sandbox-detection,
+.motion-sandbox-diagnostics {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
@@ -5154,7 +5157,8 @@ body,
   gap: var(--space-2);
 }
 
-.motion-sandbox-detection .motion-sandbox-readout-title {
+.motion-sandbox-detection .motion-sandbox-readout-title,
+.motion-sandbox-diagnostics .motion-sandbox-readout-title {
   margin-bottom: 0;
 }
 
