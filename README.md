@@ -123,29 +123,40 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 34A - Spatial Hive Visual Refinement Planning`
-  (**planning / documentation only**). Phase 34A changes no source, runtime, CSS,
-  package, or screenshot files. It plans the **next Spatial Hive visual refinement
-  wave** after the 33C/33D/33E 2.5D foundation-and-evidence pass — **refinement,
-  not more feature expansion** — to make the graph feel more premium, dimensional,
-  alive, readable, and portfolio-grade while keeping the disciplined graph-primary
-  architecture intact. It records the current baseline (deterministic near/mid/far
-  depth tiers, selected-node focus priority, living-hive breathing/aura motion, and
-  preserved overlays / inspector / keyboard / orbital-control compatibility, plus
-  the connected-runtime evidence captured in Phase 33E), the visual refinement
-  principles and concrete refinement targets (depth atmosphere / parallax, node
-  material + glow hierarchy, edge depth + routing, cluster/group field presence,
-  selected-node cinematic focus, ambient motion restraint, overlay-to-graph spatial
-  relationship, reduced-motion + responsive behavior, portfolio screenshot
-  composition), the non-goals / guardrails (no backend / API / schema / persistence
-  change, no new graph library, no Three.js / R3F / WebGL, no D3 / Cytoscape /
-  React Flow, no physics, no fake data, no graph mutation, no dashboard/sidebar/
-  card-grid redesign, no broad CSS rewrite unless separately scoped, no screenshots
-  this phase), and the likely next phases — **Phase 34B** (Spatial Hive Visual
-  Refinement Frontend Pass) and **Phase 34C** (Visual Refinement QA + Screenshot
-  Evidence Refresh). **Honest limitation preserved:** no live webcam / hand-motion
-  evidence is claimed unless separately verified (Phase 32K camera-blocked evidence
-  policy). See the
+- **Current phase:** `Phase 35A - Spatial Hive Interaction State Planning`
+  (**docs / planning only**). Phase 35A changes no source, runtime, CSS, package,
+  or screenshot files, and the **screenshot / evidence refresh remains deferred**
+  (a Phase 34C-style evidence pass is *not* next-active). It plans the next
+  capability level for the Spatial Hive after the completed Phase 34B visual
+  refinement — **Level 1 interaction state**: how the Spatial Hive responds to
+  hover, selection, focus, overlays, camera/view intent, and motion-control
+  readiness as **transient, in-memory, reload-resettable** view state, **without**
+  mutating graph data, saving layouts, adding persistence, changing backend/API
+  contracts, or implementing any frontend behavior yet. It defines the
+  interaction-state model and the load-bearing four-way distinction (presentation
+  polish vs. transient interaction state vs. persistent view memory vs. graph
+  mutation), the state categories (resting, hover, selected, related-neighborhood,
+  overlay-open, command/rail-active, motion-control-armed, reduced-motion), the
+  camera/view behavior (focus target, orbit/yaw/pitch, zoom, recenter,
+  selected-node focus), the overlay behavior (respond to focus context, never steal
+  graph dominance, stay transient), the motion-control relationship (no
+  webcam/MediaPipe change; future gestures feed view state, never graph mutation),
+  the **hard non-persistence rule** (no `localStorage` / `sessionStorage` /
+  IndexedDB / backend save; reload resets state), and the deferred **Level 2**
+  persistent-view-memory and **Level 3** semantic (Temporal Decay / Provenance /
+  Query Trails / Dreaming) boundaries — then scopes **Phase 35B** (Spatial Hive
+  Interaction State Frontend Pass) with acceptance criteria, non-goals, and risks.
+  **Honest limitation preserved:** no live webcam / hand-motion evidence is claimed
+  unless separately verified (Phase 32K camera-blocked evidence policy). See the
+  [Phase 35A planning doc](docs/planning/phase-35a-spatial-hive-interaction-state-planning.md).
+  The preceding **Phase 34B** — Spatial Hive Visual Refinement Frontend Pass
+  (**frontend-only**, merged via **PR #135**) — implemented a bounded subset of the
+  Phase 34A refinement targets over the read-only view model (sharper depth,
+  node/edge material + glow hierarchy, focus cinematics, ambient motion restraint,
+  overlay-to-graph spatial relationship); no backend/API/schema/package/dependency
+  change and no graph mutation. The preceding **Phase 34A** — Spatial Hive Visual
+  Refinement Planning (**planning / documentation only**) planned that refinement
+  wave (principles, targets, guardrails, and the 34B/34C sequence). See the
   [Phase 34A planning doc](docs/planning/phase-34a-spatial-hive-visual-refinement-planning.md).
   The preceding **Phase 33E** — 2.5D Spatial Hive QA + Screenshot Evidence Refresh
   (**evidence / QA / documentation only**, completed) — changed no source or runtime
