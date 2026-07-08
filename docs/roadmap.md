@@ -45,10 +45,29 @@ and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-co
 
 ## Current status
 
-**Current phase:** Phase 35C — Spatial Hive Interaction State UX Hardening / CSS
-Consolidation Pass (**frontend / CSS only**, on branch
-`phase-35c-spatial-hive-interaction-state-ux-hardening-css-consolidation`).
-Phase 35C hardens the Phase 35B interaction-state surface and consolidates the
+**Current phase:** Phase 35D — Spatial Hive Interaction State Micro-Polish /
+Readout Refinement Pass (**frontend-only**, on branch
+`phase-35d-spatial-hive-interaction-state-micro-polish-readout-refinement`).
+Phase 35D is a small interaction-readability pass on top of Phase 35C. It refines
+the graph-canvas readout copy so the idle, hover, selected, and motion states
+read as one calm, consistent voice: hover becomes `Previewing <node> · select to
+inspect` (lighter and more momentary than the committed "… selected" line), the
+motion-armed resting state gets its own honest `Motion control available` copy
+(the canvas only knows control is *available*; live/active stays owned by the
+separate Motion camera readout), and idle reads `Spatial hive idle`. Selection
+remains the strongest interaction state; hover stays visibly secondary. The only
+CSS touch is comment clarity plus a one-step-lighter hover-name weight — the
+Phase 35C compose-not-replace `--hive-surface-base` box-shadow model, the
+selected-strongest hierarchy, and the reduced-motion guards are all preserved. **No
+graph behavior, selection flow, motion-control wiring, backend / API / schema /
+package / dependency change, no persistence, no `localStorage` / `sessionStorage`,
+no graph mutation, no MediaPipe / webcam / orbital-control retuning, and no
+screenshot / evidence refresh** (that pass stays deferred). `npm run
+check:frontend` passes.
+
+The preceding **Phase 35C — Spatial Hive Interaction State UX Hardening / CSS
+Consolidation Pass** (**frontend / CSS only**, merged into `main` via **PR #138**)
+hardened the Phase 35B interaction-state surface and consolidated the
 CSS the recent Spatial Hive passes added, without changing behavior or data
 contracts. The core fix: the resting surface vignette is published once as a
 `--hive-surface-base` custom property on `.viewfinder-canvas-wrap`, and the

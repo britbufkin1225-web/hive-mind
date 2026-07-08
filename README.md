@@ -123,9 +123,24 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 35C - Spatial Hive Interaction State UX Hardening /
-  CSS Consolidation Pass` (**frontend / CSS only**). Phase 35C hardens the Phase
-  35B interaction-state surface and consolidates the CSS the recent Spatial Hive
+- **Current phase:** `Phase 35D - Spatial Hive Interaction State Micro-Polish /
+  Readout Refinement Pass` (**frontend-only**). Phase 35D is a small
+  interaction-readability pass on top of Phase 35C: it refines the graph-canvas
+  readout copy so the idle, hover, selected, and motion states read as one calm,
+  consistent voice. Hover now reads `Previewing <node> · select to inspect`
+  (lighter and more momentary than the committed "… selected" line), the
+  motion-armed resting state gets its own honest `Motion control available` copy
+  (the canvas only knows control is *available*; live/active stays owned by the
+  separate Motion camera readout), and idle reads `Spatial hive idle`. Selection
+  stays the strongest interaction state and hover stays visibly secondary. No
+  graph behavior, selection flow, motion-control wiring, data contract,
+  persistence, or dependency changed; the only CSS touch is comment clarity plus a
+  one-step-lighter hover-name weight. **No screenshot / evidence** work (that
+  refresh stays deferred). `npm run check:frontend` passes.
+
+  The preceding **Phase 35C - Spatial Hive Interaction State UX Hardening /
+  CSS Consolidation Pass** (**frontend / CSS only**) hardened the Phase
+  35B interaction-state surface and consolidated the CSS the recent Spatial Hive
   passes added, **without** changing behavior, data contracts, or the 2.5D
   direction. The core cascade fix: the resting-surface vignette is now published
   once as a `--hive-surface-base` custom property on `.viewfinder-canvas-wrap`,
