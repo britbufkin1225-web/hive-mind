@@ -45,9 +45,29 @@ and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-co
 
 ## Current status
 
-**Current phase:** Phase 36C — Spatial Hive 2.5D Render + Tracking Manipulation
-QA / Hardening (**frontend-only**, on branch
-`phase-36c-spatial-hive-2-5d-render-tracking-hardening`). Phase 36C validates —
+**Current phase:** Phase 36D — Full Hand Landmark Overlay + Gesture Tracking
+Readability (**frontend-only**, on branch
+`phase-36d-full-hand-landmark-overlay-gesture-readability`). Phase 36D upgrades
+the Motion Sandbox's hand-tracking overlay into a full-hand landmark
+diagnostic: all 21 MediaPipe hand landmarks render as small faint cyan dots
+joined by thin translucent skeleton lines (the overlay canvas doubled to
+640×480 so the thin lines stay crisp), making whole-hand tracking quality —
+jitter, dropped joints, partial detection — visible instead of only the pinch
+points. Active control geometry stays visually strongest: thumb/index tips
+draw brighter and larger (green while a debounced pinch is held), a
+thumb↔index gesture line shows the gap the pinch ratio measures (dashed while
+open, solid green while held), and subtle hollow rings mark the wrist joint
+and the derived palm centroid that yaw/pitch actually track. The overlay is
+purely visual — the `MotionCommand` contract, gesture/command pipeline, opt-in
+graph control, Phase 36C reduced-motion behavior, and the no-camera / no-hand
+idle states are all unchanged, and no backend / API / schema / package /
+dependency / persistence surface is touched. **Live webcam hand tracking
+remains untested** (camera hardware still unavailable) and the **screenshot /
+evidence refresh remains deferred**. `npm run check:frontend` passes.
+
+The preceding **Phase 36C — Spatial Hive 2.5D Render + Tracking Manipulation
+QA / Hardening** (**frontend-only**, on branch
+`phase-36c-spatial-hive-2-5d-render-tracking-hardening`) validated —
 through live in-browser behavior checks, not screenshot capture — that the
 Spatial Hive renders as a believable 2.5D layered surface and that the opt-in
 tracking/motion control manipulates it safely. Render QA confirmed the

@@ -14,6 +14,7 @@ import {
   handBoundingSpan,
   HAND_CONNECTIONS,
   LM,
+  palmCenter,
   ZERO_MOTION,
   type ConfidenceQuality,
   type ControlGate,
@@ -112,9 +113,11 @@ const SMOOTHING = 0.28;
 const READOUT_INTERVAL_MS = 80;
 
 // Overlay canvas resolution (4:3, matches the preview box). Landmarks are
-// normalized 0..1, so this only sets draw crispness, not alignment.
-const OVERLAY_W = 320;
-const OVERLAY_H = 240;
+// normalized 0..1, so this only sets draw crispness, not alignment. Phase 36D
+// doubled it (320×240 → 640×480) so the thin diagnostic skeleton lines stay
+// crisp instead of smearing when the canvas is CSS-stretched over the preview.
+const OVERLAY_W = 640;
+const OVERLAY_H = 480;
 
 // Video-source constraints, tried in order. A modest explicit resolution first
 // (keeps the preview + downscaled sampling cheap and predictable), then a bare
@@ -491,10 +494,25 @@ function MotionSandboxPanel({
     }
   }, []);
 
-  // Draw the detected hand skeleton onto the overlay canvas. Lightweight debug
-  // aid: bone lines + landmark dots, with thumb/index tips highlighted when a
-  // pinch is active so the derivation is easy to eyeball. Coords are normalized;
-  // the canvas is CSS-mirrored to match the mirrored preview.
+  /* Phase 36D — full-hand landmark diagnostic overlay.
+
+     Draw the complete 21-landmark MediaPipe hand model onto the overlay canvas,
+     layered so the diagnostic skeleton stays subtle while the control-relevant
+     geometry stays unmissable:
+
+       1. bones            very thin translucent cyan lines (full skeleton)
+       2. landmark dots    small faint cyan dots — every detected landmark
+       3. wrist ring       hollow ring: the skeleton's anchor joint
+       4. palm-centre ring smaller ring at the derived palm centroid — the point
+                           yaw/pitch actually track (see deriveHandCommand)
+       5. pinch line       thumb-tip↔index-tip gesture line: faint dashed while
+                           open, solid bright green while the debounced hold is on
+       6. thumb/index tips always brighter + larger than the diagnostic dots;
+                           green while pinch-held, cyan otherwise
+
+     Purely visual: it reads the same landmarks/pinch state the command pipeline
+     already produced and feeds nothing back into it. Coords are normalized; the
+     canvas is CSS-mirrored to match the mirrored preview. */
   const drawOverlay = useCallback(
     (landmarks: Landmark[], pinchActive: boolean) => {
       const overlay = overlayCanvasRef.current;
@@ -504,9 +522,13 @@ function MotionSandboxPanel({
       const w = overlay.width;
       const h = overlay.height;
       octx.clearRect(0, 0, w, h);
+      // No hand this frame → leave the canvas clear (idle state unchanged).
+      if (landmarks.length === 0) return;
 
-      octx.lineWidth = 2;
-      octx.strokeStyle = "rgba(139, 124, 240, 0.85)";
+      // 1. Full skeleton bones — thin and translucent so they read as a
+      //    diagnostic layer over the video, not a mask on top of it.
+      octx.lineWidth = 1.5;
+      octx.strokeStyle = "rgba(103, 232, 249, 0.4)";
       octx.beginPath();
       for (const [a, b] of HAND_CONNECTIONS) {
         const pa = landmarks[a];
@@ -517,14 +539,70 @@ function MotionSandboxPanel({
       }
       octx.stroke();
 
+      // 2. Every detected landmark as a small faint dot, so partial or jittery
+      //    tracking is visible joint-by-joint. The two control tips are skipped
+      //    here and drawn brighter on top (step 6).
+      octx.fillStyle = "rgba(134, 239, 220, 0.6)";
       for (let i = 0; i < landmarks.length; i += 1) {
+        if (i === LM.THUMB_TIP || i === LM.INDEX_TIP) continue;
         const p = landmarks[i];
-        const isTip = i === LM.THUMB_TIP || i === LM.INDEX_TIP;
         octx.beginPath();
-        octx.arc(p.x * w, p.y * h, isTip ? 4 : 2.5, 0, Math.PI * 2);
-        octx.fillStyle =
-          isTip && pinchActive ? "rgba(122, 240, 170, 0.95)" : "#c9c2ff";
+        octx.arc(p.x * w, p.y * h, 3, 0, Math.PI * 2);
         octx.fill();
+      }
+
+      // 3./4. Orientation anchors — hollow rings so they mark position without
+      // covering pixels: the wrist joint, and the palm centroid the yaw/pitch
+      // derivation actually follows. Diagnostic only; commands are unchanged.
+      const wrist = landmarks[LM.WRIST];
+      if (wrist) {
+        octx.lineWidth = 1.5;
+        octx.strokeStyle = "rgba(103, 232, 249, 0.65)";
+        octx.beginPath();
+        octx.arc(wrist.x * w, wrist.y * h, 8, 0, Math.PI * 2);
+        octx.stroke();
+      }
+      if (landmarks.length > LM.PINKY_MCP) {
+        const palm = palmCenter(landmarks);
+        octx.lineWidth = 1.25;
+        octx.strokeStyle = "rgba(103, 232, 249, 0.5)";
+        octx.beginPath();
+        octx.arc(palm.x * w, palm.y * h, 5, 0, Math.PI * 2);
+        octx.stroke();
+      }
+
+      // 5. Pinch gesture line between the two control tips: dashed and faint
+      //    while open (the gap the pinch ratio measures), solid bright green
+      //    while the debounced hold is engaged.
+      const thumbTip = landmarks[LM.THUMB_TIP];
+      const indexTip = landmarks[LM.INDEX_TIP];
+      if (thumbTip && indexTip) {
+        octx.lineWidth = pinchActive ? 2.5 : 1.25;
+        octx.strokeStyle = pinchActive
+          ? "rgba(122, 240, 170, 0.9)"
+          : "rgba(165, 243, 252, 0.5)";
+        octx.setLineDash(pinchActive ? [] : [5, 5]);
+        octx.beginPath();
+        octx.moveTo(thumbTip.x * w, thumbTip.y * h);
+        octx.lineTo(indexTip.x * w, indexTip.y * h);
+        octx.stroke();
+        octx.setLineDash([]);
+      }
+
+      // 6. Active control tips — always brighter and larger than the diagnostic
+      //    dots, with a dark outline so they hold up over bright video.
+      const tipFill = pinchActive
+        ? "rgba(122, 240, 170, 0.95)"
+        : "rgba(165, 243, 252, 0.95)";
+      for (const tip of [thumbTip, indexTip]) {
+        if (!tip) continue;
+        octx.beginPath();
+        octx.arc(tip.x * w, tip.y * h, 6, 0, Math.PI * 2);
+        octx.fillStyle = tipFill;
+        octx.fill();
+        octx.lineWidth = 1.5;
+        octx.strokeStyle = "rgba(10, 24, 22, 0.65)";
+        octx.stroke();
       }
     },
     [],
