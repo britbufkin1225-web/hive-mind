@@ -64,12 +64,17 @@ opacity), every edge (projected endpoints, fog, and a `--spatial-edge-w`
 depth width factor consumed by an appended CSS ladder that preserves the
 base < incident/hovered < selected weight hierarchy exactly), and the
 particle canvas — near and far objects move differently, so motion and
-cursor input produce true parallax. A new always-available **cursor
-parallax** (bounded ±9° yaw / ±6.5° pitch, eased per frame, composed
-additively with the opt-in motion camera, wake-on-input so the resting graph
-costs zero rAF work) makes the field feel like a floating, manipulable
-structure without a webcam; motion control remains opt-in and Recenter now
-clears both inputs. **Preserved, riding the projected positions:** breathing
+cursor input produce true parallax. The depth field is deliberately deep
+(~2.2× near-to-far perspective scale at rest, z ∈ ±240), node/edge **render
+order is depth-sorted per frame** (painter's algorithm on the live projected
+depth — orbiting visibly changes occlusion), and projected depth drives
+per-node fog plus a camera-relative **depth-of-field blur** (selected /
+related / hover-primary / focused nodes always resolve sharp). A new
+always-available **cursor parallax** (bounded ±16° yaw / ±11° pitch, eased
+per frame, composed additively with the opt-in motion camera, wake-on-input
+so the resting graph costs zero rAF work) makes the field feel like a
+floating, manipulable structure without a webcam; motion control remains
+opt-in and Recenter now clears both inputs. **Preserved, riding the projected positions:** breathing
 nodes, the selected node's pulsing halo + 1.2 depth lift, the related-aura
 tier, hover-primary clarity, the resting far/mid/near tier fades and aerial
 perspective, the depth-floor/veil atmosphere and interaction modes, the

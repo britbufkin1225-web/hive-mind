@@ -58,20 +58,24 @@ export interface ProjectedSpatialPoint {
 
 // --- Tuning constants --------------------------------------------------------
 //
-// All values are in viewBox units (the graph draws in a 760×560 viewBox) and
-// chosen so the resting field already reads as occupying depth (~±25% scale
-// spread front-to-back) while the bounded orbital camera (yaw ≤ ~32°) can never
-// project a node off-screen or through the camera plane.
+// All values are in viewBox units (the graph draws in a 760×560 viewBox).
+// Phase 36F revision: the first pass used a conservative depth field (±170,
+// ~±25% scale spread) and the graph still read as a flat board with effects.
+// The revised field is deliberately deep — roughly a 2.2× near-to-far scale
+// ratio at rest — so occupying depth is the *first* thing the eye reads, while
+// the perspective-denominator floor still guarantees the bounded camera can
+// never project a node through the camera plane.
 
 /** Half-extent of the z axis: nodes live in z ∈ [-range, +range]. */
-export const SPATIAL_HIVE_DEPTH_RANGE = 170;
+export const SPATIAL_HIVE_DEPTH_RANGE = 240;
 
 /** Camera distance from the field centre at zoom 1. Zooming in shortens the
     distance (a dolly), so near objects grow faster than far ones — approach,
     not a flat uniform scale. */
-export const SPATIAL_HIVE_CAMERA_DISTANCE = 620;
+export const SPATIAL_HIVE_CAMERA_DISTANCE = 640;
 
-/** Perspective focal length: projected scale = focal / (distance - z). */
+/** Perspective focal length: projected scale = focal / (distance - z).
+    At rest: near ≈ 560/400 = 1.40, far ≈ 560/880 = 0.64. */
 export const SPATIAL_HIVE_FOCAL_LENGTH = 560;
 
 /** Floor for the perspective denominator so an extreme zoom-in can never
@@ -84,11 +88,11 @@ export const SPATIAL_HIVE_MIN_ZOOM = 0.4;
 export const SPATIAL_HIVE_MAX_ZOOM = 2.2;
 
 /** Max radial drift off the ring per node (toward/away from centre) and max
-    tangential drift along it. Together they break the perfect-ring silhouette
-    into an organic constellation without ever moving a node far enough to
-    confuse its place in the layout. */
-export const SPATIAL_HIVE_RADIAL_DRIFT = 30;
-export const SPATIAL_HIVE_TANGENT_DRIFT = 18;
+    tangential drift along it. Wide enough (±26% of the ring radius) that the
+    resting silhouette reads as an organic constellation, never a printed
+    ring, while every node stays recognisably in its layout neighbourhood. */
+export const SPATIAL_HIVE_RADIAL_DRIFT = 48;
+export const SPATIAL_HIVE_TANGENT_DRIFT = 26;
 
 const DEG_TO_RAD = Math.PI / 180;
 
@@ -247,19 +251,55 @@ export function projectSpatialPoint(
 // on top (the spatial wrapper is a separate element, so opacities compose).
 
 /** Node fog: multiplies the node group's opacity by camera-relative depth.
-    Floor 0.7 keeps the deepest node clearly present under the tier fades. */
+    Floor 0.55 keeps the deepest node clearly present under the tier fades
+    while making front-to-back layering unmistakable. */
 export function spatialNodeFog(depth: number): number {
-  return 0.7 + 0.3 * clamp(depth, 0, 1);
+  return 0.55 + 0.45 * clamp(depth, 0, 1);
 }
 
 /** Edge fog: synapses soften with distance a touch more than nodes do, so far
     links recede into atmosphere while near links stay crisp. */
 export function spatialEdgeFog(depth: number): number {
-  return 0.55 + 0.45 * clamp(depth, 0, 1);
+  return 0.45 + 0.55 * clamp(depth, 0, 1);
 }
 
 /** Depth-aware synapse width factor (multiplies each state's stroke width in
-    CSS via --spatial-edge-w): near edges thicken slightly, far edges thin. */
+    CSS via --spatial-edge-w): near edges thicken, far edges thin. */
 export function spatialEdgeWidthFactor(depth: number): number {
-  return 0.72 + 0.56 * clamp(depth, 0, 1);
+  return 0.6 + 0.75 * clamp(depth, 0, 1);
+}
+
+/** Camera-relative depth-of-field blur (px) for a node at projected depth:
+    sharp through the front half of the field, easing to a soft-focus ~1.1px at
+    the very back. Driven per frame from the *projected* depth (not the static
+    tier), so a far node swinging toward the camera under yaw resolves crisp. */
+export function spatialNodeBlur(depth: number): number {
+  const d = clamp(depth, 0, 1);
+  return d >= 0.55 ? 0 : (0.55 - d) * 2;
+}
+
+/** Projected glow/energy value for depth (0.55 far … 1.15 near): the single
+    brightness curve the point-cloud dust (and any future depth-lit cue) reads,
+    so "near burns brighter, far dissolves" stays consistent everywhere. */
+export function spatialDepthGlow(depth: number): number {
+  return 0.55 + 0.6 * clamp(depth, 0, 1);
+}
+
+/** Depth tier from a *projected* depth value, using the same 0.32/0.62 cuts as
+    the resting structural tier model — exposed so any consumer that needs a
+    discrete read of camera-relative depth agrees with the tier vocabulary. */
+export function spatialDepthTier(depth: number): "near" | "mid" | "far" {
+  if (depth >= 0.62) return "near";
+  if (depth >= 0.32) return "mid";
+  return "far";
+}
+
+/** Ascending-depth comparator (far → near) for painter's-algorithm render
+    order: sort items by projected depth and append far-first so near objects
+    paint over far ones — the render-order half of the depth illusion. */
+export function compareProjectedDepth(
+  a: { depth: number },
+  b: { depth: number },
+): number {
+  return a.depth - b.depth;
 }

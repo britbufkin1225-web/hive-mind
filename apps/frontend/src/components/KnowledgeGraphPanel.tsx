@@ -17,11 +17,13 @@ import {
 } from "../orbitalGraphControl";
 import {
   buildSpatialHiveNodes,
+  compareProjectedDepth,
   computeSpatialDepthUnit,
   hashUnit,
   projectSpatialPoint,
   spatialEdgeFog,
   spatialEdgeWidthFactor,
+  spatialNodeBlur,
   spatialNodeFog,
 } from "../spatialHiveProjection";
 import {
@@ -723,6 +725,25 @@ const GraphCanvas = memo(function GraphCanvas({
     return m;
   }, [spatialNodes, layout.width, layout.height]);
 
+  // Painter's-algorithm render order at rest: far nodes/edges first in the
+  // DOM so near ones paint over them. The per-frame driver re-sorts from the
+  // live *projected* depth whenever the camera pose changes the order, so
+  // occlusion stays correct mid-orbit — render order is part of the depth
+  // model, not a fixed document order. (Tab order follows the depth order;
+  // the explorer lists remain the stable, model-ordered keyboard surface.)
+  const nodesRenderOrder = useMemo(() => {
+    return [...layout.nodes].sort(
+      (a, b) => (spatialNodes.get(a.id)?.z ?? 0) - (spatialNodes.get(b.id)?.z ?? 0),
+    );
+  }, [layout.nodes, spatialNodes]);
+  const edgesRenderOrder = useMemo(() => {
+    const meanZ = (edge: GraphLayoutEdge) =>
+      ((spatialNodes.get(edge.source)?.z ?? 0) +
+        (spatialNodes.get(edge.target)?.z ?? 0)) /
+      2;
+    return [...layout.edges].sort((a, b) => meanZ(a) - meanZ(b));
+  }, [layout.edges, spatialNodes]);
+
   const initialEdgeProjection = useMemo(() => {
     const m = new Map<
       string,
@@ -871,6 +892,10 @@ const GraphCanvas = memo(function GraphCanvas({
     // classes/styles inside these wrappers, never the wrappers themselves).
     const nodeTargets: Array<{
       el: SVGGElement;
+      /** The inner Hive group (`.graph-canvas-node`), read per frame so the
+          depth-of-field blur can yield to selected / related / hover-primary
+          clarity without the driver ever *writing* those classes. */
+      inner: SVGGElement | null;
       x: number;
       y: number;
       z: number;
@@ -882,6 +907,7 @@ const GraphCanvas = memo(function GraphCanvas({
       if (spatialNode) {
         nodeTargets.push({
           el,
+          inner: el.querySelector<SVGGElement>(".graph-canvas-node"),
           x: spatialNode.x,
           y: spatialNode.y,
           z: spatialNode.z,
@@ -952,11 +978,32 @@ const GraphCanvas = memo(function GraphCanvas({
     // opacity, edge endpoints + fog + depth width factor, particle canvas.
     // Every Hive class (tiers, auras, selection, hover) lives on elements
     // *inside* these wrappers, so the polish composes on top untouched.
+    // Last applied paint orders, so re-sorting (an appendChild pass) happens
+    // only on frames where the projected occlusion order actually changed.
+    let lastNodeOrder: SVGGElement[] = [];
+    let lastEdgeOrder: SVGGElement[] = [];
+    const reorderIfChanged = (
+      sorted: Array<{ el: SVGGElement; depth: number }>,
+      last: SVGGElement[],
+    ): SVGGElement[] => {
+      const next = sorted.map((entry) => entry.el);
+      const changed =
+        next.length !== last.length || next.some((el, i) => el !== last[i]);
+      if (changed && next.length > 0) {
+        const parent = next[0].parentNode;
+        if (parent) {
+          for (const el of next) parent.appendChild(el);
+        }
+      }
+      return next;
+    };
+
     const applyPose = (
       pose: OrbitalGraphCameraTransform,
       timeSec: number,
       animate: boolean,
     ) => {
+      const nodePaint: Array<{ el: SVGGElement; depth: number }> = [];
       for (const target of nodeTargets) {
         const p = projectSpatialPoint(target.x, target.y, target.z, pose, width, height);
         target.el.setAttribute(
@@ -964,7 +1011,22 @@ const GraphCanvas = memo(function GraphCanvas({
           `translate(${p.x.toFixed(2)} ${p.y.toFixed(2)}) scale(${p.scale.toFixed(4)})`,
         );
         target.el.style.opacity = spatialNodeFog(p.depth).toFixed(3);
+        // Camera-relative depth of field: back-of-field nodes soften, and a
+        // far node swinging near under yaw resolves sharp. Emphasised nodes
+        // (selected / related / hover-primary / keyboard focus) always render
+        // clear — depth may recede them, it never smudges the active focus.
+        const inner = target.inner;
+        const emphasised =
+          inner !== null &&
+          (inner.classList.contains("graph-canvas-node-selected") ||
+            inner.classList.contains("graph-canvas-node-related") ||
+            inner.classList.contains("graph-canvas-node-hover-primary") ||
+            inner === document.activeElement);
+        const blur = emphasised ? 0 : spatialNodeBlur(p.depth);
+        target.el.style.filter = blur > 0.04 ? `blur(${blur.toFixed(2)}px)` : "";
+        nodePaint.push({ el: target.el, depth: p.depth });
       }
+      const edgePaint: Array<{ el: SVGGElement; depth: number }> = [];
       for (const target of edgeTargets) {
         const ps = projectSpatialPoint(
           target.source.x, target.source.y, target.source.z, pose, width, height,
@@ -984,7 +1046,14 @@ const GraphCanvas = memo(function GraphCanvas({
           "--spatial-edge-w",
           spatialEdgeWidthFactor(meanDepth).toFixed(3),
         );
+        edgePaint.push({ el: target.el, depth: meanDepth });
       }
+      // Painter's algorithm on the live pose: far paints first, near last, so
+      // orbiting visibly changes occlusion — the render-order half of depth.
+      nodePaint.sort(compareProjectedDepth);
+      edgePaint.sort(compareProjectedDepth);
+      lastNodeOrder = reorderIfChanged(nodePaint, lastNodeOrder);
+      lastEdgeOrder = reorderIfChanged(edgePaint, lastEdgeOrder);
       drawParticles(pose, timeSec, animate);
       appliedPoseRef.current = pose;
     };
@@ -1293,7 +1362,7 @@ const GraphCanvas = memo(function GraphCanvas({
           </defs>
 
           <g className="graph-canvas-edges">
-            {layout.edges.map((edge) => {
+            {edgesRenderOrder.map((edge) => {
               const selected = edge.id === selectedEdgeId;
               const incident =
                 selectedNodeId !== null &&
@@ -1395,7 +1464,7 @@ const GraphCanvas = memo(function GraphCanvas({
           </g>
 
           <g className="graph-canvas-nodes">
-            {layout.nodes.map((node) => {
+            {nodesRenderOrder.map((node) => {
               const selected = node.id === selectedNodeId;
               // Related nodes (direct neighbors of the selection, or the two
               // endpoints of a selected edge) form the middle emphasis tier:

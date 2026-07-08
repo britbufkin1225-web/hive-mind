@@ -21,6 +21,7 @@ import type { OrbitalGraphCameraTransform } from "./orbitalGraphControl";
 import {
   hashUnit,
   projectSpatialPoint,
+  spatialDepthGlow,
   type SpatialHiveNode,
 } from "./spatialHiveProjection";
 
@@ -50,13 +51,14 @@ export interface SpatialParticleEnergy {
     even for a much larger graph than the current field. */
 export const SPATIAL_HIVE_PARTICLE_CAP = 520;
 
-/** Shell thickness: particles live between the node's rim and rim + spread. */
-export const SPATIAL_HIVE_PARTICLE_SPREAD = 36;
+/** Shell thickness: particles live between the node's rim and rim + spread.
+    Deep enough that a cluster reads as a volume, not a rim decoration. */
+export const SPATIAL_HIVE_PARTICLE_SPREAD = 46;
 
 /** Particles per node: a base presence plus a degree bonus (cluster energy —
     hubs read as denser organisms), bounded per node. */
 export function particleCountForDegree(degree: number): number {
-  return 5 + Math.min(11, Math.round(degree * 2));
+  return 8 + Math.min(14, Math.round(degree * 3));
 }
 
 /**
@@ -96,7 +98,7 @@ export function buildSpatialHiveParticleField(
         // Slight vertical squash: swarms drift wide, not tall.
         y: node.y + shell * sinPhi * Math.sin(theta) * 0.85,
         z: node.z + shell * u * 0.9,
-        size: 0.7 + hashUnit(`${seed}::s`) * 1.15,
+        size: 0.8 + hashUnit(`${seed}::s`) * 1.4,
         phase: hashUnit(`${seed}::ph`),
       });
     }
@@ -162,9 +164,11 @@ export function drawSpatialHiveParticles(
     const twinkle = animate
       ? 0.72 + 0.28 * Math.sin((timeSec * 0.55 + particle.phase) * Math.PI * 2)
       : 1;
+    // Brightness follows the shared projected-depth glow curve so dust and
+    // every other depth-lit cue agree: near burns, far dissolves into fog.
     const alpha = Math.min(
-      0.85,
-      (0.1 + 0.38 * projected.depth) * style.energy * twinkle,
+      0.9,
+      0.42 * spatialDepthGlow(projected.depth) * style.energy * twinkle,
     );
     if (alpha <= 0.01) continue;
     const radius =

@@ -134,13 +134,17 @@ SVG visualization.
   maps nodes, edges, and particles through the camera pose per frame. The
   Phase 32G orbital camera no longer tilts the whole layer as a flat poster —
   yaw/pitch/zoom re-project every element individually, so near and far
-  objects move differently and manipulation produces true parallax; a new
-  always-available **cursor parallax** (bounded ±9°/±6.5°, eased, composed
-  with the opt-in motion camera and disabled under reduced motion) makes the
-  field feel suspended and manipulable without a webcam. Edges are **spatial
-  synapses**: depth-aware fog opacity and a depth-scaled stroke-width ladder
-  that preserves the base < incident/hovered < selected weight hierarchy
-  exactly. The living Hive system is preserved, not replaced — breathing
+  objects move differently and manipulation produces true parallax. The depth
+  field is deliberately deep (~2.2× near-to-far perspective scale at rest),
+  node **render order is depth-sorted per frame** (painter's algorithm on the
+  live projected depth, so orbiting visibly changes occlusion), projected
+  depth drives per-node **fog and depth-of-field blur** (emphasised nodes
+  always resolve sharp), and a new always-available **cursor parallax**
+  (bounded ±16°/±11°, eased, composed with the opt-in motion camera and
+  disabled under reduced motion) makes the field feel suspended and
+  manipulable without a webcam. Edges are **spatial synapses**: depth-aware
+  fog opacity and a depth-scaled stroke-width ladder that preserves the
+  base < incident/hovered < selected weight hierarchy exactly. The living Hive system is preserved, not replaced — breathing
   nodes, pulsing selected halo, related-node aura tier, hover-primary clarity,
   far/mid/near tiers (now computed from the same shared depth unit as the
   projection), depth fog/veil atmosphere, interaction modes, reduced-motion

@@ -338,15 +338,17 @@ export type SpatialPointerPose = Readonly<{
 /** Rest offset: cursor centred or absent contributes no tilt. */
 export const SPATIAL_POINTER_NEUTRAL: SpatialPointerPose = { yaw: 0, pitch: 0 };
 
-/** Max cursor-driven orbit. Small on purpose: parallax should make the field
-    feel suspended and manipulable at rest, while the opt-in motion camera
-    (±32° / ±24°) stays the authoritative way to really orbit the structure. */
-export const SPATIAL_POINTER_MAX_YAW = 9;
-export const SPATIAL_POINTER_MAX_PITCH = 6.5;
+/** Max cursor-driven orbit. Phase 36F revision: raised from the first pass's
+    timid ±9°/±6.5° — the cursor is the manipulation input most users actually
+    have, and at the old bounds the parallax read as a shimmer rather than a
+    floating object being orbited. Still inside the motion camera's own range
+    (±32°/±24°), which remains the authoritative deep-orbit input. */
+export const SPATIAL_POINTER_MAX_YAW = 16;
+export const SPATIAL_POINTER_MAX_PITCH = 11;
 
 /** Per-frame easing toward the pointer target — the same "glide, don't snap"
     feel as the camera decay, tuned slightly quicker so parallax feels live. */
-export const SPATIAL_POINTER_EASE = 0.12;
+export const SPATIAL_POINTER_EASE = 0.14;
 
 /** Composed-pose clamp: motion pose + pointer offset may sum past the motion
     bounds, so the composition re-clamps to bounds that admit the full pointer
