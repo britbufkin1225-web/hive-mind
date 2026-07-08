@@ -434,6 +434,174 @@ simulate evidence.
 
 ---
 
+## Addendum A — Living-colony behavioral model (Hive-State / Focus-State)
+
+This addendum refines the experiential target of the 2.5D surface. It does not
+override §1–§15; it sharpens what "spatial knowledge object" should *feel* like and
+constrains how the depth/motion primitives already defined get composed. Everything
+here remains display-only, deterministic, read-only, and reduced-motion-guarded.
+
+### A.1 The living-colony metaphor
+
+The knowledge surface should read as a **living colony of symbiotic
+micro-organisms**, not a static diagram and not a field of isolated dots. Nodes are
+coordinated members of a living whole: they breathe, pulse, and shift together with
+cluster-level rhythm, and the colony reacts as a system when the user directs
+attention at part of it.
+
+The metaphor is a *presentation and interaction* target, not a simulation claim.
+There is no biology model, no agent-based sim, no physics — the "life" is composed
+from the low-amplitude, deterministic primitives in §4 (breathing, aura expansion,
+ring oscillation, glow depth, micro-movement, parallax) already reused from the
+existing per-node idle-aura/pulse groundwork (Phase 28B) and orbital camera (Phase
+32G/32H). Honesty boundary: **it looks alive; it is not alive.**
+
+The surface supports **two primary visual/interaction states**: **Hive-State**
+(ambient whole-system) and **Focus-State** (inspection). They are the resting and
+attentive poses of the same colony, not two different renderers.
+
+### A.2 Hive-State (ambient whole-system)
+
+Hive-State is the resting state — no selection, no active inspection. The whole
+colony feels alive through **subtle, coordinated** motion:
+
+- **Breathing** — a slow, low-amplitude scale/opacity oscillation on nodes and
+  cluster halos.
+- **Pulsing** — a gentle glow pulse, phase-organized so a cluster reads as one
+  organism rather than a bag of independently blinking dots.
+- **Aura expansion / ring oscillation** — resting halos expand and settle within a
+  tight bound.
+- **Micro-movement** — barely-perceptible positional drift within a clamped radius
+  around each node's deterministic home position (a spring back to home, never a
+  random walk away from it).
+- **Cluster-level rhythm** — nodes within a cluster share a rhythm/phase so the
+  cluster breathes as a unit; different clusters may sit at slightly offset phases
+  so the colony feels populated, not metronomic.
+
+Coordination rule: rhythm is **deterministic** — phase/period derive from a stable
+key (cluster id + node id hash), so the animation is reproducible frame-for-frame
+and never devolves into noise. Hive-State must stay legible: a user should be able
+to read the graph while it breathes.
+
+### A.3 Focus-State (inspection)
+
+Focus-State is entered when a node (or its neighborhood) is selected. The colony
+**responds to attention** like a living system leaning toward a stimulus:
+
+- The **selected node and its local neighborhood come forward** (foreground depth
+  tier per §6), larger, sharper, brighter.
+- **Related nodes become more legible and organized** — the neighborhood settles
+  into a readable local arrangement (a calmer, tighter cluster around the
+  selection) rather than staying scattered.
+- **Non-related nodes recede** — pushed to background depth, dimmer and softer, but
+  never removed and never fully hidden.
+- **The graph reacts as a system** — ambient Hive-State rhythm damps down globally
+  while the focused neighborhood gains a slightly livelier, attentive rhythm, so
+  attention visibly concentrates energy where the user is looking.
+
+Focus-State inherits all §9/§10 node/edge behavior and §11 inspector behavior. The
+inspector reads as inspecting the pulled-forward organism, not a detached sidebar.
+
+### A.4 State transition
+
+- Transition between Hive-State and Focus-State is a **smooth, bounded, brief**
+  settle — no snap, no long cinematic move — reusing the existing eased transition
+  discipline (Phase 31F easing curve).
+- Transitions are **reversible and non-destructive**: deselecting returns the
+  colony to Hive-State; nothing about the graph data changes in either state.
+- **Reduced-motion** collapses the transition to a near-instant, low/no-motion
+  change of emphasis (depth/opacity only), preserving the same information
+  hierarchy without animation.
+- Focus-State layering must remain compatible with the orbital camera (§7): a
+  focused neighborhood stays legible and foregrounded *through* orbit/tilt/zoom.
+
+### A.5 Cluster hierarchy and grouping
+
+The colony must be **grouped in a readable hierarchy**, so it reads as cluster
+families and sub-clusters rather than one undifferentiated swarm. Grouping is
+derived deterministically from existing node/edge traits — no invented taxonomy,
+no AI clustering:
+
+- **Grouping traits** (from existing frontend data): **source**, **topic/tag**,
+  **type**, and **size/degree** (e.g. node degree or connection count), plus other
+  already-available traits where honest.
+- **Cluster families** — top-level groupings (e.g. by source or type) read as
+  distinct colonies/organs within the whole.
+- **Sub-clusters** — nested groupings within a family (e.g. topic within source)
+  read as sub-structures, giving a legible family → sub-cluster hierarchy.
+- **Depth banding** — families/sub-clusters may occupy shared depth bands (§6) so
+  hierarchy is reinforced by depth, not just position.
+- **Determinism** — cluster assignment and layout derive from stable keys (trait
+  values + ids), so the same graph always groups the same way. If a trait is not
+  already present in the frontend data, it is **not** fabricated to force a
+  grouping.
+
+The goal is **ease of use**: a user should be able to visually parse "these belong
+together" at a glance, and the hierarchy should aid navigation and focus, not just
+decorate.
+
+### A.6 Color discipline
+
+Color lives **primarily in the graph**. This extends, and does not relax, the
+Phase 28A §6.2 shell-chrome rule:
+
+- **The surrounding UI shell stays restrained, dark, chrome, and neutral** — rail,
+  masthead, dock frames, and overlays carry no decorative accent color.
+- **The graph carries the living color, depth, pulse, and energy** — node/cluster
+  hue, aura, glow, and depth are where the system's color and life concentrate.
+- Color should encode meaning where possible (type/source/cluster family), not be
+  applied as arbitrary decoration, and must respect existing accessibility/contrast
+  and label-legibility rules (§9, §12).
+- Overlays and inspector chrome remain translucent neutral glass so the colored,
+  living colony reads *through* and *behind* them (§11) — opening a tool must not
+  splash color into the shell.
+
+### A.7 Motion discipline
+
+All motion — Hive-State rhythm, Focus-State response, transitions, parallax, and
+camera — must remain **low-amplitude, readable, deterministic, and controlled**.
+The result should feel alive and interactive **without becoming chaotic, jittery,
+or visually noisy**. Concretely:
+
+- **Low-amplitude** — every oscillation/drift is tightly bounded (small scale,
+  opacity, and positional deltas); nothing swings far from its deterministic home.
+- **Readable** — motion never degrades legibility of labels, selection, or cluster
+  structure; if an effect makes the graph harder to read, it is dialled back or
+  removed (the §10 "readability over glitter" test applies to all motion).
+- **Deterministic** — periods/phases/offsets derive from stable ids/keys; no
+  `Math.random()` jitter, no unbounded random walk, so behavior is reproducible and
+  QA-able.
+- **Controlled** — global amplitude is governed by a single depth/energy intensity
+  control (extending §7 `depthIntensity`) so the whole colony can be calmed at
+  once; Focus-State damps ambient motion globally so energy concentrates, not
+  compounds.
+- **Reduced-motion honored** — `prefers-reduced-motion` clamps amplitude toward
+  zero: the colony becomes still-but-layered and fully usable, with emphasis
+  carried by depth/opacity rather than movement (§12).
+- **Performance-safe** — motion rides the existing zero-re-render transform path
+  (`motionCommandRef` pattern, §13); ambient rhythm must not trigger per-frame
+  React state updates or layout thrash.
+
+### A.8 Impact on the next phases
+
+This addendum tightens the acceptance target for the sequenced phases (§15) without
+changing the sequence:
+
+- **Phase 33B** (visual/depth contract) must additionally specify: the two named
+  states (Hive-State / Focus-State) and their exact emphasis rules; the ambient
+  rhythm model (amplitude bounds, deterministic phase derivation, cluster
+  coordination); the cluster-hierarchy grouping keys (source/topic/type/size) and
+  family/sub-cluster depth banding; the color-ownership contract (graph-only color,
+  neutral shell); and the global motion-amplitude / reduced-motion clamps.
+- **Phase 33C** (frontend MVP) implements Hive-State and Focus-State over the
+  existing view model against that contract.
+- **Phase 33D** (motion tuning) tunes the ambient/attentive rhythm and the
+  Hive↔Focus transition feel, and the motion→camera mapping onto the colony.
+- **Phase 33E** (live webcam QA + evidence) remains gated by the Phase 32K
+  camera-blocked evidence policy — no fabricated or simulated evidence.
+
+---
+
 ## Appendix — scope confirmation
 
 - Docs / planning only. No frontend implementation changes.

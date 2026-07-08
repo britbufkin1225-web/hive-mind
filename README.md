@@ -132,7 +132,16 @@ SVG visualization.
   Phase 32 webcam/motion-control investment is preserved by mapping the existing
   `MotionCommand` / `OrbitalGraphControlCommand` / `integrateOrbitalCamera`
   orbital camera onto the spatial field (yaw→orbit, pitch→tilt, zoom→depth-
-  approach, pinch→deferred focus/select). The doc defines the visual/depth model,
+  approach, pinch→deferred focus/select). The target experience is a **living
+  colony of symbiotic micro-organisms** with two states — an ambient **Hive-State**
+  (coordinated, low-amplitude breathing / pulsing / cluster rhythm so nodes read as
+  a living whole) and an inspection **Focus-State** (the selected node and its
+  neighborhood come forward, related nodes organize and grow legible, unrelated
+  nodes recede, and the colony reacts to attention) — grouped in a readable
+  **source / topic / type / size** cluster-family hierarchy, with **color owned by
+  the graph** while the shell stays dark/chrome/neutral, and all motion kept
+  **low-amplitude, deterministic, readable, and controlled** (never chaotic or
+  jittery). The doc defines the visual/depth model,
   deterministic depth placement, camera/orbit behavior, motion mapping, node/edge
   behavior, overlay/inspector behavior, accessibility and reduced-motion rules,
   performance constraints, deferred items, and recommends the next sequence —
