@@ -4569,11 +4569,25 @@ body,
    vignette shadow so the field feels recessed into the chrome, plus a hairline
    accent inner edge (the same graph identity violet, very faint) so the surface
    reads as a deliberate intelligence viewport rather than a flat rectangle.
-   Purely presentational and non-interactive. */
+   Purely presentational and non-interactive.
+
+   Phase 35C: this resting surface is the authoritative base for every transient
+   interaction state. It is published as `--hive-surface-base` so the hover /
+   motion cues (in the consolidated Phase 35C block below) can *compose* on top
+   of it instead of replacing it wholesale — before, each mode set its own
+   `box-shadow` and silently dropped this vignette, flattening the field on
+   hover and in idle. It also IS the idle surface: idle needs no override, so the
+   calm default simply shows through. The `box-shadow` transition lives here too
+   (the single owner of the surface elevation) so idle <-> hover <-> motion, and
+   selection, all fade rather than snap. Only box-shadow — a still colour /
+   elevation fade, never motion — transitions; the reduced-motion guard nulls it
+   explicitly below. */
 .viewfinder-canvas-wrap {
-  box-shadow:
+  --hive-surface-base:
     inset 0 0 130px rgba(0, 0, 0, 0.55),
     inset 0 0 0 1px rgba(139, 124, 240, 0.06);
+  box-shadow: var(--hive-surface-base);
+  transition: box-shadow 0.18s ease;
 }
 
 /* --- 2. Node cluster depth ------------------------------------------------
@@ -5765,52 +5779,49 @@ body,
    instant. Nothing new to disable here; noted so the guarantee stays explicit. */
 
 /* ============================================================================
-   Phase 35B — Spatial Hive interaction state (Level 1, frontend-only)
+   Phase 35C — Spatial Hive interaction state (Level 1, frontend-only)
+   Consolidated from the Phase 35B pass.
 
-   The canvas wrap now carries a transient `data-interaction-mode`
+   The canvas wrap carries a transient `data-interaction-mode`
    (idle / hover / focus / inspect / motion) plus its raw inputs
    (`data-has-selection`, `data-has-hover`), all derived in the view and never
-   persisted. These rules give each mode a *subtle* surface treatment so the
-   graph feels aware of engagement — deliberately quiet, so the field never
-   reads as a Christmas tree. The focus / inspect (selection-active) surface is
-   already owned by the existing `[data-has-selection="true"] .viewfinder-canvas-
-   wrap` rule and the depth Focus-State hierarchy, so it is intentionally NOT
-   re-styled here — selection clarity keeps winning untouched. Only the
-   selection-less hover and motion resting states get a new, faint cue.
+   persisted. Each resting mode gets a *subtle* surface treatment so the graph
+   feels aware of engagement — deliberately quiet, so the field never reads as a
+   Christmas tree.
+
+   Cascade model (Phase 35C hardening): the resting surface owns a single
+   `box-shadow` published as `--hive-surface-base` on `.viewfinder-canvas-wrap`
+   (above). The hover and motion cues *layer on top of* that base rather than
+   replacing it, so the viewport vignette is never dropped mid-interaction — the
+   Phase 35B rules each set a standalone `box-shadow` and quietly flattened the
+   field. Idle needs no rule at all: it is exactly the base surface, so the calm
+   default simply shows through. Focus / inspect (selection-active) is owned by
+   `[data-has-selection="true"] .viewfinder-canvas-wrap` and the depth
+   Focus-State hierarchy — the strongest surface, intentionally NOT restyled
+   here so selection clarity keeps winning untouched.
    ============================================================================ */
 
-/* Soft state-swap fade so idle <-> hover <-> motion never flickers. Only the
-   box-shadow transitions (a still colour/elevation fade, not motion), so the
-   reduced-motion contract is unaffected; nulled below anyway to be explicit. */
-.viewfinder-canvas-wrap {
-  transition: box-shadow 0.18s ease;
-}
-
-/* Hover (nothing selected): a barely-there inner ring in the graph-owned
-   identity violet marks the surface as "being explored". Far lighter than the
-   selection ring so it reads as a hint, not a state change, and it cannot
-   appear while a selection is active (mode would be focus/inspect instead). */
+/* Hover (nothing selected): the base vignette plus a barely-there inner ring in
+   the graph-owned identity violet, marking the surface as "being explored".
+   Composed on `--hive-surface-base` so hover reads as the resting field with a
+   faint hint added — not a depth-stripping state change — and it cannot appear
+   while a selection is active (mode would be focus/inspect instead). */
 .viewfinder-canvas-wrap[data-interaction-mode="hover"] {
-  box-shadow: inset 0 0 0 1px rgba(139, 124, 240, 0.1);
+  box-shadow:
+    var(--hive-surface-base),
+    inset 0 0 0 1px rgba(139, 124, 240, 0.1);
 }
 
-/* Motion (orbital control armed, nothing selected): a slightly stronger inset
-   ring plus a faint top vignette so the resting surface signals "camera is
-   available" as its own calm state, distinct from bare idle. Still well below
-   the selection surface's weight, and it yields the moment a node/edge is
-   picked. Under reduced motion the camera is held neutral in the view, so this
-   only ever marks availability, never live movement. */
+/* Motion (orbital control armed, nothing selected): the base vignette plus a
+   slightly stronger inset ring, signalling "camera is available" as its own
+   calm resting state, distinct from bare idle. Still well below the selection
+   surface's weight, and it yields the moment a node/edge is picked. Under
+   reduced motion the camera is held neutral, so this only ever marks
+   availability, never live movement. */
 .viewfinder-canvas-wrap[data-interaction-mode="motion"] {
   box-shadow:
-    inset 0 0 0 1px rgba(139, 124, 240, 0.14),
-    inset 0 1px 22px rgba(0, 0, 0, 0.32);
-}
-
-/* Idle is deliberately styled as the calm default — no extra surface cue — so
-   the resting Hive-State stays quiet and graph-first. Declared explicitly (not
-   just implied) so the intent is legible next to the states above. */
-.viewfinder-canvas-wrap[data-interaction-mode="idle"] {
-  box-shadow: none;
+    var(--hive-surface-base),
+    inset 0 0 0 1px rgba(139, 124, 240, 0.14);
 }
 
 /* Hovered-node name in the canvas hint: a quiet neutral emphasis (hueless, in
@@ -5822,8 +5833,9 @@ body,
 }
 
 /* Reduced motion: keep every interaction-state cue a still state. The box-shadow
-   fade above is already motion-free, but null its transition too so the swap is
-   instant and nothing animates under the user's stated preference. */
+   fade (owned by the base `.viewfinder-canvas-wrap` rule above) is already
+   motion-free, but null its transition too so the swap is instant and nothing
+   animates under the user's stated preference. */
 @media (prefers-reduced-motion: reduce) {
   .viewfinder-canvas-wrap {
     transition: none;
