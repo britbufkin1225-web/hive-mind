@@ -310,6 +310,125 @@ function clampRange(value: number, min: number, max: number): number {
 
     Non-finite fields in `prev` fail safe: they are treated as neutral via the
     clamps, so a corrupted pose can never leak into the transform. */
+// --- Phase 36F — spatial pointer parallax + pose composition -----------------
+//
+// The Spatial Hive projection (spatialHiveProjection.ts) re-projects every node,
+// edge, and particle per frame from a single camera pose. Two small, pure
+// additions let that pose be steered by the cursor as well as by the opt-in
+// motion camera, without either input source knowing about the other:
+//
+//   pointer parallax  A bounded yaw/pitch offset derived from where the cursor
+//                     sits over the graph surface. Always-available, gentle
+//                     (well inside the motion camera's own bounds), and eased
+//                     so the structure feels suspended, not glued to the mouse.
+//   pose composition  motion pose + pointer offset → one projection pose, with
+//                     the summed angles clamped so the two sources can never
+//                     stack past a safe orbit.
+//
+// Both are deterministic (same inputs → same outputs) and live here beside the
+// camera integrator so every pose rule stays auditable in one module.
+
+/** A pointer-driven yaw/pitch offset. Deliberately not a full camera pose:
+    the cursor only tilts the orbit — zoom stays owned by the motion camera. */
+export type SpatialPointerPose = Readonly<{
+  yaw: number;
+  pitch: number;
+}>;
+
+/** Rest offset: cursor centred or absent contributes no tilt. */
+export const SPATIAL_POINTER_NEUTRAL: SpatialPointerPose = { yaw: 0, pitch: 0 };
+
+/** Max cursor-driven orbit. Small on purpose: parallax should make the field
+    feel suspended and manipulable at rest, while the opt-in motion camera
+    (±32° / ±24°) stays the authoritative way to really orbit the structure. */
+export const SPATIAL_POINTER_MAX_YAW = 9;
+export const SPATIAL_POINTER_MAX_PITCH = 6.5;
+
+/** Per-frame easing toward the pointer target — the same "glide, don't snap"
+    feel as the camera decay, tuned slightly quicker so parallax feels live. */
+export const SPATIAL_POINTER_EASE = 0.12;
+
+/** Composed-pose clamp: motion pose + pointer offset may sum past the motion
+    bounds, so the composition re-clamps to bounds that admit the full pointer
+    range on top of a maxed motion orbit. */
+export const SPATIAL_COMPOSED_MAX_YAW =
+  ORBITAL_GRAPH_CAMERA_MAX_YAW + SPATIAL_POINTER_MAX_YAW;
+export const SPATIAL_COMPOSED_MAX_PITCH =
+  ORBITAL_GRAPH_CAMERA_MAX_PITCH + SPATIAL_POINTER_MAX_PITCH;
+
+/** Map a cursor position over the graph surface (normalized to [-1, 1] from
+    the surface centre) to its parallax target. Non-finite input reads as
+    centred; inputs are clamped so an out-of-bounds pointer can't over-tilt.
+    Signs: cursor right → positive yaw (the structure's right side swings
+    toward the viewer); cursor up → positive pitch (top tips toward viewer) —
+    the field gently faces the cursor, which is what sells "floating object". */
+export function pointerParallaxTarget(nx: number, ny: number): SpatialPointerPose {
+  const x = Number.isFinite(nx) ? clampRange(nx, -1, 1) : 0;
+  const y = Number.isFinite(ny) ? clampRange(ny, -1, 1) : 0;
+  return {
+    yaw: x * SPATIAL_POINTER_MAX_YAW,
+    pitch: -y * SPATIAL_POINTER_MAX_PITCH,
+  };
+}
+
+/** Ease the current pointer offset toward its target by `ease` per frame,
+    snapping once within epsilon so the loop can settle to exact rest (and the
+    caller's "pose unchanged → stop work" check can fire). Pure. */
+export function easePointerPose(
+  current: SpatialPointerPose,
+  target: SpatialPointerPose,
+  ease: number = SPATIAL_POINTER_EASE,
+): SpatialPointerPose {
+  const a = clampRange(ease, 0, 1);
+  return {
+    yaw: settle(current.yaw + (target.yaw - current.yaw) * a, target.yaw, 0.005),
+    pitch: settle(
+      current.pitch + (target.pitch - current.pitch) * a,
+      target.pitch,
+      0.005,
+    ),
+  };
+}
+
+/** Compose the motion camera pose and the pointer parallax offset into the
+    single pose the spatial projection renders from. Additive on yaw/pitch
+    (clamped), zoom passed through the camera's own bounds. Pure. */
+export function composeSpatialCameraPose(
+  camera: OrbitalGraphCameraTransform,
+  pointer: SpatialPointerPose,
+): OrbitalGraphCameraTransform {
+  return {
+    yaw: clampRange(
+      camera.yaw + pointer.yaw,
+      -SPATIAL_COMPOSED_MAX_YAW,
+      SPATIAL_COMPOSED_MAX_YAW,
+    ),
+    pitch: clampRange(
+      camera.pitch + pointer.pitch,
+      -SPATIAL_COMPOSED_MAX_PITCH,
+      SPATIAL_COMPOSED_MAX_PITCH,
+    ),
+    zoom: clampRange(
+      camera.zoom,
+      ORBITAL_GRAPH_CAMERA_MIN_ZOOM,
+      ORBITAL_GRAPH_CAMERA_MAX_ZOOM,
+    ),
+  };
+}
+
+/** True when two poses are visually indistinguishable — the projection loop's
+    "nothing moved, skip the DOM writes / go to sleep" check. */
+export function spatialPosesAlmostEqual(
+  a: OrbitalGraphCameraTransform,
+  b: OrbitalGraphCameraTransform,
+): boolean {
+  return (
+    Math.abs(a.yaw - b.yaw) < 0.002 &&
+    Math.abs(a.pitch - b.pitch) < 0.002 &&
+    Math.abs(a.zoom - b.zoom) < 0.0005
+  );
+}
+
 export function integrateOrbitalCamera(
   prev: OrbitalGraphCameraTransform,
   command: OrbitalGraphControlCommand,

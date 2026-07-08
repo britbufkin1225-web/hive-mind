@@ -45,9 +45,49 @@ and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-co
 
 ## Current status
 
-**Current phase:** Phase 36F — Live Camera Test + Tuning Validation
+**Current phase:** Phase 36F — Spatial Hive Point-Cloud Graph Manipulation +
+Living Hive Preservation Pass (**frontend-only**, on branch
+`phase-36f-spatial-hive-point-cloud`). The Knowledge Graph now sits on a
+**pseudo-3D spatial point-cloud foundation** added *underneath* the existing
+living-Hive polish. New pure helpers: `spatialHiveProjection.ts` (stable
+per-node x/y/z from the deterministic ring layout + identity/degree hashes —
+the same depth unit that drives the far/mid/near tiers, so continuous depth
+and tier styling can never disagree — plus a yaw/pitch/zoom perspective
+projector with a dollied camera distance, so zoom reads as approach/recede
+rather than uniform scaling) and `spatialHiveParticles.ts` (deterministic,
+hash-seeded per-cluster dust shells, degree-weighted and globally capped at
+520, drawn on a pointer-events-none canvas behind the SVG). The Phase 32G
+camera was re-founded: the pose is no longer written to the `.graph-camera`
+wrapper as a whole-layer CSS tilt (a rotated flat poster); a per-frame driver
+re-projects every node wrapper (translate + perspective scale + depth-fog
+opacity), every edge (projected endpoints, fog, and a `--spatial-edge-w`
+depth width factor consumed by an appended CSS ladder that preserves the
+base < incident/hovered < selected weight hierarchy exactly), and the
+particle canvas — near and far objects move differently, so motion and
+cursor input produce true parallax. A new always-available **cursor
+parallax** (bounded ±9° yaw / ±6.5° pitch, eased per frame, composed
+additively with the opt-in motion camera, wake-on-input so the resting graph
+costs zero rAF work) makes the field feel like a floating, manipulable
+structure without a webcam; motion control remains opt-in and Recenter now
+clears both inputs. **Preserved, riding the projected positions:** breathing
+nodes, the selected node's pulsing halo + 1.2 depth lift, the related-aura
+tier, hover-primary clarity, the resting far/mid/near tier fades and aerial
+perspective, the depth-floor/veil atmosphere and interaction modes, the
+selection emphasis hierarchy, read-only graph interactions, the inspector,
+billboard-readable labels (projection only translates/scales, never
+rotates), and reduced-motion stillness (no loop, no parallax, no shimmer —
+the static depth structure remains). Particle energy inherits live Hive
+state: the selected cluster burns brightest, related clusters stay lit,
+unrelated clusters calm during a selection. No backend / API / schema /
+package / persistence change; no WebGL, no Three.js, no D3, no physics —
+perspective-projected SVG + Canvas 2D only. `npm run check:frontend` passes;
+live browser verification confirmed per-node parallax deltas (nodes moving
+in different directions/magnitudes under one camera move), the depth-scaled
+synapse widths, and the intact selection/aura/breathing behavior.
+
+The preceding **Phase 36F — Live Camera Test + Tuning Validation**
 (**validation-only, no code changes**, on branch
-`phase-36f-live-camera-test-tuning-validation`). Phase 36F ran the live-camera
+`phase-36f-live-camera-test-tuning-validation`) ran the live-camera
 validation session Phases 36D/36E prepared for, against a real Chrome 149
 browser on the dev machine. **Live-validated:** the `HD Pro Webcam C920`
 starts cleanly through the Motion Sandbox's real getUserMedia flow (640×480,
