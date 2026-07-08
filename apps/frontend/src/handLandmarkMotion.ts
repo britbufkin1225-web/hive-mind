@@ -113,7 +113,33 @@ export const HAND_CONNECTIONS: ReadonlyArray<readonly [number, number]> = [
 // distance-invariant: a pinch reads the same whether the hand is near or far.
 // 0.4 was chosen so a deliberate thumb/index touch trips it while a relaxed open
 // hand (ratio typically > 0.8) does not.
+//
+// Live-tuning note (Phase 36E): if live testing shows pinches engaging too
+// eagerly, lower this toward 0.35; if deliberate pinches fail to register,
+// raise toward 0.45. Keep it comfortably below PINCH_RELEASE_RATIO_THRESHOLD —
+// the gap between them is the hysteresis band (see resolveRawPinch).
 export const PINCH_RATIO_THRESHOLD = 0.4;
+
+// Phase 36E — pinch release threshold (ratio hysteresis). With a single
+// threshold, a thumb/index gap hovering exactly at 0.4 flips the raw pinch flag
+// many times per second; the temporal pinch gate absorbs the flicker from the
+// *displayed* state, but every raw flip restarts the gate's hold/release
+// timers, so a boundary-hovering hand felt sticky and unpredictable. Splitting
+// engage (< PINCH_RATIO_THRESHOLD) from release (> this) gives the raw flag a
+// 0.4–0.52 sticky band: once pinched, the fingers must clearly open before the
+// raw pinch drops. 0.52 stays far below a relaxed open hand (ratio > 0.8), so
+// release still lands promptly on a deliberate open.
+export const PINCH_RELEASE_RATIO_THRESHOLD = 0.52;
+
+/** Raw per-frame pinch with ratio hysteresis (Phase 36E). `wasPinched` is the
+    previous frame's raw pinch: engaged pinches persist until the gap opens past
+    the release threshold; open hands must close below the (tighter) engage
+    threshold. Pure — the caller carries the one bit of state. */
+export function resolveRawPinch(ratio: number, wasPinched: boolean): boolean {
+  return wasPinched
+    ? ratio < PINCH_RELEASE_RATIO_THRESHOLD
+    : ratio < PINCH_RATIO_THRESHOLD;
+}
 
 // Neutral reference palm length (as a fraction of frame height) at a comfortable
 // arm's-length distance. A larger measured span → hand is closer → zoom in
