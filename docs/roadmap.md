@@ -45,9 +45,35 @@ and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-co
 
 ## Current status
 
-**Current phase:** Phase 36A — Spatial Hive Energy Field / Depth-Atmosphere
-Frontend Pass (**frontend-only, CSS-led**, on branch
-`phase-36a-spatial-hive-energy-field-depth-atmosphere`). Phase 36A adds a
+**Current phase:** Phase 36B — Spatial Hive Energy Field UX Hardening / Visual
+Balance Pass (**frontend-only, CSS visual-balance pass**, on branch
+`phase-36b-spatial-hive-energy-field-ux-hardening-visual-balance`). Phase 36B
+hardens the Phase 36A atmosphere in place — tuning existing values, adding no
+new visual system — so the energy field supports rather than competes with node
+labels, selected-node focus, and graph topology: the idle veil quiets
+(0.6 → 0.52) while staying dimensional; the hover delta narrows so pointer
+entry/exit reads as attention rather than a lighting change; selection
+compression eases (0.88 → 0.78) so peripheral fog stops fighting related/far
+labels at the frame edge while **selection remains the strongest state** in a
+clean monotone hierarchy (hover 0.44 < idle 0.52 < motion 0.6 < selected 0.78);
+the veil's clear core widens (58% → 63%) to keep fog off the populated middle
+band; the canvas centre glow eases (0.10 → 0.07) and the deep-space floor
+falloff starts later and lands lighter (44%/0.5 → 52%/0.42) so corner-region
+nodes and labels stay legible; far-tier aerial muting is bounded tighter
+(saturate 0.88 / brightness 0.97 — it had stacked with the veil, double-charging
+far labels for one distance cue) with near/mid/far ordering intact; and the
+selected-incident-edge bloom tightens (3px/0.35 → 2px/0.4) into a denser,
+narrower halo. Reduced-motion behavior is preserved unchanged, nothing animated
+is added, `KnowledgeGraphPanel.tsx` is untouched, the Phase 35C
+`--hive-surface-base` vignette/elevation model is untouched, motion control
+remains opt-in, and the **screenshot / evidence refresh stays deferred** to a
+later phase (live webcam hand-motion evidence is still not claimed — it requires
+separate verification on working camera hardware). `npm run check:frontend`
+passes.
+
+The preceding **Phase 36A — Spatial Hive Energy Field / Depth-Atmosphere
+Frontend Pass** (**frontend-only, CSS-led**, on branch
+`phase-36a-spatial-hive-energy-field-depth-atmosphere`) added a
 presentation-only energy-field / depth-atmosphere layer around the existing 2.5D
 Spatial Hive, after the merged Phase 35C consolidation. Three coordinated
 pieces, all riding existing state: (1) an **ambient depth floor** — the dark

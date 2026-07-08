@@ -123,8 +123,29 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 36A - Spatial Hive Energy Field / Depth-Atmosphere
-  Frontend Pass` (**frontend-only, CSS-led**). Phase 36A adds a presentation-only
+- **Current phase:** `Phase 36B - Spatial Hive Energy Field UX Hardening /
+  Visual Balance Pass` (**frontend-only, CSS visual-balance pass**). Phase 36B
+  tunes the Phase 36A atmosphere in place — no new visual system — so the
+  Spatial Hive reads premium, layered, calm, and graph-legible: the idle veil
+  quiets (0.6 → 0.52) while staying dimensional; the hover delta narrows so
+  pointer entry reads as attention, not a lighting flicker; selection
+  compression eases (0.88 → 0.78) so peripheral fog no longer competes with
+  related/far labels near the frame edge while **selection remains the
+  unambiguous strongest state** (hover 0.44 < idle 0.52 < motion 0.6 <
+  selected 0.78); the veil's clear core widens so fog stays off the populated
+  middle band; the canvas centre glow eases and the deep-space floor falloff
+  starts later and lands lighter so corner-region nodes stay legible; far-tier
+  aerial muting is bounded a step tighter (it had stacked with the veil,
+  making far labels pay twice for one distance cue) with near/mid/far ordering
+  intact; and the selected-incident-edge bloom tightens to a denser, narrower
+  halo. Reduced-motion behavior is preserved unchanged, nothing animated is
+  added, `KnowledgeGraphPanel.tsx` is untouched, motion control remains
+  opt-in, and the **screenshot / evidence refresh stays deferred** to a later
+  phase (live webcam hand-motion evidence is still not claimed — it requires
+  separate verification on working camera hardware).
+
+  The preceding **Phase 36A - Spatial Hive Energy Field / Depth-Atmosphere
+  Frontend Pass** (**frontend-only, CSS-led**) added a presentation-only
   energy-field / depth-atmosphere layer around the existing 2.5D Spatial Hive so
   the graph reads as suspended inside a deep, pressurized black/chrome space —
   spatial and alive, not decorated. Three coordinated pieces, all riding existing
