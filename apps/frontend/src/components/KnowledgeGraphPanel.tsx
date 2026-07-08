@@ -96,6 +96,65 @@ type Selection =
   | { kind: "edge"; id: string }
   | null;
 
+/**
+ * Phase 35B — Spatial Hive interaction state (Level 1).
+ *
+ * A single, small, *transient* presentation mode summarising how the graph
+ * surface is currently being engaged. It is derived fresh every render from
+ * state that already exists (selection, canvas-local hover, orbital-control
+ * availability) and is display-only: it drives CSS via `data-*` attributes and
+ * readout copy. It deliberately does NOT persist (no storage / URL / backend),
+ * never mutates graph data, and never changes selection — so a reload always
+ * resets it to `idle` because there is nothing to restore.
+ */
+type SpatialHiveInteractionMode =
+  | "idle"
+  | "hover"
+  | "focus"
+  | "inspect"
+  | "motion";
+
+/**
+ * Resolve the single winning interaction mode from the currently-active
+ * signals. The priority order is deliberate and load-bearing:
+ *
+ *   focus / inspect (a committed selection)  ← strongest, always wins
+ *   → hover (a transient pointer / keyboard cue)
+ *   → motion (orbital camera control is available)
+ *   → idle (resting fallback)
+ *
+ * A committed selection outranks hover so exploring with the pointer never
+ * fights or dislodges the inspected record — selected-node clarity is never
+ * overridden. A node selection reads as `focus`; an edge selection reads as
+ * `inspect` (examining a relationship). `motion` sits just above `idle`, so it
+ * marks "camera control is armed" as a distinct resting state without ever
+ * competing with an active selection. The function is pure (same inputs → same
+ * mode), so the mode carries no memory of its own.
+ */
+function resolveInteractionMode({
+  selectionKind,
+  hasHover,
+  motionAvailable,
+}: {
+  selectionKind: "node" | "edge" | null;
+  hasHover: boolean;
+  motionAvailable: boolean;
+}): SpatialHiveInteractionMode {
+  if (selectionKind === "node") {
+    return "focus";
+  }
+  if (selectionKind === "edge") {
+    return "inspect";
+  }
+  if (hasHover) {
+    return "hover";
+  }
+  if (motionAvailable) {
+    return "motion";
+  }
+  return "idle";
+}
+
 /** Render a metadata value as a readable string (mirrors the Sources panel). */
 function formatMetaValue(value: unknown): string {
   return typeof value === "string" ? value : JSON.stringify(value);
@@ -773,8 +832,42 @@ const GraphCanvas = memo(function GraphCanvas({
     return null;
   }
 
+  // Phase 35B — transient interaction mode for the graph surface. Derived (not
+  // stored) from the selection passed down, the canvas-local hover cue, and
+  // whether orbital control is available. It only feeds the surface `data-*`
+  // attributes and the readout copy below — it never persists, never mutates
+  // data, and never changes selection. Hover stays canvas-local (Phase 29A
+  // hover contract): it is surfaced here purely as a presentational attribute,
+  // not lifted into panel/app state.
+  const hasHover = hoverNodeId !== null || hoverEdge !== null;
+  const interactionMode = resolveInteractionMode({
+    selectionKind:
+      selectedEdgeId !== null
+        ? "edge"
+        : selectedNodeId !== null
+          ? "node"
+          : null,
+    hasHover,
+    motionAvailable: graphControlEnabled,
+  });
+  // Label of the node currently under pointer / keyboard focus, for the
+  // transient hover readout. Selection copy still wins in the hint below, so
+  // this only ever surfaces while nothing is selected.
+  const hoverNodeLabel =
+    hoverNodeId !== null
+      ? (nodes.find((node) => node.id === hoverNodeId)?.label ?? null)
+      : null;
+
   return (
-    <div className="viewfinder-canvas-wrap">
+    <div
+      className="viewfinder-canvas-wrap"
+      // Phase 35B: expose the resolved interaction mode + its raw inputs so CSS
+      // can style idle / hover / focus / inspect / motion surface states without
+      // any of it leaving the render path into persistence.
+      data-interaction-mode={interactionMode}
+      data-has-selection={hasSelection ? "true" : "false"}
+      data-has-hover={hasHover ? "true" : "false"}
+    >
       {/* Phase 32G camera stage: the opt-in orbital transform is written to this
           wrapper (never to the SVG's own coordinate system), so the graph's node
           positions, hit-testing, and selection stay untouched — the camera moves
@@ -1063,6 +1156,19 @@ const GraphCanvas = memo(function GraphCanvas({
             <kbd className="graph-hint-key">Esc</kbd> or click empty space to
             clear
           </>
+        ) : hoverNodeLabel !== null ? (
+          // Phase 35B: transient hover context. It only appears with nothing
+          // selected (selection copy above wins), so hover informs exploration
+          // without ever replacing the selected-node inspection line.
+          <>
+            Hovering{" "}
+            <span className="graph-hint-focus">
+              {truncateLabel(hoverNodeLabel, 28)}
+            </span>
+            {" · select to inspect"}
+          </>
+        ) : hoverEdge !== null ? (
+          <>Hovering a relationship · select to inspect</>
         ) : (
           "Read-only map · select a node or relationship to inspect it."
         )}

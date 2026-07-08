@@ -123,31 +123,38 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 35A - Spatial Hive Interaction State Planning`
-  (**docs / planning only**). Phase 35A changes no source, runtime, CSS, package,
-  or screenshot files, and the **screenshot / evidence refresh remains deferred**
-  (a Phase 34C-style evidence pass is *not* next-active). It plans the next
-  capability level for the Spatial Hive after the completed Phase 34B visual
-  refinement — **Level 1 interaction state**: how the Spatial Hive responds to
-  hover, selection, focus, overlays, camera/view intent, and motion-control
-  readiness as **transient, in-memory, reload-resettable** view state, **without**
-  mutating graph data, saving layouts, adding persistence, changing backend/API
-  contracts, or implementing any frontend behavior yet. It defines the
-  interaction-state model and the load-bearing four-way distinction (presentation
-  polish vs. transient interaction state vs. persistent view memory vs. graph
-  mutation), the state categories (resting, hover, selected, related-neighborhood,
-  overlay-open, command/rail-active, motion-control-armed, reduced-motion), the
-  camera/view behavior (focus target, orbit/yaw/pitch, zoom, recenter,
-  selected-node focus), the overlay behavior (respond to focus context, never steal
-  graph dominance, stay transient), the motion-control relationship (no
-  webcam/MediaPipe change; future gestures feed view state, never graph mutation),
-  the **hard non-persistence rule** (no `localStorage` / `sessionStorage` /
-  IndexedDB / backend save; reload resets state), and the deferred **Level 2**
-  persistent-view-memory and **Level 3** semantic (Temporal Decay / Provenance /
-  Query Trails / Dreaming) boundaries — then scopes **Phase 35B** (Spatial Hive
-  Interaction State Frontend Pass) with acceptance criteria, non-goals, and risks.
-  **Honest limitation preserved:** no live webcam / hand-motion evidence is claimed
-  unless separately verified (Phase 32K camera-blocked evidence policy). See the
+- **Current phase:** `Phase 35B - Spatial Hive Interaction State Frontend Pass`
+  (**frontend-only**). Phase 35B implements the first **Level 1 interaction-state
+  layer** over the read-only 2.5D Spatial Hive — a small, typed, **transient
+  in-memory** interaction mode (`idle` / `hover` / `focus` / `inspect` / `motion`)
+  derived every render from existing selection, canvas-local hover, and
+  orbital-control availability by a pure `resolveInteractionMode` helper (no new
+  state store). The priority is load-bearing: a committed selection (`focus` for a
+  node, `inspect` for a relationship) always outranks transient hover so
+  selected-node clarity is never overridden; hover outranks the `motion` "camera
+  armed" resting state; and `idle` is the calm fallback. The graph surface exposes
+  `data-interaction-mode`, `data-has-selection`, and `data-has-hover` so
+  `styles.css` gives each mode a *subtle* surface treatment (calm idle, a faint
+  hover ring, a motion ring + vignette) while the selection surface stays owned by
+  the existing rules, untouched; the canvas readout gains transient hover copy
+  ("Hovering *node* · select to inspect") that never replaces the selected-node
+  inspection line, and reduced-motion keeps every cue a still state. Hover stays
+  canvas-local (the Phase 29A hover contract) — surfaced only as a presentational
+  attribute, never lifted into panel/app state. Strict boundaries hold: **no
+  persistence** (no `localStorage` / `sessionStorage` / IndexedDB / URL / backend —
+  a reload resets to `idle`), **no graph mutation**, no backend/API/schema/package/
+  dependency change, no webcam/MediaPipe/orbital-camera-math change, no new
+  dependency or graph library, and **no screenshot / evidence** work (the Phase
+  34C-style refresh stays deferred). `npm run check:frontend` passes and a
+  connected-runtime smoke test verified the idle/hover/focus/inspect transitions
+  plus Escape-to-clear with zero console errors. The preceding **Phase 35A** —
+  Spatial Hive Interaction State Planning (**docs / planning only**) — defined the
+  interaction-state model, the four-way distinction (presentation polish vs.
+  transient interaction state vs. persistent view memory vs. graph mutation), the
+  state categories, the camera/overlay/motion behaviors, and the **hard
+  non-persistence rule**, then scoped this Phase 35B pass. **Honest limitation
+  preserved:** no live webcam / hand-motion evidence is claimed unless separately
+  verified (Phase 32K camera-blocked evidence policy). See the
   [Phase 35A planning doc](docs/planning/phase-35a-spatial-hive-interaction-state-planning.md).
   The preceding **Phase 34B** — Spatial Hive Visual Refinement Frontend Pass
   (**frontend-only**, merged via **PR #135**) — implemented a bounded subset of the
