@@ -5825,11 +5825,12 @@ body,
 }
 
 /* Hovered-node name in the canvas hint: a quiet neutral emphasis (hueless, in
-   step with the Esc key chip) so the transient "Hovering <name>" readout is
-   scannable without pulling a decorative colour into the hint line. */
+   step with the Esc key chip) so the transient "Previewing <name>" readout is
+   scannable without pulling a decorative colour into the hint line. Weight stays
+   below the selected line's full-surface brighten so hover reads as secondary. */
 .graph-hint-focus {
   color: var(--text);
-  font-weight: 650;
+  font-weight: 640;
 }
 
 /* Reduced motion: keep every interaction-state cue a still state. The box-shadow
