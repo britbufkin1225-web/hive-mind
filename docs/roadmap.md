@@ -36,43 +36,77 @@ and the [Motion Sandbox Control Contract + 32C QA + 32D MediaPipe](motion-sandbo
 and the [Phase 32E Orbital Graph Control Contract + Motion-to-Graph Wiring Planning](planning/phase-32e-orbital-graph-control-contract-motion-wiring.md),
 and the [Phase 32J Orbital Graph Control System-Camera Recovery Planning + Deferred Evidence Track](planning/phase-32j-orbital-graph-control-system-camera-recovery-planning-deferred-evidence.md),
 and the [Phase 32K Path B Orbital Graph Control Camera-Blocked Stabilization + Evidence Deferral](planning/phase-32k-path-b-camera-blocked-stabilization-evidence-deferral.md),
-and the [Phase 33A 2.5D Spatial Knowledge Surface Planning](planning/phase-33a-2-5d-spatial-knowledge-surface-planning.md).
+and the [Phase 33A 2.5D Spatial Knowledge Surface Planning](planning/phase-33a-2-5d-spatial-knowledge-surface-planning.md),
+and the [Phase 33B 2.5D Spatial Hive Visual Contract + Implementation Readiness](planning/phase-33b-2-5d-spatial-hive-visual-contract-readiness.md),
+and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-contract.md).
 
 ## Current status
 
-**Current phase:** Phase 33A — 2.5D Spatial Knowledge Surface Planning
-(**planning / documentation only**, on branch
-`phase-33a-2-5d-spatial-knowledge-surface-planning`). Phase 33A plans the pivot
-from the current flat graph-primary surface into a **2.5D spatial knowledge
-surface** — a layered, orbit-able "knowledge constellation" built from
-frontend-safe depth illusion (simulated `zDepth`, perspective scaling, opacity /
-blur falloff, glow depth, parallax offsets, selected-node foregrounding, related-
-node depth clustering, and edge depth hierarchy) over the **existing read-only SVG
-graph view model**. It is explicitly **not true 3D**: no Three.js, no React Three
-Fiber, no WebGL requirement, no physics engine, no new graph/camera/gesture
-dependency. All depth metadata is **frontend-derived, display-only** — existing
-graph data and contracts stay unchanged — and it preserves the Phase 32
-webcam/motion-control investment by mapping the existing `MotionCommand` /
-`OrbitalGraphControlCommand` / `integrateOrbitalCamera` orbital camera onto the
-spatial field (yaw→orbit, pitch→tilt, zoom→depth-approach, pinch→deferred
-focus/select). The target experience is a **living colony of symbiotic
+**Current phase:** Phase 33B — 2.5D Spatial Hive Visual Contract + Implementation
+Readiness (**contract / implementation-readiness / documentation only**, on branch
+`phase-33b-2-5d-spatial-hive-visual-contract-readiness`). Phase 33B changes no code.
+It converts the Phase 33A direction into a concrete, reviewable frontend **visual
+contract** for the future 2.5D spatial hive / living-colony surface — before any
+runtime frontend code is touched — so implementation lands as one designed system
+instead of an append-only pile of depth hacks. It defines: the **2.5D depth
+contract** (discrete near/mid/far depth tiers with bounded scale, opacity falloff,
+aura/glow strength, restrained guarded blur, label/edge priority, selected-node
+lift, related-cluster secondary lift, and receded-but-readable unrelated nodes); the
+ambient **Hive-State** contract (deterministic breathing, phase-organized pulsing,
+aura/ring oscillation, spring-to-home micro-movement — no random walk, no physics, no
+layout instability, no data mutation); the **Focus-State** contract (selected node as
+spatial anchor, related nodes as an illuminated local cluster, unrelated nodes
+receding, legible selected edges, inspector connected to the anchor, ambient damping
+while focus energizes, keyboard + pointer parity); the **determinism** contract
+(stable id/cluster hashes, deterministic phase offsets, depth-tier assignment, aura
+rhythm, and grouping fallback so the **same graph data yields the same visual
+structure every reload**); the **reduced-motion / accessibility** contract; graph-data
+/ contract preservation; a **future frontend touch map** (`KnowledgeGraphPanel.tsx`,
+`styles.css`, `orbitalGraphControl.ts`) with what each file may and must not change;
+**proposed class/state names** for later phases (`graph-depth-tier-near/mid/far`,
+`graph-hive-state`, `graph-focus-state`, `graph-node-focus-anchor/related`,
+`graph-node-receded`, `graph-colony-cluster`, `graph-reduced-motion` — proposed only,
+**not** added to any stylesheet or component); acceptance criteria for the future
+implementation pass; deferred items; and the recommended next sequence — **33C**
+(2.5D Spatial Hive Frontend Foundation Pass), **33D** (Living-Colony Motion +
+Focus-State Frontend Pass), and **33E** (2.5D Spatial Hive QA + Evidence Decision,
+evidence deferred until the frontend is visually settled and still gated by the Phase
+32K camera-blocked evidence policy). No frontend runtime implementation, no CSS, no
+React component change, no new dependency, no Three.js / React Three Fiber / D3 /
+Cytoscape / React Flow / physics / true-3D / WebGL, no backend / API / schema /
+MediaPipe change, no graph mutation, no fake data, and no screenshots or fabricated
+evidence. See the
+[Phase 33B readiness doc](planning/phase-33b-2-5d-spatial-hive-visual-contract-readiness.md)
+and the concise reusable
+[2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-contract.md).
+
+The preceding **Phase 33A** — 2.5D Spatial Knowledge Surface Planning (**planning /
+documentation only**, merged into `main` via **PR #129**). Phase 33A planned the
+pivot from the current flat graph-primary surface into a **2.5D spatial knowledge
+surface** — a layered, orbit-able "knowledge constellation" built from frontend-safe
+depth illusion (simulated `zDepth`, perspective scaling, opacity / blur falloff, glow
+depth, parallax offsets, selected-node foregrounding, related-node depth clustering,
+and edge depth hierarchy) over the **existing read-only SVG graph view model**. It is
+explicitly **not true 3D**: no Three.js, no React Three Fiber, no WebGL requirement,
+no physics engine, no new graph/camera/gesture dependency. All depth metadata is
+**frontend-derived, display-only** — existing graph data and contracts stay unchanged
+— and it preserves the Phase 32 webcam/motion-control investment by mapping the
+existing `MotionCommand` / `OrbitalGraphControlCommand` / `integrateOrbitalCamera`
+orbital camera onto the spatial field (yaw→orbit, pitch→tilt, zoom→depth-approach,
+pinch→deferred focus/select). The target experience is a **living colony of symbiotic
 micro-organisms** with two states — an ambient **Hive-State** (coordinated,
 low-amplitude breathing / pulsing / cluster rhythm so nodes read as a living whole)
 and an inspection **Focus-State** (the selected node + neighborhood come forward,
-related nodes organize and grow legible, unrelated nodes recede, the colony reacts
-to attention) — grouped in a readable **source / topic / type / size** cluster-family
-hierarchy, with **color owned by the graph** while the shell stays dark/chrome/neutral,
-and all motion kept **low-amplitude, deterministic, readable, and controlled** (never
-chaotic or jittery). The doc defines the visual/depth model, deterministic depth
-placement, camera/orbit behavior, motion mapping, node/edge behavior, overlay and
-inspector behavior, accessibility / reduced-motion rules, performance constraints,
-deferred items (true 3D/WebGL, gesture selection, pinch-to-grab, backend layout
-persistence, AI clustering, evidence capture), and recommends the next sequence —
-**33B** (visual/depth contract + implementation readiness) before **33C** (frontend
-MVP), then **33D** (motion tuning) and **33E** (live webcam spatial-control QA +
-evidence, still gated by the Phase 32K camera-blocked evidence policy). No source,
-runtime, package, API, schema, or MediaPipe change; no graph mutation; no true
-3D/WebGL dependency; no screenshots or fabricated evidence. See the
+related nodes organize and grow legible, unrelated nodes recede, the colony reacts to
+attention) — grouped in a readable **source / topic / type / size** cluster-family
+hierarchy, with **color owned by the graph** while the shell stays
+dark/chrome/neutral, and all motion kept **low-amplitude, deterministic, readable,
+and controlled**. It recommended **33B** (this phase — visual/depth contract +
+implementation readiness) before **33C** (frontend MVP), then **33D** (motion tuning)
+and **33E** (live webcam spatial-control QA + evidence, still gated by the Phase 32K
+camera-blocked evidence policy). No source, runtime, package, API, schema, or
+MediaPipe change; no graph mutation; no true 3D/WebGL dependency; no screenshots or
+fabricated evidence. See the
 [Phase 33A planning doc](planning/phase-33a-2-5d-spatial-knowledge-surface-planning.md).
 
 The preceding **Phase 32K Path B** — Orbital Graph Control Camera-Blocked
@@ -716,6 +750,10 @@ Current non-capabilities:
 | 32J | Complete (docs) | Orbital Graph Control System-Camera Recovery Planning + Deferred Evidence Track (**planning / documentation only**); records the deferred-evidence posture after 32I honestly — the opt-in orbital graph control is wired, hardened, and still **experimental / opt-in / read-only**, while the **local camera stack remains blocked outside the Hive|Mind app** (native Windows Camera cannot produce a live preview, so no live hand-motion evidence exists yet). Classifies the blocker as a **host/system camera stack issue** (not proven a Hive|Mind bug), defines a graded non-destructive **camera recovery checklist**, locks an **evidence gate**, defines the **deferred evidence track** to capture *later*, restates guardrails and approved **portfolio wording**, and sets the two Phase 32K tracks — Path A (evidence capture if the camera works) or Path B (alternate input / continued deferral if it stays blocked). No source/runtime/package/API/schema/MediaPipe change; no screenshots or fabricated evidence. See the [Phase 32J planning doc](planning/phase-32j-orbital-graph-control-system-camera-recovery-planning-deferred-evidence.md). |
 | 32K Path B | Complete (docs) | Orbital Graph Control Camera-Blocked Stabilization + Evidence Deferral (**planning / documentation only**, this phase); resolves the Phase 32J decision — the deciding condition was tested and the **host camera remains blocked** (native Windows Camera still cannot produce a live preview), closing Path A and selecting **Path B**. A docs-only blocker-isolation / evidence-deferral pass: records the camera-blocked state honestly, preserves the opt-in orbital graph control as **implemented-but-unverified by live hand motion**, restates the blocker sits **outside Hive|Mind app logic** (native Windows Camera also fails), and defines a **blocker decision tree** (A camera works → live QA + evidence · B stays blocked → keep deferring + system recovery · C external USB webcam works → external-camera QA · D all webcams blocked → dev-only synthetic harness), a **system-level recovery checklist** (not claimed complete), and an **evidence policy** (no fake/simulated evidence; no live-gesture success claim until a real camera session verifies it). No source/runtime/package/API/schema/MediaPipe change; no screenshots or fabricated evidence. **Next-phase options:** 32L Path A if the camera works · **32L Path B — External USB Webcam Validation Pass** (preferred while blocked) · 32L Path C if a dev-only synthetic harness is needed. See the [Phase 32K Path B planning doc](planning/phase-32k-path-b-camera-blocked-stabilization-evidence-deferral.md). |
 | 33A | Complete (docs) | 2.5D Spatial Knowledge Surface Planning (**planning / documentation only**, this phase); plans the pivot from the flat graph-primary surface to a **2.5D spatial knowledge surface** — a layered, orbit-able "knowledge constellation" built from frontend-safe depth illusion (simulated `zDepth`, perspective scaling, opacity/blur falloff, glow depth, parallax offsets, selected-node foregrounding, related-node depth clustering, edge depth hierarchy) over the **existing read-only SVG graph view model**. Explicitly **not true 3D**: no Three.js/R3F/WebGL/physics/new graph-camera-gesture dependency. Depth metadata is **frontend-derived, display-only** (existing graph data/contracts unchanged), and the Phase 32 webcam/motion investment is preserved by mapping the existing `MotionCommand` / `OrbitalGraphControlCommand` / `integrateOrbitalCamera` orbital camera onto the field (yaw→orbit, pitch→tilt, zoom→depth-approach, pinch→deferred focus/select). Target experience is a **living colony of symbiotic micro-organisms** with two states — ambient **Hive-State** (coordinated low-amplitude breathing/pulsing/cluster rhythm) and inspection **Focus-State** (selection + neighborhood forward, related nodes organized/legible, unrelated recede, colony reacts to attention) — grouped in a readable **source/topic/type/size** cluster-family hierarchy, **color owned by the graph** (shell stays dark/chrome/neutral), all motion **low-amplitude / deterministic / readable / controlled**. Defines the visual/depth model, deterministic depth placement, camera/orbit + motion mapping, node/edge behavior, overlay/inspector behavior, accessibility/reduced-motion rules, performance constraints, deferred items, and the next sequence — **33B** (visual/depth contract + implementation readiness) before **33C** (frontend MVP), then **33D** (motion tuning) and **33E** (live webcam QA + evidence, gated by the Phase 32K camera-blocked evidence policy). No source/runtime/package/API/schema/MediaPipe change; no graph mutation; no true 3D/WebGL; no screenshots or fabricated evidence. See the [Phase 33A planning doc](planning/phase-33a-2-5d-spatial-knowledge-surface-planning.md). |
+| 33B | Complete (docs) | 2.5D Spatial Hive Visual Contract + Implementation Readiness (**contract / implementation-readiness / documentation only**, this phase); converts the Phase 33A direction into a concrete, reviewable frontend **visual contract** before any runtime code is touched, so implementation lands as one designed system instead of an append-only pile of depth hacks. Defines the **2.5D depth contract** (near/mid/far depth tiers, bounded scale, opacity falloff, aura/glow strength, restrained guarded blur, label/edge priority, selected-node lift, related-cluster secondary lift, receded-but-readable unrelated nodes), the ambient **Hive-State** contract (deterministic breathing / phase-organized pulsing / aura-ring oscillation / spring-to-home micro-movement — no random walk, no physics, no layout instability, no data mutation), the **Focus-State** contract (selected node as spatial anchor, related nodes as an illuminated cluster, unrelated nodes receding, legible selected edges, inspector connected to the anchor, ambient damping while focus energizes, keyboard + pointer parity), the **determinism** contract (stable id/cluster hashes, deterministic phase offsets / depth-tier assignment / aura rhythm / grouping fallback — **same graph data ⇒ same visual structure every reload**), the **reduced-motion / accessibility** contract, graph-data / contract preservation, a **future frontend touch map** (`KnowledgeGraphPanel.tsx`, `styles.css`, `orbitalGraphControl.ts`), **proposed class/state names** (`graph-depth-tier-near/mid/far`, `graph-hive-state`, `graph-focus-state`, `graph-node-focus-anchor/related`, `graph-node-receded`, `graph-colony-cluster`, `graph-reduced-motion` — proposed only, **not** added to any stylesheet/component), acceptance criteria for the future implementation pass, deferred items, and the next sequence (**33C** foundation · **33D** motion + Focus-State · **33E** QA + evidence decision). **No frontend runtime implementation, no CSS, no React change, no new dependency, no Three.js / R3F / D3 / Cytoscape / React Flow / physics / true-3D / WebGL, no backend / API / schema / MediaPipe change, no graph mutation, no fake data, no screenshots or fabricated evidence.** See the [Phase 33B readiness doc](planning/phase-33b-2-5d-spatial-hive-visual-contract-readiness.md) and the [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-contract.md). |
+| 33C (planned) | Planned | 2.5D Spatial Hive Frontend Foundation Pass — first implementation pass: derive display-only depth tiers and apply the Phase 33B depth contract plus base Hive-State / Focus-State emphasis over the existing read-only SVG view model, against the proposed class/state names. Reduced-motion guarded; no new dependency; graph read-only. **Not started.** |
+| 33D (planned) | Planned | Living-Colony Motion + Focus-State Frontend Pass — adds and tunes the ambient breathing / pulsing rhythm, the Focus-State attentive response and Hive↔Focus transition, and the depth-intensity coupling to the orbital camera; all deterministic, low-amplitude, reduced-motion-clamped. **Not started.** |
+| 33E (planned) | Planned | 2.5D Spatial Hive QA + Evidence Decision — QA of the settled surface and an evidence decision; evidence stays **deferred** until the frontend is visually settled and remains gated by the Phase 32K camera-blocked evidence policy (no fabricated or simulated evidence). **Not started.** |
 
 ## Future roadmap
 
