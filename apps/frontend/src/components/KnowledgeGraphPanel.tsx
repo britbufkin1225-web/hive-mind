@@ -482,11 +482,17 @@ type DepthTier = "near" | "mid" | "far";
  * Discrete scale per tier. The ramp is monotonic and tightly bounded
  * (near > mid > far) so it reads as believable depth rather than a cartoonish
  * zoom (visual contract §3).
+ *
+ * Phase 34B: the far end of the ramp is widened a touch (0.9 → 0.87) and near
+ * lifted a hair (1.12 → 1.14) so the resting Hive-State reads as clearer layered
+ * depth at a glance. Still tightly bounded and monotonic — near stays below the
+ * selected lift (1.2) and related (1.04) set in CSS, so the selection hierarchy's
+ * spatial order (selected > related > ambient) is preserved, not flattened.
  */
 const DEPTH_TIER_SCALE: Record<DepthTier, number> = {
-  near: 1.12,
+  near: 1.14,
   mid: 1,
-  far: 0.9,
+  far: 0.87,
 };
 
 interface NodeDepth {
