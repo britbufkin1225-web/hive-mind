@@ -45,9 +45,40 @@ and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-co
 
 ## Current status
 
-**Current phase:** Phase 36E — Gesture Tracking Super-Tuning + Control Feel
-Readiness (**frontend-only**, on branch
-`phase-36e-gesture-tracking-super-tuning-control-feel-readiness`). Phase 36E is
+**Current phase:** Phase 36F — Live Camera Test + Tuning Validation
+(**validation-only, no code changes**, on branch
+`phase-36f-live-camera-test-tuning-validation`). Phase 36F ran the live-camera
+validation session Phases 36D/36E prepared for, against a real Chrome 149
+browser on the dev machine. **Live-validated:** the `HD Pro Webcam C920`
+starts cleanly through the Motion Sandbox's real getUserMedia flow (640×480,
+live track, camera active in ~2s); the MediaPipe hand landmarker loads on the
+GPU delegate and reaches **MediaPipe ready** ("Graph successfully started
+running"); Stop Camera genuinely releases the device (track `ended`,
+srcObject cleared) and an immediate restart works with the cached detector;
+graph control is confirmed **off by default** (`useState(false)` in App) with
+the Graph link cue flipping Linked/Off and `data-graph-control` following;
+with control enabled and no hand in frame the graph camera transform holds
+*exactly* neutral across multi-second sampling (no drift — the 32H staleness
+guard and deadzone hold); and Recenter resets the pose. The long-standing
+"camera hardware unavailable" blocker is resolved: the faulty device is a
+separate `PC Camera` (driver Error state) — the C920 reports OK at the OS
+level and works live. **Not validated:** no human hand was in front of the
+camera during the session, so overlay readability under real hand motion,
+pinch engage/release feel (the 0.40/0.52 ratio hysteresis), palm-centroid
+steadiness, range hints, and live graph yaw/pitch/zoom feel remain
+unverified; because no live behavior demonstrated a defect, **no tuning
+constants were changed** (smallest-change rule). Console stayed clean apart
+from two known-benign MediaPipe wasm info/warn lines and a pre-existing
+`/favicon.ico` 404 (no icon link in `index.html`; out of 36F scope). No
+backend / API / schema / package / dependency / persistence surface was
+touched. **Screenshot / evidence capture remains deferred** until a
+human-in-frame session confirms control feel; the recommended Phase 36G is a
+short human-in-frame gesture-feel session (then evidence capture), not
+another stabilization pass.
+
+The preceding **Phase 36E — Gesture Tracking Super-Tuning + Control Feel
+Readiness** (**frontend-only**, on branch
+`phase-36e-gesture-tracking-super-tuning-control-feel-readiness`) was
 a diagnostic-readability and conservative-tuning pass preparing the Motion
 Sandbox for a serious live camera validation session. Three bounded changes to
 the gesture pipeline's *presentation and raw-input conditioning* (never the
@@ -73,9 +104,10 @@ tuned against live feel in Phase 32H, and re-tuning them without working camera
 hardware would be unjustified. Opt-in/off-by-default graph control, Phase 36C
 reduced-motion behavior, the Phase 36D overlay layering, and the no-camera /
 no-hand idle states are all preserved; no backend / API / schema / package /
-dependency / persistence surface is touched. **Live webcam hand tracking
-remains untested** (camera hardware still unavailable) and the **screenshot /
-evidence refresh remains deferred**. `npm run check:frontend` passes.
+dependency / persistence surface is touched. Live webcam hand tracking
+remained untested at the close of 36E (camera startup was then live-validated
+in 36F; hand-motion feel is still pending) and the **screenshot / evidence
+refresh remains deferred**. `npm run check:frontend` passes.
 
 The preceding **Phase 36D — Full Hand Landmark Overlay + Gesture Tracking
 Readability** (**frontend-only**, on branch
