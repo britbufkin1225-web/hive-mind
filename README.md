@@ -123,8 +123,31 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 36B - Spatial Hive Energy Field UX Hardening /
-  Visual Balance Pass` (**frontend-only, CSS visual-balance pass**). Phase 36B
+- **Current phase:** `Phase 36C - Spatial Hive Final Micro-Polish / Screenshot
+  Readiness Frontend Pass` (**frontend-only, CSS micro-polish**). Phase 36C is
+  the last visual-preparation pass before evidence capture — four tiny tunings
+  of existing systems, no new visual system: the node-label dark halo densifies
+  fractionally (0.72 → 0.78) so glyph contrast holds constant over the 36A/36B
+  fog fields and auras; the resting far-tier blur eases (0.4px → 0.3px) so far
+  labels resolve crisper in stills while distance stays carried by opacity,
+  scale, and desaturation (near/mid/far ordering intact); the atmosphere veil's
+  peripheral corner ring eases (0.4 → 0.36) so viewport corners stay readable
+  under the deepest (selection) fog with the state ordering unchanged; and a
+  hovered node at rest now lifts clear of the resting depth fade/blur with a
+  one-step label brighten — hooked on the existing hover-primary class, which
+  never applies to selected/related nodes — giving pointer hover the same
+  clarity keyboard focus already had. **The selected node remains the strongest
+  visual priority** (scale 1.2, pulsing aura, heaviest label halo, deepest
+  atmosphere). Nothing animated is added, reduced-motion behavior is preserved
+  unchanged, `KnowledgeGraphPanel.tsx` is untouched, motion control remains
+  opt-in and visually unchanged at rest, and the **screenshot / evidence
+  refresh remains deferred to Phase 36D or later** (no new screenshots are
+  claimed; live webcam hand-motion evidence is still not claimed — it requires
+  separate verification on working camera hardware). `npm run check:frontend`
+  passes.
+
+  The preceding **Phase 36B - Spatial Hive Energy Field UX Hardening /
+  Visual Balance Pass** (**frontend-only, CSS visual-balance pass**)
   tunes the Phase 36A atmosphere in place — no new visual system — so the
   Spatial Hive reads premium, layered, calm, and graph-legible: the idle veil
   quiets (0.6 → 0.52) while staying dimensional; the hover delta narrows so

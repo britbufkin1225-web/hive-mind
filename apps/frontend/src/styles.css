@@ -2694,9 +2694,13 @@ section {
   /* Subtle dark text halo so every label stays legible over the denser 31E
      canvas (region glows + dual-scale lattice) and the type-coloured aura rings
      that sit behind related/hovered clusters. The selected label carries its own
-     heavier halo (Phase 31B block), so it stays the clearest text on the canvas. */
+     heavier halo (Phase 31B block), so it stays the clearest text on the canvas.
+     Phase 36C polish: halo densifies a step (0.72 -> 0.78) — the 36A/36B fog
+     fields and edge blooms put low-level variation behind labels, and a
+     fractionally denser halo holds glyph contrast constant across them without
+     touching label colour or weight in any state. */
   paint-order: stroke;
-  stroke: rgba(4, 5, 10, 0.72);
+  stroke: rgba(4, 5, 10, 0.78);
   stroke-width: 2.5px;
   stroke-linejoin: round;
 }
@@ -5734,11 +5738,15 @@ body,
    far-tier muting is bounded a step tighter (saturate 0.85 -> 0.88, brightness
    0.95 -> 0.97) — under the 36A veil the two effects stacked, and far labels
    were paying twice for the same distance cue. Near eases 1.05 -> 1.03 so the
-   resting field is quieter overall; the near > mid > far ordering is intact. */
+   resting field is quieter overall; the near > mid > far ordering is intact.
+   Phase 36C polish: the far blur eases 0.4px -> 0.3px — at 11px label size the
+   heavier blur visibly softened glyph edges in stills, and distance is already
+   carried three other ways (opacity, scale, desaturation). The far tier still
+   reads soft-focus against sharp near (0 > 0.15 > 0.3 ordering intact). */
 .graph-viewfinder[data-has-selection="false"]
   .graph-depth-tier-far
   .graph-node-depth {
-  filter: blur(0.4px) saturate(0.88) brightness(0.97);
+  filter: blur(0.3px) saturate(0.88) brightness(0.97);
 }
 .graph-viewfinder[data-has-selection="false"]
   .graph-depth-tier-mid
@@ -5905,7 +5913,13 @@ body,
    Phase 36B balance: each fog field lands a touch lighter and the peripheral
    ring's clear core widens (58% -> 63%), pulling the veil further off the
    populated middle band where labels live; the idle dial drops 0.6 -> 0.52 so
-   rest reads dimensional-but-quiet instead of weather. */
+   rest reads dimensional-but-quiet instead of weather.
+   Phase 36C polish: the peripheral ring's terminal density eases 0.4 -> 0.36.
+   Corner-region text pays the veil twice (ring + canvas floor falloff meet in
+   the corners), and under the selection dial (0.78) that stack was the last
+   place dimmed far labels went marginal. A lighter ring end keeps every
+   viewport corner readable in stills while the state ordering
+   (hover < idle < motion < selected) is untouched. */
 .viewfinder-canvas-wrap::after {
   content: "";
   position: absolute;
@@ -5914,7 +5928,7 @@ body,
   background:
     radial-gradient(ellipse 150% 100% at 50% -35%, rgba(10, 12, 20, 0.26), transparent 52%),
     radial-gradient(ellipse 130% 85% at 50% 120%, rgba(3, 4, 9, 0.32), transparent 55%),
-    radial-gradient(ellipse 95% 78% at 50% 47%, transparent 63%, rgba(2, 3, 8, 0.4) 100%);
+    radial-gradient(ellipse 95% 78% at 50% 47%, transparent 63%, rgba(2, 3, 8, 0.36) 100%);
   opacity: 0.52;
   /* Slow, single-property fade — pressure change, not animation. Nulled under
      reduced motion below. */
@@ -5975,5 +5989,50 @@ body,
   .viewfinder-canvas-wrap::after {
     transition: none;
   }
+}
+
+/* ============================================================================
+   Phase 36C — Spatial Hive final micro-polish / screenshot readiness
+
+   Last visual-preparation pass before evidence capture: three in-place value
+   eases above (label halo 0.72 -> 0.78, far-tier blur 0.4px -> 0.3px, veil
+   corner ring 0.4 -> 0.36) plus the one genuinely missing legibility state,
+   added here — hover clarity at rest.
+
+   Rationale: at rest a hovered mid/far node kept its receded depth treatment
+   (tier opacity 0.9 / 0.74 and the aerial blur), so the one node the user is
+   actively pointing at — whose name they are reading via the hint readout —
+   stayed soft and dimmed. Keyboard focus already snaps clear of the atmosphere
+   (33D intent 3); pointer hover now gets the same clarity. Hooked on
+   `graph-canvas-node-hover-primary`, which the view sets only on nodes that
+   are neither selected nor related, so this lift can never compete with the
+   selection hierarchy — selected keeps scale 1.2, the pulsing aura, the w800
+   halo label, and the deepest atmosphere as the unambiguous top priority.
+   All static states, no new transitions: nothing to null for reduced motion.
+   ============================================================================ */
+
+/* Hovered node lifts to full presence: clears the resting tier fade (0.9/0.74)
+   so the pointed-at node is fully lit while the finger is on it. Same
+   (0,3,0)-with-attr specificity as the 33C tier rules; appended later so it
+   wins only while the hover-primary class is present. */
+.graph-viewfinder[data-has-selection="false"] .graph-canvas-node-hover-primary {
+  opacity: 1;
+}
+
+/* ...and snaps clear of the aerial-perspective softening, mirroring the
+   keyboard-focus rule (33D intent 3) so pointer and keyboard get the same
+   sharp read on the node under inspection. */
+.graph-viewfinder[data-has-selection="false"]
+  .graph-canvas-node-hover-primary
+  .graph-node-depth {
+  filter: none;
+}
+
+/* Hovered node's own label brightens one step so the name being read (echoed
+   in the hint readout) is the clearest ambient text nearby. Slots into the
+   established label hierarchy below selected (#f4f6fb w800) and above related
+   (#cfd6e6): hover-primary never coexists with either, so no rule fights. */
+.graph-canvas-node-hover-primary .graph-canvas-node-label {
+  fill: #dfe4f0;
 }
 
