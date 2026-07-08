@@ -735,6 +735,36 @@ const GraphCanvas = memo(function GraphCanvas({
     ORBITAL_GRAPH_CAMERA_NEUTRAL,
   );
 
+  // Phase 36C hardening — track the OS reduced-motion preference *live*, not
+  // just at toggle time. Previously the preference was read once inside the
+  // camera effect, so flipping it on mid-session left the rAF loop running
+  // (visually masked by the CSS `transform: none` guard, but the readout kept
+  // claiming Live/Idle and the pose kept accumulating in the ref) — and
+  // flipping it back off made CSS re-apply that stale accumulated pose as a
+  // jump. Holding the preference in state re-runs the camera effect on change:
+  // enabling reduced motion now halts the loop, resets the pose to neutral,
+  // and reports "Reduced motion" honestly; disabling it restarts cleanly from
+  // neutral. Rationale: the reduced-motion contract must hold across a live
+  // preference change, not only across control toggles.
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = (event: MediaQueryListEvent) => {
+      setPrefersReducedMotion(event.matches);
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
   useEffect(() => {
     const resetTransform = () => {
       const el = cameraRef.current;
@@ -752,12 +782,8 @@ const GraphCanvas = memo(function GraphCanvas({
 
     // Respect the OS reduced-motion preference: keep the camera neutral and say
     // why, rather than introduce continuous orbital motion the user has asked
-    // the system to avoid. (Re-read whenever control is toggled.)
-    const prefersReducedMotion =
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
+    // the system to avoid. (Held in state above, so a live preference flip
+    // re-runs this effect rather than being noticed only on the next toggle.)
     if (prefersReducedMotion) {
       cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
       resetTransform();
@@ -811,7 +837,7 @@ const GraphCanvas = memo(function GraphCanvas({
       cancelAnimationFrame(frame);
       resetTransform();
     };
-  }, [graphControlEnabled, motionCommandRef, onCameraStatus]);
+  }, [graphControlEnabled, motionCommandRef, onCameraStatus, prefersReducedMotion]);
 
   // Phase 32H — explicit recenter. Bumping `recenterSignal` from the panel snaps
   // the accumulated camera pose straight back to neutral, so the user never has
