@@ -107,6 +107,11 @@ what makes it auditable.
 > contained narrow-viewport rail) are captured in the `phase-30c-connected-*`
 > set, documented in the
 > [Phase 30C Interaction Recovery QA + Screenshot Evidence](docs/demo/phase-30c-interaction-recovery-qa-screenshot-evidence.md)
+> note. The current **2.5D Spatial Hive** surface — the Phase 33C spatial-depth
+> foundation (PR #131) hardened by Phase 33D (PR #132), with visible near/mid/far
+> depth tiers, a near-tier selected-node lift, and reduced-motion compatibility —
+> is captured in the `phase-33e-spatial-hive-*` set, documented in the
+> [Phase 33E 2.5D Spatial Hive QA + Screenshot Evidence](docs/demo/phase-33e-2-5d-spatial-hive-qa-screenshot-evidence.md)
 > note. The earlier dashboard-era `phase-23b-*` / `phase-25c-*` capture sets are
 > preserved in `docs/demo/screenshots/` as history.
 
@@ -118,9 +123,25 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 33B - 2.5D Spatial Hive Visual Contract + Implementation Readiness`
-  (**contract / implementation-readiness / documentation only**). Phase 33B changes
-  no code. It converts the Phase 33A direction into a concrete, reviewable frontend
+- **Current phase:** `Phase 33E - 2.5D Spatial Hive QA + Screenshot Evidence Refresh`
+  (**evidence / QA / documentation only**). Phase 33E changes no source or runtime
+  code. It validates, launches, and visually QA's the **current** 2.5D Spatial Hive
+  surface that shipped in **Phase 33C** (spatial-depth foundation, merged via
+  **PR #131**) and was hardened in **Phase 33D** (UX + motion compatibility, merged
+  via **PR #132**), then refreshes the screenshot evidence. Against the connected
+  local runtime (frontend `:5173` → backend `:8787`) the frontend build passes and
+  16/16 automated QA checks pass: the graph renders as the primary surface with
+  **near/mid/far depth tiers visible at rest**, a selected node **lifts to the near
+  tier** with legible labels and coherent edges, overlays/dock stay bounded over a
+  dominant graph (no sidebar/dashboard/card-grid regression), reduced-motion keeps
+  the depth read + selection intact, and no console or network errors appear.
+  **Live webcam / hand-motion control was not tested this phase** (no camera in the
+  build environment — consistent with the Phase 32K camera-blocked evidence policy);
+  no motion-control liveness is claimed. Evidence: the `phase-33e-spatial-hive-*`
+  capture set and the
+  [Phase 33E 2.5D Spatial Hive QA + Screenshot Evidence](docs/demo/phase-33e-2-5d-spatial-hive-qa-screenshot-evidence.md)
+  note. The preceding **Phase 33B** (**contract / implementation-readiness /
+  documentation only**) changed no code. It converts the Phase 33A direction into a concrete, reviewable frontend
   **visual contract** for the future 2.5D spatial hive / living-colony surface —
   before any runtime frontend code is touched. It defines the rules future
   implementation must follow: the **2.5D depth contract** (discrete
