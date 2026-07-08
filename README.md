@@ -123,9 +123,38 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 35C - Spatial Hive Interaction State UX Hardening /
-  CSS Consolidation Pass` (**frontend / CSS only**). Phase 35C hardens the Phase
-  35B interaction-state surface and consolidates the CSS the recent Spatial Hive
+- **Current phase:** `Phase 36A - Spatial Hive Energy Field / Depth-Atmosphere
+  Frontend Pass` (**frontend-only, CSS-led**). Phase 36A adds a presentation-only
+  energy-field / depth-atmosphere layer around the existing 2.5D Spatial Hive so
+  the graph reads as suspended inside a deep, pressurized black/chrome space —
+  spatial and alive, not decorated. Three coordinated pieces, all riding existing
+  state: (1) an **ambient depth floor** — the dark graph-canvas background gains
+  a deep-space falloff beneath the nodes so the plotting grid recedes at the
+  edges while nodes stay lit; (2) an **atmosphere veil** — a single `::after`
+  pseudo-element on the canvas wrap (zero markup, zero React change) lays
+  edge-weighted fog over the field, driven through one opacity dial by the
+  existing Phase 35B/35C interaction attributes: hover gently thins the fog
+  (the field opens toward exploration), motion-armed holds fractionally more
+  pressure than idle, and an active selection **compresses the field** — the
+  periphery deepens so the lit selected neighbourhood reads as the pressurized
+  centre of a local energy field, while every established selected / related /
+  dimmed rule is untouched and selection stays the strongest state; edges
+  incident to the selection additionally carry a soft static identity-violet
+  bloom so connections into the selected node read as energized conduits; and
+  (3) **aerial-perspective far-depth recession** — the resting far tier
+  desaturates and dims fractionally (distance mutes colour, not just sharpness),
+  mid stays near-neutral, near reads fractionally crisper, and far labels remain
+  readable. Reduced motion keeps the full static atmosphere hierarchy and drops
+  only the cross-state fade — no pulsing, no shimmer, nothing animated is added.
+  Boundaries hold: **no backend / API / schema / package / dependency change, no
+  persistence, no graph mutation, no new graph data, no Three.js / WebGL / new
+  graph library, no webcam / MediaPipe / orbital-control tuning (motion control
+  remains opt-in and unchanged), and no screenshot / evidence refresh** (that
+  pass stays deferred). `npm run check:frontend` passes.
+
+  The preceding **Phase 35C - Spatial Hive Interaction State UX Hardening /
+  CSS Consolidation Pass** (**frontend / CSS only**) hardened the Phase
+  35B interaction-state surface and consolidated the CSS the recent Spatial Hive
   passes added, **without** changing behavior, data contracts, or the 2.5D
   direction. The core cascade fix: the resting-surface vignette is now published
   once as a `--hive-surface-base` custom property on `.viewfinder-canvas-wrap`,
