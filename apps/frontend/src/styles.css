@@ -2761,6 +2761,12 @@ section {
 
 .graph-canvas-node-circle {
   animation: graph-node-idle-breathe 5.5s ease-in-out infinite;
+  /* Phase 33C: offset each cluster's breathing by its deterministic phase (set
+     on the parent group as --hive-phase, shared by all nodes of one type) so a
+     type-cluster breathes as one organism rather than the whole colony pulsing
+     in lockstep. A negative delay starts each cluster mid-cycle, so the phased
+     motion is visible immediately without a synchronized first beat. */
+  animation-delay: calc(var(--hive-phase, 0) * -5.5s);
 }
 
 .graph-canvas-node:hover .graph-canvas-node-circle,
@@ -5534,6 +5540,108 @@ body,
 
   .graph-control-recenter {
     transition: none;
+  }
+}
+
+/* ============================================================================
+   Phase 33C — 2.5D Spatial Hive graph foundation (frontend presentation only)
+   Layers a deterministic depth illusion over the existing read-only SVG graph so
+   it reads as a spatial, layered, living-colony surface rather than a flat ring.
+   Every hook here is fed by display-only depth metadata derived in the view from
+   stable graph data (degree + id/type hashes) — no randomness, no data/layout
+   mutation, no new dependency, no true 3D. The depth handles are scale, opacity,
+   and aura; they ride the existing orbital-camera transform and never touch
+   selection or hit-testing.
+
+   These are new `graph-` prefixed classes (depth stage / tier / edge tier), so
+   there is no authoritative rule to edit in place — they are added here as one
+   tight block per the visual contract's naming extension, not as an override of
+   existing selectors. The resting Hive-State rules are scoped to
+   `[data-has-selection="false"]` so the moment a node/edge is picked, the
+   established Focus-State hierarchy (dimmed / related / selected) owns the
+   surface untouched — readability of the selection always wins over depth.
+   ============================================================================ */
+
+/* Per-node depth stage: the inner group scaled by its resolved tier
+   (--depth-scale, set in the view). Its origin (0,0) is the node centre because
+   the parent group already carries the translate, so the scale is centred and
+   never shifts position, hit-testing, or selection. Eased so the Hive<->Focus
+   depth change settles calmly; the ease is nulled under reduced motion below. */
+.graph-node-depth {
+  transform: scale(var(--depth-scale, 1));
+  transform-origin: 0 0;
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Resting Hive-State node depth (nothing selected) ----------------------
+   Opacity falloff layers the idle colony into believable near/mid/far. It stays
+   well above readable — far nodes recede, they are never removed — and it dims
+   the whole node group (aura + circle + label together) for a unified recede. */
+.graph-viewfinder[data-has-selection="false"] .graph-depth-tier-near {
+  opacity: 1;
+}
+.graph-viewfinder[data-has-selection="false"] .graph-depth-tier-mid {
+  opacity: 0.9;
+}
+.graph-viewfinder[data-has-selection="false"] .graph-depth-tier-far {
+  opacity: 0.74;
+}
+
+/* Foreground (near) nodes carry a soft, type-owned resting aura so the near tier
+   reads as lit and forward even before any interaction, and that aura breathes
+   on the node's cluster phase so the colony feels alive but calm. Mid keeps a
+   whisper of aura; far stays clean. Scoped high and only at rest, so these never
+   override the selected/related aura tiers (which exist only under selection). */
+.graph-viewfinder[data-has-selection="false"]
+  .graph-depth-tier-near
+  .graph-canvas-node-aura {
+  opacity: 0.2;
+  animation: graph-hive-aura-breathe 6.5s ease-in-out infinite;
+  animation-delay: calc(var(--hive-phase, 0) * -6.5s);
+}
+.graph-viewfinder[data-has-selection="false"]
+  .graph-depth-tier-mid
+  .graph-canvas-node-aura {
+  opacity: 0.08;
+}
+
+@keyframes graph-hive-aura-breathe {
+  0%,
+  100% {
+    opacity: 0.14;
+  }
+  50% {
+    opacity: 0.26;
+  }
+}
+
+/* --- Resting edge depth ----------------------------------------------------
+   Edges fade by their inherited tier (nearer endpoint) so background links
+   recede while links to a foreground hub stay legible — no glowing hairball.
+   Applied as the edge group's opacity (multiplies the visible + hit lines) and
+   only at rest, so incident / selected / dimmed edge emphasis is untouched the
+   moment a selection is active. */
+.graph-viewfinder[data-has-selection="false"] .graph-depth-edge-far {
+  opacity: 0.5;
+}
+.graph-viewfinder[data-has-selection="false"] .graph-depth-edge-mid {
+  opacity: 0.78;
+}
+
+/* --- Reduced motion --------------------------------------------------------
+   Flatten the living-colony motion to a still-but-layered surface (visual
+   contract §7): the depth ease collapses to instant and the resting aura
+   breathing stops, while every static depth cue — scale, opacity, aura level —
+   is preserved, so the spatial structure and all selection/focus state stay
+   fully readable with zero movement. */
+@media (prefers-reduced-motion: reduce) {
+  .graph-node-depth {
+    transition: none;
+  }
+  .graph-viewfinder[data-has-selection="false"]
+    .graph-depth-tier-near
+    .graph-canvas-node-aura {
+    animation: none;
   }
 }
 

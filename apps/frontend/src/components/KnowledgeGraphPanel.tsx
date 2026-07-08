@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode, RefObject } from "react";
+import type { CSSProperties, KeyboardEvent, ReactNode, RefObject } from "react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../api/client";
 import type { HiveMetadata, KnowledgeGraphResponse } from "../types/api";
@@ -20,6 +20,7 @@ import {
   type GraphViewNode,
 } from "../lib/graphViewModel";
 import { computeGraphLayout } from "../lib/graphLayout";
+import type { GraphLayoutEdge, GraphLayoutNode } from "../lib/graphLayout";
 
 /**
  * Roving keyboard navigation within a node/edge list: Up/Down move focus
@@ -463,6 +464,111 @@ function truncateLabel(label: string, max = 22): string {
 }
 
 /**
+ * Phase 33C — 2.5D spatial depth model.
+ *
+ * Each node resolves to one discrete depth tier (near / mid / far) plus a
+ * cluster phase, derived purely from *stable* graph data — never randomness and
+ * never a mutation of the model — so the same graph renders the same layered
+ * structure on every reload (visual contract §6, determinism).
+ *
+ * Depth is a display-only illusion layered on top of the existing read-only
+ * ring layout: it drives node scale, opacity, aura intensity, and edge subtlety,
+ * and it rides the existing orbital-camera transform. It never touches node
+ * positions, selection, or data.
+ */
+type DepthTier = "near" | "mid" | "far";
+
+/**
+ * Discrete scale per tier. The ramp is monotonic and tightly bounded
+ * (near > mid > far) so it reads as believable depth rather than a cartoonish
+ * zoom (visual contract §3).
+ */
+const DEPTH_TIER_SCALE: Record<DepthTier, number> = {
+  near: 1.12,
+  mid: 1,
+  far: 0.9,
+};
+
+interface NodeDepth {
+  tier: DepthTier;
+  /** Cluster breathing phase in [0, 1); shared by nodes of the same type. */
+  phase: number;
+}
+
+interface DepthModel {
+  nodes: Map<string, NodeDepth>;
+  /** Resting depth tier per edge, inherited from its nearer endpoint. */
+  edges: Map<string, DepthTier>;
+}
+
+/**
+ * Stable string → unit float in [0, 1). A small FNV-1a hash normalized into the
+ * unit interval. Deterministic and dependency-free: identical ids always yield
+ * the identical value, so per-node phase and depth spread are reproducible with
+ * no `Math.random()` and no time seeding.
+ */
+function hashUnit(input: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 100000) / 100000;
+}
+
+/** Bucket a continuous depth value [0, 1] into one of the three discrete tiers. */
+function tierFromZ(z: number): DepthTier {
+  if (z >= 0.62) {
+    return "near";
+  }
+  if (z >= 0.32) {
+    return "mid";
+  }
+  return "far";
+}
+
+/**
+ * Build the deterministic resting depth model for the current layout. Structural
+ * depth brings the busy hubs forward (degree-ranked, so foreground carries the
+ * most-connected nodes — depth that improves readability, not decoration) while a
+ * stable id hash spreads equal-degree nodes across tiers so the field reads as
+ * layered space rather than flat bands. Edges inherit the nearer endpoint's tier
+ * so a link to a foreground hub stays legible and purely background links recede.
+ */
+function buildDepthModel(
+  nodes: GraphLayoutNode[],
+  edges: GraphLayoutEdge[],
+): DepthModel {
+  const maxDegree = nodes.reduce((max, node) => Math.max(max, node.degree), 0);
+  const nodeMap = new Map<string, NodeDepth>();
+  const zById = new Map<string, number>();
+
+  for (const node of nodes) {
+    const degreeNorm = maxDegree > 0 ? node.degree / maxDegree : 0;
+    const z =
+      maxDegree > 0
+        ? degreeNorm * 0.65 + hashUnit(node.id) * 0.35
+        : hashUnit(node.id);
+    zById.set(node.id, z);
+    nodeMap.set(node.id, {
+      tier: tierFromZ(z),
+      // Cluster phase keyed on node type so a whole type-cluster breathes as one
+      // organism at a reproducible offset (visual contract §4, phase-organized).
+      phase: hashUnit(`cluster:${node.type}`),
+    });
+  }
+
+  const edgeMap = new Map<string, DepthTier>();
+  for (const edge of edges) {
+    const zs = zById.get(edge.source) ?? 0;
+    const zt = zById.get(edge.target) ?? 0;
+    edgeMap.set(edge.id, tierFromZ(Math.max(zs, zt)));
+  }
+
+  return { nodes: nodeMap, edges: edgeMap };
+}
+
+/**
  * Read-only SVG visualization of the graph. Renders nodes and relationships in
  * the deterministic ring layout and reports node/edge clicks back up so the
  * existing inspector stays the single source of selection truth. Purely
@@ -500,6 +606,14 @@ const GraphCanvas = memo(function GraphCanvas({
   const layout = useMemo(
     () => computeGraphLayout(nodes, edges),
     [nodes, edges],
+  );
+
+  // Phase 33C — deterministic 2.5D depth model, derived once per layout. It is a
+  // display-only projection of stable graph data (never mutated, never random),
+  // so it recomputes only when the layout itself changes, not per motion frame.
+  const depth = useMemo(
+    () => buildDepthModel(layout.nodes, layout.edges),
+    [layout.nodes, layout.edges],
   );
 
   const edgeTypeById = useMemo(() => {
@@ -725,8 +839,17 @@ const GraphCanvas = memo(function GraphCanvas({
                 setHoverEdge((current) =>
                   current?.id === edge.id ? null : current,
                 );
+              // Phase 33C: resting depth tier for the edge, inherited from its
+              // nearer endpoint. Drives a subtle background/foreground fade so
+              // deep links recede — but only while nothing is selected, so the
+              // selection's own incident/dimmed hierarchy stays untouched.
+              const edgeDepthTier = depth.edges.get(edge.id) ?? "mid";
               return (
-                <g key={edge.id} data-edge-type={edgeTypeById.get(edge.id) ?? ""}>
+                <g
+                  key={edge.id}
+                  data-edge-type={edgeTypeById.get(edge.id) ?? ""}
+                  className={`graph-depth-edge graph-depth-edge-${edgeDepthTier}`}
+                >
                   <line
                     className={className}
                     x1={edge.x1}
@@ -795,8 +918,25 @@ const GraphCanvas = memo(function GraphCanvas({
               // overrides — the selection hierarchy's brighter aura tiers.
               const hoverPrimary =
                 !selected && !isRelated && hoverNodeId === node.id;
+              // Phase 33C: effective depth tier. When a selection is active it is
+              // relationship-driven (selected anchors to near, its cluster lifts
+              // to mid, everything else recedes to far) so Focus-State reads as a
+              // spatial lift; at rest it falls back to the deterministic
+              // structural tier so the idle Hive-State already reads as layered
+              // space (visual contract §3/§5). Depth never hides the selection —
+              // the selected node always resolves to near.
+              const structuralDepth = depth.nodes.get(node.id);
+              const depthTier: DepthTier = hasSelection
+                ? selected
+                  ? "near"
+                  : isRelated
+                    ? "mid"
+                    : "far"
+                : (structuralDepth?.tier ?? "mid");
+              const depthScale = DEPTH_TIER_SCALE[depthTier];
               const className = [
                 "graph-canvas-node",
+                `graph-depth-tier-${depthTier}`,
                 selected ? "graph-canvas-node-selected" : "",
                 isRelated ? "graph-canvas-node-related" : "",
                 dimmed ? "graph-canvas-node-dimmed" : "",
@@ -813,6 +953,13 @@ const GraphCanvas = memo(function GraphCanvas({
                   data-node-type={node.type}
                   data-node-id={node.id}
                   transform={`translate(${node.x}, ${node.y})`}
+                  // Cluster breathing phase inherits to the circle so a type
+                  // cluster breathes together at a reproducible offset.
+                  style={
+                    {
+                      "--hive-phase": structuralDepth?.phase ?? 0,
+                    } as CSSProperties
+                  }
                   role="button"
                   tabIndex={0}
                   aria-label={`${node.label}, ${nodeTypeLabel(node.type)}, ${
@@ -839,26 +986,41 @@ const GraphCanvas = memo(function GraphCanvas({
                     )
                   }
                 >
-                  {/* Phase 31B presentational aura ring: a concentric halo that
-                      sits behind the node circle. Invisible at rest, it fades in
-                      faintly for related neighbors and pulses for the selected
-                      node — a distinct "energy" cue outside the node's own glow
-                      that strengthens the selected/related hierarchy. pointer-
-                      events are disabled in CSS so it never intercepts clicks or
-                      changes selection/deselection behavior. */}
-                  <circle
-                    className="graph-canvas-node-aura"
-                    r={node.radius + 7}
-                    aria-hidden="true"
-                  />
-                  <circle className="graph-canvas-node-circle" r={node.radius} />
-                  <text
-                    className="graph-canvas-node-label"
-                    y={node.radius + 14}
-                    textAnchor="middle"
+                  {/* Phase 33C depth stage: a display-only inner group that
+                      scales the node's whole visual mass by its depth tier so
+                      near nodes read forward and far nodes recede. Because the
+                      parent group already carries the translate, this inner
+                      group's origin (0,0) is the node centre, so the scale is
+                      centred and never shifts the node's position, hit-testing,
+                      or selection. The scale is eased in CSS for a calm
+                      Hive↔Focus transition. */}
+                  <g
+                    className="graph-node-depth"
+                    style={
+                      { "--depth-scale": depthScale } as CSSProperties
+                    }
                   >
-                    {truncateLabel(node.label)}
-                  </text>
+                    {/* Phase 31B presentational aura ring: a concentric halo that
+                        sits behind the node circle. Invisible at rest, it fades in
+                        faintly for related neighbors and pulses for the selected
+                        node — a distinct "energy" cue outside the node's own glow
+                        that strengthens the selected/related hierarchy. pointer-
+                        events are disabled in CSS so it never intercepts clicks or
+                        changes selection/deselection behavior. */}
+                    <circle
+                      className="graph-canvas-node-aura"
+                      r={node.radius + 7}
+                      aria-hidden="true"
+                    />
+                    <circle className="graph-canvas-node-circle" r={node.radius} />
+                    <text
+                      className="graph-canvas-node-label"
+                      y={node.radius + 14}
+                      textAnchor="middle"
+                    >
+                      {truncateLabel(node.label)}
+                    </text>
+                  </g>
                 </g>
               );
             })}
