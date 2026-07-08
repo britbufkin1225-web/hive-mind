@@ -45,9 +45,33 @@ and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-co
 
 ## Current status
 
-**Current phase:** Phase 36B — Spatial Hive Energy Field UX Hardening / Visual
-Balance Pass (**frontend-only, CSS visual-balance pass**, on branch
-`phase-36b-spatial-hive-energy-field-ux-hardening-visual-balance`). Phase 36B
+**Current phase:** Phase 36C — Spatial Hive Final Micro-Polish / Screenshot
+Readiness Frontend Pass (**frontend-only, CSS micro-polish**, on branch
+`phase-36c-spatial-hive-final-micro-polish-screenshot-readiness`). Phase 36C is
+the last visual-preparation pass before evidence capture — four tiny tunings of
+existing 33C/33D/36A/36B systems, adding no new visual system: the node-label
+dark halo densifies fractionally (0.72 → 0.78) so glyph contrast holds constant
+over the 36A/36B fog fields and auras; the resting far-tier blur eases
+(0.4px → 0.3px) so far labels resolve crisper in stills while distance stays
+carried by opacity, scale, and desaturation (near/mid/far ordering intact); the
+atmosphere veil's peripheral corner ring eases (0.4 → 0.36) so viewport corners
+stay readable under the deepest (selection) fog with the monotone state ordering
+(hover < idle < motion < selected) unchanged; and a hovered node at rest now
+lifts clear of the resting depth fade/blur with a one-step label brighten —
+hooked on the existing hover-primary class, which never applies to
+selected/related nodes — giving pointer hover the same atmosphere-clearing
+clarity keyboard focus already had. **The selected node remains the strongest
+visual priority** (scale 1.2, pulsing aura, heaviest label halo, deepest
+atmosphere). Nothing animated is added, reduced-motion behavior is preserved
+unchanged, `KnowledgeGraphPanel.tsx` is untouched, motion control remains opt-in
+and visually unchanged at rest, and the **screenshot / evidence refresh remains
+deferred to Phase 36D or later** (no new screenshots are claimed; live webcam
+hand-motion evidence is still not claimed — it requires separate verification on
+working camera hardware). `npm run check:frontend` passes.
+
+The preceding **Phase 36B — Spatial Hive Energy Field UX Hardening / Visual
+Balance Pass** (**frontend-only, CSS visual-balance pass**, on branch
+`phase-36b-spatial-hive-energy-field-ux-hardening-visual-balance`)
 hardens the Phase 36A atmosphere in place — tuning existing values, adding no
 new visual system — so the energy field supports rather than competes with node
 labels, selected-node focus, and graph topology: the idle veil quiets
