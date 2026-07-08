@@ -5376,6 +5376,18 @@ body,
   inset: 0;
   transform-origin: center center;
   transform-style: preserve-3d;
+  /* Phase 33D — smoother orbital tilt: hide the plane's back face so it does not
+     flicker as rotateX/rotateY sweep across it. `will-change` is now gated below
+     to when control is actually live, so the resting (motionless) graph no longer
+     pins a permanent compositing layer for the whole SVG. */
+  backface-visibility: hidden;
+}
+
+/* Promote the camera stage to its own compositing layer only while orbital
+   control is on (data attr set by the panel), so the tilt/zoom stay smooth
+   without permanently layering the resting graph. Under reduced motion the
+   `transform: none !important` guard below still wins regardless. */
+.graph-camera[data-graph-control="on"] {
   will-change: transform;
 }
 
@@ -5644,4 +5656,96 @@ body,
     animation: none;
   }
 }
+
+/* ============================================================================
+   Phase 33D — 2.5D Spatial Hive UX hardening + motion-compatibility pass
+   Hardens the Phase 33C depth foundation without adding data, dependencies, or
+   true 3D. Four presentation-only intents: (1) sharpen depth legibility so a
+   far-but-relevant node reads as *spatially distant* rather than *disabled*;
+   (2) give the active selection a clear spatial lift so Focus-State reads as
+   depth, not brightness alone; (3) make keyboard focus on a canvas node
+   unmistakable — even when dimmed or under the orbital camera tilt; (4) keep the
+   depth + selection cues composed correctly under that camera transform. Added
+   as one tight block scoped to the graph surface (no scattered rewrites, no
+   duplicate cascade of unrelated rules); every new cue is a static state or
+   rides an already-nulled transition, so reduced motion stays fully honored.
+   ============================================================================ */
+
+/* --- 1. Depth legibility: atmospheric far tier -----------------------------
+   Opacity + scale alone left "far" ambiguous with "faded/disabled". A whisper of
+   depth-of-field blur on the receding tiers (resting only) reads as distance —
+   soft focus, not a greyed-out control — so near/mid/far layering is legible at a
+   glance and a background-but-relevant node no longer looks switched off. Kept
+   tiny so far labels still resolve, and resting-only (scoped to
+   [data-has-selection="false"]) so the instant a selection exists the sharp,
+   opacity-dimmed Focus-State hierarchy owns clarity and nothing double-softens.
+   It is a *static* depth cue, so it is intentionally preserved under reduced
+   motion (visual contract §7 keeps static depth cues; only movement is dropped). */
+.graph-viewfinder[data-has-selection="false"]
+  .graph-depth-tier-far
+  .graph-node-depth {
+  filter: blur(0.4px);
+}
+.graph-viewfinder[data-has-selection="false"]
+  .graph-depth-tier-mid
+  .graph-node-depth {
+  filter: blur(0.15px);
+}
+
+/* --- 2. Selected-node spatial priority ------------------------------------
+   Under a selection the tiers are relationship-driven (33C): selected -> near,
+   its cluster -> mid, the rest -> far. Lift the selected node's own depth scale a
+   step beyond the structural "near" so it visibly moves toward the viewer as the
+   one active node — depth reinforcing the existing brighter aura/label, never
+   replacing it. The related cluster lifts a hair above the receding field so the
+   illuminated neighbourhood reads as one *forward* group too, keeping the
+   three-tier spatial order explicit: selected (1.2) > related (1.04) >
+   unrelated/far (0.9).
+   These set `transform` directly rather than the --depth-scale variable: the
+   view sets --depth-scale as an *inline* custom property per node, which would
+   out-rank any variable override here. `transform` itself is not set inline (it
+   comes from the .graph-node-depth rule via the variable), so this higher-
+   specificity transform wins cleanly, inherits the same transform-origin, and
+   rides the same eased transition — and the same reduced-motion null — from 33C. */
+.graph-viewfinder[data-has-selection="true"]
+  .graph-canvas-node-selected
+  .graph-node-depth {
+  transform: scale(1.2);
+}
+.graph-viewfinder[data-has-selection="true"]
+  .graph-canvas-node-related
+  .graph-node-depth {
+  transform: scale(1.04);
+}
+
+/* --- 3. Keyboard focus on a canvas node -----------------------------------
+   The prior canvas focus-visible cue only recoloured the ring stroke, which was
+   easy to lose on a busy field and under the orbital tilt. Give a keyboard-
+   focused node a brighter, heavier ring plus a soft graph-identity glow so focus
+   is unmistakable wherever it lands. Scoped under .viewfinder-canvas-wrap so the
+   selector out-ranks the base focus rule without editing it, and it never touches
+   selection — a dimmed node already lifts to full opacity on :focus (existing
+   rule), so the ring stays visible even mid-selection. The focused node is also
+   un-blurred (winning over intent 1 via the extra .graph-viewfinder ancestor) so
+   the ring never fights the atmospheric far-tier softening. */
+.viewfinder-canvas-wrap
+  .graph-canvas-node:focus-visible
+  .graph-canvas-node-circle {
+  stroke: #cbd2ff;
+  stroke-width: 3.25;
+  filter: drop-shadow(0 0 5px rgba(139, 124, 240, 0.75));
+}
+.graph-viewfinder
+  .viewfinder-canvas-wrap
+  .graph-canvas-node:focus-visible
+  .graph-node-depth {
+  filter: none;
+}
+
+/* --- 4. Reduced motion ----------------------------------------------------
+   Every cue added above is a still state — the far/mid blur, the focus ring, and
+   the selected/related depth scale are all static. The only movement involved is
+   the --depth-scale change animating through .graph-node-depth's transform
+   transition, which the 33C reduced-motion guard above already collapses to
+   instant. Nothing new to disable here; noted so the guarantee stays explicit. */
 
