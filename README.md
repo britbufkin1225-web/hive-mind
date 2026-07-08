@@ -118,9 +118,33 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 32K Path B - Orbital Graph Control Camera-Blocked
-  Stabilization + Evidence Deferral` (**planning / documentation only**). Phase 32K
-  changes no code. It resolves the Phase 32J decision: the host camera **remains
+- **Current phase:** `Phase 33A - 2.5D Spatial Knowledge Surface Planning`
+  (**planning / documentation only**). Phase 33A changes no code. It plans the
+  pivot from the current **flat** graph-primary surface to a **2.5D spatial
+  knowledge surface** — a layered, orbit-able "knowledge constellation" built from
+  frontend-safe depth illusion (simulated `zDepth`, perspective scaling,
+  opacity/blur falloff, glow depth, parallax offsets, selected-node foregrounding,
+  related-node depth clustering, and edge depth hierarchy) over the **existing
+  read-only SVG graph view model**. It is explicitly **not true 3D**: no Three.js,
+  no React Three Fiber, no WebGL requirement, no physics engine, and no new
+  graph/camera/gesture dependency. All depth metadata is **frontend-derived,
+  display-only**, so existing graph data and contracts stay unchanged, and the
+  Phase 32 webcam/motion-control investment is preserved by mapping the existing
+  `MotionCommand` / `OrbitalGraphControlCommand` / `integrateOrbitalCamera`
+  orbital camera onto the spatial field (yaw→orbit, pitch→tilt, zoom→depth-
+  approach, pinch→deferred focus/select). The doc defines the visual/depth model,
+  deterministic depth placement, camera/orbit behavior, motion mapping, node/edge
+  behavior, overlay/inspector behavior, accessibility and reduced-motion rules,
+  performance constraints, deferred items, and recommends the next sequence —
+  **Phase 33B** (visual/depth contract + implementation readiness) before **Phase
+  33C** (frontend MVP), then **33D** (motion tuning) and **33E** (live webcam
+  spatial-control QA + evidence, still gated by the Phase 32K camera-blocked
+  evidence policy). No source, runtime, package, API, schema, or MediaPipe change;
+  no graph mutation; no true 3D/WebGL dependency; no screenshots or fabricated
+  evidence. See the
+  [Phase 33A planning doc](docs/planning/phase-33a-2-5d-spatial-knowledge-surface-planning.md).
+  The preceding **Phase 32K Path B** (**planning / documentation only**) changed no
+  code. It resolved the Phase 32J decision: the host camera **remains
   blocked** (native Windows Camera still cannot produce a live preview), so 32J's
   Path A is closed and **Path B** is selected. The opt-in orbital graph control is
   implemented experimentally, but **live hand-motion feel remains unverified** —
