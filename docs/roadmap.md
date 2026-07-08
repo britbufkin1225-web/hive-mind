@@ -38,11 +38,69 @@ and the [Phase 32J Orbital Graph Control System-Camera Recovery Planning + Defer
 and the [Phase 32K Path B Orbital Graph Control Camera-Blocked Stabilization + Evidence Deferral](planning/phase-32k-path-b-camera-blocked-stabilization-evidence-deferral.md),
 and the [Phase 33A 2.5D Spatial Knowledge Surface Planning](planning/phase-33a-2-5d-spatial-knowledge-surface-planning.md),
 and the [Phase 33B 2.5D Spatial Hive Visual Contract + Implementation Readiness](planning/phase-33b-2-5d-spatial-hive-visual-contract-readiness.md),
+and the [Phase 33E 2.5D Spatial Hive QA + Screenshot Evidence Refresh](demo/phase-33e-2-5d-spatial-hive-qa-screenshot-evidence.md),
+and the [Phase 34A Spatial Hive Visual Refinement Planning](planning/phase-34a-spatial-hive-visual-refinement-planning.md),
 and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-contract.md).
 
 ## Current status
 
-**Current phase:** Phase 33B — 2.5D Spatial Hive Visual Contract + Implementation
+**Current phase:** Phase 34A — Spatial Hive Visual Refinement Planning
+(**planning / documentation only**, on branch
+`phase-34a-spatial-hive-visual-refinement-planning`). Phase 34A changes no code.
+It plans the **next Spatial Hive visual refinement wave** after the 33C/33D/33E
+2.5D foundation-and-evidence pass — not more features, but a sharper, more
+premium, more dimensional, more alive, more readable, portfolio-grade version of
+the surface that already exists, kept inside the disciplined graph-primary
+architecture. It records the **current baseline** (deterministic near/mid/far
+depth tiers, near/mid/far rendering, selected-node focus priority, living-hive
+breathing/aura motion, preserved overlays / inspector / keyboard / orbital-control
+compatibility, and the connected-runtime evidence captured in Phase 33E — with
+webcam / live hand-motion evidence still **not** claimed unless separately
+verified); **why this phase is refinement not expansion**; the **visual
+refinement principles** (graph stays primary, overlays secondary and
+non-competing, dimensionality improves readability not decoration sludge, motion
+alive but controlled, selected/focused states stay obvious, density intentional
+not noisy, no fake terminal cosplay, no SaaS dashboard/sidebar regression, no full
+3D dependency jump yet); the concrete **refinement targets** (depth atmosphere /
+parallax, node material + glow hierarchy, edge depth + routing, cluster/group
+field presence, selected-node cinematic focus, ambient motion restraint,
+overlay-to-graph spatial relationship, reduced-motion compatibility, responsive
+viewport behavior, portfolio screenshot composition); the **non-goals / guardrails**
+(no backend / API / schema / persistence change, no new graph library, no Three.js /
+R3F / WebGL, no D3 / Cytoscape / React Flow, no physics, no fake data, no graph
+mutation, no dashboard/sidebar/card-grid redesign, no broad CSS rewrite unless
+separately scoped, no screenshot evidence this phase); a **Phase 34B implementation
+proposal** (Spatial Hive Visual Refinement Frontend Pass — `KnowledgeGraphPanel.tsx`
+only if needed + `styles.css`, no backend / package / contract / dependency /
+screenshot change); a **Phase 34C QA/evidence proposal** (Spatial Hive Visual
+Refinement QA + Screenshot Evidence Refresh, run only after 34B is visually worth
+locking); a **CSS cleanup relationship** note (avoid endless cascade-winning append
+blocks; scope any cleanup narrowly/separately or fold into 34B only if safe; no
+cleanup in 34A); and acceptance criteria. No frontend / backend / API / schema /
+package / dependency / CSS / runtime change, no graph mutation, no new dependency,
+no Three.js / R3F / WebGL, and no screenshots or fabricated evidence. See the
+[Phase 34A planning doc](planning/phase-34a-spatial-hive-visual-refinement-planning.md).
+
+The preceding **Phase 33E** — 2.5D Spatial Hive QA + Screenshot Evidence Refresh
+(**evidence / QA / documentation only**, completed / merged). Phase 33E changed no
+source or runtime code. It validated, launched, and visually QA'd the **current**
+2.5D Spatial Hive surface that shipped in **Phase 33C** (spatial-depth foundation,
+merged via **PR #131**) and was hardened in **Phase 33D** (UX + motion
+compatibility, merged via **PR #132**), then refreshed the screenshot evidence.
+Against the connected local runtime (frontend `:5173` → backend `:8787`) the
+frontend build passes and **16/16** automated browser QA checks pass: the graph
+renders as the primary surface with **near/mid/far depth tiers visible at rest**, a
+selected node **lifts to the near tier** with legible labels and coherent edges,
+overlays/dock stay bounded over a dominant graph (no sidebar / dashboard /
+card-grid regression), reduced-motion keeps the depth read + selection intact, and
+no console or network errors appear. **Live webcam / hand-motion control was not
+tested** (no camera in the build environment, consistent with the Phase 32K
+camera-blocked evidence policy); no motion-control liveness is claimed. Evidence:
+the `phase-33e-spatial-hive-*` capture set and the
+[Phase 33E 2.5D Spatial Hive QA + Screenshot Evidence](demo/phase-33e-2-5d-spatial-hive-qa-screenshot-evidence.md)
+note.
+
+The preceding **Phase 33B** — 2.5D Spatial Hive Visual Contract + Implementation
 Readiness (**contract / implementation-readiness / documentation only**, on branch
 `phase-33b-2-5d-spatial-hive-visual-contract-readiness`). Phase 33B changes no code.
 It converts the Phase 33A direction into a concrete, reviewable frontend **visual
@@ -754,6 +812,9 @@ Current non-capabilities:
 | 33C | Complete | 2.5D Spatial Hive Frontend Foundation Pass (**frontend-only**, merged into `main` via **PR #131**); first implementation pass — derives **display-only** discrete depth tiers (`graph-depth-tier-near/mid/far`, monotonic scale `1.12 / 1.0 / 0.9`) and applies the Phase 33B depth contract plus base Hive-State / Focus-State emphasis over the existing read-only SVG view model, against the proposed class/state names. Structural depth at rest (degree-ranked + id-hash spread), relationship-driven depth on selection; edges inherit the nearer endpoint's tier. Reduced-motion guarded; graph read-only; no new dependency, no backend/API/schema change. |
 | 33D | Complete | Living-Colony Motion + Focus-State Frontend Pass (**frontend-only**, merged into `main` via **PR #132**); hardens the 2.5D surface's UX and motion compatibility — the ambient breathing / pulsing rhythm, the Focus-State attentive response and Hive↔Focus transition, and depth-intensity coupling; all deterministic, low-amplitude, reduced-motion-clamped. No backend/API/schema/package/dependency change; graph read-only; still no true 3D / WebGL / new graph library. |
 | 33E | Complete (evidence) | 2.5D Spatial Hive QA + Screenshot Evidence Refresh (**evidence / QA / documentation only**, this phase); validates, launches, and visually QA's the current 2.5D Spatial Hive surface (33C foundation + 33D hardening) against the connected local runtime (frontend `:5173` → backend `:8787`). `npm run check:frontend` passes; **16/16** automated browser checks pass — near/mid/far depth tiers all present at rest, selected node lifts to the near tier, labels legible, edges coherent across tiers, graph stays the dominant surface with bounded overlays (no sidebar/dashboard/card-grid regression), reduced-motion keeps the depth read + selection intact, zero console/network errors. Refreshes the `phase-33e-spatial-hive-*` screenshot set. **Live webcam / hand-motion control was not tested** (no camera in the build environment; consistent with the Phase 32K camera-blocked evidence policy) — no motion-control liveness claimed. No source/runtime/CSS/backend/API/schema/package/dependency change; no graph mutation; no fabricated evidence. See the [Phase 33E QA + Screenshot Evidence doc](demo/phase-33e-2-5d-spatial-hive-qa-screenshot-evidence.md). |
+| 34A | Current (docs) | Spatial Hive Visual Refinement Planning (**planning / documentation only**, this phase); plans the next Spatial Hive visual refinement wave after the 33C/33D/33E 2.5D foundation-and-evidence pass — **refinement, not expansion** — to make the graph feel more premium, dimensional, alive, readable, and portfolio-grade while keeping the disciplined graph-primary architecture. Records the current baseline (deterministic near/mid/far depth tiers, selected-node focus priority, living-hive motion, preserved overlays/inspector/keyboard/orbital-control compatibility, Phase 33E connected-runtime evidence — webcam/live hand-motion evidence still **not** claimed unless separately verified), the visual refinement **principles** (graph stays primary, overlays secondary/non-competing, dimensionality improves readability not decoration sludge, motion alive-but-controlled, selected/focused states obvious, density intentional-not-noisy, no fake terminal cosplay, no SaaS dashboard/sidebar regression, no full-3D dependency jump yet), the concrete **refinement targets** (depth atmosphere/parallax, node material + glow hierarchy, edge depth + routing, cluster/group field presence, selected-node cinematic focus, ambient motion restraint, overlay-to-graph spatial relationship, reduced-motion compatibility, responsive viewport behavior, portfolio screenshot composition), the **non-goals/guardrails** (no backend/API/schema/persistence change, no new graph library, no Three.js/R3F/WebGL, no D3/Cytoscape/React Flow, no physics, no fake data, no graph mutation, no dashboard/sidebar/card-grid redesign, no broad CSS rewrite unless separately scoped, no screenshots this phase), a **Phase 34B** implementation proposal and **Phase 34C** QA/evidence proposal, a CSS-cleanup relationship note (avoid endless cascade-winning append blocks; scope cleanup narrowly/separately or fold into 34B only if safe; no cleanup in 34A), and acceptance criteria. No frontend/backend/API/schema/CSS/package/dependency/runtime change; no graph mutation; no new dependency; no Three.js/R3F/WebGL; no screenshots or fabricated evidence. See the [Phase 34A planning doc](planning/phase-34a-spatial-hive-visual-refinement-planning.md). |
+| 34B | Planned | Spatial Hive Visual Refinement Frontend Pass (**frontend-only**, likely next implementation pass); implements a bounded subset of the Phase 34A refinement targets against its principles and guardrails — `KnowledgeGraphPanel.tsx` **only if needed** (display-only, deterministic derivation) + `styles.css` edited **in place** against the Phase 33B proposed class/state names (not appended as a fresh cascade pile). No backend/API/schema/persistence change, no new graph library, no Three.js/R3F/WebGL/D3/Cytoscape/React Flow, no physics, no package/dependency change, no graph contract change, no graph mutation, no screenshots/evidence (deferred to 34C). |
+| 34C | Planned | Spatial Hive Visual Refinement QA + Screenshot Evidence Refresh (**QA / evidence / documentation only**, later phase); run **only after 34B is visually worth locking** — validates the refined surface against the connected local runtime and refreshes the Spatial Hive screenshot set (superseding `phase-33e-spatial-hive-*` while preserving history), following the Phase 33E evidence discipline. Not automatic if frontend quality is still unsettled. Live webcam / hand-motion liveness still not claimed until separately verified (Phase 32K camera-blocked evidence policy). No source/runtime/CSS/backend/API/schema/package/dependency change; no fabricated evidence. |
 
 ## Future roadmap
 
