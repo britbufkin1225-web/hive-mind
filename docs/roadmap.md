@@ -45,29 +45,49 @@ and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-co
 
 ## Current status
 
-**Current phase:** Phase 36C — Spatial Hive Final Micro-Polish / Screenshot
-Readiness Frontend Pass (**frontend-only, CSS micro-polish**, on branch
-`phase-36c-spatial-hive-final-micro-polish-screenshot-readiness`). Phase 36C is
-the last visual-preparation pass before evidence capture — four tiny tunings of
-existing 33C/33D/36A/36B systems, adding no new visual system: the node-label
-dark halo densifies fractionally (0.72 → 0.78) so glyph contrast holds constant
-over the 36A/36B fog fields and auras; the resting far-tier blur eases
-(0.4px → 0.3px) so far labels resolve crisper in stills while distance stays
-carried by opacity, scale, and desaturation (near/mid/far ordering intact); the
-atmosphere veil's peripheral corner ring eases (0.4 → 0.36) so viewport corners
-stay readable under the deepest (selection) fog with the monotone state ordering
-(hover < idle < motion < selected) unchanged; and a hovered node at rest now
-lifts clear of the resting depth fade/blur with a one-step label brighten —
-hooked on the existing hover-primary class, which never applies to
-selected/related nodes — giving pointer hover the same atmosphere-clearing
-clarity keyboard focus already had. **The selected node remains the strongest
-visual priority** (scale 1.2, pulsing aura, heaviest label halo, deepest
-atmosphere). Nothing animated is added, reduced-motion behavior is preserved
-unchanged, `KnowledgeGraphPanel.tsx` is untouched, motion control remains opt-in
-and visually unchanged at rest, and the **screenshot / evidence refresh remains
-deferred to Phase 36D or later** (no new screenshots are claimed; live webcam
-hand-motion evidence is still not claimed — it requires separate verification on
-working camera hardware). `npm run check:frontend` passes.
+**Current phase:** Phase 36C — Spatial Hive 2.5D Render + Tracking Manipulation
+QA / Hardening (**frontend-only**, on branch
+`phase-36c-spatial-hive-2-5d-render-tracking-hardening`). Phase 36C validates —
+through live in-browser behavior checks, not screenshot capture — that the
+Spatial Hive renders as a believable 2.5D layered surface and that the opt-in
+tracking/motion control manipulates it safely. Render QA confirmed the
+near/mid/far tier ramp (scale 1.14/1.0/0.87, opacity 1/0.9/0.74, aerial
+blur/desaturation), label readability in every tier, the selected node as the
+strongest visual priority (scale 1.2, w800 halo label, pulsing aura, deepest
+atmosphere), readable incident edges, and a depth model that the
+atmosphere/veil/aura layers preserve rather than flatten — at desktop and
+narrow viewports, with zero console errors. Tracking QA confirmed motion
+control is opt-in and off by default, enabling it mutates no graph data or
+node geometry, the idle/no-hand camera holds a drift-free neutral pose,
+Recenter restores a face-on view, and a selection outranks — and stays fully
+readable during — motion-armed state. One hardening gap was found and fixed in
+`KnowledgeGraphPanel.tsx`: the OS reduced-motion preference is now tracked
+live via a `matchMedia` change listener, so enabling it mid-session halts the
+camera loop and reports "Reduced motion" honestly (previously it was only
+re-read on the next toggle, and flipping it back could replay a stale
+accumulated pose). `MotionSandboxPanel.tsx`, `orbitalGraphControl.ts`,
+`handLandmarkMotion.ts`, and `styles.css` needed no changes and are untouched.
+**Live webcam hand tracking was NOT tested** (no working camera hardware); the
+motion pipeline was validated to its fail-safe boundaries without a live hand,
+and yaw/pitch/zoom live feel remains unverified. The **screenshot / evidence
+refresh remains deferred** to a later phase. `npm run check:frontend` passes.
+
+The preceding **Spatial Hive final micro-polish / screenshot-readiness pass**
+(**frontend-only, CSS micro-polish**, merged from branch
+`phase-36c-spatial-hive-final-micro-polish-screenshot-readiness`) was the last
+visual-preparation step before evidence capture — four tiny tunings of existing
+33C/33D/36A/36B systems, adding no new visual system: the node-label dark halo
+densifies fractionally (0.72 → 0.78) so glyph contrast holds constant over the
+36A/36B fog fields and auras; the resting far-tier blur eases (0.4px → 0.3px)
+so far labels resolve crisper in stills while distance stays carried by
+opacity, scale, and desaturation (near/mid/far ordering intact); the atmosphere
+veil's peripheral corner ring eases (0.4 → 0.36) so viewport corners stay
+readable under the deepest (selection) fog with the monotone state ordering
+(hover < idle < motion < selected) unchanged; and a hovered node at rest lifts
+clear of the resting depth fade/blur with a one-step label brighten — hooked on
+the existing hover-primary class, which never applies to selected/related
+nodes — giving pointer hover the same atmosphere-clearing clarity keyboard
+focus already had.
 
 The preceding **Phase 36B — Spatial Hive Energy Field UX Hardening / Visual
 Balance Pass** (**frontend-only, CSS visual-balance pass**, on branch
