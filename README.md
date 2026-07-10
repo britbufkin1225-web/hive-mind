@@ -123,8 +123,45 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 36F - Live Camera Test + Tuning Validation`
-  (**validation-only, no code changes**). Phase 36F ran the live-camera
+- **Current phase:** `Phase 36F - Spatial Hive Point-Cloud Graph Manipulation
+  + Living Hive Preservation Pass` (**frontend-only**). The Knowledge Graph
+  now renders on a **pseudo-3D spatial point-cloud foundation**: every node
+  receives stable spatial coordinates (x, y, z) derived deterministically from
+  the existing layout + node identity/degree (`spatialHiveProjection.ts` — no
+  runtime randomness, no fake data), each cluster gains a deterministic,
+  hash-seeded dust shell drawn on a canvas behind the SVG
+  (`spatialHiveParticles.ts`, globally capped), and a perspective projector
+  maps nodes, edges, and particles through the camera pose per frame. The
+  Phase 32G orbital camera no longer tilts the whole layer as a flat poster —
+  yaw/pitch/zoom re-project every element individually, so near and far
+  objects move differently and manipulation produces true parallax. The depth
+  field is deliberately deep (~2.2× near-to-far perspective scale at rest,
+  with node depths **rank-stratified** so the cloud always spans the full
+  front-to-back range), node **render order is depth-sorted per frame**
+  (painter's algorithm on the live projected depth, so orbiting visibly
+  changes occlusion), and projected depth drives per-node **fog and
+  depth-of-field blur** (emphasised nodes always resolve sharp). Three
+  always-available cursor inputs make the structure directly manipulable
+  without a webcam: **drag-to-orbit** (grab and spin the structure, ±42°/±26°,
+  persistent until Recenter or an empty-space double-click; a drag never
+  commits the click it releases on, so selection stays untouched), **cursor
+  parallax** (bounded ±16°/±11°, eased), and a slow deterministic **ambient
+  sway** (±10°/±5° over ~26s/19s sine periods) that keeps a whisper of
+  parallax alive at rest so depth is visible before any input. All three
+  compose with the opt-in motion camera under a total-orbit clamp and are
+  disabled under reduced motion. Edges are **spatial synapses**: depth-aware
+  fog opacity and a depth-scaled stroke-width ladder that preserves the
+  base < incident/hovered < selected weight hierarchy exactly. The living Hive system is preserved, not replaced — breathing
+  nodes, pulsing selected halo, related-node aura tier, hover-primary clarity,
+  far/mid/near tiers (now computed from the same shared depth unit as the
+  projection), depth fog/veil atmosphere, interaction modes, reduced-motion
+  stillness (static depth structure, zero movement), read-only interactions,
+  inspector, and billboard-readable labels all ride the projected positions.
+  No backend / API / schema / package / persistence change; no WebGL, no
+  Three.js, no physics — perspective-projected SVG + canvas only.
+
+  The preceding **Phase 36F - Live Camera Test + Tuning Validation**
+  (**validation-only, no code changes**) ran the live-camera
   validation session that Phases 36D/36E prepared for, against a real Chrome
   149 browser on the dev machine. **Live-validated:** the `HD Pro Webcam C920`
   starts cleanly through the Motion Sandbox's real getUserMedia flow (640×480,

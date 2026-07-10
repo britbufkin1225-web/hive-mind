@@ -5417,33 +5417,20 @@ body,
 }
 
 /* --- Phase 32G — orbital graph camera stage + readout ----------------------
-   `.graph-camera` is the transform stage: the opt-in orbital pose is written to
-   this wrapper's `transform`, never to the SVG's coordinate system, so node
-   positions, hit-testing, and selection are untouched. It fills the viewfinder
-   and is clipped by the wrap's own `overflow: hidden`, so the tilt/zoom can
-   never spill outside the viewport. */
+   `.graph-camera` was the whole-layer transform stage for the opt-in orbital
+   pose. Phase 36F re-founded it: the camera pose is now applied *per element*
+   by the spatial projection driver (see the Phase 36F block at the end of this
+   file), so this wrapper never carries a tilt of its own again — it simply
+   hosts the point-cloud particle canvas + the SVG, filling the viewfinder and
+   clipped by the wrap's `overflow: hidden`. The 33D will-change compositing
+   promotion was removed together with the wrapper transform it existed for. */
 .graph-camera {
   position: absolute;
   inset: 0;
-  transform-origin: center center;
-  transform-style: preserve-3d;
-  /* Phase 33D — smoother orbital tilt: hide the plane's back face so it does not
-     flicker as rotateX/rotateY sweep across it. `will-change` is now gated below
-     to when control is actually live, so the resting (motionless) graph no longer
-     pins a permanent compositing layer for the whole SVG. */
-  backface-visibility: hidden;
 }
 
-/* Promote the camera stage to its own compositing layer only while orbital
-   control is on (data attr set by the panel), so the tilt/zoom stay smooth
-   without permanently layering the resting graph. Under reduced motion the
-   `transform: none !important` guard below still wins regardless. */
-.graph-camera[data-graph-control="on"] {
-  will-change: transform;
-}
-
-/* Belt-and-suspenders: even if the JS loop is mid-flight when the preference
-   flips, never let the camera hold a transform under reduced motion. */
+/* Belt-and-suspenders: the pose is no longer written here, but if any stray
+   transform ever lands on the stage, never let it hold under reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   .graph-camera {
     transform: none !important;
@@ -6040,3 +6027,90 @@ body,
   fill: #dfe4f0;
 }
 
+
+/* ============================================================================
+   Phase 36F — Spatial Hive point-cloud projection layer (frontend-only)
+
+   The pseudo-3D foundation the living Hive now sits on. Structure (owned by
+   the view + spatialHiveProjection.ts / spatialHiveParticles.ts):
+
+     .graph-particle-canvas   Point-cloud dust drawn behind the SVG — each
+                              cluster's deterministic particle shell, projected
+                              through the same camera pose as the nodes.
+     .graph-spatial-node      Per-node projection wrapper: camera-projected
+                              translate + perspective scale (transform) and
+                              depth fog (element opacity). Every Hive class —
+                              tiers, aura, breathing, selection, hover — lives
+                              on elements *inside* it, so those opacities and
+                              transforms compose with (never fight) the
+                              spatial geometry.
+     .graph-spatial-edge      Per-edge projection wrapper: depth fog as element
+                              opacity plus the --spatial-edge-w width factor
+                              consumed by the synapse ladder below.
+
+   Nothing here animates on its own: the wrappers are written per frame by the
+   projection driver (or once, statically, under reduced motion), so there are
+   no new keyframes and no transitions to null — reduced motion keeps the full
+   static depth structure with zero movement, per the visual contract.
+   ============================================================================ */
+
+/* Point-cloud layer: behind the SVG inside the camera stage, never a click
+   target, clipped with everything else by the wrap's overflow. */
+.graph-particle-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Projection wrappers are driven imperatively every frame; explicitly opt them
+   out of any inherited transition so pose writes land instantly (easing is
+   done in the driver's math, where it belongs, not in CSS lag). */
+.graph-spatial-node,
+.graph-spatial-edge {
+  transition: none;
+}
+
+/* --- Spatial synapse width ladder -------------------------------------------
+   Depth-aware edge width: each emphasis state keeps its established weight
+   (base 1.5 < incident/hovered 2.25 < selected 2.5 — the same ladder set by
+   the Phase 9A/31B/31C blocks above) multiplied by the per-edge depth factor
+   --spatial-edge-w (≈0.72 far … 1.28 near, set by the projection driver). Near
+   and active synapses read thicker and brighter; far ones thin softly into the
+   fog. Appended last so these win the cascade; every :not() guard mirrors the
+   original rules so the selected > incident/hovered > base hierarchy is
+   preserved exactly, now depth-scaled. */
+.graph-spatial-edge .graph-canvas-edge {
+  stroke-width: calc(1.5px * var(--spatial-edge-w, 1));
+}
+
+.graph-spatial-edge .graph-canvas-edge-incident:not(.graph-canvas-edge-selected) {
+  stroke-width: calc(2.25px * var(--spatial-edge-w, 1));
+}
+
+.graph-spatial-edge
+  .graph-canvas-edge-hovered:not(.graph-canvas-edge-selected):not(
+    .graph-canvas-edge-incident
+  ) {
+  stroke-width: calc(2.25px * var(--spatial-edge-w, 1));
+}
+
+.graph-spatial-edge .graph-canvas-edge-selected {
+  stroke-width: calc(2.5px * var(--spatial-edge-w, 1));
+}
+
+/* --- Drag-to-orbit affordance ------------------------------------------------
+   The spatial structure is directly grabbable (36F revision): empty canvas
+   shows a grab cursor, and while a drag-orbit is in flight the driver sets
+   `.graph-orbiting` on the wrap so everything under the pointer reads as
+   "holding the object" — including nodes the drag happens to cross, whose
+   pointer cursor would otherwise flicker mid-orbit. */
+.viewfinder-canvas-wrap .graph-canvas {
+  cursor: grab;
+}
+
+.viewfinder-canvas-wrap.graph-orbiting,
+.viewfinder-canvas-wrap.graph-orbiting * {
+  cursor: grabbing;
+}

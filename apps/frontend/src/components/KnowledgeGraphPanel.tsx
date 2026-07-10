@@ -4,11 +4,35 @@ import { apiClient } from "../api/client";
 import type { HiveMetadata, KnowledgeGraphResponse } from "../types/api";
 import { ZERO_MOTION, type MotionCommand } from "../handLandmarkMotion";
 import {
+  ambientSwayPose,
+  applyDragDelta,
+  composeSpatialCameraPose,
+  easePointerPose,
   integrateOrbitalCamera,
   mapMotionCommandToOrbitalGraphControlCommand,
   ORBITAL_GRAPH_CAMERA_NEUTRAL,
+  pointerParallaxTarget,
+  SPATIAL_DRAG_CLICK_THRESHOLD_PX,
+  SPATIAL_POINTER_NEUTRAL,
   type OrbitalGraphCameraTransform,
+  type SpatialPointerPose,
 } from "../orbitalGraphControl";
+import {
+  buildSpatialHiveNodes,
+  compareProjectedDepth,
+  computeSpatialDepthUnit,
+  hashUnit,
+  projectSpatialPoint,
+  spatialEdgeFog,
+  spatialEdgeWidthFactor,
+  spatialNodeBlur,
+  spatialNodeFog,
+} from "../spatialHiveProjection";
+import {
+  buildSpatialHiveParticleField,
+  drawSpatialHiveParticles,
+  type SpatialParticleEnergy,
+} from "../spatialHiveParticles";
 import {
   buildGraphViewModel,
   edgeTypeColor,
@@ -566,21 +590,6 @@ interface DepthModel {
   edges: Map<string, DepthTier>;
 }
 
-/**
- * Stable string → unit float in [0, 1). A small FNV-1a hash normalized into the
- * unit interval. Deterministic and dependency-free: identical ids always yield
- * the identical value, so per-node phase and depth spread are reproducible with
- * no `Math.random()` and no time seeding.
- */
-function hashUnit(input: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < input.length; i += 1) {
-    h ^= input.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return ((h >>> 0) % 100000) / 100000;
-}
-
 /** Bucket a continuous depth value [0, 1] into one of the three discrete tiers. */
 function tierFromZ(z: number): DepthTier {
   if (z >= 0.62) {
@@ -609,11 +618,10 @@ function buildDepthModel(
   const zById = new Map<string, number>();
 
   for (const node of nodes) {
-    const degreeNorm = maxDegree > 0 ? node.degree / maxDegree : 0;
-    const z =
-      maxDegree > 0
-        ? degreeNorm * 0.65 + hashUnit(node.id) * 0.35
-        : hashUnit(node.id);
+    // Phase 36F: the depth unit is now computed by the shared spatial helper
+    // (same formula as before), so the discrete tiers and the continuous
+    // point-cloud projection can never disagree about a node's depth.
+    const z = computeSpatialDepthUnit(node.id, node.degree, maxDegree);
     zById.set(node.id, z);
     nodeMap.set(node.id, {
       tier: tierFromZ(z),
@@ -681,6 +689,91 @@ const GraphCanvas = memo(function GraphCanvas({
     [layout.nodes, layout.edges],
   );
 
+  // Phase 36F — spatial Hive point-cloud model. The deterministic pseudo-3D
+  // lift of the ring layout: stable (x, y, z) per node plus a hash-seeded
+  // particle shell per cluster. Display geometry only — derived once per
+  // layout, never mutated, never random, and the flat layout stays the
+  // authoritative structure underneath.
+  const spatialNodes = useMemo(
+    () => buildSpatialHiveNodes(layout.nodes, layout.width, layout.height),
+    [layout.nodes, layout.width, layout.height],
+  );
+  const particleField = useMemo(
+    () => buildSpatialHiveParticleField(Array.from(spatialNodes.values())),
+    [spatialNodes],
+  );
+
+  // Neutral-pose projection for the initial React render: nodes and edges are
+  // born already occupying depth (perspective scale + fog at yaw 0 / pitch 0 /
+  // zoom 1), and the per-frame driver below only ever *re-projects* the same
+  // stable spatial model through the live camera pose. Constant per layout, so
+  // React reconciliation never fights the imperative per-frame writes.
+  const initialNodeProjection = useMemo(() => {
+    const m = new Map<string, { transform: string; fog: number }>();
+    for (const [id, spatialNode] of spatialNodes) {
+      const p = projectSpatialPoint(
+        spatialNode.x,
+        spatialNode.y,
+        spatialNode.z,
+        ORBITAL_GRAPH_CAMERA_NEUTRAL,
+        layout.width,
+        layout.height,
+      );
+      m.set(id, {
+        transform: `translate(${p.x.toFixed(2)} ${p.y.toFixed(2)}) scale(${p.scale.toFixed(4)})`,
+        fog: spatialNodeFog(p.depth),
+      });
+    }
+    return m;
+  }, [spatialNodes, layout.width, layout.height]);
+
+  // Painter's-algorithm render order at rest: far nodes/edges first in the
+  // DOM so near ones paint over them. The per-frame driver re-sorts from the
+  // live *projected* depth whenever the camera pose changes the order, so
+  // occlusion stays correct mid-orbit — render order is part of the depth
+  // model, not a fixed document order. (Tab order follows the depth order;
+  // the explorer lists remain the stable, model-ordered keyboard surface.)
+  const nodesRenderOrder = useMemo(() => {
+    return [...layout.nodes].sort(
+      (a, b) => (spatialNodes.get(a.id)?.z ?? 0) - (spatialNodes.get(b.id)?.z ?? 0),
+    );
+  }, [layout.nodes, spatialNodes]);
+  const edgesRenderOrder = useMemo(() => {
+    const meanZ = (edge: GraphLayoutEdge) =>
+      ((spatialNodes.get(edge.source)?.z ?? 0) +
+        (spatialNodes.get(edge.target)?.z ?? 0)) /
+      2;
+    return [...layout.edges].sort((a, b) => meanZ(a) - meanZ(b));
+  }, [layout.edges, spatialNodes]);
+
+  const initialEdgeProjection = useMemo(() => {
+    const m = new Map<
+      string,
+      { x1: number; y1: number; x2: number; y2: number; fog: number; width: number }
+    >();
+    for (const edge of layout.edges) {
+      const s = spatialNodes.get(edge.source);
+      const t = spatialNodes.get(edge.target);
+      if (!s || !t) continue;
+      const ps = projectSpatialPoint(
+        s.x, s.y, s.z, ORBITAL_GRAPH_CAMERA_NEUTRAL, layout.width, layout.height,
+      );
+      const pt = projectSpatialPoint(
+        t.x, t.y, t.z, ORBITAL_GRAPH_CAMERA_NEUTRAL, layout.width, layout.height,
+      );
+      const meanDepth = (ps.depth + pt.depth) / 2;
+      m.set(edge.id, {
+        x1: ps.x,
+        y1: ps.y,
+        x2: pt.x,
+        y2: pt.y,
+        fog: spatialEdgeFog(meanDepth),
+        width: spatialEdgeWidthFactor(meanDepth),
+      });
+    }
+    return m;
+  }, [spatialNodes, layout.edges, layout.width, layout.height]);
+
   const edgeTypeById = useMemo(() => {
     const m = new Map<string, string>();
     for (const e of edges) {
@@ -723,17 +816,36 @@ const GraphCanvas = memo(function GraphCanvas({
     target: string;
   } | null>(null);
 
-  // Phase 32G — opt-in orbital camera. When graph motion control is enabled, a
-  // ref-driven rAF loop reads the shared MotionCommand, maps it through the
-  // Phase 32F control contract, integrates it into an accumulated camera pose,
-  // and writes that pose as a CSS transform on the SVG wrapper. This is a
-  // *visual, read-only* camera: it never touches nodes, edges, source data,
-  // layout, or selection. Driving it through refs (not state) keeps it entirely
-  // off React's render path, so no graph re-renders happen per motion frame.
-  const cameraRef = useRef<HTMLDivElement | null>(null);
+  // Phase 36F — spatial projection driver refs. The opt-in orbital camera
+  // (Phase 32G) and the new cursor parallax both feed one composed pose; a
+  // ref-driven rAF loop re-projects every node, edge, and particle through it.
+  // This replaces the old whole-wrapper CSS transform: the camera now moves a
+  // *pseudo-3D structure* (near/far objects move differently — parallax), not
+  // a tilted flat poster. Still a visual, read-only camera: it never touches
+  // nodes, edges, source data, layout, or selection, and driving it through
+  // refs keeps every per-frame write off React's render path.
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const particleCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const cameraPoseRef = useRef<OrbitalGraphCameraTransform>(
     ORBITAL_GRAPH_CAMERA_NEUTRAL,
   );
+  const pointerPoseRef = useRef<SpatialPointerPose>(SPATIAL_POINTER_NEUTRAL);
+  const pointerTargetRef = useRef<SpatialPointerPose>(SPATIAL_POINTER_NEUTRAL);
+  // Persistent drag-to-orbit pose: survives effect re-runs so a vantage the
+  // user grabbed stays put until Recenter / double-click clears it.
+  const dragPoseRef = useRef<SpatialPointerPose>(SPATIAL_POINTER_NEUTRAL);
+  const appliedPoseRef = useRef<OrbitalGraphCameraTransform>(
+    ORBITAL_GRAPH_CAMERA_NEUTRAL,
+  );
+  // Latest apply function, exposed to the recenter/energy/sync effects so they
+  // can re-project outside the driver effect's closure without re-running it.
+  const applyPoseRef = useRef<((pose: OrbitalGraphCameraTransform) => void) | null>(
+    null,
+  );
+  // Per-node particle styling (type color + selection/hover energy), read by
+  // the draw path each frame. Held in a ref so pose frames never re-render.
+  const particleEnergyRef = useRef<Map<string, SpatialParticleEnergy>>(new Map());
 
   // Phase 36C hardening — track the OS reduced-motion preference *live*, not
   // just at toggle time. Previously the preference was read once inside the
@@ -765,79 +877,440 @@ const GraphCanvas = memo(function GraphCanvas({
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
+  // Phase 36F — the spatial projection driver. One effect owns: (1) collecting
+  // the projected elements, (2) the applyPose writer that re-projects nodes /
+  // edges / particles through a camera pose, (3) the rAF loop that integrates
+  // the opt-in motion camera and eases cursor parallax, and (4) the pointer
+  // listeners that feed parallax targets. The loop is wake-on-input: it runs
+  // continuously only while motion control is enabled (it must keep reading
+  // commands and reporting status); cursor parallax wakes it and it goes back
+  // to sleep once the pose settles, so the resting graph costs zero rAF work.
   useEffect(() => {
-    const resetTransform = () => {
-      const el = cameraRef.current;
-      if (el) el.style.transform = "";
-    };
-
-    // Disabled: hold the camera neutral and mark the readout off. No loop runs,
-    // so motion is fully ignored and the graph behaves exactly as before.
-    if (!graphControlEnabled) {
-      cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
-      resetTransform();
-      onCameraStatus(GRAPH_CONTROL_STATUS_OFF);
+    const svg = svgRef.current;
+    const wrap = wrapRef.current;
+    if (!svg || !wrap) {
+      applyPoseRef.current = null;
       return;
     }
 
-    // Respect the OS reduced-motion preference: keep the camera neutral and say
-    // why, rather than introduce continuous orbital motion the user has asked
-    // the system to avoid. (Held in state above, so a live preference flip
-    // re-runs this effect rather than being noticed only on the next toggle.)
+    // --- Projected-element maps (stable per layout; React only ever changes
+    // classes/styles inside these wrappers, never the wrappers themselves).
+    const nodeTargets: Array<{
+      el: SVGGElement;
+      /** The inner Hive group (`.graph-canvas-node`), read per frame so the
+          depth-of-field blur can yield to selected / related / hover-primary
+          clarity without the driver ever *writing* those classes. */
+      inner: SVGGElement | null;
+      x: number;
+      y: number;
+      z: number;
+    }> = [];
+    svg.querySelectorAll<SVGGElement>("g[data-spatial-node]").forEach((el) => {
+      const spatialNode = spatialNodes.get(
+        el.getAttribute("data-spatial-node") ?? "",
+      );
+      if (spatialNode) {
+        nodeTargets.push({
+          el,
+          inner: el.querySelector<SVGGElement>(".graph-canvas-node"),
+          x: spatialNode.x,
+          y: spatialNode.y,
+          z: spatialNode.z,
+        });
+      }
+    });
+    const edgeTargets: Array<{
+      el: SVGGElement;
+      lines: SVGLineElement[];
+      source: { x: number; y: number; z: number };
+      target: { x: number; y: number; z: number };
+    }> = [];
+    svg.querySelectorAll<SVGGElement>("g[data-spatial-edge]").forEach((el) => {
+      const s = spatialNodes.get(el.getAttribute("data-spatial-source") ?? "");
+      const t = spatialNodes.get(el.getAttribute("data-spatial-target") ?? "");
+      if (s && t) {
+        edgeTargets.push({
+          el,
+          lines: Array.from(el.querySelectorAll<SVGLineElement>("line")),
+          source: { x: s.x, y: s.y, z: s.z },
+          target: { x: t.x, y: t.y, z: t.z },
+        });
+      }
+    });
+
+    const width = layout.width;
+    const height = layout.height;
+
+    // --- Particle canvas frame: fit the viewBox into the canvas box exactly
+    // like the SVG's preserveAspectRatio="xMidYMid meet", at device pixels.
+    const drawParticles = (
+      pose: OrbitalGraphCameraTransform,
+      timeSec: number,
+      animate: boolean,
+    ) => {
+      const canvas = particleCanvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) return;
+      const box = canvas.getBoundingClientRect();
+      if (box.width < 1 || box.height < 1) return;
+      const dpr = window.devicePixelRatio || 1;
+      const pxWidth = Math.round(box.width * dpr);
+      const pxHeight = Math.round(box.height * dpr);
+      if (canvas.width !== pxWidth || canvas.height !== pxHeight) {
+        canvas.width = pxWidth;
+        canvas.height = pxHeight;
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, pxWidth, pxHeight);
+      const fit = Math.min(box.width / width, box.height / height);
+      const offsetX = (box.width - width * fit) / 2;
+      const offsetY = (box.height - height * fit) / 2;
+      ctx.setTransform(dpr * fit, 0, 0, dpr * fit, dpr * offsetX, dpr * offsetY);
+      drawSpatialHiveParticles(
+        ctx,
+        particleField,
+        pose,
+        width,
+        height,
+        particleEnergyRef.current,
+        timeSec,
+        animate,
+      );
+    };
+
+    // --- The single pose writer. Re-projects the stable spatial model through
+    // `pose` and writes screen geometry only: node wrapper transform + fog
+    // opacity, edge endpoints + fog + depth width factor, particle canvas.
+    // Every Hive class (tiers, auras, selection, hover) lives on elements
+    // *inside* these wrappers, so the polish composes on top untouched.
+    // Last applied paint orders, so re-sorting (an appendChild pass) happens
+    // only on frames where the projected occlusion order actually changed.
+    let lastNodeOrder: SVGGElement[] = [];
+    let lastEdgeOrder: SVGGElement[] = [];
+    const reorderIfChanged = (
+      sorted: Array<{ el: SVGGElement; depth: number }>,
+      last: SVGGElement[],
+    ): SVGGElement[] => {
+      const next = sorted.map((entry) => entry.el);
+      const changed =
+        next.length !== last.length || next.some((el, i) => el !== last[i]);
+      if (changed && next.length > 0) {
+        const parent = next[0].parentNode;
+        if (parent) {
+          for (const el of next) parent.appendChild(el);
+        }
+      }
+      return next;
+    };
+
+    const applyPose = (
+      pose: OrbitalGraphCameraTransform,
+      timeSec: number,
+      animate: boolean,
+    ) => {
+      const nodePaint: Array<{ el: SVGGElement; depth: number }> = [];
+      for (const target of nodeTargets) {
+        const p = projectSpatialPoint(target.x, target.y, target.z, pose, width, height);
+        target.el.setAttribute(
+          "transform",
+          `translate(${p.x.toFixed(2)} ${p.y.toFixed(2)}) scale(${p.scale.toFixed(4)})`,
+        );
+        target.el.style.opacity = spatialNodeFog(p.depth).toFixed(3);
+        // Camera-relative depth of field: back-of-field nodes soften, and a
+        // far node swinging near under yaw resolves sharp. Emphasised nodes
+        // (selected / related / hover-primary / keyboard focus) always render
+        // clear — depth may recede them, it never smudges the active focus.
+        const inner = target.inner;
+        const emphasised =
+          inner !== null &&
+          (inner.classList.contains("graph-canvas-node-selected") ||
+            inner.classList.contains("graph-canvas-node-related") ||
+            inner.classList.contains("graph-canvas-node-hover-primary") ||
+            inner === document.activeElement);
+        const blur = emphasised ? 0 : spatialNodeBlur(p.depth);
+        target.el.style.filter = blur > 0.04 ? `blur(${blur.toFixed(2)}px)` : "";
+        nodePaint.push({ el: target.el, depth: p.depth });
+      }
+      const edgePaint: Array<{ el: SVGGElement; depth: number }> = [];
+      for (const target of edgeTargets) {
+        const ps = projectSpatialPoint(
+          target.source.x, target.source.y, target.source.z, pose, width, height,
+        );
+        const pt = projectSpatialPoint(
+          target.target.x, target.target.y, target.target.z, pose, width, height,
+        );
+        for (const line of target.lines) {
+          line.setAttribute("x1", ps.x.toFixed(2));
+          line.setAttribute("y1", ps.y.toFixed(2));
+          line.setAttribute("x2", pt.x.toFixed(2));
+          line.setAttribute("y2", pt.y.toFixed(2));
+        }
+        const meanDepth = (ps.depth + pt.depth) / 2;
+        target.el.style.opacity = spatialEdgeFog(meanDepth).toFixed(3);
+        target.el.style.setProperty(
+          "--spatial-edge-w",
+          spatialEdgeWidthFactor(meanDepth).toFixed(3),
+        );
+        edgePaint.push({ el: target.el, depth: meanDepth });
+      }
+      // Painter's algorithm on the live pose: far paints first, near last, so
+      // orbiting visibly changes occlusion — the render-order half of depth.
+      nodePaint.sort(compareProjectedDepth);
+      edgePaint.sort(compareProjectedDepth);
+      lastNodeOrder = reorderIfChanged(nodePaint, lastNodeOrder);
+      lastEdgeOrder = reorderIfChanged(edgePaint, lastEdgeOrder);
+      drawParticles(pose, timeSec, animate);
+      appliedPoseRef.current = pose;
+    };
+    applyPoseRef.current = (pose) =>
+      applyPose(pose, performance.now() / 1000, false);
+
+    // Respect the OS reduced-motion preference: no loop, no parallax, no
+    // shimmer — but the *static* pseudo-3D structure stays (visual contract:
+    // keep static depth cues, drop movement). A live preference flip re-runs
+    // this effect, so the pose is honestly neutral the moment it changes.
     if (prefersReducedMotion) {
       cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
-      resetTransform();
-      onCameraStatus({
-        enabled: true,
-        active: false,
-        confidence: 0,
-        reducedMotion: true,
-        camera: ORBITAL_GRAPH_CAMERA_NEUTRAL,
-      });
-      return;
+      pointerPoseRef.current = SPATIAL_POINTER_NEUTRAL;
+      pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
+      dragPoseRef.current = SPATIAL_POINTER_NEUTRAL;
+      applyPose(ORBITAL_GRAPH_CAMERA_NEUTRAL, 0, false);
+      onCameraStatus(
+        graphControlEnabled
+          ? {
+              enabled: true,
+              active: false,
+              confidence: 0,
+              reducedMotion: true,
+              camera: ORBITAL_GRAPH_CAMERA_NEUTRAL,
+            }
+          : GRAPH_CONTROL_STATUS_OFF,
+      );
+      return () => {
+        applyPoseRef.current = null;
+      };
+    }
+
+    if (!graphControlEnabled) {
+      // Camera held neutral and readout off; cursor parallax stays available.
+      cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
+      onCameraStatus(GRAPH_CONTROL_STATUS_OFF);
     }
 
     let frame = 0;
     let lastStatus = 0;
 
+    // Drag-to-orbit gesture bookkeeping (closure-scoped; the accumulated pose
+    // itself lives in dragPoseRef so it survives effect re-runs and Recenter
+    // can clear it from outside).
+    let pointerHeld = false;
+    let dragPointerId = -1;
+    let dragTravel = 0;
+    let lastDragX = 0;
+    let lastDragY = 0;
+    let suppressNextClick = false;
+
     const tick = (now: number) => {
-      const command = mapMotionCommandToOrbitalGraphControlCommand(
-        motionCommandRef.current,
+      // 1. Motion camera: integrate the gated command stream (only while the
+      //    opt-in control is enabled — otherwise the motion pose holds
+      //    neutral and the cursor owns the steering).
+      if (graphControlEnabled) {
+        const command = mapMotionCommandToOrbitalGraphControlCommand(
+          motionCommandRef.current,
+        );
+        // Pass `now` so the integrator can drop a stale active command (e.g.
+        // the sandbox loop stalled mid-motion) instead of drifting on it.
+        const pose = integrateOrbitalCamera(cameraPoseRef.current, command, now);
+        cameraPoseRef.current = pose;
+        // Projection updates every frame; the React-facing readout stays
+        // throttled to ~10Hz so the status text is legible and cheap.
+        if (now - lastStatus >= 100) {
+          lastStatus = now;
+          onCameraStatus({
+            enabled: true,
+            active: command.active,
+            confidence: command.confidence,
+            reducedMotion: false,
+            camera: pose,
+          });
+        }
+      }
+
+      // 2. Compose every steering input: motion pose + eased cursor parallax
+      //    + persistent drag orbit + the slow ambient sway that keeps a
+      //    whisper of parallax alive at rest (the floating-object tell).
+      pointerPoseRef.current = easePointerPose(
+        pointerPoseRef.current,
+        pointerTargetRef.current,
       );
-      // Pass `now` so the integrator can drop a stale active command (e.g. the
-      // sandbox loop stalled mid-motion) to neutral instead of drifting on it.
-      const pose = integrateOrbitalCamera(cameraPoseRef.current, command, now);
-      cameraPoseRef.current = pose;
+      const composed = composeSpatialCameraPose(
+        cameraPoseRef.current,
+        pointerPoseRef.current,
+        dragPoseRef.current,
+        ambientSwayPose(now / 1000),
+      );
+      applyPose(composed, now / 1000, true);
 
-      const el = cameraRef.current;
-      if (el) {
-        el.style.transform =
-          `perspective(1200px) rotateX(${pose.pitch.toFixed(3)}deg) ` +
-          `rotateY(${pose.yaw.toFixed(3)}deg) scale(${pose.zoom.toFixed(4)})`;
-      }
-
-      // The transform updates every frame above; the React-facing readout is
-      // throttled to ~10Hz so the status text stays legible and cheap.
-      if (now - lastStatus >= 100) {
-        lastStatus = now;
-        onCameraStatus({
-          enabled: true,
-          active: command.active,
-          confidence: command.confidence,
-          reducedMotion: false,
-          camera: pose,
-        });
-      }
-
+      // 3. The sway keeps the pose perpetually breathing, so the driver runs
+      //    for the life of the (non-reduced-motion) surface — no sleep state.
       frame = requestAnimationFrame(tick);
     };
 
+    // --- Direct manipulation: press-drag orbits the structure ---------------
+    // Reads only cursor movement; never selection, never data. A press only
+    // becomes a drag past the click threshold, so plain clicks keep their
+    // normal target and the read-only select/deselect behavior is untouched.
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      pointerHeld = true;
+      dragPointerId = event.pointerId;
+      dragTravel = 0;
+      lastDragX = event.clientX;
+      lastDragY = event.clientY;
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      const box = wrap.getBoundingClientRect();
+      if (box.width < 1 || box.height < 1) return;
+      if (pointerHeld && event.pointerId === dragPointerId) {
+        const dx = event.clientX - lastDragX;
+        const dy = event.clientY - lastDragY;
+        lastDragX = event.clientX;
+        lastDragY = event.clientY;
+        dragTravel += Math.abs(dx) + Math.abs(dy);
+        if (dragTravel > SPATIAL_DRAG_CLICK_THRESHOLD_PX) {
+          // Real drag: capture the pointer so the orbit keeps following even
+          // outside the surface, flag the trailing click for suppression so
+          // orbiting never selects, and steer the persistent drag pose.
+          // Capture is taken only after the threshold, so an ordinary click's
+          // pointerup still lands on the node/edge it pressed.
+          try {
+            if (!wrap.hasPointerCapture(event.pointerId)) {
+              wrap.setPointerCapture(event.pointerId);
+            }
+          } catch {
+            // Capture is a smoothness nicety; dragging works without it.
+          }
+          suppressNextClick = true;
+          wrap.classList.add("graph-orbiting");
+          dragPoseRef.current = applyDragDelta(
+            dragPoseRef.current,
+            dx / box.width,
+            dy / box.height,
+          );
+        }
+        return; // while dragging, the cursor steers the orbit, not parallax
+      }
+      // Cursor parallax target: normalized offset from the surface centre,
+      // mapped through the bounded parallax helper.
+      const nx = ((event.clientX - box.left) / box.width) * 2 - 1;
+      const ny = ((event.clientY - box.top) / box.height) * 2 - 1;
+      pointerTargetRef.current = pointerParallaxTarget(nx, ny);
+    };
+
+    const endDrag = (event: PointerEvent) => {
+      if (event.pointerId !== dragPointerId) return;
+      pointerHeld = false;
+      dragPointerId = -1;
+      wrap.classList.remove("graph-orbiting");
+      try {
+        if (wrap.hasPointerCapture(event.pointerId)) {
+          wrap.releasePointerCapture(event.pointerId);
+        }
+      } catch {
+        // Nothing to release.
+      }
+      // The click a drag suppresses fires synchronously right after this
+      // pointerup; if the gesture produced no click at all (released off-
+      // surface / cancelled), disarm on the next task so the flag can never
+      // linger and swallow a later, legitimate selection click.
+      window.setTimeout(() => {
+        suppressNextClick = false;
+      }, 0);
+    };
+
+    const onPointerLeave = () => {
+      pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
+    };
+
+    // A gesture that travelled past the click threshold must not commit the
+    // click it releases on (capture phase, so it is consumed before the
+    // node/edge/empty-space handlers ever see it).
+    const onClickCapture = (event: MouseEvent) => {
+      if (suppressNextClick) {
+        suppressNextClick = false;
+        event.stopPropagation();
+        event.preventDefault();
+      }
+    };
+
+    // Double-click on empty space shakes off the accumulated drag + parallax
+    // orbit — a no-chrome view reset (selection and data untouched). Node and
+    // edge double-clicks are ignored so rapid selection clicks never recenter.
+    const onDoubleClick = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest("[data-spatial-node], [data-spatial-edge]")) return;
+      dragPoseRef.current = SPATIAL_POINTER_NEUTRAL;
+      pointerPoseRef.current = SPATIAL_POINTER_NEUTRAL;
+      pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
+    };
+
+    wrap.addEventListener("pointerdown", onPointerDown);
+    wrap.addEventListener("pointermove", onPointerMove);
+    wrap.addEventListener("pointerup", endDrag);
+    wrap.addEventListener("pointercancel", endDrag);
+    wrap.addEventListener("pointerleave", onPointerLeave);
+    wrap.addEventListener("click", onClickCapture, true);
+    wrap.addEventListener("dblclick", onDoubleClick);
+
+    // Re-fit the particle canvas when the surface resizes (static redraw at
+    // the current pose; the SVG scales itself via its viewBox).
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => {
+            applyPose(appliedPoseRef.current, performance.now() / 1000, false);
+          })
+        : null;
+    resizeObserver?.observe(wrap);
+
+    // Initial projection at the current composed pose (neutral on first
+    // mount; drag/motion poses are preserved across toggles and layout
+    // refreshes so nothing jumps), then the continuous driver loop.
+    applyPose(
+      composeSpatialCameraPose(
+        cameraPoseRef.current,
+        pointerPoseRef.current,
+        dragPoseRef.current,
+        ambientSwayPose(performance.now() / 1000),
+      ),
+      performance.now() / 1000,
+      false,
+    );
     frame = requestAnimationFrame(tick);
+
     return () => {
       cancelAnimationFrame(frame);
-      resetTransform();
+      wrap.removeEventListener("pointerdown", onPointerDown);
+      wrap.removeEventListener("pointermove", onPointerMove);
+      wrap.removeEventListener("pointerup", endDrag);
+      wrap.removeEventListener("pointercancel", endDrag);
+      wrap.removeEventListener("pointerleave", onPointerLeave);
+      wrap.removeEventListener("click", onClickCapture, true);
+      wrap.removeEventListener("dblclick", onDoubleClick);
+      wrap.classList.remove("graph-orbiting");
+      resizeObserver?.disconnect();
+      applyPoseRef.current = null;
     };
-  }, [graphControlEnabled, motionCommandRef, onCameraStatus, prefersReducedMotion]);
+  }, [
+    graphControlEnabled,
+    motionCommandRef,
+    onCameraStatus,
+    prefersReducedMotion,
+    spatialNodes,
+    particleField,
+    layout.width,
+    layout.height,
+  ]);
 
   // Phase 32H — explicit recenter. Bumping `recenterSignal` from the panel snaps
   // the accumulated camera pose straight back to neutral, so the user never has
@@ -850,9 +1323,44 @@ const GraphCanvas = memo(function GraphCanvas({
   useEffect(() => {
     if (recenterSignal === 0) return;
     cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
-    const el = cameraRef.current;
-    if (el) el.style.transform = "";
+    // Phase 36F: recenter clears the cursor parallax and the persistent drag
+    // orbit too, and re-projects the whole spatial structure at the neutral
+    // pose immediately — face-on, level, unscaled — whether or not the driver
+    // loop happens to be running.
+    pointerPoseRef.current = SPATIAL_POINTER_NEUTRAL;
+    pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
+    dragPoseRef.current = SPATIAL_POINTER_NEUTRAL;
+    applyPoseRef.current?.(ORBITAL_GRAPH_CAMERA_NEUTRAL);
   }, [recenterSignal]);
+
+  // Phase 36F — particle cluster energy. Each node's dust inherits its type
+  // accent and the live Hive emphasis: the selected cluster burns brightest,
+  // related clusters stay lit, unrelated clusters calm down while a selection
+  // is active, and the hovered node's cloud lifts at rest. Derived (never
+  // stored), pushed into a ref for the per-frame draw path, and redrawn once
+  // per change so emphasis updates even while the driver loop is asleep.
+  const particleEnergy = useMemo(() => {
+    const m = new Map<string, SpatialParticleEnergy>();
+    for (const node of nodes) {
+      let energy = 1;
+      if (node.id === selectedNodeId) {
+        energy = 1.65;
+      } else if (relatedNodeIds.has(node.id)) {
+        energy = 1.3;
+      } else if (hasSelection) {
+        energy = 0.5;
+      } else if (node.id === hoverNodeId) {
+        energy = 1.35;
+      }
+      m.set(node.id, { color: nodeTypeColor(node.type), energy });
+    }
+    return m;
+  }, [nodes, selectedNodeId, relatedNodeIds, hasSelection, hoverNodeId]);
+
+  useEffect(() => {
+    particleEnergyRef.current = particleEnergy;
+    applyPoseRef.current?.(appliedPoseRef.current);
+  }, [particleEnergy]);
 
   if (layout.nodes.length === 0) {
     return null;
@@ -887,6 +1395,10 @@ const GraphCanvas = memo(function GraphCanvas({
   return (
     <div
       className="viewfinder-canvas-wrap"
+      // Phase 36F: the wrap anchors the cursor-parallax listeners and the
+      // particle-canvas resize observer (both attached imperatively in the
+      // spatial driver effect — read-only view steering, never data).
+      ref={wrapRef}
       // Phase 35B: expose the resolved interaction mode + its raw inputs so CSS
       // can style idle / hover / focus / inspect / motion surface states without
       // any of it leaving the render path into persistence.
@@ -894,22 +1406,27 @@ const GraphCanvas = memo(function GraphCanvas({
       data-has-selection={hasSelection ? "true" : "false"}
       data-has-hover={hasHover ? "true" : "false"}
     >
-      {/* Phase 32G camera stage: the opt-in orbital transform is written to this
-          wrapper (never to the SVG's own coordinate system), so the graph's node
-          positions, hit-testing, and selection stay untouched — the camera moves
-          the *view*, not the data.
-          Phase 33D: expose whether orbital control is live as a data attribute so
-          the compositing-layer promotion (will-change) can be scoped to when the
-          camera actually moves. The common motionless case then no longer pins a
-          permanent GPU layer for the whole SVG, and the layer is created exactly
-          when control turns on — a motion-compatibility/perf refinement only; it
-          changes no transform math and no data. */}
+      {/* Phase 32G camera stage, re-founded by Phase 36F: the camera pose is no
+          longer written to this wrapper as a whole-layer CSS tilt (that read as
+          a rotated flat poster). The stage now just hosts the point-cloud
+          particle canvas and the SVG; the pose is applied *per element* by the
+          spatial projection driver, so near and far objects move differently
+          (true parallax) while node hit-testing and selection stay untouched —
+          the camera still moves the view, never the data. */}
       <div
         className="graph-camera"
-        ref={cameraRef}
         data-graph-control={graphControlEnabled ? "on" : "off"}
       >
+      {/* Phase 36F point-cloud layer: deterministic per-cluster dust drawn
+          behind the SVG. Presentation only — pointer-events off, aria-hidden,
+          and fed exclusively from the projected spatial model. */}
+      <canvas
+        className="graph-particle-canvas"
+        ref={particleCanvasRef}
+        aria-hidden="true"
+      />
       <svg
+        ref={svgRef}
         className="graph-canvas"
         viewBox={`0 0 ${layout.width} ${layout.height}`}
         role="group"
@@ -940,7 +1457,7 @@ const GraphCanvas = memo(function GraphCanvas({
           </defs>
 
           <g className="graph-canvas-edges">
-            {layout.edges.map((edge) => {
+            {edgesRenderOrder.map((edge) => {
               const selected = edge.id === selectedEdgeId;
               const incident =
                 selectedNodeId !== null &&
@@ -979,28 +1496,46 @@ const GraphCanvas = memo(function GraphCanvas({
               // deep links recede — but only while nothing is selected, so the
               // selection's own incident/dimmed hierarchy stays untouched.
               const edgeDepthTier = depth.edges.get(edge.id) ?? "mid";
+              // Phase 36F: spatial synapse geometry. The outer wrapper carries
+              // the camera-projected endpoints (updated per frame by the
+              // driver), depth fog as element opacity (multiplies with the
+              // tier/selection opacities on the inner group — never overrides
+              // them), and the depth width factor consumed by the CSS ladder.
+              const spatialEdge = initialEdgeProjection.get(edge.id);
               return (
                 <g
                   key={edge.id}
+                  className="graph-spatial-edge"
+                  data-spatial-edge={edge.id}
+                  data-spatial-source={edge.source}
+                  data-spatial-target={edge.target}
+                  style={
+                    {
+                      opacity: spatialEdge?.fog ?? 1,
+                      "--spatial-edge-w": spatialEdge?.width ?? 1,
+                    } as CSSProperties
+                  }
+                >
+                <g
                   data-edge-type={edgeTypeById.get(edge.id) ?? ""}
                   className={`graph-depth-edge graph-depth-edge-${edgeDepthTier}`}
                 >
                   <line
                     className={className}
-                    x1={edge.x1}
-                    y1={edge.y1}
-                    x2={edge.x2}
-                    y2={edge.y2}
+                    x1={spatialEdge?.x1 ?? edge.x1}
+                    y1={spatialEdge?.y1 ?? edge.y1}
+                    x2={spatialEdge?.x2 ?? edge.x2}
+                    y2={spatialEdge?.y2 ?? edge.y2}
                     markerEnd="url(#graph-arrow)"
                   />
                   {/* Wider transparent line so thin edges are easy to click. */}
                   <line
                     className="graph-canvas-edge-hit"
                     data-edge-id={edge.id}
-                    x1={edge.x1}
-                    y1={edge.y1}
-                    x2={edge.x2}
-                    y2={edge.y2}
+                    x1={spatialEdge?.x1 ?? edge.x1}
+                    y1={spatialEdge?.y1 ?? edge.y1}
+                    x2={spatialEdge?.x2 ?? edge.x2}
+                    y2={spatialEdge?.y2 ?? edge.y2}
                     role="button"
                     tabIndex={0}
                     aria-label={`Relationship ${edge.label ?? "edge"}`}
@@ -1018,12 +1553,13 @@ const GraphCanvas = memo(function GraphCanvas({
                     onBlur={clearHover}
                   />
                 </g>
+                </g>
               );
             })}
           </g>
 
           <g className="graph-canvas-nodes">
-            {layout.nodes.map((node) => {
+            {nodesRenderOrder.map((node) => {
               const selected = node.id === selectedNodeId;
               // Related nodes (direct neighbors of the selection, or the two
               // endpoints of a selected edge) form the middle emphasis tier:
@@ -1081,13 +1617,26 @@ const GraphCanvas = memo(function GraphCanvas({
               ]
                 .filter(Boolean)
                 .join(" ");
+              // Phase 36F: spatial anchor for this node. The wrapper owns the
+              // camera-projected translate + perspective scale (updated per
+              // frame by the driver) and depth fog as element opacity; every
+              // Hive class — tiers, aura, breathing, selection, hover — stays
+              // on the inner group, so the living polish rides the projected
+              // position untouched. Labels only ever translate/scale (never
+              // rotate), so they remain readable billboard labels.
+              const spatialProj = initialNodeProjection.get(node.id);
               return (
                 <g
                   key={node.id}
+                  className="graph-spatial-node"
+                  data-spatial-node={node.id}
+                  transform={spatialProj?.transform ?? `translate(${node.x} ${node.y})`}
+                  style={{ opacity: spatialProj?.fog ?? 1 } as CSSProperties}
+                >
+                <g
                   className={className}
                   data-node-type={node.type}
                   data-node-id={node.id}
-                  transform={`translate(${node.x}, ${node.y})`}
                   // Cluster breathing phase inherits to the circle so a type
                   // cluster breathes together at a reproducible offset.
                   style={
@@ -1157,6 +1706,7 @@ const GraphCanvas = memo(function GraphCanvas({
                     </text>
                   </g>
                 </g>
+                </g>
               );
             })}
           </g>
@@ -1196,7 +1746,7 @@ const GraphCanvas = memo(function GraphCanvas({
         ) : hoverEdge !== null ? (
           <>Hovering a relationship · select to inspect</>
         ) : (
-          "Read-only map · select a node or relationship to inspect it."
+          "Read-only map · drag to orbit · select a node or relationship to inspect it."
         )}
       </p>
     </div>
