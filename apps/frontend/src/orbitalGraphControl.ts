@@ -389,12 +389,19 @@ export function easePointerPose(
 // Direct manipulation: press and drag on the graph surface to spin the spatial
 // structure, exactly like orbiting a floating object. The drag pose *persists*
 // (no decay) so the user can set a vantage and keep it; Recenter (or a
-// double-click on empty space) clears it. Bounds are wide — this is the input
-// that lets someone actually look around the structure — but still short of a
-// flip-over, so labels never invert.
+// double-click on empty space) clears it.
+//
+// Phase 36H (per the 36G Option A contract): yaw is no longer clamped — the
+// structure can be spun endlessly in either direction, like turning a globe.
+// The accumulated yaw is wrap-normalized into [-180, 180) after every step so
+// float precision can never degrade over a long spin; wrapping is visually
+// invisible because the projector feeds yaw straight into cos/sin (yaw θ and
+// θ − 360° project identically). Pitch keeps its clamp at every level so the
+// structure never flips upside down and labels never invert — this is a
+// deliberate policy, not a limitation, and it is why no quaternion/arcball
+// orientation is needed.
 
-/** Max drag-accumulated orbit. */
-export const SPATIAL_DRAG_MAX_YAW = 42;
+/** Max drag-accumulated pitch. Yaw has no bound since Phase 36H (wrapped). */
 export const SPATIAL_DRAG_MAX_PITCH = 26;
 
 /** Orbit gain per full surface-width / surface-height of drag travel (deg). */
@@ -406,10 +413,19 @@ export const SPATIAL_DRAG_PITCH_GAIN = 90;
     click is suppressed so orbiting never accidentally selects. */
 export const SPATIAL_DRAG_CLICK_THRESHOLD_PX = 4;
 
+/** Wrap an accumulated yaw angle into the stable range [-180, 180). Pure and
+    total: non-finite input reads as 0. Equivalent orientations map to one
+    canonical value, so an unbounded spin can never grow the stored angle. */
+export function wrapYawDegrees(deg: number): number {
+  if (!Number.isFinite(deg)) return 0;
+  return ((((deg + 180) % 360) + 360) % 360) - 180;
+}
+
 /** Accumulate one drag movement (normalized to the surface size: dxNorm = px
     moved / surface width) into the persistent drag pose. Drag right swings the
     structure's right side toward the viewer (same sign convention as pointer
-    parallax); drag up tips the top toward the viewer. Pure and clamped. */
+    parallax); drag up tips the top toward the viewer. Pure; yaw wraps
+    (continuous rotation, no hard stop), pitch stays clamped. */
 export function applyDragDelta(
   drag: SpatialPointerPose,
   dxNorm: number,
@@ -418,16 +434,103 @@ export function applyDragDelta(
   const dx = Number.isFinite(dxNorm) ? dxNorm : 0;
   const dy = Number.isFinite(dyNorm) ? dyNorm : 0;
   return {
-    yaw: clampRange(
-      drag.yaw + dx * SPATIAL_DRAG_YAW_GAIN,
-      -SPATIAL_DRAG_MAX_YAW,
-      SPATIAL_DRAG_MAX_YAW,
-    ),
+    yaw: wrapYawDegrees(drag.yaw + dx * SPATIAL_DRAG_YAW_GAIN),
     pitch: clampRange(
       drag.pitch - dy * SPATIAL_DRAG_PITCH_GAIN,
       -SPATIAL_DRAG_MAX_PITCH,
       SPATIAL_DRAG_MAX_PITCH,
     ),
+  };
+}
+
+// --- Phase 36H — drag-release rotational momentum ------------------------------
+//
+// After a graph-background drag releases with speed, the orbit coasts briefly
+// and settles through deterministic exponential damping — the cheapest "feels
+// like a held object" win the 36G plan named. This is not a physics engine:
+// there is no simulation loop of its own (the existing driver integrates it),
+// no forces, and no state beyond one angular velocity that decays to exact
+// zero. Frame-rate aware via dt-scaled exponentiation, so the coast feels the
+// same at 30 fps and 144 fps.
+
+/** Angular velocity in degrees per millisecond (yaw/pitch). */
+export type SpatialAngularVelocity = Readonly<{ yaw: number; pitch: number }>;
+
+export const SPATIAL_ANGULAR_VELOCITY_ZERO: SpatialAngularVelocity = {
+  yaw: 0,
+  pitch: 0,
+};
+
+/** Retained fraction of the release velocity per 60fps-equivalent frame. */
+export const SPATIAL_MOMENTUM_RETAIN_PER_FRAME = 0.94;
+
+/** Speed (deg/ms) below which momentum snaps to exact zero — guarantees the
+    coast settles completely instead of drifting asymptotically forever. */
+export const SPATIAL_MOMENTUM_MIN_SPEED = 0.0045;
+
+/** Release-speed cap (deg/ms; ≈5.3°/frame at 60fps) so a violent fling coasts
+    briskly but the graph is never launched into low Earth orbit. */
+export const SPATIAL_MOMENTUM_MAX_SPEED = 0.32;
+
+/** How stale (ms) the last drag movement may be at release and still hand its
+    velocity to momentum. A pause-then-release reads as "placed", not "thrown". */
+export const SPATIAL_MOMENTUM_RELEASE_MAX_AGE_MS = 90;
+
+const BASE_FRAME_MS = 1000 / 60;
+
+/** Sanitize and speed-cap a release velocity estimate. Non-finite axes read as
+    zero; the vector magnitude is clamped to `SPATIAL_MOMENTUM_MAX_SPEED`. */
+export function clampAngularVelocity(
+  velocity: SpatialAngularVelocity,
+): SpatialAngularVelocity {
+  const yaw = Number.isFinite(velocity.yaw) ? velocity.yaw : 0;
+  const pitch = Number.isFinite(velocity.pitch) ? velocity.pitch : 0;
+  const speed = Math.hypot(yaw, pitch);
+  if (speed <= SPATIAL_MOMENTUM_MAX_SPEED) return { yaw, pitch };
+  const scale = SPATIAL_MOMENTUM_MAX_SPEED / speed;
+  return { yaw: yaw * scale, pitch: pitch * scale };
+}
+
+/** Advance the drag-orbit pose by one momentum step and damp the velocity.
+    Pure and deterministic: (pose, velocity, dt) → (pose, velocity). Yaw wraps
+    (continuous rotation), pitch stays clamped — and a pitch axis that hits its
+    clamp has its velocity absorbed (soft wall, no bounce). Velocity below the
+    stop threshold snaps to exact zero so the driver's work provably ends. */
+export function integrateSpatialMomentum(
+  drag: SpatialPointerPose,
+  velocity: SpatialAngularVelocity,
+  dtMs: number,
+): { drag: SpatialPointerPose; velocity: SpatialAngularVelocity } {
+  const vYaw = Number.isFinite(velocity.yaw) ? velocity.yaw : 0;
+  const vPitch = Number.isFinite(velocity.pitch) ? velocity.pitch : 0;
+  if (vYaw === 0 && vPitch === 0) {
+    return { drag, velocity: SPATIAL_ANGULAR_VELOCITY_ZERO };
+  }
+  // Clamp dt so a tab-throttled frame can never teleport the orbit.
+  const dt = clampRange(dtMs, 0, 64);
+
+  const rawPitch = drag.pitch + vPitch * dt;
+  const nextPitch = clampRange(
+    rawPitch,
+    -SPATIAL_DRAG_MAX_PITCH,
+    SPATIAL_DRAG_MAX_PITCH,
+  );
+  const pitchAbsorbed = nextPitch !== rawPitch;
+
+  const retain = Math.pow(SPATIAL_MOMENTUM_RETAIN_PER_FRAME, dt / BASE_FRAME_MS);
+  let nextVYaw = vYaw * retain;
+  let nextVPitch = pitchAbsorbed ? 0 : vPitch * retain;
+  if (Math.hypot(nextVYaw, nextVPitch) < SPATIAL_MOMENTUM_MIN_SPEED) {
+    nextVYaw = 0;
+    nextVPitch = 0;
+  }
+
+  return {
+    drag: {
+      yaw: wrapYawDegrees(drag.yaw + vYaw * dt),
+      pitch: nextPitch,
+    },
+    velocity: { yaw: nextVYaw, pitch: nextVPitch },
   };
 }
 
@@ -458,17 +561,19 @@ export function ambientSwayPose(timeSec: number): SpatialPointerPose {
   };
 }
 
-/** Total-orbit clamp for the composed pose: motion + drag + parallax + sway
-    may stack, so the sum is bounded well short of a flip-over — the structure
-    can be examined from a steep angle but labels never invert. */
-export const SPATIAL_TOTAL_MAX_YAW = 58;
+/** Total-pitch clamp for the composed pose: motion + drag + parallax + sway
+    may stack, so the summed pitch is bounded well short of a flip-over — the
+    structure can be examined from a steep angle but never inverts and labels
+    never read upside down. Phase 36H removed the matching total-yaw clamp
+    (was ±58°): composed yaw now wraps instead, so horizontal rotation is
+    continuous with no hard stop while the vertical horizon stays protected. */
 export const SPATIAL_TOTAL_MAX_PITCH = 36;
 
 /** Compose every steering input — the opt-in motion camera, the persistent
     drag orbit, the cursor parallax, and the ambient sway — into the single
-    pose the spatial projection renders from. Additive on yaw/pitch with the
-    total clamp above; zoom stays owned by the motion camera's own bounds.
-    Pure. */
+    pose the spatial projection renders from. Additive on yaw/pitch; yaw wraps
+    (continuous, Phase 36H), pitch keeps the total clamp above; zoom stays
+    owned by the motion camera's own bounds. Pure. */
 export function composeSpatialCameraPose(
   camera: OrbitalGraphCameraTransform,
   pointer: SpatialPointerPose,
@@ -476,11 +581,7 @@ export function composeSpatialCameraPose(
   sway: SpatialPointerPose = SPATIAL_POINTER_NEUTRAL,
 ): OrbitalGraphCameraTransform {
   return {
-    yaw: clampRange(
-      camera.yaw + pointer.yaw + drag.yaw + sway.yaw,
-      -SPATIAL_TOTAL_MAX_YAW,
-      SPATIAL_TOTAL_MAX_YAW,
-    ),
+    yaw: wrapYawDegrees(camera.yaw + pointer.yaw + drag.yaw + sway.yaw),
     pitch: clampRange(
       camera.pitch + pointer.pitch + drag.pitch + sway.pitch,
       -SPATIAL_TOTAL_MAX_PITCH,

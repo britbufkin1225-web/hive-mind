@@ -6114,3 +6114,34 @@ body,
 .viewfinder-canvas-wrap.graph-orbiting * {
   cursor: grabbing;
 }
+
+/* ============================================================================
+   Phase 36H — Elastic Spatial Hive manipulation (frontend-only)
+
+   CSS support for the interaction pass: infinite wrapped-yaw orbit with
+   release momentum, and elastic node grabbing (grab a node past the click
+   threshold and it — plus its bounded relationship neighborhood — displaces
+   with the pointer, springing home on release). All movement is driven by the
+   projection driver's deterministic math, not CSS: nothing here animates, so
+   there are no new keyframes or transitions to null for reduced motion.
+   Presentation-only, exactly like 36F — no data, no persistence.
+   ============================================================================ */
+
+/* While a gesture may begin on the surface, the browser must never start a
+   text selection or a native element drag from it — the drag IS the
+   interaction. Labels already disable selection; this covers the surface
+   itself (the driver also cancels dragstart). Node/edge click, keyboard
+   focus, and inspector behavior are untouched. */
+.viewfinder-canvas-wrap {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+/* Node-grab affordance: mirrors the orbit treatment — while a node is held,
+   everything under the pointer reads as "holding the node". The driver sets
+   `.graph-node-grabbing` on the wrap for the duration of the grab only. */
+.viewfinder-canvas-wrap.graph-node-grabbing,
+.viewfinder-canvas-wrap.graph-node-grabbing * {
+  cursor: grabbing;
+}

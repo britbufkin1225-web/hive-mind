@@ -46,7 +46,58 @@ and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-co
 
 ## Current status
 
-**Current phase:** Phase 36G — Elastic Spatial Hive Manipulation Planning
+**Current phase:** Phase 36H — Elastic Spatial Hive Manipulation
+(**frontend-only implementation**, on branch
+`phase-36h-elastic-spatial-hive-manipulation`). Implements the Phase 36G
+contract against its §15 acceptance checklist. **(1) Infinite wrapped-yaw
+orbit:** the drag (±42°) and total (±58°) yaw clamps are removed; accumulated
+yaw wrap-normalizes into [-180°, 180°) (`wrapYawDegrees` in
+`orbitalGraphControl.ts`) so the structure spins endlessly with no seam and no
+float drift, while every pitch clamp is preserved (drag ±26°, total ±36°) —
+no quaternion, arcball, or roll, per the 36G Option A decision. **(2)
+Drag-release momentum:** release velocity is estimated from recent pointer
+movement (exponentially smoothed, speed-capped at 0.32°/ms, discarded if the
+release followed a >90ms pause), then integrated by a pure dt-scaled damping
+helper (retain 0.94 per 60fps frame, snap to zero below 0.0045°/ms; pitch
+absorbs at its clamp, yaw wraps) — deterministic, no physics library, no new
+loop (the existing 36F driver integrates it). **(3) Elastic node-pull:** a
+new pure module `spatialHiveElasticity.ts` implements the closed-form model
+`displacement(node) = grabbedDisplacement × hopWeight × recoveryFactor`:
+undirected adjacency is built once per graph-data change, a bounded BFS
+influence map once per grab (hop weights 1 / 0.45 / 0.18, exactly 0 beyond
+two hops — monotone in relationship distance), the grabbed node tracks the
+pointer in its own depth plane (screen delta ÷ projected perspective scale,
+inverse-rotated through pitch then yaw) under a tanh soft cap (140 world
+units), and release decays everything exponentially to exact zero;
+re-grabbing mid-recovery folds in-flight offsets into an independently
+decaying residual field so nothing snaps. Closed-form was chosen over a
+force simulation because it is deterministic, bounded, unit-testable,
+O(affected nodes) per frame, and needs no solver, integrator, per-node
+velocity state, or dependency. Edges re-project from displaced endpoints
+(synapses stretch and stay attached) and each particle shell rides its
+displaced anchor. **(4) Input arbitration:** a `SpatialInteractionOwner`
+union (node-grab > graph-pointer > reset > motion-control > none) gates the
+motion camera off during any pointer gesture and resumes it cleanly (the
+32H stale-command guard prevents resume jumps); node grabbing suppresses
+graph rotation; clicking still selects (4px threshold + trailing-click
+suppression preserved); the opt-in default-off motion contract is untouched.
+Recenter and double-click reset now also zero rotational velocity and all
+elastic state. **(5) Reduced motion:** no driver loop, no sway, no parallax,
+no momentum, no overshoot, no animated recovery — while direct manipulation
+stays usable (36G §11 posture (a)): drag-reorient and node-pull run
+position-coupled with event-driven rendering, and release snaps home.
+Presentation-only throughout: no graph/edge/source mutation, no
+persistence, no backend/API/schema/package change; reload or Recenter always
+restores the exact deterministic resting cloud. Validation:
+`npm run check:frontend` passes; a connected-runtime smoke test (live
+backend, real graph) verified endless yaw with no wall, momentum coast +
+complete settle, grab displacement with attenuated neighbor follow and
+still unrelated nodes, edge attachment at 0px error during deformation,
+full home recovery, click-select/inspector integrity, a clean console, and
+GET-only network traffic during every gesture. **Screenshot / evidence
+capture remains deferred**; live human hand-motion feel is still untested.
+
+The preceding **Phase 36G — Elastic Spatial Hive Manipulation Planning**
 (**planning / documentation only, no implementation**, on branch
 `phase-36g-elastic-spatial-hive-manipulation-planning`). Defines the
 implementation contract for making the Spatial Hive a *handled* object:
