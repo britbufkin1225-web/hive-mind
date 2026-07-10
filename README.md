@@ -124,8 +124,50 @@ the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
 - **Current phase:**
-  `Phase 36I - Elastic Spatial Hive Live Interaction QA + Tuning`
-  (**frontend-only**). A focused live-interaction QA and defensive pass over
+  `Phase 36J - Full-Hand Spatial Tracking + Gesture Control Foundation`
+  (**frontend-only implementation**). Webcam graph control now derives from
+  the full 21-landmark MediaPipe hand set instead of primarily the sparse
+  wrist / thumb-tip / index-tip triangle. A new pure module
+  `handSpatialTracking.ts` extracts a typed `HandSpatialFeatures` object per
+  frame: palm center / width / height, normalized hand scale, a palm
+  coordinate frame (longitudinal + lateral axes and approximate palm normal,
+  built from the wrist and four MCP knuckles via Gram-Schmidt +
+  cross-product so it stays stable while individual fingers bend),
+  yaw/pitch/roll estimates, deterministic per-finger
+  `extended | partial | curled | unknown` states (tip projection along the
+  palm's longitudinal axis — rotation-invariant, not raw screen y),
+  continuous 0..1 openness, and pinch geometry normalized identically to the
+  preserved 0.40 / 0.52 thresholds. Degenerate or non-finite landmark
+  geometry collapses to an explicit `valid: false` sentinel, so `NaN` /
+  `Infinity` cannot reach the control pipeline. A deterministic tracker
+  layer adds wrap-aware step-bounded EMA smoothing, finger-state debounce,
+  per-frame translation/expansion deltas, and a full reset after 250 ms of
+  detection loss. A minimal typed gesture foundation
+  (`gestureRecognition.ts`) separates raw pose observations from confirmed
+  gestures (hold-to-confirm + switch debounce, held-duration + stability)
+  and recognizes **open palm / fist / pointing** as derived display states —
+  pinch stays owned by the existing pinch-gate pipeline, and no new graph
+  actions were added. The externally consumed `MotionCommand` contract is
+  unchanged and all downstream consumers are untouched: yaw/pitch still map
+  from the 5-point palm centroid, zoom now reads the aspect-compensated hand
+  scale (steadier under hand tilt; same 0.22 neutral), pinch behavior is
+  preserved. The Motion Sandbox gains a concise **Spatial tracking** readout
+  (gesture candidate, palm yaw/pitch/roll, openness, hand scale, five
+  finger-state chips, validity) plus faint smoothed palm-axis overlay lines
+  under the existing skeleton. A dependency-free Node self-test
+  (`node apps/frontend/src/handSpatialTracking.selftest.ts`, 400+ assertions
+  over synthetic fixtures: open / fist / pointing / pinch, rotated,
+  mirrored, tiny-scale, overlapping/degenerate, missing landmarks, loss +
+  smoothing reset, no-NaN walks) passes, and `npm run check:frontend`
+  passes. **Honest status:** this is a tracking-foundation implementation
+  validated with synthetic fixtures and a non-camera browser smoke test
+  only — **live human-camera tuning is still required**, the broader gesture
+  library remains future work, and **screenshot / evidence capture remains
+  deferred**. Recommended next: a live-camera validation + conservative
+  gesture-tuning pass over the new thresholds.
+
+  The preceding **Phase 36I - Elastic Spatial Hive Live Interaction QA +
+  Tuning** (**frontend-only**). A focused live-interaction QA and defensive pass over
   the Phase 36H elastic system — not a feature-expansion phase: no new
   gestures, no dependency / backend / API / schema / persistence change, and
   the read-only graph-data contract is preserved. **Verified live** against a
@@ -152,9 +194,9 @@ SVG visualization.
   live webcam hand-motion feel was **not tested and remains unverified**.
   `npm run check:frontend` (tsc + vite build) passes; browser smoke testing
   passes; no console errors/warnings introduced. **Screenshot / evidence
-  capture remains deferred.** Recommended next: **Phase 36J — Elastic Spatial
-  Hive QA + Screenshot Evidence Refresh** (pointer interaction passed cleanly;
-  only live webcam feel remains).
+  capture remains deferred.** (Phase 36J was subsequently scoped to the
+  full-hand tracking foundation above rather than the screenshot refresh this
+  phase suggested; the evidence pass is still pending.)
 
   The preceding **Phase 36H - Elastic Spatial Hive Manipulation**
   (**frontend-only implementation**) implements the Phase 36G contract: the

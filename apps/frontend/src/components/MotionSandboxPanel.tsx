@@ -10,13 +10,11 @@ import {
   classifyHandRange,
   createControlGate,
   createPinchGate,
-  deriveHandCommand,
+  deriveHandCommandFromFeatures,
   handBoundingSpan,
   HAND_CONNECTIONS,
   LM,
   palmCenter,
-  palmSpan,
-  pinchRatio,
   resolveRawPinch,
   ZERO_MOTION,
   type ConfidenceQuality,
@@ -28,6 +26,22 @@ import {
   type PinchGate,
   type PinchPhase,
 } from "../handLandmarkMotion";
+import {
+  advanceHandTracker,
+  createHandTrackerState,
+  extractHandSpatialFeatures,
+  type FingerName,
+  type FingerStates,
+  type HandTrackerState,
+  type TrackedHandPose,
+} from "../handSpatialTracking";
+import {
+  advanceGestureResolver,
+  classifyHandPose,
+  createGestureResolverState,
+  type GestureCandidate,
+  type GestureResolverState,
+} from "../gestureRecognition";
 
 /* Phase 32D — Standalone Webcam Motion Sandbox (MediaPipe hand landmarks).
 
@@ -335,6 +349,67 @@ function formatDiagnostic(value: number | null): string {
   return value === null ? "—" : value.toFixed(3);
 }
 
+/* Phase 36J — full-hand spatial tracking readout.
+
+   The throttled snapshot of the new tracking foundation: the resolved gesture
+   candidate, the smoothed palm orientation (yaw/pitch/roll), openness, hand
+   scale, and the debounced per-finger states. Null whenever there is no valid
+   tracked hand, so the readout shows "—" instead of stale values. Deliberately
+   concise — the raw geometry lives in handSpatialTracking.ts, not the panel. */
+type SpatialReadout = {
+  pose: GestureCandidate;
+  yawDeg: number;
+  pitchDeg: number;
+  rollDeg: number;
+  openness: number;
+  handScale: number;
+  fingers: FingerStates;
+};
+
+const FINGER_ORDER: ReadonlyArray<{ key: FingerName; label: string }> = [
+  { key: "thumb", label: "T" },
+  { key: "index", label: "I" },
+  { key: "middle", label: "M" },
+  { key: "ring", label: "R" },
+  { key: "little", label: "L" },
+];
+
+// Short finger-state labels so five fingers fit on one readable row.
+function fingerStateLabel(state: FingerStates[FingerName]): string {
+  switch (state) {
+    case "extended":
+      return "ext";
+    case "curled":
+      return "curl";
+    case "partial":
+      return "part";
+    default:
+      return "—";
+  }
+}
+
+function formatDegrees(deg: number): string {
+  return `${deg.toFixed(0)}°`;
+}
+
+// UI copy + tone for the resolved gesture candidate pill.
+function poseLabel(pose: GestureCandidate | null): { label: string; tone: PillTone } {
+  if (!pose || pose.state === "none") return { label: "No pose", tone: "neutral" };
+  const name =
+    pose.kind === "open-palm"
+      ? "Open palm"
+      : pose.kind === "fist"
+        ? "Fist"
+        : pose.kind === "pointing"
+          ? "Pointing"
+          : pose.kind === "pinch"
+            ? "Pinch"
+            : "Unknown";
+  return pose.state === "confirmed"
+    ? { label: name, tone: "success" }
+    : { label: `${name}?`, tone: "pending" };
+}
+
 // UI copy + status-pill class for each feedback dimension. Kept as small pure
 // maps (not scattered ternaries in JSX) so the honest, concise labels live in one
 // place. `neutral`/`pending`/`success`/`error` reuse the existing status-pill
@@ -429,6 +504,9 @@ function MotionSandboxPanel({
   // palm centroid, hand span) for live threshold evaluation.
   const [diagnostics, setDiagnostics] =
     useState<GestureDiagnostics>(NO_DIAGNOSTICS);
+  // Phase 36J — throttled full-hand spatial tracking readout (gesture
+  // candidate, palm orientation, openness, scale, finger states).
+  const [spatial, setSpatial] = useState<SpatialReadout | null>(null);
 
   // Live-object refs: none of these should trigger a re-render when they change.
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -455,6 +533,12 @@ function MotionSandboxPanel({
   // Null when no hand, so a re-appearing hand snaps to its real position
   // instead of easing in from a stale one. Never feeds the command math.
   const palmDisplayRef = useRef<{ x: number; y: number } | null>(null);
+  // Phase 36J — full-hand tracker state (smoothed pose + finger debounce) and
+  // the gesture resolver, both pure reducers advanced once per detection frame.
+  const handTrackerRef = useRef<HandTrackerState>(createHandTrackerState());
+  const gestureResolverRef = useRef<GestureResolverState>(
+    createGestureResolverState(),
+  );
 
   // Phase 32G: keep the (optional) command sink in a ref so the detection loop
   // can forward every frame without `publishReadout`/`teardown` re-binding when
@@ -549,6 +633,9 @@ function MotionSandboxPanel({
     // for the same reason: a new session must not inherit stale gesture state.
     rawPinchRef.current = false;
     palmDisplayRef.current = null;
+    // Phase 36J — reset the full-hand tracker and gesture resolver too.
+    handTrackerRef.current = createHandTrackerState();
+    gestureResolverRef.current = createGestureResolverState();
     // Phase 32G: forward a final idle command so a graph consumer decays to
     // stillness the moment the camera stops (no frozen last-frame deltas).
     onMotionCommandRef.current?.(ZERO_MOTION);
@@ -591,6 +678,7 @@ function MotionSandboxPanel({
       landmarks: Landmark[],
       pinchPhase: PinchPhase,
       palmDisplay: { x: number; y: number } | null,
+      trackedPose: TrackedHandPose | null,
     ) => {
       const overlay = overlayCanvasRef.current;
       const octx = overlay?.getContext("2d") ?? null;
@@ -601,6 +689,34 @@ function MotionSandboxPanel({
       octx.clearRect(0, 0, w, h);
       // No hand this frame → leave the canvas clear (idle state unchanged).
       if (landmarks.length === 0) return;
+
+      // Phase 36J — smoothed palm-frame axes (debug aid, drawn UNDER the
+      // skeleton so they never obscure it). The tracked pose lives in mirrored
+      // control space while this canvas draws raw landmark coords (the canvas
+      // itself is CSS-mirrored), so x is un-mirrored here: point x → 1 − x,
+      // vector x → −x. Violet keeps them distinct from the cyan skeleton, the
+      // amber control marker, and the green pinch line.
+      if (trackedPose && trackedPose.valid) {
+        const cxRaw = (1 - trackedPose.palmCenter.x) * w;
+        const cyRaw = trackedPose.palmCenter.y * h;
+        const axisLen = trackedPose.handScale;
+        const axes = [
+          // Longitudinal: palm center toward the fingers.
+          { v: trackedPose.palmLongitudinalAxis, len: axisLen * 0.55 },
+          // Lateral: palm center toward the index side.
+          { v: trackedPose.palmLateralAxis, len: axisLen * 0.4 },
+        ];
+        octx.lineWidth = 1.5;
+        octx.strokeStyle = "rgba(196, 181, 253, 0.55)";
+        octx.setLineDash([4, 3]);
+        octx.beginPath();
+        for (const { v, len } of axes) {
+          octx.moveTo(cxRaw, cyRaw);
+          octx.lineTo(cxRaw + -v.x * len * w, cyRaw + v.y * len * h);
+        }
+        octx.stroke();
+        octx.setLineDash([]);
+      }
 
       // 1. Full skeleton bones — thin and translucent so they read as a
       //    diagnostic layer over the video, not a mask on top of it.
@@ -849,6 +965,15 @@ function MotionSandboxPanel({
       // centroid immediately, so a re-appearing hand starts from live geometry.
       rawPinchRef.current = false;
       palmDisplayRef.current = null;
+      // Phase 36J — the tracker sees the loss (invalidates its pose now,
+      // full-resets after TRACKING_LOSS_RESET_MS) and the gesture resolver
+      // observes "unknown" so any held pose candidate decays away.
+      handTrackerRef.current = advanceHandTracker(handTrackerRef.current, null, now);
+      gestureResolverRef.current = advanceGestureResolver(
+        gestureResolverRef.current,
+        "unknown",
+        now,
+      ).state;
 
       const smoothed: MotionCommand = {
         ...MEDIAPIPE_IDLE,
@@ -868,6 +993,7 @@ function MotionSandboxPanel({
         pinchPhase: pinchGate.phase,
       });
       setDiagnostics(NO_DIAGNOSTICS);
+      setSpatial(null);
     },
     [publishReadout],
   );
@@ -912,7 +1038,7 @@ function MotionSandboxPanel({
 
     if (!hasHand) {
       emitIdleFrame(now);
-      drawOverlay([], "idle", null);
+      drawOverlay([], "idle", null, null);
       return;
     }
 
@@ -921,7 +1047,18 @@ function MotionSandboxPanel({
     const handedness = category?.categoryName ?? null;
     const score = category?.score ?? 0;
 
-    const target = deriveHandCommand(landmarks, score, now);
+    // Phase 36J — full-hand feature extraction in mirrored control space. An
+    // invalid frame (degenerate/overlapping landmarks) is treated exactly like
+    // a missing hand for the command pipeline, but the raw skeleton is still
+    // drawn so a live tester can see WHAT the detector returned.
+    const features = extractHandSpatialFeatures(landmarks, { mirrorX: true });
+    if (!features.valid) {
+      emitIdleFrame(now);
+      drawOverlay(landmarks, "idle", null, null);
+      return;
+    }
+
+    const target = deriveHandCommandFromFeatures(features, score, now);
 
     // Smooth the continuous fields; the discrete pinch/active come from the
     // temporal gates below (not straight from `target`) so both are debounced.
@@ -939,15 +1076,34 @@ function MotionSandboxPanel({
       now,
     );
     controlGateRef.current = controlGate;
-    // Phase 36E — the raw pinch fed to the gate now carries ratio hysteresis
+    // Phase 36E — the raw pinch fed to the gate carries ratio hysteresis
     // (engage < 0.40, release > 0.52) instead of the single-threshold
     // `target.pinchActive`, so a gap hovering at the boundary can't strobe the
     // gate's hold/release timers. The gate's temporal debounce is unchanged.
-    const ratio = pinchRatio(landmarks);
+    // Phase 36J: the ratio now comes from the feature layer — identical
+    // normalization (image-plane thumb↔index gap / palm height), same numbers.
+    const ratio = features.pinchRatio;
     const rawPinch = resolveRawPinch(ratio, rawPinchRef.current);
     rawPinchRef.current = rawPinch;
     const pinchGate = advancePinchGate(pinchGateRef.current, rawPinch, now);
     pinchGateRef.current = pinchGate;
+
+    // Phase 36J — advance the full-hand tracker (smoothed pose, debounced
+    // finger states) and resolve the gesture candidate from the STABILIZED
+    // signals, with the debounced pinch hold taking priority so this layer can
+    // never contradict the preserved pinch pipeline.
+    const trackerState = advanceHandTracker(handTrackerRef.current, features, now);
+    handTrackerRef.current = trackerState;
+    const trackedPose = trackerState.pose;
+    const rawPose = trackedPose
+      ? classifyHandPose(trackedPose.fingers, trackedPose.openness, pinchGate.held)
+      : "unknown";
+    const gestureResult = advanceGestureResolver(
+      gestureResolverRef.current,
+      rawPose,
+      now,
+    );
+    gestureResolverRef.current = gestureResult.state;
 
     // Phase 36E — display-only EMA on the palm centroid marker (snaps to the
     // raw point on the first frame a hand appears). Command math is untouched.
@@ -973,9 +1129,10 @@ function MotionSandboxPanel({
     };
     smoothedRef.current = smoothed;
 
-    // Overlay renders the debounced pinch phase (idle/ready/holding) and the
-    // display-smoothed centroid, so neither strobes on single-frame noise.
-    drawOverlay(landmarks, pinchGate.phase, palmDisplay);
+    // Overlay renders the debounced pinch phase (idle/ready/holding), the
+    // display-smoothed centroid, and (36J) the smoothed palm-frame axes, so
+    // none of them strobes on single-frame noise.
+    drawOverlay(landmarks, pinchGate.phase, palmDisplay, trackedPose);
 
     const published = publishReadout(smoothed, now);
     if (!published) return;
@@ -996,11 +1153,26 @@ function MotionSandboxPanel({
     // so moving the hand toward the user's right increases it.
     setDiagnostics({
       pinchRatio: ratio,
-      palmSpan: palmSpan(landmarks),
+      palmSpan: features.palmHeight,
       palmX: 1 - palmDisplay.x,
       palmY: palmDisplay.y,
       handSpan: handBoundingSpan(landmarks),
     });
+    // Phase 36J — the concise spatial-tracking readout: gesture candidate,
+    // smoothed palm orientation, openness, scale, and finger states.
+    setSpatial(
+      trackedPose && trackedPose.valid
+        ? {
+            pose: gestureResult.candidate,
+            yawDeg: (trackedPose.orientation.yawRad * 180) / Math.PI,
+            pitchDeg: (trackedPose.orientation.pitchRad * 180) / Math.PI,
+            rollDeg: (trackedPose.orientation.rollRad * 180) / Math.PI,
+            openness: trackedPose.openness,
+            handScale: trackedPose.handScale,
+            fingers: trackedPose.fingers,
+          }
+        : null,
+    );
   }, [drawOverlay, emitIdleFrame, publishReadout]);
 
   // The single RAF loop. Dispatches to the active estimator each frame and
@@ -1040,12 +1212,15 @@ function MotionSandboxPanel({
     setHandInfo(NO_HAND);
     setFeedback(NEUTRAL_FEEDBACK);
     setDiagnostics(NO_DIAGNOSTICS);
+    setSpatial(null);
     smoothedRef.current =
       activeMode === "mediapipe-hand-landmarker" ? MEDIAPIPE_IDLE : ZERO_MOTION;
     controlGateRef.current = createControlGate();
     pinchGateRef.current = createPinchGate();
     rawPinchRef.current = false;
     palmDisplayRef.current = null;
+    handTrackerRef.current = createHandTrackerState();
+    gestureResolverRef.current = createGestureResolverState();
     prevGrayRef.current = null;
     lastVideoTimeRef.current = -1;
 
@@ -1131,6 +1306,7 @@ function MotionSandboxPanel({
     setHandInfo(NO_HAND);
     setFeedback(NEUTRAL_FEEDBACK);
     setDiagnostics(NO_DIAGNOSTICS);
+    setSpatial(null);
     if (mpStatus === "loading") {
       setMpStatus(handLandmarkerRef.current ? "ready" : "idle");
     }
@@ -1193,6 +1369,8 @@ function MotionSandboxPanel({
   const graphCue: { label: string; tone: PillTone } = graphControlEnabled
     ? { label: "Linked", tone: "success" }
     : { label: "Off", tone: "neutral" };
+  // Phase 36J — the resolved gesture candidate for the spatial readout header.
+  const poseCue = poseLabel(spatial?.pose ?? null);
 
   return (
     <section className="motion-sandbox" id={id}>
@@ -1501,6 +1679,80 @@ function MotionSandboxPanel({
               </dd>
             </div>
           </dl>
+        </div>
+      )}
+
+      {/* Phase 36J — full-hand spatial tracking readout. A concise view of the
+          new foundation: the resolved gesture candidate (possible → "?",
+          confirmed → solid), the smoothed palm orientation, openness, hand
+          scale, and the debounced per-finger states. All values come from the
+          stabilized tracker, so they read steadily instead of strobing; every
+          field shows "—" before camera start and whenever tracking is not
+          valid. Read-only, MediaPipe only. */}
+      {isMediaPipe && (
+        <div className="motion-sandbox-spatial" aria-live="polite">
+          <div className="motion-sandbox-readout-head">
+            <h3 className="motion-sandbox-readout-title">Spatial tracking</h3>
+            <div className="motion-sandbox-cue" data-tone={poseCue.tone}>
+              <span className="motion-sandbox-cue-key">Pose</span>
+              <span className="motion-sandbox-cue-val">{poseCue.label}</span>
+            </div>
+          </div>
+          <dl className="motion-sandbox-metrics">
+            <div>
+              <dt>palm yaw</dt>
+              <dd>
+                {spatial ? formatDegrees(spatial.yawDeg) : "—"}
+                <span className="motion-sandbox-hint">+ index side near</span>
+              </dd>
+            </div>
+            <div>
+              <dt>palm pitch</dt>
+              <dd>
+                {spatial ? formatDegrees(spatial.pitchDeg) : "—"}
+                <span className="motion-sandbox-hint">+ fingers near</span>
+              </dd>
+            </div>
+            <div>
+              <dt>palm roll</dt>
+              <dd>
+                {spatial ? formatDegrees(spatial.rollDeg) : "—"}
+                <span className="motion-sandbox-hint">0° ≈ fingers up</span>
+              </dd>
+            </div>
+            <div>
+              <dt>openness</dt>
+              <dd>
+                {spatial ? spatial.openness.toFixed(2) : "—"}
+                <span className="motion-sandbox-hint">0 fist · 1 open</span>
+              </dd>
+            </div>
+            <div>
+              <dt>hand scale</dt>
+              <dd>
+                {spatial ? spatial.handScale.toFixed(3) : "—"}
+                <span className="motion-sandbox-hint">zoom 0 ≈ 0.22</span>
+              </dd>
+            </div>
+            <div>
+              <dt>tracking</dt>
+              <dd>{spatial ? "valid" : "—"}</dd>
+            </div>
+          </dl>
+          <div className="motion-sandbox-fingers">
+            {FINGER_ORDER.map(({ key, label }) => (
+              <span
+                key={key}
+                className="motion-sandbox-finger"
+                data-state={spatial ? spatial.fingers[key] : "unknown"}
+              >
+                <span className="motion-sandbox-finger-key">{label}</span>
+                <span className="motion-sandbox-finger-val">
+                  {spatial ? fingerStateLabel(spatial.fingers[key]) : "—"}
+                </span>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
