@@ -123,8 +123,39 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 36F - Spatial Hive Point-Cloud Graph Manipulation
-  + Living Hive Preservation Pass` (**frontend-only**). The Knowledge Graph
+- **Current phase:** `Phase 36G - Elastic Spatial Hive Manipulation Planning`
+  (**planning / documentation only, no implementation**). Defines the
+  implementation contract for making the Spatial Hive a *handled* object,
+  in two parts. **Infinite/freeform orbit:** the recommended path is wrapped
+  (unbounded, wrap-normalized) **yaw with clamped pitch** — endless horizontal
+  spin like turning a globe, chosen over arcball / free-roll alternatives
+  because the pitch clamp keeps the structure from ever flipping and keeps
+  billboard labels readable, while the existing projector already handles any
+  yaw value (the current ±58° bound is a composition policy, not a math
+  limit). **Elastic node-pull:** a new pure, deterministic,
+  presentation-only deformation layer (working name `spatialHiveElastic.ts`)
+  holding a transient per-node displacement field — the grabbed node follows
+  the pointer (eased, capped), direct neighbors follow at 0.35–0.55 strength,
+  second-degree neighbors at 0.12–0.25, unrelated nodes stay still, with
+  weights computed once per grab by BFS over the *real* edge list so the
+  deformation visualizes actual relationships; release eases everything back
+  to exactly zero. Explicitly **not** a physics simulation: no force solver,
+  no D3, no physics engine, no new dependency, no persistence — closed-form
+  displacement math, cleared by release / Esc / Recenter / reload. The
+  [planning doc](docs/planning/phase-36g-elastic-spatial-hive-manipulation-planning.md)
+  separates the three layers (read-only source graph data / deterministic
+  Phase 36F spatial projection / new transient elastic interaction) and
+  specifies interaction rules (click still selects; drag-from-empty still
+  orbits; drag-from-node becomes pull; pull never selects or mutates),
+  reduced-motion behavior, motion-tracking compatibility (pinch-grab maps
+  onto the same abstract grab/pull/release contract later), acceptance
+  criteria, and rollback. Graph and source data remain strictly read-only;
+  **screenshot / evidence capture stays deferred** until the
+  post-implementation surface settles. Docs-only: no frontend, backend, API,
+  schema, package, dependency, or persistence change.
+
+  The preceding **Phase 36F - Spatial Hive Point-Cloud Graph Manipulation
+  + Living Hive Preservation Pass** (**frontend-only**). The Knowledge Graph
   now renders on a **pseudo-3D spatial point-cloud foundation**: every node
   receives stable spatial coordinates (x, y, z) derived deterministically from
   the existing layout + node identity/degree (`spatialHiveProjection.ts` — no

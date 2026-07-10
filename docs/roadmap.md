@@ -41,13 +41,48 @@ and the [Phase 33B 2.5D Spatial Hive Visual Contract + Implementation Readiness]
 and the [Phase 33E 2.5D Spatial Hive QA + Screenshot Evidence Refresh](demo/phase-33e-2-5d-spatial-hive-qa-screenshot-evidence.md),
 and the [Phase 34A Spatial Hive Visual Refinement Planning](planning/phase-34a-spatial-hive-visual-refinement-planning.md),
 and the [Phase 35A Spatial Hive Interaction State Planning](planning/phase-35a-spatial-hive-interaction-state-planning.md),
+and the [Phase 36G Elastic Spatial Hive Manipulation Planning](planning/phase-36g-elastic-spatial-hive-manipulation-planning.md),
 and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-contract.md).
 
 ## Current status
 
-**Current phase:** Phase 36F — Spatial Hive Point-Cloud Graph Manipulation +
-Living Hive Preservation Pass (**frontend-only**, on branch
-`phase-36f-spatial-hive-point-cloud`). The Knowledge Graph now sits on a
+**Current phase:** Phase 36G — Elastic Spatial Hive Manipulation Planning
+(**planning / documentation only, no implementation**, on branch
+`phase-36g-elastic-spatial-hive-manipulation-planning`). Defines the
+implementation contract for making the Spatial Hive a *handled* object:
+(1) an **infinite/freeform orbit camera** — the recommended path is
+**Option A: wrapped (unbounded, wrap-normalized) yaw + clamped pitch**, chosen
+over an arcball or free yaw/pitch/roll because it delivers endless horizontal
+spin at the lowest cost and risk while the pitch clamp keeps the structure
+from ever flipping and billboard labels always readable; and (2) an
+**elastic node-pull deformation layer** — a new pure, deterministic,
+presentation-only module (working name `spatialHiveElastic.ts`) holding a
+transient per-node world-space displacement field: the grabbed node follows
+the pointer (eased, magnitude-capped), direct neighbors follow at 0.35–0.55
+strength, second-degree neighbors at 0.12–0.25, unrelated nodes stay still
+(weights from a once-per-grab BFS over the *real* edge list, monotone in hop
+distance), and release eases every displacement back to exactly zero. No
+force simulation, no physics engine, no D3, no new dependency, no
+persistence — displacement is closed-form (grab displacement × static
+weight, exponential settle), unit-testable, and cleared by release, Escape,
+Recenter, and reload. The planning doc
+([phase-36g-elastic-spatial-hive-manipulation-planning.md](planning/phase-36g-elastic-spatial-hive-manipulation-planning.md))
+separates the three layers (read-only source graph data / deterministic 36F
+spatial projection / new transient elastic interaction), specifies
+hover/select/inspector/Esc/Recenter rules, reduced-motion behavior
+(user-coupled drag stays, all autonomous motion — inertia, spring-back
+animation, sway — goes), motion-tracking compatibility (pinch-grab maps onto
+the same abstract grab/pull/release contract; not implemented or tested
+yet), acceptance criteria, and rollback strategy. Graph and source data
+remain strictly read-only; **screenshot / evidence capture stays deferred**
+until the post-implementation surface settles (planned as the phase after
+implementation, ideally combined with the pending human-in-frame motion-feel
+session). Docs-only: no frontend, backend, API, schema, package, dependency,
+or persistence change.
+
+The preceding **Phase 36F — Spatial Hive Point-Cloud Graph Manipulation +
+Living Hive Preservation Pass** (**frontend-only**, on branch
+`phase-36f-spatial-hive-point-cloud`, PR #148). The Knowledge Graph now sits on a
 **pseudo-3D spatial point-cloud foundation** added *underneath* the existing
 living-Hive polish. New pure helpers: `spatialHiveProjection.ts` (stable
 per-node x/y/z from the deterministic ring layout + identity/degree hashes —
