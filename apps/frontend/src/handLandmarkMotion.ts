@@ -9,7 +9,20 @@
    Everything here is deterministic and side-effect free. No AI/LLM, no training,
    no persistence, no I/O — given the same landmarks it always returns the same
    command. That makes the sign conventions and thresholds auditable in one place
-   and keeps them identical to the frame-difference contract hardened in 32C. */
+   and keeps them identical to the frame-difference contract hardened in 32C.
+
+   Phase 36J: the command derivation now consumes the full-hand feature layer
+   (handSpatialTracking.ts — palm frame, hand scale, per-finger state) instead
+   of re-deriving sparse wrist/thumb/index geometry here. The MotionCommand
+   contract itself is unchanged. The `.ts` import extension is deliberate: it
+   lets the dependency-free Node self-test execute this chain directly via
+   type stripping (see handSpatialTracking.selftest.ts). */
+
+import {
+  extractHandSpatialFeatures,
+  HAND_LANDMARKS,
+  type HandSpatialFeatures,
+} from "./handSpatialTracking.ts";
 
 /** The detection backend that produced a command. Phase 32B/32C shipped only the
     dependency-free frame-difference estimator; Phase 32D adds a MediaPipe
@@ -64,20 +77,14 @@ export const ZERO_MOTION: MotionCommand = {
 /** Minimal normalized-landmark shape. MediaPipe returns `NormalizedLandmark`
     objects with more fields; we depend only on x/y (0..1, origin top-left) and
     the relative depth z, so the derivation stays decoupled from the package's
-    exact types and remains trivially testable. */
+    exact types and remains trivially testable. Structurally identical to
+    `Vec3` in handSpatialTracking.ts. */
 export type Landmark = { x: number; y: number; z: number };
 
-// MediaPipe Hand Landmarker index map (21 landmarks per hand). Only the subset
-// the derivation uses is named here.
-export const LM = {
-  WRIST: 0,
-  THUMB_TIP: 4,
-  INDEX_MCP: 5,
-  INDEX_TIP: 8,
-  MIDDLE_MCP: 9,
-  RING_MCP: 13,
-  PINKY_MCP: 17,
-} as const;
+// MediaPipe Hand Landmarker index map. Phase 36J moved the (now complete,
+// 21-entry) map into handSpatialTracking.ts as the single source of truth;
+// `LM` stays exported here so existing consumers keep working.
+export const LM = HAND_LANDMARKS;
 
 // Palm anchor: the wrist plus the four finger metacarpophalangeal joints. This
 // subset barely moves as fingers flex, so the palm centre stays stable even
@@ -188,35 +195,52 @@ export function pinchRatio(landmarks: Landmark[]): number {
   return distance(landmarks[LM.THUMB_TIP], landmarks[LM.INDEX_TIP]) / palmSpan(landmarks);
 }
 
-/** Derive a normalized MotionCommand from a single hand's landmarks.
+/** Phase 36J — derive a normalized MotionCommand from the full-hand feature
+    set (the preferred path; `deriveHandCommand` delegates here).
 
-    `landmarks`      21 normalized landmarks for one hand.
-    `handednessScore` MediaPipe's 0..1 classification score (used as confidence).
-    `timestamp`      performance.now() of the source frame.
+    `features` must be extracted with `mirrorX: true` so its coordinates are
+    already in the mirrored control space ("user's right → positive yaw", the
+    32C convention). Mapping:
 
-    The preview and overlay are mirrored (CSS scaleX(-1)); MediaPipe runs on the
-    RAW video, so we mirror x here (mx = 1 − x) to keep "user's right → positive
-    yaw" consistent with the frame-difference path and the 32C contract. This is a
-    raw, unsmoothed target — the panel applies EMA smoothing to the continuous
-    fields and leaves the discrete ones (pinchActive) alone. */
-export function deriveHandCommand(
-  landmarks: Landmark[],
+      yawDelta / pitchDelta  from the PALM CENTER — the 5-point palm-anchor
+                             centroid (wrist + four MCPs), stable while
+                             individual fingers flex, instead of any single
+                             landmark.
+      zoomDelta              from the normalized HAND SCALE (max of palm height
+                             and aspect-compensated palm width) — steadier under
+                             hand pitch/yaw than the bare wrist→middle-MCP span.
+                             For a camera-facing palm the two measures agree, so
+                             NEUTRAL_PALM_SPAN keeps its meaning.
+      pinchActive            from the feature pinch ratio — same normalization
+                             (image-plane gap / palm height), same threshold.
+
+    An invalid feature set (missing/degenerate landmarks) yields a safe idle
+    command with zero confidence — degenerate geometry can never leak NaN or a
+    control spike downstream. This is a raw, unsmoothed target — the panel
+    applies EMA smoothing to the continuous fields and the temporal gates to
+    the discrete ones. */
+export function deriveHandCommandFromFeatures(
+  features: HandSpatialFeatures,
   handednessScore: number,
   timestamp: number,
 ): MotionCommand {
-  const palm = palmCenter(landmarks);
-  // Mirror x to match the mirrored preview: user's right hand → positive yaw.
-  const mirroredX = 1 - palm.x;
-  const yawDelta = clamp((mirroredX - 0.5) * 2, -1, 1);
+  if (!features.valid) {
+    return { ...ZERO_MOTION, source: "mediapipe-hand-landmarker", timestamp };
+  }
+
+  const yawDelta = clamp((features.palmCenter.x - 0.5) * 2, -1, 1);
   // Image y grows downward; invert so hand-up (small y) is a positive pitch,
   // matching the 32C "positive = up" convention.
-  const pitchDelta = clamp((0.5 - palm.y) * 2, -1, 1);
+  const pitchDelta = clamp((0.5 - features.palmCenter.y) * 2, -1, 1);
 
-  // Single-camera depth proxy: bigger apparent palm → closer → zoom in.
-  const span = palmSpan(landmarks);
-  const zoomDelta = clamp((span - NEUTRAL_PALM_SPAN) * ZOOM_GAIN, -1, 1);
+  // Single-camera depth proxy: bigger apparent hand → closer → zoom in.
+  const zoomDelta = clamp(
+    (features.handScale - NEUTRAL_PALM_SPAN) * ZOOM_GAIN,
+    -1,
+    1,
+  );
 
-  const pinchActive = pinchRatio(landmarks) < PINCH_RATIO_THRESHOLD;
+  const pinchActive = features.pinchRatio < PINCH_RATIO_THRESHOLD;
 
   const confidence = clamp(handednessScore, 0, 1);
 
@@ -230,6 +254,26 @@ export function deriveHandCommand(
     source: "mediapipe-hand-landmarker",
     timestamp,
   };
+}
+
+/** Derive a normalized MotionCommand from a single hand's landmarks.
+
+    `landmarks`      21 normalized landmarks for one hand.
+    `handednessScore` MediaPipe's 0..1 classification score (used as confidence).
+    `timestamp`      performance.now() of the source frame.
+
+    The preview and overlay are mirrored (CSS scaleX(-1)); MediaPipe runs on the
+    RAW video, so extraction mirrors x (mx = 1 − x) to keep "user's right →
+    positive yaw" consistent with the frame-difference path and the 32C
+    contract. Since Phase 36J this is a thin wrapper over the full-hand feature
+    extraction + `deriveHandCommandFromFeatures`. */
+export function deriveHandCommand(
+  landmarks: Landmark[],
+  handednessScore: number,
+  timestamp: number,
+): MotionCommand {
+  const features = extractHandSpatialFeatures(landmarks, { mirrorX: true });
+  return deriveHandCommandFromFeatures(features, handednessScore, timestamp);
 }
 
 /* Phase 32M — Gesture-recognition stability + control-zone feedback helpers.
