@@ -1620,6 +1620,51 @@ const GraphCanvas = memo(function GraphCanvas({
       }, 0);
     };
 
+    // Phase 36I — window blur / focus-steal safety net. A gesture can be
+    // interrupted without ever delivering pointerup or pointercancel to the
+    // surface: alt-tabbing with the button held, an OS focus steal, a native
+    // dialog, or the tab being backgrounded. That is a real wedge here, not a
+    // cosmetic one — a live `press` blocks every subsequent pointerdown ("one
+    // gesture at a time"), and a held grab freezes the elastic displacement at
+    // its target while pausing momentum, so a single dropped release would
+    // strand the whole interaction until the effect rebuilds. Treat the
+    // interruption as a clean, throw-less release: end the gesture, hand the
+    // deformation back to the recovery decay (or snap home under reduced
+    // motion), and never coast — a blur is an interruption, not a fling.
+    const cancelActiveGesture = () => {
+      if (press === null) return;
+      const { pointerId, mode } = press;
+      press = null;
+      // Interrupted drag places the structure; it is never thrown on a blur.
+      dragVelocityRef.current = SPATIAL_ANGULAR_VELOCITY_ZERO;
+      if (mode === "grab") {
+        grabSession = null;
+        if (prefersReducedMotion) {
+          // No loop under reduced motion: snap the deformation home now.
+          elasticWeightsRef.current = null;
+          grabDisplacementRef.current = ELASTIC_VECTOR_ZERO;
+          grabTargetRef.current = ELASTIC_VECTOR_ZERO;
+          residualDisplacementRef.current.clear();
+          applyCurrent();
+        }
+        // Otherwise the driver loop's recovery decay eases every displaced
+        // node smoothly back to its deterministic home position.
+      }
+      wrap.classList.remove("graph-orbiting", "graph-node-grabbing");
+      try {
+        if (wrap.hasPointerCapture(pointerId)) {
+          wrap.releasePointerCapture(pointerId);
+        }
+      } catch {
+        // Nothing to release.
+      }
+      // No trailing click follows a blur-interrupted gesture, so clear the
+      // suppression flag immediately (not on the next task like a real
+      // pointerup) — it must never linger and swallow a later selection click.
+      suppressNextClick = false;
+      interactionOwnerRef.current = resolveOwner();
+    };
+
     const onPointerLeave = () => {
       pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
     };
@@ -1668,6 +1713,9 @@ const GraphCanvas = memo(function GraphCanvas({
     wrap.addEventListener("click", onClickCapture, true);
     wrap.addEventListener("dragstart", onDragStart);
     wrap.addEventListener("dblclick", onDoubleClick);
+    // Phase 36I: window-level blur ends any in-flight gesture cleanly (see
+    // cancelActiveGesture) so a focus steal can never wedge pointer input.
+    window.addEventListener("blur", cancelActiveGesture);
 
     // Re-fit the particle canvas when the surface resizes (static redraw at
     // the current pose; the SVG scales itself via its viewBox).
@@ -1701,6 +1749,7 @@ const GraphCanvas = memo(function GraphCanvas({
       wrap.removeEventListener("click", onClickCapture, true);
       wrap.removeEventListener("dragstart", onDragStart);
       wrap.removeEventListener("dblclick", onDoubleClick);
+      window.removeEventListener("blur", cancelActiveGesture);
       wrap.classList.remove("graph-orbiting", "graph-node-grabbing");
       resizeObserver?.disconnect();
       applyPoseRef.current = null;

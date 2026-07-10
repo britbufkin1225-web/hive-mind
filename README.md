@@ -123,8 +123,41 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 36H - Elastic Spatial Hive Manipulation`
-  (**frontend-only implementation**). Implements the Phase 36G contract: the
+- **Current phase:**
+  `Phase 36I - Elastic Spatial Hive Live Interaction QA + Tuning`
+  (**frontend-only**). A focused live-interaction QA and defensive pass over
+  the Phase 36H elastic system — not a feature-expansion phase: no new
+  gestures, no dependency / backend / API / schema / persistence change, and
+  the read-only graph-data contract is preserved. **Verified live** against a
+  connected runtime (live backend, the real 7-node graph): pointer orbit with
+  continuous wrapped yaw + the preserved pitch clamp + live depth/occlusion
+  reorder; drag-release momentum that coasts and settles; a hub-node grab that
+  follows the pointer under the soft cap while direct neighbors follow
+  attenuated, the two-hop node moves less, and unrelated nodes stay still —
+  edges stretch and stay attached, transforms stay finite (no NaN); full
+  recovery to the deterministic home cloud on release; double-click recenter;
+  and intact click-select + inspector with a clean console. **One defect
+  fixed:** a window blur / focus-steal *mid-gesture* delivered no `pointerup` /
+  `pointercancel`, so the in-flight press was never cleared — and because the
+  surface accepts one gesture at a time, that wedged all further pointer input
+  and froze a held grab. A window `blur` handler (`cancelActiveGesture`) now
+  ends the interrupted gesture as a throw-less release (drops the gesture,
+  recovers the deformation — snapping home under reduced motion — releases
+  pointer capture, and clears the click-suppression flag); verified
+  deterministically (gesture clears on blur, a fresh gesture is accepted
+  immediately after). **No tuning constants were changed** — the existing
+  gains/thresholds/damping carry live-tested rationale (Phases 32H / 36E /
+  36F) and this QA exposed no feel defect to justify moving one. **Motion /
+  webcam:** the pointer↔motion arbitration was *structurally inspected* only;
+  live webcam hand-motion feel was **not tested and remains unverified**.
+  `npm run check:frontend` (tsc + vite build) passes; browser smoke testing
+  passes; no console errors/warnings introduced. **Screenshot / evidence
+  capture remains deferred.** Recommended next: **Phase 36J — Elastic Spatial
+  Hive QA + Screenshot Evidence Refresh** (pointer interaction passed cleanly;
+  only live webcam feel remains).
+
+  The preceding **Phase 36H - Elastic Spatial Hive Manipulation**
+  (**frontend-only implementation**) implements the Phase 36G contract: the
   Spatial Hive is now a *handled* object. **Infinite orbit:** the yaw clamps
   (drag ±42°, total ±58°) are gone — dragging spins the structure endlessly
   in either direction, with the accumulated angle wrap-normalized into
