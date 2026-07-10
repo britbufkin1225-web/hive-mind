@@ -145,9 +145,29 @@ export function buildSpatialHiveNodes(
   const maxDegree = nodes.reduce((max, node) => Math.max(max, node.degree), 0);
   const spatial = new Map<string, SpatialHiveNode>();
 
+  // Rank-stratify the geometric z: nodes are ordered by their depth unit and
+  // assigned evenly spaced slots across the full ±range. Raw degree/hash units
+  // cluster around the middle on small graphs, which left the first 36F pass
+  // occupying only a slice of its depth field; stratification guarantees the
+  // cloud always spans front-to-back while preserving the depth *ordering*
+  // (and therefore the tier vocabulary) that the unit defines. Deterministic:
+  // same nodes, same ranks, every reload.
+  const depthRank = new Map<string, number>();
+  [...nodes]
+    .map((node) => ({
+      id: node.id,
+      unit: computeSpatialDepthUnit(node.id, node.degree, maxDegree),
+    }))
+    .sort((a, b) => a.unit - b.unit || (a.id < b.id ? -1 : 1))
+    .forEach((entry, rank) => depthRank.set(entry.id, rank));
+
   for (const node of nodes) {
     const zUnit = computeSpatialDepthUnit(node.id, node.degree, maxDegree);
-    const z = (zUnit - 0.5) * 2 * SPATIAL_HIVE_DEPTH_RANGE;
+    const rank = depthRank.get(node.id) ?? 0;
+    const z =
+      nodes.length > 1
+        ? ((rank + 0.5) / nodes.length - 0.5) * 2 * SPATIAL_HIVE_DEPTH_RANGE
+        : 0;
 
     let x = node.x;
     let y = node.y;

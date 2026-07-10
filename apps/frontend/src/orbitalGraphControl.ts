@@ -350,14 +350,6 @@ export const SPATIAL_POINTER_MAX_PITCH = 11;
     feel as the camera decay, tuned slightly quicker so parallax feels live. */
 export const SPATIAL_POINTER_EASE = 0.14;
 
-/** Composed-pose clamp: motion pose + pointer offset may sum past the motion
-    bounds, so the composition re-clamps to bounds that admit the full pointer
-    range on top of a maxed motion orbit. */
-export const SPATIAL_COMPOSED_MAX_YAW =
-  ORBITAL_GRAPH_CAMERA_MAX_YAW + SPATIAL_POINTER_MAX_YAW;
-export const SPATIAL_COMPOSED_MAX_PITCH =
-  ORBITAL_GRAPH_CAMERA_MAX_PITCH + SPATIAL_POINTER_MAX_PITCH;
-
 /** Map a cursor position over the graph surface (normalized to [-1, 1] from
     the surface centre) to its parallax target. Non-finite input reads as
     centred; inputs are clamped so an out-of-bounds pointer can't over-tilt.
@@ -392,23 +384,107 @@ export function easePointerPose(
   };
 }
 
-/** Compose the motion camera pose and the pointer parallax offset into the
-    single pose the spatial projection renders from. Additive on yaw/pitch
-    (clamped), zoom passed through the camera's own bounds. Pure. */
+// --- Drag-to-orbit ------------------------------------------------------------
+//
+// Direct manipulation: press and drag on the graph surface to spin the spatial
+// structure, exactly like orbiting a floating object. The drag pose *persists*
+// (no decay) so the user can set a vantage and keep it; Recenter (or a
+// double-click on empty space) clears it. Bounds are wide — this is the input
+// that lets someone actually look around the structure — but still short of a
+// flip-over, so labels never invert.
+
+/** Max drag-accumulated orbit. */
+export const SPATIAL_DRAG_MAX_YAW = 42;
+export const SPATIAL_DRAG_MAX_PITCH = 26;
+
+/** Orbit gain per full surface-width / surface-height of drag travel (deg). */
+export const SPATIAL_DRAG_YAW_GAIN = 140;
+export const SPATIAL_DRAG_PITCH_GAIN = 90;
+
+/** Movement (px) below which a press-and-release still counts as a click on
+    whatever it started on; beyond it the gesture is a drag and the trailing
+    click is suppressed so orbiting never accidentally selects. */
+export const SPATIAL_DRAG_CLICK_THRESHOLD_PX = 4;
+
+/** Accumulate one drag movement (normalized to the surface size: dxNorm = px
+    moved / surface width) into the persistent drag pose. Drag right swings the
+    structure's right side toward the viewer (same sign convention as pointer
+    parallax); drag up tips the top toward the viewer. Pure and clamped. */
+export function applyDragDelta(
+  drag: SpatialPointerPose,
+  dxNorm: number,
+  dyNorm: number,
+): SpatialPointerPose {
+  const dx = Number.isFinite(dxNorm) ? dxNorm : 0;
+  const dy = Number.isFinite(dyNorm) ? dyNorm : 0;
+  return {
+    yaw: clampRange(
+      drag.yaw + dx * SPATIAL_DRAG_YAW_GAIN,
+      -SPATIAL_DRAG_MAX_YAW,
+      SPATIAL_DRAG_MAX_YAW,
+    ),
+    pitch: clampRange(
+      drag.pitch - dy * SPATIAL_DRAG_PITCH_GAIN,
+      -SPATIAL_DRAG_MAX_PITCH,
+      SPATIAL_DRAG_MAX_PITCH,
+    ),
+  };
+}
+
+// --- Ambient sway ---------------------------------------------------------------
+//
+// The floating-object tell: the spatial structure is never frozen. A slow,
+// bounded, deterministic sway (two incommensurate sine periods, so the path
+// never visibly loops) keeps a whisper of parallax alive at rest — depth is
+// visible before the user touches anything. Purely time-based (like a CSS
+// keyframe: no randomness, no state), gentle enough to sit far below the
+// selection/motion emphasis, and dropped entirely under reduced motion.
+
+export const SPATIAL_SWAY_MAX_YAW = 10;
+export const SPATIAL_SWAY_MAX_PITCH = 5;
+export const SPATIAL_SWAY_YAW_PERIOD_S = 26;
+export const SPATIAL_SWAY_PITCH_PERIOD_S = 19;
+
+/** The ambient sway offset at a moment in time. Pure: same t, same pose. */
+export function ambientSwayPose(timeSec: number): SpatialPointerPose {
+  const t = Number.isFinite(timeSec) ? timeSec : 0;
+  return {
+    yaw:
+      SPATIAL_SWAY_MAX_YAW *
+      Math.sin((t / SPATIAL_SWAY_YAW_PERIOD_S) * Math.PI * 2),
+    pitch:
+      SPATIAL_SWAY_MAX_PITCH *
+      Math.sin((t / SPATIAL_SWAY_PITCH_PERIOD_S) * Math.PI * 2 + 1.7),
+  };
+}
+
+/** Total-orbit clamp for the composed pose: motion + drag + parallax + sway
+    may stack, so the sum is bounded well short of a flip-over — the structure
+    can be examined from a steep angle but labels never invert. */
+export const SPATIAL_TOTAL_MAX_YAW = 58;
+export const SPATIAL_TOTAL_MAX_PITCH = 36;
+
+/** Compose every steering input — the opt-in motion camera, the persistent
+    drag orbit, the cursor parallax, and the ambient sway — into the single
+    pose the spatial projection renders from. Additive on yaw/pitch with the
+    total clamp above; zoom stays owned by the motion camera's own bounds.
+    Pure. */
 export function composeSpatialCameraPose(
   camera: OrbitalGraphCameraTransform,
   pointer: SpatialPointerPose,
+  drag: SpatialPointerPose = SPATIAL_POINTER_NEUTRAL,
+  sway: SpatialPointerPose = SPATIAL_POINTER_NEUTRAL,
 ): OrbitalGraphCameraTransform {
   return {
     yaw: clampRange(
-      camera.yaw + pointer.yaw,
-      -SPATIAL_COMPOSED_MAX_YAW,
-      SPATIAL_COMPOSED_MAX_YAW,
+      camera.yaw + pointer.yaw + drag.yaw + sway.yaw,
+      -SPATIAL_TOTAL_MAX_YAW,
+      SPATIAL_TOTAL_MAX_YAW,
     ),
     pitch: clampRange(
-      camera.pitch + pointer.pitch,
-      -SPATIAL_COMPOSED_MAX_PITCH,
-      SPATIAL_COMPOSED_MAX_PITCH,
+      camera.pitch + pointer.pitch + drag.pitch + sway.pitch,
+      -SPATIAL_TOTAL_MAX_PITCH,
+      SPATIAL_TOTAL_MAX_PITCH,
     ),
     zoom: clampRange(
       camera.zoom,

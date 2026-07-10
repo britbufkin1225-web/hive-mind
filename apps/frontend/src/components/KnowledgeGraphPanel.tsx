@@ -4,14 +4,16 @@ import { apiClient } from "../api/client";
 import type { HiveMetadata, KnowledgeGraphResponse } from "../types/api";
 import { ZERO_MOTION, type MotionCommand } from "../handLandmarkMotion";
 import {
+  ambientSwayPose,
+  applyDragDelta,
   composeSpatialCameraPose,
   easePointerPose,
   integrateOrbitalCamera,
   mapMotionCommandToOrbitalGraphControlCommand,
   ORBITAL_GRAPH_CAMERA_NEUTRAL,
   pointerParallaxTarget,
+  SPATIAL_DRAG_CLICK_THRESHOLD_PX,
   SPATIAL_POINTER_NEUTRAL,
-  spatialPosesAlmostEqual,
   type OrbitalGraphCameraTransform,
   type SpatialPointerPose,
 } from "../orbitalGraphControl";
@@ -830,6 +832,9 @@ const GraphCanvas = memo(function GraphCanvas({
   );
   const pointerPoseRef = useRef<SpatialPointerPose>(SPATIAL_POINTER_NEUTRAL);
   const pointerTargetRef = useRef<SpatialPointerPose>(SPATIAL_POINTER_NEUTRAL);
+  // Persistent drag-to-orbit pose: survives effect re-runs so a vantage the
+  // user grabbed stays put until Recenter / double-click clears it.
+  const dragPoseRef = useRef<SpatialPointerPose>(SPATIAL_POINTER_NEUTRAL);
   const appliedPoseRef = useRef<OrbitalGraphCameraTransform>(
     ORBITAL_GRAPH_CAMERA_NEUTRAL,
   );
@@ -1068,6 +1073,7 @@ const GraphCanvas = memo(function GraphCanvas({
       cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
       pointerPoseRef.current = SPATIAL_POINTER_NEUTRAL;
       pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
+      dragPoseRef.current = SPATIAL_POINTER_NEUTRAL;
       applyPose(ORBITAL_GRAPH_CAMERA_NEUTRAL, 0, false);
       onCameraStatus(
         graphControlEnabled
@@ -1092,15 +1098,22 @@ const GraphCanvas = memo(function GraphCanvas({
     }
 
     let frame = 0;
-    let running = false;
     let lastStatus = 0;
 
-    const tick = (now: number) => {
-      frame = 0;
+    // Drag-to-orbit gesture bookkeeping (closure-scoped; the accumulated pose
+    // itself lives in dragPoseRef so it survives effect re-runs and Recenter
+    // can clear it from outside).
+    let pointerHeld = false;
+    let dragPointerId = -1;
+    let dragTravel = 0;
+    let lastDragX = 0;
+    let lastDragY = 0;
+    let suppressNextClick = false;
 
+    const tick = (now: number) => {
       // 1. Motion camera: integrate the gated command stream (only while the
-      //    opt-in control is enabled — otherwise the motion pose holds neutral
-      //    and the cursor is the only steering input).
+      //    opt-in control is enabled — otherwise the motion pose holds
+      //    neutral and the cursor owns the steering).
       if (graphControlEnabled) {
         const command = mapMotionCommandToOrbitalGraphControlCommand(
           motionCommandRef.current,
@@ -1123,9 +1136,9 @@ const GraphCanvas = memo(function GraphCanvas({
         }
       }
 
-      // 2. Cursor parallax: glide toward the pointer target (or back to
-      //    neutral after pointer leave), then compose both inputs into the
-      //    single projection pose.
+      // 2. Compose every steering input: motion pose + eased cursor parallax
+      //    + persistent drag orbit + the slow ambient sway that keeps a
+      //    whisper of parallax alive at rest (the floating-object tell).
       pointerPoseRef.current = easePointerPose(
         pointerPoseRef.current,
         pointerTargetRef.current,
@@ -1133,51 +1146,122 @@ const GraphCanvas = memo(function GraphCanvas({
       const composed = composeSpatialCameraPose(
         cameraPoseRef.current,
         pointerPoseRef.current,
+        dragPoseRef.current,
+        ambientSwayPose(now / 1000),
       );
+      applyPose(composed, now / 1000, true);
 
-      const moved = !spatialPosesAlmostEqual(composed, appliedPoseRef.current);
-      if (moved || graphControlEnabled) {
-        // While control is on, redraw even when still so the particle shimmer
-        // stays alive as the "camera armed" ambience.
-        applyPose(composed, now / 1000, true);
-      }
-
-      // 3. Keep running while motion control needs its command/status loop, or
-      //    while the pointer pose is still travelling; otherwise sleep.
-      const pointerSettled =
-        pointerPoseRef.current.yaw === pointerTargetRef.current.yaw &&
-        pointerPoseRef.current.pitch === pointerTargetRef.current.pitch;
-      if (graphControlEnabled || !pointerSettled || moved) {
-        frame = requestAnimationFrame(tick);
-      } else {
-        running = false;
-      }
+      // 3. The sway keeps the pose perpetually breathing, so the driver runs
+      //    for the life of the (non-reduced-motion) surface — no sleep state.
+      frame = requestAnimationFrame(tick);
     };
 
-    const ensureRunning = () => {
-      if (!running) {
-        running = true;
-        frame = requestAnimationFrame(tick);
-      }
+    // --- Direct manipulation: press-drag orbits the structure ---------------
+    // Reads only cursor movement; never selection, never data. A press only
+    // becomes a drag past the click threshold, so plain clicks keep their
+    // normal target and the read-only select/deselect behavior is untouched.
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      pointerHeld = true;
+      dragPointerId = event.pointerId;
+      dragTravel = 0;
+      lastDragX = event.clientX;
+      lastDragY = event.clientY;
     };
 
-    // Pointer parallax listeners. Reads only cursor position over the surface;
-    // never selection, never data. Normalized offset from the wrap centre maps
-    // to a bounded parallax target (orbitalGraphControl owns the mapping).
     const onPointerMove = (event: PointerEvent) => {
       const box = wrap.getBoundingClientRect();
       if (box.width < 1 || box.height < 1) return;
+      if (pointerHeld && event.pointerId === dragPointerId) {
+        const dx = event.clientX - lastDragX;
+        const dy = event.clientY - lastDragY;
+        lastDragX = event.clientX;
+        lastDragY = event.clientY;
+        dragTravel += Math.abs(dx) + Math.abs(dy);
+        if (dragTravel > SPATIAL_DRAG_CLICK_THRESHOLD_PX) {
+          // Real drag: capture the pointer so the orbit keeps following even
+          // outside the surface, flag the trailing click for suppression so
+          // orbiting never selects, and steer the persistent drag pose.
+          // Capture is taken only after the threshold, so an ordinary click's
+          // pointerup still lands on the node/edge it pressed.
+          try {
+            if (!wrap.hasPointerCapture(event.pointerId)) {
+              wrap.setPointerCapture(event.pointerId);
+            }
+          } catch {
+            // Capture is a smoothness nicety; dragging works without it.
+          }
+          suppressNextClick = true;
+          wrap.classList.add("graph-orbiting");
+          dragPoseRef.current = applyDragDelta(
+            dragPoseRef.current,
+            dx / box.width,
+            dy / box.height,
+          );
+        }
+        return; // while dragging, the cursor steers the orbit, not parallax
+      }
+      // Cursor parallax target: normalized offset from the surface centre,
+      // mapped through the bounded parallax helper.
       const nx = ((event.clientX - box.left) / box.width) * 2 - 1;
       const ny = ((event.clientY - box.top) / box.height) * 2 - 1;
       pointerTargetRef.current = pointerParallaxTarget(nx, ny);
-      ensureRunning();
     };
+
+    const endDrag = (event: PointerEvent) => {
+      if (event.pointerId !== dragPointerId) return;
+      pointerHeld = false;
+      dragPointerId = -1;
+      wrap.classList.remove("graph-orbiting");
+      try {
+        if (wrap.hasPointerCapture(event.pointerId)) {
+          wrap.releasePointerCapture(event.pointerId);
+        }
+      } catch {
+        // Nothing to release.
+      }
+      // The click a drag suppresses fires synchronously right after this
+      // pointerup; if the gesture produced no click at all (released off-
+      // surface / cancelled), disarm on the next task so the flag can never
+      // linger and swallow a later, legitimate selection click.
+      window.setTimeout(() => {
+        suppressNextClick = false;
+      }, 0);
+    };
+
     const onPointerLeave = () => {
       pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
-      ensureRunning();
     };
+
+    // A gesture that travelled past the click threshold must not commit the
+    // click it releases on (capture phase, so it is consumed before the
+    // node/edge/empty-space handlers ever see it).
+    const onClickCapture = (event: MouseEvent) => {
+      if (suppressNextClick) {
+        suppressNextClick = false;
+        event.stopPropagation();
+        event.preventDefault();
+      }
+    };
+
+    // Double-click on empty space shakes off the accumulated drag + parallax
+    // orbit — a no-chrome view reset (selection and data untouched). Node and
+    // edge double-clicks are ignored so rapid selection clicks never recenter.
+    const onDoubleClick = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest("[data-spatial-node], [data-spatial-edge]")) return;
+      dragPoseRef.current = SPATIAL_POINTER_NEUTRAL;
+      pointerPoseRef.current = SPATIAL_POINTER_NEUTRAL;
+      pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
+    };
+
+    wrap.addEventListener("pointerdown", onPointerDown);
     wrap.addEventListener("pointermove", onPointerMove);
+    wrap.addEventListener("pointerup", endDrag);
+    wrap.addEventListener("pointercancel", endDrag);
     wrap.addEventListener("pointerleave", onPointerLeave);
+    wrap.addEventListener("click", onClickCapture, true);
+    wrap.addEventListener("dblclick", onDoubleClick);
 
     // Re-fit the particle canvas when the surface resizes (static redraw at
     // the current pose; the SVG scales itself via its viewBox).
@@ -1189,22 +1273,31 @@ const GraphCanvas = memo(function GraphCanvas({
         : null;
     resizeObserver?.observe(wrap);
 
-    // Initial projection at the current composed pose (neutral on first mount;
-    // preserved across toggles/layout refreshes so nothing jumps).
+    // Initial projection at the current composed pose (neutral on first
+    // mount; drag/motion poses are preserved across toggles and layout
+    // refreshes so nothing jumps), then the continuous driver loop.
     applyPose(
-      composeSpatialCameraPose(cameraPoseRef.current, pointerPoseRef.current),
+      composeSpatialCameraPose(
+        cameraPoseRef.current,
+        pointerPoseRef.current,
+        dragPoseRef.current,
+        ambientSwayPose(performance.now() / 1000),
+      ),
       performance.now() / 1000,
       false,
     );
-    if (graphControlEnabled) {
-      ensureRunning();
-    }
+    frame = requestAnimationFrame(tick);
 
     return () => {
-      if (frame) cancelAnimationFrame(frame);
-      running = false;
+      cancelAnimationFrame(frame);
+      wrap.removeEventListener("pointerdown", onPointerDown);
       wrap.removeEventListener("pointermove", onPointerMove);
+      wrap.removeEventListener("pointerup", endDrag);
+      wrap.removeEventListener("pointercancel", endDrag);
       wrap.removeEventListener("pointerleave", onPointerLeave);
+      wrap.removeEventListener("click", onClickCapture, true);
+      wrap.removeEventListener("dblclick", onDoubleClick);
+      wrap.classList.remove("graph-orbiting");
       resizeObserver?.disconnect();
       applyPoseRef.current = null;
     };
@@ -1230,11 +1323,13 @@ const GraphCanvas = memo(function GraphCanvas({
   useEffect(() => {
     if (recenterSignal === 0) return;
     cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
-    // Phase 36F: recenter clears the cursor parallax too, and re-projects the
-    // whole spatial structure at the neutral pose immediately — face-on, level,
-    // unscaled — whether or not the driver loop happens to be running.
+    // Phase 36F: recenter clears the cursor parallax and the persistent drag
+    // orbit too, and re-projects the whole spatial structure at the neutral
+    // pose immediately — face-on, level, unscaled — whether or not the driver
+    // loop happens to be running.
     pointerPoseRef.current = SPATIAL_POINTER_NEUTRAL;
     pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
+    dragPoseRef.current = SPATIAL_POINTER_NEUTRAL;
     applyPoseRef.current?.(ORBITAL_GRAPH_CAMERA_NEUTRAL);
   }, [recenterSignal]);
 
@@ -1651,7 +1746,7 @@ const GraphCanvas = memo(function GraphCanvas({
         ) : hoverEdge !== null ? (
           <>Hovering a relationship · select to inspect</>
         ) : (
-          "Read-only map · select a node or relationship to inspect it."
+          "Read-only map · drag to orbit · select a node or relationship to inspect it."
         )}
       </p>
     </div>

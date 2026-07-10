@@ -65,16 +65,24 @@ depth width factor consumed by an appended CSS ladder that preserves the
 base < incident/hovered < selected weight hierarchy exactly), and the
 particle canvas — near and far objects move differently, so motion and
 cursor input produce true parallax. The depth field is deliberately deep
-(~2.2× near-to-far perspective scale at rest, z ∈ ±240), node/edge **render
-order is depth-sorted per frame** (painter's algorithm on the live projected
-depth — orbiting visibly changes occlusion), and projected depth drives
-per-node fog plus a camera-relative **depth-of-field blur** (selected /
-related / hover-primary / focused nodes always resolve sharp). A new
-always-available **cursor parallax** (bounded ±16° yaw / ±11° pitch, eased
-per frame, composed additively with the opt-in motion camera, wake-on-input
-so the resting graph costs zero rAF work) makes the field feel like a
-floating, manipulable structure without a webcam; motion control remains
-opt-in and Recenter now clears both inputs. **Preserved, riding the projected positions:** breathing
+(~2.2× near-to-far perspective scale at rest, z ∈ ±240, node depths
+**rank-stratified** across the full range so the cloud never clumps
+mid-field), node/edge **render order is depth-sorted per frame** (painter's
+algorithm on the live projected depth — orbiting visibly changes occlusion),
+and projected depth drives per-node fog plus a camera-relative
+**depth-of-field blur** (selected / related / hover-primary / focused nodes
+always resolve sharp). Three always-available cursor inputs make the
+structure directly manipulable without a webcam: **drag-to-orbit** (grab and
+spin, ±42° yaw / ±26° pitch, persistent until Recenter or an empty-space
+double-click; a drag that travels past the click threshold suppresses the
+click it releases on, so orbiting can never select), **cursor parallax**
+(bounded ±16°/±11°, eased per frame), and a slow deterministic **ambient
+sway** (±10°/±5° on ~26s/19s sine periods — time-based like a CSS keyframe,
+no randomness) that keeps a whisper of parallax alive at rest so the field
+reads as floating before any input. All inputs compose additively with the
+opt-in motion camera under a total-orbit clamp (±58°/±36°, labels never
+invert); motion control remains opt-in and Recenter clears every steering
+input. **Preserved, riding the projected positions:** breathing
 nodes, the selected node's pulsing halo + 1.2 depth lift, the related-aura
 tier, hover-primary clarity, the resting far/mid/near tier fades and aerial
 perspective, the depth-floor/veil atmosphere and interaction modes, the

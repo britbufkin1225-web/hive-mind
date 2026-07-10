@@ -6099,3 +6099,18 @@ body,
 .graph-spatial-edge .graph-canvas-edge-selected {
   stroke-width: calc(2.5px * var(--spatial-edge-w, 1));
 }
+
+/* --- Drag-to-orbit affordance ------------------------------------------------
+   The spatial structure is directly grabbable (36F revision): empty canvas
+   shows a grab cursor, and while a drag-orbit is in flight the driver sets
+   `.graph-orbiting` on the wrap so everything under the pointer reads as
+   "holding the object" — including nodes the drag happens to cross, whose
+   pointer cursor would otherwise flicker mid-orbit. */
+.viewfinder-canvas-wrap .graph-canvas {
+  cursor: grab;
+}
+
+.viewfinder-canvas-wrap.graph-orbiting,
+.viewfinder-canvas-wrap.graph-orbiting * {
+  cursor: grabbing;
+}
