@@ -6,17 +6,38 @@ import { ZERO_MOTION, type MotionCommand } from "../handLandmarkMotion";
 import {
   ambientSwayPose,
   applyDragDelta,
+  clampAngularVelocity,
   composeSpatialCameraPose,
   easePointerPose,
   integrateOrbitalCamera,
+  integrateSpatialMomentum,
   mapMotionCommandToOrbitalGraphControlCommand,
   ORBITAL_GRAPH_CAMERA_NEUTRAL,
   pointerParallaxTarget,
+  SPATIAL_ANGULAR_VELOCITY_ZERO,
   SPATIAL_DRAG_CLICK_THRESHOLD_PX,
+  SPATIAL_DRAG_PITCH_GAIN,
+  SPATIAL_DRAG_YAW_GAIN,
+  SPATIAL_MOMENTUM_RELEASE_MAX_AGE_MS,
   SPATIAL_POINTER_NEUTRAL,
   type OrbitalGraphCameraTransform,
+  type SpatialAngularVelocity,
   type SpatialPointerPose,
 } from "../orbitalGraphControl";
+import {
+  buildElasticAdjacency,
+  computeElasticInfluence,
+  decayElasticVector,
+  easeElasticVector,
+  ELASTIC_VECTOR_ZERO,
+  elasticMotionProfile,
+  elasticVectorMagnitude,
+  resolveSpatialInteractionOwner,
+  screenDeltaToWorldDisplacement,
+  softCapElasticDisplacement,
+  type ElasticVector,
+  type SpatialInteractionOwner,
+} from "../spatialHiveElasticity";
 import {
   buildSpatialHiveNodes,
   compareProjectedDepth,
@@ -847,6 +868,38 @@ const GraphCanvas = memo(function GraphCanvas({
   // the draw path each frame. Held in a ref so pose frames never re-render.
   const particleEnergyRef = useRef<Map<string, SpatialParticleEnergy>>(new Map());
 
+  // Phase 36H — elastic manipulation + momentum state. All of it is transient
+  // presentation state held in refs (never React state — these change per
+  // pointer event / per frame) and none of it ever touches graph data: the
+  // deterministic home coordinates in `spatialNodes` stay the single source
+  // of truth that displacement is applied *on top of* and recovered *back to*.
+  //
+  //   interactionOwnerRef   The single arbitration owner (node grab > graph
+  //                         drag > reset > motion control > none), re-resolved
+  //                         whenever the contributing signals change.
+  //   elasticWeightsRef     Bounded BFS influence map for the current/most
+  //                         recent grab; computed once per grab, reused every
+  //                         frame, cleared once recovery settles.
+  //   grabDisplacementRef   The grabbed node's current (eased) displacement.
+  //   grabTargetRef         The pointer-derived, soft-capped target the
+  //                         displacement eases toward while held.
+  //   residualDisplacementRef  Per-node leftovers folded in when a new grab
+  //                         starts mid-recovery, decaying independently so a
+  //                         re-grab never snaps previously displaced nodes.
+  //   dragVelocityRef       Release momentum (deg/ms) for the drag orbit.
+  const interactionOwnerRef = useRef<SpatialInteractionOwner>("none");
+  const elasticWeightsRef = useRef<Map<string, number> | null>(null);
+  const grabDisplacementRef = useRef<ElasticVector>(ELASTIC_VECTOR_ZERO);
+  const grabTargetRef = useRef<ElasticVector>(ELASTIC_VECTOR_ZERO);
+  const residualDisplacementRef = useRef<Map<string, ElasticVector>>(new Map());
+  const dragVelocityRef = useRef<SpatialAngularVelocity>(
+    SPATIAL_ANGULAR_VELOCITY_ZERO,
+  );
+
+  // Undirected relationship adjacency for the elastic influence BFS. Built
+  // only when the edge list changes — never per grab, never per frame.
+  const elasticAdjacency = useMemo(() => buildElasticAdjacency(edges), [edges]);
+
   // Phase 36C hardening — track the OS reduced-motion preference *live*, not
   // just at toggle time. Previously the preference was read once inside the
   // camera effect, so flipping it on mid-session left the rAF loop running
@@ -901,18 +954,21 @@ const GraphCanvas = memo(function GraphCanvas({
           depth-of-field blur can yield to selected / related / hover-primary
           clarity without the driver ever *writing* those classes. */
       inner: SVGGElement | null;
+      /** Node id, so the per-frame elastic displacement lookup (Phase 36H)
+          can offset this node without ever touching its home coordinates. */
+      id: string;
       x: number;
       y: number;
       z: number;
     }> = [];
     svg.querySelectorAll<SVGGElement>("g[data-spatial-node]").forEach((el) => {
-      const spatialNode = spatialNodes.get(
-        el.getAttribute("data-spatial-node") ?? "",
-      );
+      const nodeId = el.getAttribute("data-spatial-node") ?? "";
+      const spatialNode = spatialNodes.get(nodeId);
       if (spatialNode) {
         nodeTargets.push({
           el,
           inner: el.querySelector<SVGGElement>(".graph-canvas-node"),
+          id: nodeId,
           x: spatialNode.x,
           y: spatialNode.y,
           z: spatialNode.z,
@@ -922,16 +978,22 @@ const GraphCanvas = memo(function GraphCanvas({
     const edgeTargets: Array<{
       el: SVGGElement;
       lines: SVGLineElement[];
+      sourceId: string;
+      targetId: string;
       source: { x: number; y: number; z: number };
       target: { x: number; y: number; z: number };
     }> = [];
     svg.querySelectorAll<SVGGElement>("g[data-spatial-edge]").forEach((el) => {
-      const s = spatialNodes.get(el.getAttribute("data-spatial-source") ?? "");
-      const t = spatialNodes.get(el.getAttribute("data-spatial-target") ?? "");
+      const sourceId = el.getAttribute("data-spatial-source") ?? "";
+      const targetId = el.getAttribute("data-spatial-target") ?? "";
+      const s = spatialNodes.get(sourceId);
+      const t = spatialNodes.get(targetId);
       if (s && t) {
         edgeTargets.push({
           el,
           lines: Array.from(el.querySelectorAll<SVGLineElement>("line")),
+          sourceId,
+          targetId,
           source: { x: s.x, y: s.y, z: s.z },
           target: { x: t.x, y: t.y, z: t.z },
         });
@@ -947,6 +1009,7 @@ const GraphCanvas = memo(function GraphCanvas({
       pose: OrbitalGraphCameraTransform,
       timeSec: number,
       animate: boolean,
+      elastic: Map<string, ElasticVector> | null,
     ) => {
       const canvas = particleCanvasRef.current;
       const ctx = canvas?.getContext("2d");
@@ -975,7 +1038,37 @@ const GraphCanvas = memo(function GraphCanvas({
         particleEnergyRef.current,
         timeSec,
         animate,
+        elastic,
       );
+    };
+
+    // Phase 36H — the per-frame elastic displacement field. Closed-form, per
+    // the 36G contract: displacement(node) = grabbedDisplacement × hopWeight
+    // (from the influence map cached once per grab) + any residual folded in
+    // from an interrupted recovery — no per-node velocities, no force solver,
+    // no iteration. Returns null whenever no elastic state is active, so the
+    // resting or purely-orbiting graph pays zero extra cost per frame.
+    const frameElasticDisplacements = (): Map<string, ElasticVector> | null => {
+      const residual = residualDisplacementRef.current;
+      const weights = elasticWeightsRef.current;
+      const grabDisp = grabDisplacementRef.current;
+      const grabActive = weights !== null && elasticVectorMagnitude(grabDisp) > 0;
+      if (!grabActive && residual.size === 0) return null;
+      const out = new Map<string, ElasticVector>();
+      for (const [id, v] of residual) {
+        out.set(id, { dx: v.dx, dy: v.dy, dz: v.dz });
+      }
+      if (grabActive && weights) {
+        for (const [id, weight] of weights) {
+          const base = out.get(id);
+          out.set(id, {
+            dx: (base?.dx ?? 0) + grabDisp.dx * weight,
+            dy: (base?.dy ?? 0) + grabDisp.dy * weight,
+            dz: (base?.dz ?? 0) + grabDisp.dz * weight,
+          });
+        }
+      }
+      return out;
     };
 
     // --- The single pose writer. Re-projects the stable spatial model through
@@ -1008,9 +1101,21 @@ const GraphCanvas = memo(function GraphCanvas({
       timeSec: number,
       animate: boolean,
     ) => {
+      // Phase 36H: elastic offsets are added to the *stable* home coordinates
+      // right before projection — the home positions themselves never change,
+      // so releasing (or resetting) always recovers the exact 36F cloud.
+      const elastic = frameElasticDisplacements();
       const nodePaint: Array<{ el: SVGGElement; depth: number }> = [];
       for (const target of nodeTargets) {
-        const p = projectSpatialPoint(target.x, target.y, target.z, pose, width, height);
+        const shift = elastic?.get(target.id);
+        const p = projectSpatialPoint(
+          target.x + (shift?.dx ?? 0),
+          target.y + (shift?.dy ?? 0),
+          target.z + (shift?.dz ?? 0),
+          pose,
+          width,
+          height,
+        );
         target.el.setAttribute(
           "transform",
           `translate(${p.x.toFixed(2)} ${p.y.toFixed(2)}) scale(${p.scale.toFixed(4)})`,
@@ -1033,11 +1138,25 @@ const GraphCanvas = memo(function GraphCanvas({
       }
       const edgePaint: Array<{ el: SVGGElement; depth: number }> = [];
       for (const target of edgeTargets) {
+        // Edges re-project from their endpoints' *displaced* positions, so
+        // synapses stretch with a pulled node and stay attached throughout.
+        const shiftS = elastic?.get(target.sourceId);
+        const shiftT = elastic?.get(target.targetId);
         const ps = projectSpatialPoint(
-          target.source.x, target.source.y, target.source.z, pose, width, height,
+          target.source.x + (shiftS?.dx ?? 0),
+          target.source.y + (shiftS?.dy ?? 0),
+          target.source.z + (shiftS?.dz ?? 0),
+          pose,
+          width,
+          height,
         );
         const pt = projectSpatialPoint(
-          target.target.x, target.target.y, target.target.z, pose, width, height,
+          target.target.x + (shiftT?.dx ?? 0),
+          target.target.y + (shiftT?.dy ?? 0),
+          target.target.z + (shiftT?.dz ?? 0),
+          pose,
+          width,
+          height,
         );
         for (const line of target.lines) {
           line.setAttribute("x1", ps.x.toFixed(2));
@@ -1059,22 +1178,42 @@ const GraphCanvas = memo(function GraphCanvas({
       edgePaint.sort(compareProjectedDepth);
       lastNodeOrder = reorderIfChanged(nodePaint, lastNodeOrder);
       lastEdgeOrder = reorderIfChanged(edgePaint, lastEdgeOrder);
-      drawParticles(pose, timeSec, animate);
+      drawParticles(pose, timeSec, animate, elastic);
       appliedPoseRef.current = pose;
     };
     applyPoseRef.current = (pose) =>
       applyPose(pose, performance.now() / 1000, false);
 
-    // Respect the OS reduced-motion preference: no loop, no parallax, no
-    // shimmer — but the *static* pseudo-3D structure stays (visual contract:
-    // keep static depth cues, drop movement). A live preference flip re-runs
-    // this effect, so the pose is honestly neutral the moment it changes.
+    // Phase 36H — transient interaction state resets to a clean baseline
+    // whenever this effect rebuilds (graph-data change, motion-control
+    // toggle, live reduced-motion flip): grabs, momentum, and deformation are
+    // presentation-only and must never survive a surface rebuild as stale
+    // state. The deterministic home coordinates are untouched by design.
+    interactionOwnerRef.current = "none";
+    elasticWeightsRef.current = null;
+    grabDisplacementRef.current = ELASTIC_VECTOR_ZERO;
+    grabTargetRef.current = ELASTIC_VECTOR_ZERO;
+    residualDisplacementRef.current.clear();
+    dragVelocityRef.current = SPATIAL_ANGULAR_VELOCITY_ZERO;
+
+    // Reduced-motion tuning profile: under the preference, momentum is
+    // disabled, the grab follow is position-coupled (ease 1, no lag or
+    // overshoot), and recovery snaps home instantly (retain 0).
+    const motionProfile = elasticMotionProfile(prefersReducedMotion);
+
+    // Respect the OS reduced-motion preference: no driver loop, no parallax,
+    // no sway, no shimmer, no momentum, no animated recovery — but the
+    // *static* pseudo-3D structure stays, and direct manipulation remains
+    // usable (36G §11): dragging still reorients and a node pull still tracks
+    // the pointer, both position-coupled (the view moves only while the hand
+    // moves) and rendered event-driven through applyCurrent below. A live
+    // preference flip re-runs this effect, so the pose is honestly neutral
+    // the moment it changes.
     if (prefersReducedMotion) {
       cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
       pointerPoseRef.current = SPATIAL_POINTER_NEUTRAL;
       pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
       dragPoseRef.current = SPATIAL_POINTER_NEUTRAL;
-      applyPose(ORBITAL_GRAPH_CAMERA_NEUTRAL, 0, false);
       onCameraStatus(
         graphControlEnabled
           ? {
@@ -1086,35 +1225,166 @@ const GraphCanvas = memo(function GraphCanvas({
             }
           : GRAPH_CONTROL_STATUS_OFF,
       );
-      return () => {
-        applyPoseRef.current = null;
-      };
-    }
-
-    if (!graphControlEnabled) {
+    } else if (!graphControlEnabled) {
       // Camera held neutral and readout off; cursor parallax stays available.
       cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
       onCameraStatus(GRAPH_CONTROL_STATUS_OFF);
     }
 
+    // One static re-projection of the current composed state. This is the
+    // only render path under reduced motion (called per pointer event); the
+    // continuous loop below owns rendering otherwise.
+    const applyCurrent = () => {
+      applyPose(
+        composeSpatialCameraPose(
+          cameraPoseRef.current,
+          pointerPoseRef.current,
+          dragPoseRef.current,
+          prefersReducedMotion
+            ? SPATIAL_POINTER_NEUTRAL
+            : ambientSwayPose(performance.now() / 1000),
+        ),
+        performance.now() / 1000,
+        false,
+      );
+    };
+
     let frame = 0;
     let lastStatus = 0;
+    let lastFrameTs = performance.now();
 
-    // Drag-to-orbit gesture bookkeeping (closure-scoped; the accumulated pose
-    // itself lives in dragPoseRef so it survives effect re-runs and Recenter
-    // can clear it from outside).
-    let pointerHeld = false;
-    let dragPointerId = -1;
-    let dragTravel = 0;
-    let lastDragX = 0;
-    let lastDragY = 0;
+    // --- Pointer gesture bookkeeping (Phase 36H input arbitration) ----------
+    // One press at a time. It starts "pending" and is promoted to a graph
+    // drag (from empty space) or a node grab (from a node) when it crosses
+    // the click threshold, so plain clicks keep their normal select behavior.
+    // The accumulated pose/deformation lives in refs so Recenter can clear it
+    // from outside this closure.
+    let press: {
+      pointerId: number;
+      lastX: number;
+      lastY: number;
+      travel: number;
+      nodeId: string | null;
+      mode: "pending" | "drag" | "grab";
+    } | null = null;
+    let grabSession: {
+      nodeId: string;
+      home: { x: number; y: number; z: number };
+    } | null = null;
     let suppressNextClick = false;
+    // Release-velocity estimate for drag momentum (deg/ms), exponentially
+    // smoothed over the most recent pointer movements.
+    let velYaw = 0;
+    let velPitch = 0;
+    let lastMoveTs = 0;
+
+    // The single arbitration source of truth (node grab > graph drag > reset
+    // > motion control > none), re-resolved whenever a signal changes and
+    // once per frame so every consumer reads one consistent owner.
+    const resolveOwner = () =>
+      resolveSpatialInteractionOwner({
+        nodeGrabActive: grabSession !== null,
+        graphDragActive: press?.mode === "drag",
+        resetActive: false,
+        motionControlEngaged: graphControlEnabled,
+      });
+
+    // Map a client-space pointer position into viewBox coordinates (the SVG
+    // renders with preserveAspectRatio="xMidYMid meet"; this mirrors the
+    // particle canvas's fit math exactly).
+    const clientToViewBox = (
+      clientX: number,
+      clientY: number,
+    ): { x: number; y: number } | null => {
+      const box = wrap.getBoundingClientRect();
+      if (box.width < 1 || box.height < 1) return null;
+      const fit = Math.min(box.width / width, box.height / height);
+      const offsetX = (box.width - width * fit) / 2;
+      const offsetY = (box.height - height * fit) / 2;
+      return {
+        x: (clientX - box.left - offsetX) / fit,
+        y: (clientY - box.top - offsetY) / fit,
+      };
+    };
+
+    // Begin a node grab: cache the bounded BFS influence map for this node —
+    // computed once per grab, reused every frame, never rebuilt inside the
+    // render loop — and fold any still-recovering displacement into the
+    // residual field so re-grabbing mid-recovery starts from exactly what is
+    // on screen (no snap). Returns false when the node has no spatial home
+    // (should not happen; the press then falls back to a camera drag).
+    const beginGrab = (nodeId: string): boolean => {
+      const home = spatialNodes.get(nodeId);
+      if (!home) return false;
+      const inFlight = frameElasticDisplacements();
+      const residual = residualDisplacementRef.current;
+      residual.clear();
+      if (inFlight) {
+        for (const [id, v] of inFlight) residual.set(id, v);
+      }
+      grabDisplacementRef.current = ELASTIC_VECTOR_ZERO;
+      grabTargetRef.current = ELASTIC_VECTOR_ZERO;
+      elasticWeightsRef.current = computeElasticInfluence(
+        nodeId,
+        elasticAdjacency,
+      );
+      grabSession = { nodeId, home: { x: home.x, y: home.y, z: home.z } };
+      return true;
+    };
+
+    // Update the grabbed node's displacement target from the pointer: project
+    // the node's *home* through the current pose, take the screen-plane delta
+    // to the pointer, unscale by the node's perspective scale, and inverse-
+    // rotate into world space — the node tracks the cursor in its own depth
+    // plane at any yaw/pitch. Soft-capped so no pull can fling a node
+    // off-screen or through the camera plane.
+    const updateGrabTarget = (clientX: number, clientY: number) => {
+      if (!grabSession) return;
+      const pt = clientToViewBox(clientX, clientY);
+      if (!pt) return;
+      const pose = appliedPoseRef.current;
+      const home = grabSession.home;
+      const projected = projectSpatialPoint(
+        home.x,
+        home.y,
+        home.z,
+        pose,
+        width,
+        height,
+      );
+      const sdx = (pt.x - projected.x) / projected.scale;
+      const sdy = (pt.y - projected.y) / projected.scale;
+      const raw = screenDeltaToWorldDisplacement(sdx, sdy, pose.yaw, pose.pitch);
+      // Subtract this node's own residual so the rendered node (home +
+      // residual + grab displacement) lands under the pointer, not past it.
+      const residual = residualDisplacementRef.current.get(grabSession.nodeId);
+      grabTargetRef.current = softCapElasticDisplacement({
+        dx: raw.dx - (residual?.dx ?? 0),
+        dy: raw.dy - (residual?.dy ?? 0),
+        dz: raw.dz - (residual?.dz ?? 0),
+      });
+      if (prefersReducedMotion) {
+        // Position-coupled: no eased lag, no overshoot — and render now,
+        // since no loop is running under reduced motion.
+        grabDisplacementRef.current = grabTargetRef.current;
+        applyCurrent();
+      }
+    };
 
     const tick = (now: number) => {
-      // 1. Motion camera: integrate the gated command stream (only while the
-      //    opt-in control is enabled — otherwise the motion pose holds
-      //    neutral and the cursor owns the steering).
-      if (graphControlEnabled) {
+      // Frame delta, clamped so a tab-throttled frame can never teleport
+      // momentum or deformation (all evolution below is dt-scaled).
+      const dtMs = Math.min(64, Math.max(0, now - lastFrameTs));
+      lastFrameTs = now;
+      const owner = resolveOwner();
+      interactionOwnerRef.current = owner;
+
+      // 1. Motion camera: integrate the gated command stream only while
+      //    motion control actually owns interaction — an active node grab or
+      //    graph drag pauses it (Phase 36H arbitration) without disabling the
+      //    user's opt-in, and it resumes cleanly afterward because the
+      //    integrator drops stale/queued commands via `now`.
+      if (graphControlEnabled && owner === "motion-control") {
         const command = mapMotionCommandToOrbitalGraphControlCommand(
           motionCommandRef.current,
         );
@@ -1136,7 +1406,57 @@ const GraphCanvas = memo(function GraphCanvas({
         }
       }
 
-      // 2. Compose every steering input: motion pose + eased cursor parallax
+      // 2. Drag-release momentum: coast + damp the persistent drag orbit —
+      //    yaw wraps, pitch clamps, velocity decays to exact zero — but never
+      //    while a pointer gesture owns interaction (and a new press zeroes
+      //    the velocity, so touching a spinning structure stops it).
+      if (owner !== "graph-pointer" && owner !== "node-grab") {
+        const momentum = integrateSpatialMomentum(
+          dragPoseRef.current,
+          dragVelocityRef.current,
+          dtMs,
+        );
+        dragPoseRef.current = momentum.drag;
+        dragVelocityRef.current = momentum.velocity;
+      }
+
+      // 3. Elastic displacement evolution: while held, the grabbed node's
+      //    displacement eases toward the pointer target; after release, it
+      //    decays back to exact zero (the recovery factor) and the cached
+      //    influence map is dropped once settled. Residuals from interrupted
+      //    recoveries decay on the same curve. All bounded and closed-form —
+      //    no per-node velocities, no springs, no solver.
+      if (grabSession) {
+        grabDisplacementRef.current = easeElasticVector(
+          grabDisplacementRef.current,
+          grabTargetRef.current,
+          dtMs,
+          motionProfile.grabEase,
+        );
+      } else if (elasticWeightsRef.current !== null) {
+        grabDisplacementRef.current = decayElasticVector(
+          grabDisplacementRef.current,
+          dtMs,
+          motionProfile.recoveryRetain,
+        );
+        if (elasticVectorMagnitude(grabDisplacementRef.current) === 0) {
+          elasticWeightsRef.current = null;
+          grabTargetRef.current = ELASTIC_VECTOR_ZERO;
+        }
+      }
+      const residual = residualDisplacementRef.current;
+      if (residual.size > 0) {
+        for (const [id, v] of residual) {
+          const next = decayElasticVector(v, dtMs, motionProfile.recoveryRetain);
+          if (elasticVectorMagnitude(next) === 0) {
+            residual.delete(id);
+          } else {
+            residual.set(id, next);
+          }
+        }
+      }
+
+      // 4. Compose every steering input: motion pose + eased cursor parallax
       //    + persistent drag orbit + the slow ambient sway that keeps a
       //    whisper of parallax alive at rest (the floating-object tell).
       pointerPoseRef.current = easePointerPose(
@@ -1151,56 +1471,103 @@ const GraphCanvas = memo(function GraphCanvas({
       );
       applyPose(composed, now / 1000, true);
 
-      // 3. The sway keeps the pose perpetually breathing, so the driver runs
+      // 5. The sway keeps the pose perpetually breathing, so the driver runs
       //    for the life of the (non-reduced-motion) surface — no sleep state.
       frame = requestAnimationFrame(tick);
     };
 
-    // --- Direct manipulation: press-drag orbits the structure ---------------
-    // Reads only cursor movement; never selection, never data. A press only
-    // becomes a drag past the click threshold, so plain clicks keep their
-    // normal target and the read-only select/deselect behavior is untouched.
+    // --- Direct manipulation (Phase 36H) -------------------------------------
+    // Press-drag from empty space orbits the structure; press-drag from a
+    // node grabs and elastically displaces it (suppressing camera rotation
+    // for the duration of the grab). Reads only cursor movement; never
+    // selection, never data. A press only becomes a gesture past the click
+    // threshold, so plain clicks keep their normal target and the read-only
+    // select/deselect behavior is untouched.
     const onPointerDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
-      pointerHeld = true;
-      dragPointerId = event.pointerId;
-      dragTravel = 0;
-      lastDragX = event.clientX;
-      lastDragY = event.clientY;
+      if (press !== null) return; // one gesture at a time
+      const nodeEl =
+        (event.target as Element | null)?.closest?.("[data-spatial-node]") ??
+        null;
+      const nodeId = nodeEl?.getAttribute("data-spatial-node") ?? null;
+      press = {
+        pointerId: event.pointerId,
+        lastX: event.clientX,
+        lastY: event.clientY,
+        travel: 0,
+        nodeId: nodeId !== null && spatialNodes.has(nodeId) ? nodeId : null,
+        mode: "pending",
+      };
+      velYaw = 0;
+      velPitch = 0;
+      lastMoveTs = event.timeStamp;
+      // Touching the structure stops any in-flight momentum coast instantly —
+      // grabbing a spinning globe stops it.
+      dragVelocityRef.current = SPATIAL_ANGULAR_VELOCITY_ZERO;
     };
 
     const onPointerMove = (event: PointerEvent) => {
       const box = wrap.getBoundingClientRect();
       if (box.width < 1 || box.height < 1) return;
-      if (pointerHeld && event.pointerId === dragPointerId) {
-        const dx = event.clientX - lastDragX;
-        const dy = event.clientY - lastDragY;
-        lastDragX = event.clientX;
-        lastDragY = event.clientY;
-        dragTravel += Math.abs(dx) + Math.abs(dy);
-        if (dragTravel > SPATIAL_DRAG_CLICK_THRESHOLD_PX) {
-          // Real drag: capture the pointer so the orbit keeps following even
-          // outside the surface, flag the trailing click for suppression so
-          // orbiting never selects, and steer the persistent drag pose.
-          // Capture is taken only after the threshold, so an ordinary click's
-          // pointerup still lands on the node/edge it pressed.
+      if (press && event.pointerId === press.pointerId) {
+        const dx = event.clientX - press.lastX;
+        const dy = event.clientY - press.lastY;
+        press.lastX = event.clientX;
+        press.lastY = event.clientY;
+        press.travel += Math.abs(dx) + Math.abs(dy);
+
+        if (
+          press.mode === "pending" &&
+          press.travel > SPATIAL_DRAG_CLICK_THRESHOLD_PX
+        ) {
+          // Crossing the threshold promotes the press: from a node it becomes
+          // a node grab, from empty space (or an edge) a camera orbit. Either
+          // way the trailing click is suppressed so a manipulation never
+          // selects, and the pointer is captured so the gesture keeps
+          // following outside the surface. Capture is taken only after the
+          // threshold, so an ordinary click's pointerup still lands on the
+          // node/edge it pressed.
+          const grabbed = press.nodeId !== null && beginGrab(press.nodeId);
+          press.mode = grabbed ? "grab" : "drag";
+          suppressNextClick = true;
           try {
             if (!wrap.hasPointerCapture(event.pointerId)) {
               wrap.setPointerCapture(event.pointerId);
             }
           } catch {
-            // Capture is a smoothness nicety; dragging works without it.
+            // Capture is a smoothness nicety; the gesture works without it.
           }
-          suppressNextClick = true;
-          wrap.classList.add("graph-orbiting");
+          wrap.classList.add(grabbed ? "graph-node-grabbing" : "graph-orbiting");
+          interactionOwnerRef.current = resolveOwner();
+        }
+
+        if (press.mode === "grab") {
+          updateGrabTarget(event.clientX, event.clientY);
+        } else if (press.mode === "drag") {
           dragPoseRef.current = applyDragDelta(
             dragPoseRef.current,
             dx / box.width,
             dy / box.height,
           );
+          if (prefersReducedMotion) {
+            // No loop under reduced motion: render this position-coupled
+            // reorientation now, and never estimate a throw velocity.
+            applyCurrent();
+          } else {
+            // Exponentially smoothed release-velocity estimate (deg/ms) from
+            // recent movement, handed to momentum on release.
+            const dtMove = Math.max(1, event.timeStamp - lastMoveTs);
+            const instYaw = ((dx / box.width) * SPATIAL_DRAG_YAW_GAIN) / dtMove;
+            const instPitch =
+              (-(dy / box.height) * SPATIAL_DRAG_PITCH_GAIN) / dtMove;
+            velYaw = velYaw * 0.45 + instYaw * 0.55;
+            velPitch = velPitch * 0.45 + instPitch * 0.55;
+          }
+          lastMoveTs = event.timeStamp;
         }
-        return; // while dragging, the cursor steers the orbit, not parallax
+        return; // while a press is live it owns the pointer — no parallax
       }
+      if (prefersReducedMotion) return; // no cursor parallax under reduced motion
       // Cursor parallax target: normalized offset from the surface centre,
       // mapped through the bounded parallax helper.
       const nx = ((event.clientX - box.left) / box.width) * 2 - 1;
@@ -1209,10 +1576,34 @@ const GraphCanvas = memo(function GraphCanvas({
     };
 
     const endDrag = (event: PointerEvent) => {
-      if (event.pointerId !== dragPointerId) return;
-      pointerHeld = false;
-      dragPointerId = -1;
-      wrap.classList.remove("graph-orbiting");
+      if (press && event.pointerId === press.pointerId) {
+        if (press.mode === "drag" && motionProfile.momentumEnabled) {
+          // Hand the smoothed velocity to momentum only when the release
+          // followed recent movement — a pause-then-release places the
+          // structure instead of throwing it.
+          const fresh =
+            event.timeStamp - lastMoveTs <= SPATIAL_MOMENTUM_RELEASE_MAX_AGE_MS;
+          dragVelocityRef.current = fresh
+            ? clampAngularVelocity({ yaw: velYaw, pitch: velPitch })
+            : SPATIAL_ANGULAR_VELOCITY_ZERO;
+        }
+        if (press.mode === "grab") {
+          grabSession = null;
+          if (prefersReducedMotion) {
+            // Reduced motion: recovery is immediate — snap everything home.
+            elasticWeightsRef.current = null;
+            grabDisplacementRef.current = ELASTIC_VECTOR_ZERO;
+            grabTargetRef.current = ELASTIC_VECTOR_ZERO;
+            residualDisplacementRef.current.clear();
+            applyCurrent();
+          }
+          // Otherwise the driver loop's recovery decay eases every displaced
+          // node smoothly back to its deterministic home position.
+        }
+        press = null;
+        interactionOwnerRef.current = resolveOwner();
+      }
+      wrap.classList.remove("graph-orbiting", "graph-node-grabbing");
       try {
         if (wrap.hasPointerCapture(event.pointerId)) {
           wrap.releasePointerCapture(event.pointerId);
@@ -1220,7 +1611,7 @@ const GraphCanvas = memo(function GraphCanvas({
       } catch {
         // Nothing to release.
       }
-      // The click a drag suppresses fires synchronously right after this
+      // The click a gesture suppresses fires synchronously right after this
       // pointerup; if the gesture produced no click at all (released off-
       // surface / cancelled), disarm on the next task so the flag can never
       // linger and swallow a later, legitimate selection click.
@@ -1245,14 +1636,28 @@ const GraphCanvas = memo(function GraphCanvas({
     };
 
     // Double-click on empty space shakes off the accumulated drag + parallax
-    // orbit — a no-chrome view reset (selection and data untouched). Node and
-    // edge double-clicks are ignored so rapid selection clicks never recenter.
+    // orbit — and, since Phase 36H, any momentum coast and elastic
+    // deformation too — a no-chrome view reset (selection and data
+    // untouched). Node and edge double-clicks are ignored so rapid selection
+    // clicks never recenter.
     const onDoubleClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
       if (target?.closest("[data-spatial-node], [data-spatial-edge]")) return;
       dragPoseRef.current = SPATIAL_POINTER_NEUTRAL;
       pointerPoseRef.current = SPATIAL_POINTER_NEUTRAL;
       pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
+      dragVelocityRef.current = SPATIAL_ANGULAR_VELOCITY_ZERO;
+      elasticWeightsRef.current = null;
+      grabDisplacementRef.current = ELASTIC_VECTOR_ZERO;
+      grabTargetRef.current = ELASTIC_VECTOR_ZERO;
+      residualDisplacementRef.current.clear();
+      if (prefersReducedMotion) applyCurrent(); // no loop to repaint otherwise
+    };
+
+    // Native drag behavior (image/text ghosting) must never start from a
+    // graph gesture; selection is separately blocked in CSS (user-select).
+    const onDragStart = (event: Event) => {
+      event.preventDefault();
     };
 
     wrap.addEventListener("pointerdown", onPointerDown);
@@ -1261,6 +1666,7 @@ const GraphCanvas = memo(function GraphCanvas({
     wrap.addEventListener("pointercancel", endDrag);
     wrap.addEventListener("pointerleave", onPointerLeave);
     wrap.addEventListener("click", onClickCapture, true);
+    wrap.addEventListener("dragstart", onDragStart);
     wrap.addEventListener("dblclick", onDoubleClick);
 
     // Re-fit the particle canvas when the surface resizes (static redraw at
@@ -1275,18 +1681,15 @@ const GraphCanvas = memo(function GraphCanvas({
 
     // Initial projection at the current composed pose (neutral on first
     // mount; drag/motion poses are preserved across toggles and layout
-    // refreshes so nothing jumps), then the continuous driver loop.
-    applyPose(
-      composeSpatialCameraPose(
-        cameraPoseRef.current,
-        pointerPoseRef.current,
-        dragPoseRef.current,
-        ambientSwayPose(performance.now() / 1000),
-      ),
-      performance.now() / 1000,
-      false,
-    );
-    frame = requestAnimationFrame(tick);
+    // refreshes so nothing jumps). The continuous driver loop runs only
+    // outside reduced motion — under the preference, rendering is purely
+    // event-driven (per pointer event via applyCurrent), so there is no loop
+    // and no autonomous movement at all.
+    applyCurrent();
+    if (!prefersReducedMotion) {
+      lastFrameTs = performance.now();
+      frame = requestAnimationFrame(tick);
+    }
 
     return () => {
       cancelAnimationFrame(frame);
@@ -1296,8 +1699,9 @@ const GraphCanvas = memo(function GraphCanvas({
       wrap.removeEventListener("pointercancel", endDrag);
       wrap.removeEventListener("pointerleave", onPointerLeave);
       wrap.removeEventListener("click", onClickCapture, true);
+      wrap.removeEventListener("dragstart", onDragStart);
       wrap.removeEventListener("dblclick", onDoubleClick);
-      wrap.classList.remove("graph-orbiting");
+      wrap.classList.remove("graph-orbiting", "graph-node-grabbing");
       resizeObserver?.disconnect();
       applyPoseRef.current = null;
     };
@@ -1307,6 +1711,7 @@ const GraphCanvas = memo(function GraphCanvas({
     onCameraStatus,
     prefersReducedMotion,
     spatialNodes,
+    elasticAdjacency,
     particleField,
     layout.width,
     layout.height,
@@ -1322,6 +1727,9 @@ const GraphCanvas = memo(function GraphCanvas({
   // guard skips the initial mount so we never fight the first render.
   useEffect(() => {
     if (recenterSignal === 0) return;
+    // Phase 36H: while the reset applies, it owns interaction (arbitration
+    // state 3) — then hands back to "none" so motion control resumes cleanly.
+    interactionOwnerRef.current = "reset";
     cameraPoseRef.current = ORBITAL_GRAPH_CAMERA_NEUTRAL;
     // Phase 36F: recenter clears the cursor parallax and the persistent drag
     // orbit too, and re-projects the whole spatial structure at the neutral
@@ -1330,7 +1738,18 @@ const GraphCanvas = memo(function GraphCanvas({
     pointerPoseRef.current = SPATIAL_POINTER_NEUTRAL;
     pointerTargetRef.current = SPATIAL_POINTER_NEUTRAL;
     dragPoseRef.current = SPATIAL_POINTER_NEUTRAL;
+    // Phase 36H: recenter also zeroes the rotational momentum and the entire
+    // temporary elastic deformation state (active grab weights, displacement,
+    // in-flight recovery residuals), so the baseline it restores includes
+    // canonical yaw/pitch/zoom AND zero deformation — deterministic home
+    // positions, exactly as the reset contract requires.
+    dragVelocityRef.current = SPATIAL_ANGULAR_VELOCITY_ZERO;
+    elasticWeightsRef.current = null;
+    grabDisplacementRef.current = ELASTIC_VECTOR_ZERO;
+    grabTargetRef.current = ELASTIC_VECTOR_ZERO;
+    residualDisplacementRef.current.clear();
     applyPoseRef.current?.(ORBITAL_GRAPH_CAMERA_NEUTRAL);
+    interactionOwnerRef.current = "none";
   }, [recenterSignal]);
 
   // Phase 36F — particle cluster energy. Each node's dust inherits its type
@@ -1746,7 +2165,7 @@ const GraphCanvas = memo(function GraphCanvas({
         ) : hoverEdge !== null ? (
           <>Hovering a relationship · select to inspect</>
         ) : (
-          "Read-only map · drag to orbit · select a node or relationship to inspect it."
+          "Read-only map · drag to orbit · drag a node to feel its connections · select to inspect."
         )}
       </p>
     </div>

@@ -123,7 +123,53 @@ storage, the Hive Console, the Source Registry, the Obsidian import pipeline,
 the Knowledge Graph API, and the read-only Knowledge Graph panel with its custom
 SVG visualization.
 
-- **Current phase:** `Phase 36G - Elastic Spatial Hive Manipulation Planning`
+- **Current phase:** `Phase 36H - Elastic Spatial Hive Manipulation`
+  (**frontend-only implementation**). Implements the Phase 36G contract: the
+  Spatial Hive is now a *handled* object. **Infinite orbit:** the yaw clamps
+  (drag ±42°, total ±58°) are gone — dragging spins the structure endlessly
+  in either direction, with the accumulated angle wrap-normalized into
+  [-180°, 180°) so precision never degrades (seamless across the wrap; the
+  projector feeds yaw straight into cos/sin). Pitch stays clamped at the
+  existing bounds (drag ±26°, total ±36°) so the structure never flips and
+  labels never invert — deliberately **no quaternion, arcball, or free-roll
+  orientation**. Releasing a fast drag hands off to **rotational momentum**:
+  release velocity is estimated from recent pointer movement, speed-capped,
+  and damped by a deterministic frame-rate-aware exponential decay that snaps
+  to exact zero (pitch clamps and yaw wraps throughout the coast; pressing
+  the surface stops it instantly). **Elastic node-pull:** dragging a node
+  past the existing 4px click threshold grabs it — the node tracks the
+  pointer in its own depth plane (screen delta unscaled by its perspective
+  scale, inverse-rotated through the pose), soft-capped via tanh so no pull
+  can fling a node off-screen. Displacement propagates along *real* edges by
+  a closed-form model in the new pure module `spatialHiveElasticity.ts`:
+  `displacement(node) = grabbedDisplacement × hopWeight × recoveryFactor`,
+  with BFS hop weights 1 / 0.45 / 0.18 and exactly 0 beyond two hops
+  (adjacency built once per graph change, influence map once per grab — never
+  per frame), so pulling a node visibly tugs its relationship neighborhood
+  and nothing else; edges and particle shells ride the displaced anchors.
+  Release decays every displacement exponentially back to exact zero;
+  re-grabbing mid-recovery folds the in-flight offsets into a residual field
+  so nothing snaps. Chosen over a force simulation because it is
+  deterministic (same graph + grab + pointer path → same deformation),
+  bounded, O(affected nodes) per frame, and dependency-free — no physics
+  engine, no D3 force, no solver, no per-node velocity state. **Input
+  arbitration:** a single `SpatialInteractionOwner` (node-grab >
+  graph-pointer > reset > motion-control > none) pauses motion-camera deltas
+  during any pointer gesture and resumes them cleanly afterward (the existing
+  stale-command guard prevents resume jumps); the opt-in default-off motion
+  behavior is unchanged. Recenter and double-click reset now also zero
+  momentum and all elastic state. **Reduced motion:** no driver loop, sway,
+  parallax, momentum, overshoot, or animated recovery — but direct
+  manipulation stays usable: drag-to-reorient and node-pull work
+  position-coupled (event-driven rendering) and release snaps home
+  instantly. Everything is presentation-only: graph data, edges, sources,
+  and the deterministic home coordinates are never mutated, nothing is
+  persisted, and the connected-runtime smoke test confirmed the console
+  stays clean with only GET requests during every gesture.
+  `npm run check:frontend` passes. **Screenshot / evidence capture remains
+  deferred**, and live human hand-motion feel is still untested.
+
+  The preceding **Phase 36G - Elastic Spatial Hive Manipulation Planning**
   (**planning / documentation only, no implementation**). Defines the
   implementation contract for making the Spatial Hive a *handled* object,
   in two parts. **Infinite/freeform orbit:** the recommended path is wrapped

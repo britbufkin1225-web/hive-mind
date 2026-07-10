@@ -140,6 +140,12 @@ function rgbChannels(hex: string): string {
  * offset sine — bounded, slow, and per-particle). Callers pass animate: false
  * for still frames and under reduced motion, which freezes the field at full
  * presence with zero movement.
+ *
+ * `displacementByNode` (Phase 36H, optional): transient presentation-only
+ * elastic offsets keyed by anchor node id. A displaced anchor carries its
+ * dust shell with it — the shell rides the same offset its node renders at —
+ * so a pulled cluster stays one organism. The field itself is never mutated;
+ * omitting the map (or an empty map) reproduces the 36F behavior exactly.
  */
 export function drawSpatialHiveParticles(
   ctx: CanvasRenderingContext2D,
@@ -150,12 +156,17 @@ export function drawSpatialHiveParticles(
   energyByNode: Map<string, SpatialParticleEnergy>,
   timeSec: number,
   animate: boolean,
+  displacementByNode?: ReadonlyMap<
+    string,
+    { dx: number; dy: number; dz: number }
+  > | null,
 ): void {
   for (const particle of particles) {
+    const shift = displacementByNode?.get(particle.nodeId);
     const projected = projectSpatialPoint(
-      particle.x,
-      particle.y,
-      particle.z,
+      particle.x + (shift?.dx ?? 0),
+      particle.y + (shift?.dy ?? 0),
+      particle.z + (shift?.dz ?? 0),
       pose,
       width,
       height,
