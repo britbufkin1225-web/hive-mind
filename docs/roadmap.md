@@ -42,12 +42,32 @@ and the [Phase 33E 2.5D Spatial Hive QA + Screenshot Evidence Refresh](demo/phas
 and the [Phase 34A Spatial Hive Visual Refinement Planning](planning/phase-34a-spatial-hive-visual-refinement-planning.md),
 and the [Phase 35A Spatial Hive Interaction State Planning](planning/phase-35a-spatial-hive-interaction-state-planning.md),
 and the [Phase 36G Elastic Spatial Hive Manipulation Planning](planning/phase-36g-elastic-spatial-hive-manipulation-planning.md),
-and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-contract.md).
+and the reusable [2.5D Spatial Hive Visual Contract](2-5d-spatial-hive-visual-contract.md),
+and the [Phase 37A Active Agent Memory + Verification Layer Planning](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
+and its reusable [Active Agent Memory + Verification Layer reference](active-agent-memory-verification-layer.md).
 
 ## Current status
 
-**Current phase:** Phase 36J — Full-Hand Spatial Tracking + Gesture Control
-Foundation (**frontend-only implementation**, on branch
+**Two parallel tracks.** Hive|Mind now runs two roadmap tracks. **Track 1 —
+Spatial Interaction** is the active runtime-implementation track; its active
+implementation phase is **Phase 36K — Full-Hand Gesture Live Camera QA + Control
+Tuning** (live-camera gesture tuning is **not** claimed complete). **Track 2 —
+Agent Intelligence Infrastructure** begins, **documentation-only**, with **Phase
+37A — Active Agent Memory + Verification Layer Planning**: an architecture/product
+plan for maintaining active, evidence-backed project memory across human and agent
+sessions (verified facts and decisions, current-vs-stale/superseded distinction,
+evidence attached to claims, deterministic contradiction detection, active-record
+calculation, and a read-only pre-action context packet), with humans retaining
+authority over decisions and mutation. **No memory runtime, persistence,
+ingestion, contradiction engine, inspector, or repository observer exists yet** —
+Phase 37A adds no dependency and touches no source; the next agent-memory phase is
+**Phase 37B** (contract types / schema alignment). See the
+[Phase 37A planning doc](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
+and its [reusable reference](active-agent-memory-verification-layer.md). All
+implementation claims below remain bounded by actual repository evidence.
+
+**Current phase (Track 1):** Phase 36J — Full-Hand Spatial Tracking + Gesture
+Control Foundation (**frontend-only implementation**, on branch
 `phase-36j-full-hand-spatial-tracking-gesture-foundation`). Webcam graph
 control now derives from the full 21-landmark MediaPipe hand set instead of
 primarily the sparse wrist / thumb-tip / index-tip triangle. A new pure module

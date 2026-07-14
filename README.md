@@ -166,6 +166,24 @@ SVG visualization.
   deferred**. Recommended next: a live-camera validation + conservative
   gesture-tuning pass over the new thresholds.
 
+- **Parallel track — Agent Intelligence Infrastructure (Track 2):**
+  `Phase 37A - Active Agent Memory + Verification Layer Planning`
+  (**documentation only**). A separate architecture/product-planning track that
+  designs how Hive|Mind could maintain active, evidence-backed project memory
+  across human and agent sessions — retaining verified facts and decisions,
+  distinguishing current from stale/superseded information, attaching evidence to
+  claims, detecting deterministic contradictions, computing which records are
+  active, and generating a read-only pre-action context packet — while keeping
+  humans in authority over decisions and mutation. **No memory runtime,
+  persistence, ingestion, contradiction engine, inspector, or repository observer
+  exists yet**; this phase writes the concept only, adds no dependency, and touches
+  no source. The next agent-memory phase is **Phase 37B** (contract types / schema
+  alignment). This track is **parallel to and independent of** the spatial-
+  interaction track above — **Phase 36K remains the active spatial-interaction
+  implementation track**, and live gesture tuning is **not** claimed complete. See
+  the [Phase 37A planning doc](docs/planning/phase-37a-active-agent-memory-verification-layer-planning.md)
+  and the reusable [Active Agent Memory + Verification Layer reference](docs/active-agent-memory-verification-layer.md).
+
   The preceding **Phase 36I - Elastic Spatial Hive Live Interaction QA +
   Tuning** (**frontend-only**). A focused live-interaction QA and defensive pass over
   the Phase 36H elastic system — not a feature-expansion phase: no new
