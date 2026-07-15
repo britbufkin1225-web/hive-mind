@@ -381,3 +381,76 @@ supersession field forward unrewritten.
   UTC-aware timestamps.
 - **No durability by default** — persistence is a serialize/restore boundary; no
   medium is committed.
+
+## 13. Phase 37D — deterministic contradiction detection MVP
+
+Phase 37D adds a **backend-only, read-only** contradiction-detection service
+(`apps/backend/app/services/active_memory_contradiction.py`) over the 37C store.
+It derives contract-valid `ContradictionRecord` results from stored record fields
+and **never** mutates, deletes, supersedes, resolves, or auto-picks a winner; it
+adds no API endpoint, frontend surface, persistence, ingestion, observer, or
+AI/LLM behavior. Records are read through the public `MemoryStore` surface (or a
+plain iterable); the store is untouched.
+
+### 13.1 Supported classes and exact deterministic rules
+
+Records are only ever compared when their **canonical assertion target** matches:
+`project_id` + narrower `scope` (type + id) + normalized `subject` + normalized
+`predicate`. Scope is part of identity and is **not** inherited, so a global claim
+and a phase-scoped claim about the same subject are different targets.
+
+- **`pending_vs_merged`** (mutually-exclusive state) — same target, same
+  `ClaimValueKind`, one normalized value in `{merged}` and the other in
+  `{pending, unmerged, not_merged}`. Severity `critical` (can invalidate a
+  baseline).
+- **`clean_vs_dirty_working_tree`** (mutually-exclusive state) — same target,
+  same value kind, one value `clean` and the other `dirty`. Severity `info`.
+- **`duplicate_phase_status`** (incompatible value assertion) — *both* records are
+  `phase_status`, same target and value kind, normalized values differ, and the
+  pair matched no more-specific vocabulary above. Severity `warning`.
+- **`current_vs_superseded_decision`** (structural, not value-based) — an eligible
+  `project_decision` `R` is still `active`, yet another eligible record `S`
+  authors a `supersedes` link at `R`. Detected from `supersession_refs` +
+  `lifecycle_state` only; no value inference. Severity `warning`.
+
+The recognized value vocabularies are small, closed, and case/whitespace-folded —
+**not** a natural-language ontology; there is no synonym expansion or fuzzy
+matching. A differing-value pair that matches no vocabulary and is not
+`phase_status` produces **nothing** (there is no general "values differ" class).
+
+### 13.2 Deferred class
+
+- **`frontend_only_vs_backend_modification`** is deferred. Establishing it would
+  require mapping a decision/constraint's scope onto observed file-modification
+  paths — a path/domain ontology — which is exactly the speculative semantic
+  inference this phase forbids. It stays deferred until a contract provides a
+  deterministic shared target for it. **`temporal conflict`** and **trust/evidence
+  disagreement** are likewise not implemented: `MemoryRecord` carries no
+  effective-time *validity window* (only point `observed_at`/`created_at`), and no
+  contract `ContradictionClass` represents a trust-disagreement conflict.
+
+### 13.3 Eligibility, normalization, stable id, evidence, ordering
+
+- **Eligibility.** Only `lifecycle_state == active` records participate. Records
+  that left the active baseline (`inactive`/`superseded`/`retracted`/`stale`/
+  `archived`) are stored history and are excluded. `verification_state` does
+  **not** affect eligibility — a contradiction is structural, independent of
+  belief (an `unverified` active claim can still contradict another).
+- **Normalization.** Conservative and deterministic: trim + Unicode casefold for
+  subject, predicate, and value comparison. `"Merged"` == `"merged"` (no false
+  conflict); `"Phase 37B"` groups with `"phase 37b"`; but `"complete"` ≠
+  `"completed"` (no stemming). Comparison is like-with-like: a `ClaimValueKind`
+  mismatch is missing basis, not a conflict.
+- **Stable id.** `contradiction-<sha1(class | canonical-target | sorted-record-ids)>`
+  (repo sha1-hexdigest convention). Depends only on content, never insertion
+  order, RNG, wall-clock, or dict order; reversing the input or re-running over
+  unchanged records reproduces the same id, and duplicate input records (same
+  `record_id`) are de-duplicated so they can never double the output.
+- **Caller owns the clock.** Like the 37C store, the detector never reads the wall
+  clock; `detected_at` is caller-supplied so repeated detection is reproducible.
+- **Evidence.** Each result carries both supporting record ids
+  (`involved_record_ids`), the unioned+sorted supporting `evidence_ids`, and a
+  `metadata` `reason_code` + `assertion_target` + the conflicting canonical values
+  (or supersession record ids). No narrative is fabricated.
+- **Ordering.** Stable: severity (most-severe first) → contradiction class →
+  canonical target → stable id. Insertion order never changes it.
