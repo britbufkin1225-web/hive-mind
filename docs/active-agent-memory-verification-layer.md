@@ -1,8 +1,12 @@
 # Active Agent Memory + Verification Layer — Reusable Reference
 
-**Status:** Concept / reference only. **No implementation exists.** No runtime,
-persistence, ingestion, contradiction engine, context-packet generator,
-inspector, or repository observer has been built.
+**Status:** Architecture reference with partial implementation through Phase 37D.
+Phase 37B implements the `active-memory.v1` backend/frontend contracts, Phase 37C
+implements a deterministic backend-only in-memory store, and Phase 37D implements
+a deterministic backend-only read-only contradiction-detection MVP. No endpoint,
+committed persistence medium, ingestion workflow, active-state calculation,
+context-packet generator, inspector, repository observer, AI/LLM interpretation,
+or autonomous mutation/action execution has been built.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
 types, state axes, evidence hierarchy, and contradiction classes for the Active
 Agent Memory + Verification Layer, so later phases can cite a stable reference
@@ -85,9 +89,12 @@ timestamp, references, invalidation, aggregation.
 
 ## 6. Contradiction classes
 
-**MVP (Phase 37D):** duplicate phase status · pending vs merged · frontend-only vs
-backend modifications · current vs superseded decision · clean vs dirty
-working-tree reports.
+**Implemented in Phase 37D:** duplicate phase status · pending vs merged ·
+current vs superseded decision · clean vs dirty working-tree reports.
+
+**Contracted but deferred:** frontend-only vs backend modifications. This needs a
+deterministic path/scope target model before it can be implemented without
+speculative inference.
 
 **Later (named, not MVP):** test-passed vs failing CI · capability vs missing code
 · dependency-unchanged vs lockfile change · no-persistence vs migration ·
@@ -137,9 +144,10 @@ prose**; reject/redact secrets; **no autonomous repository mutation**.
 
 ## 10. Phase sequence
 
-`37A` Planning → `37B` Contract types / schema alignment → `37C` Deterministic
-memory store MVP → `37D` Contradiction detection MVP → `37E` Pre-action context
-packet → `37F` Active-memory frontend inspector → `37G` Agent session ingestion
+`37A` Planning → `37B` Contract types / schema alignment (implemented) → `37C`
+Deterministic memory store MVP (implemented) → `37D` Contradiction detection MVP
+(implemented, validated, merged) → `37E` Pre-action context packet (next active)
+→ `37F` Active-memory frontend inspector → `37G` Agent session ingestion
 planning → `37H` Repository observer planning. This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
@@ -188,7 +196,8 @@ parity test (`test_active_memory_contracts.py`).
 - **Supersession kind** (`SupersessionKind`): `supersedes` · `superseded_by` ·
   `retracts` · `retracted_by` (only the first and third are *stored*; the `_by`
   values are derived inverses).
-- **Contradiction class** (`ContradictionClass`, the five Phase 37D MVP classes):
+- **Contradiction class** (`ContradictionClass`, the five contracted classes;
+  four are implemented by the Phase 37D MVP):
   `duplicate_phase_status` · `pending_vs_merged` ·
   `frontend_only_vs_backend_modification` · `current_vs_superseded_decision` ·
   `clean_vs_dirty_working_tree`.
@@ -304,9 +313,10 @@ Phase 37C builds the first runtime storage layer over the 37B contracts:
 `apps/backend/app/store/active_memory_store.py` (implementation) and
 `apps/backend/tests/test_active_memory_store.py` (tests). It is **backend-only,
 local-first, deterministic, and read-safe**. It implements the storage domain and
-lifecycle behavior *only* — **no** API endpoint, ingestion, contradiction
-detection, active-state calculation, context-packet generation, or AI/LLM logic
-(those remain 37D–37H), and **no new dependency**.
+lifecycle behavior *only* — **no** API endpoint, ingestion, active-state
+calculation, context-packet generation, or AI/LLM logic, and **no new
+dependency**. Contradiction detection was implemented later by Phase 37D as a
+separate read-only service over the store.
 
 ### 12.1 What the store does
 
@@ -372,9 +382,10 @@ supersession field forward unrewritten.
   head `lifecycle_state`/`verification_state` (transitions replace the stored
   snapshot in-place under immutable-copy semantics); the full append-only event
   history (Phase 37A §4.9) is deferred with the contradiction/verification phases.
-- **No active-state calculation, contradiction detection, or dedup** — 37C
-  stores and transitions records but never picks a winner, detects conflicts, or
-  keys by subject+predicate identity (37D/37E).
+- **No active-state calculation or dedup** — 37C stores and transitions records
+  but never picks a winner or keys by subject+predicate identity. Phase 37D adds
+  a separate read-only contradiction detector; active-state selection remains
+  planned for later phases.
 - **Ordering assumes consistent timestamp awareness** across records (the repo's
   naive-tolerant `datetime` convention); mixing naive and tz-aware `created_at`
   values would break comparison, matching the 37B open question on strict

@@ -77,11 +77,11 @@ Evidence
   -> memory record
   -> verification and lifecycle state
   -> contradiction analysis
-  -> active-state selection
-  -> bounded context packet
+  -> planned active-state selection
+  -> planned bounded context packet
 ```
 
-The first pipeline is implemented across the current app surfaces. The second pipeline currently exists as merged contracts and documentation only; later phases will add the store, rules, packet generation, and inspector.
+The first pipeline is implemented across the current app surfaces. The second pipeline currently exists as merged contracts, a deterministic backend-only in-memory store, and deterministic backend-only read-only contradiction detection; later phases will add active-state selection, packet generation, endpoint exposure, and inspector surfaces.
 
 ## Visual Evidence
 
@@ -197,10 +197,10 @@ Hive|Mind is currently a local, single-user developer tool. It has no authentica
 
 ## Roadmap
 
-The current controlled Track 2 sequence after Phase 37D is:
+The current controlled Track 2 sequence after the completed, validated, and merged Phase 37D is:
 
 ```text
-37E - Pre-action context packet
+37E - Pre-Action Context Packet MVP
 37F - Frontend memory inspector
 ```
 
