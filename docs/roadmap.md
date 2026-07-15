@@ -80,8 +80,7 @@ via defensive deep copies and immutable-record transitions, and serializes /
 restores through a versioned in-memory snapshot boundary (no database, no file
 watcher, no migrations). **Phase 37C adds no API endpoint, ingestion,
 contradiction detection, active-state calculation, context-packet generation, or
-UI, and adds no dependency.** **The active Track 2 phase is now Phase 37D —
-Deterministic Active Memory Contradiction Detection MVP:** a backend-only,
+UI, and adds no dependency.** **Phase 37D — Deterministic Active Memory Contradiction Detection MVP is complete:** a backend-only,
 read-only derivation service
 (`apps/backend/app/services/active_memory_contradiction.py`) over the 37C store
 that derives contract-valid `ContradictionRecord` results from stored fields
@@ -96,8 +95,7 @@ severity-first result order. **`frontend_only_vs_backend_modification` is deferr
 (it would require a path/scope ontology), and temporal/trust classes are not
 implemented (no validity-window or trust-disagreement contract data). **Phase 37D
 mutates nothing, never auto-resolves a contradiction, and adds no API endpoint,
-frontend surface, persistence, or dependency.** **Phase 37E — Deterministic
-Pre-Action Context Packet MVP is next** after 37D. See the
+frontend surface, persistence, or dependency.** **The active Track 2 phase is now Phase 37E — Deterministic Pre-Action Context Packet MVP.** See the
 [Phase 37A planning doc](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
 and its [reusable reference](active-agent-memory-verification-layer.md) (§11
 records the settled 37B contract decisions and rationale). All implementation
