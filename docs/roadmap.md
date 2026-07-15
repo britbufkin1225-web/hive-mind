@@ -49,22 +49,32 @@ and its reusable [Active Agent Memory + Verification Layer reference](active-age
 ## Current status
 
 **Two parallel tracks.** Hive|Mind now runs two roadmap tracks. **Track 1 —
-Spatial Interaction** is the active runtime-implementation track; its active
-implementation phase is **Phase 36K — Full-Hand Gesture Live Camera QA + Control
-Tuning** (live-camera gesture tuning is **not** claimed complete). **Track 2 —
-Agent Intelligence Infrastructure** begins, **documentation-only**, with **Phase
-37A — Active Agent Memory + Verification Layer Planning**: an architecture/product
-plan for maintaining active, evidence-backed project memory across human and agent
-sessions (verified facts and decisions, current-vs-stale/superseded distinction,
-evidence attached to claims, deterministic contradiction detection, active-record
-calculation, and a read-only pre-action context packet), with humans retaining
-authority over decisions and mutation. **No memory runtime, persistence,
-ingestion, contradiction engine, inspector, or repository observer exists yet** —
-Phase 37A adds no dependency and touches no source; the next agent-memory phase is
-**Phase 37B** (contract types / schema alignment). See the
+Spatial Interaction**'s active implementation phase is **Phase 36K — Full-Hand
+Gesture Live Camera QA + Control Tuning**, which is **paused — not canceled, not
+completed, not superseded** (live-camera gesture tuning is **not** claimed
+complete). **Track 2 — Agent Intelligence Infrastructure** is the currently
+active track. **Phase 37A — Active Agent Memory + Verification Layer Planning is
+complete** (documentation-only): the architecture/product plan for maintaining
+active, evidence-backed project memory across human and agent sessions (verified
+facts and decisions, current-vs-stale/superseded distinction, evidence attached
+to claims, deterministic contradiction detection, active-record calculation, and
+a read-only pre-action context packet), with humans retaining authority over
+decisions and mutation. **The active Track 2 phase is now Phase 37B — Active
+Memory Contract Types / Schema Alignment:** stable backend (Pydantic) and
+frontend (TypeScript) **wire contracts** for memory records, structured claims,
+evidence records and bounded references, the separate verification and lifecycle
+state axes, source identity (without trust), supersession/retraction references,
+contradiction records (the five Phase 37D MVP classes), the active-state result
+enum, and the read-only context-packet response — versioned `active-memory.v1`,
+with byte-for-byte frontend/backend enum parity. **Phase 37B is contracts only:
+no persistence, store, API endpoint, ingestion, contradiction execution,
+active-state calculation, context-packet generation, or UI exists yet**, and it
+adds no dependency. **Phase 37C — Deterministic Memory Store MVP is next** after
+37B. See the
 [Phase 37A planning doc](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
-and its [reusable reference](active-agent-memory-verification-layer.md). All
-implementation claims below remain bounded by actual repository evidence.
+and its [reusable reference](active-agent-memory-verification-layer.md) (§11
+records the settled 37B contract decisions and rationale). All implementation
+claims below remain bounded by actual repository evidence.
 
 **Current phase (Track 1):** Phase 36J — Full-Hand Spatial Tracking + Gesture
 Control Foundation (**frontend-only implementation**, on branch

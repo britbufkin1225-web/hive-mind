@@ -315,3 +315,274 @@ export interface IntelligenceReport {
   summary: IntelligenceReportSummary;
 }
 
+// ------------------------------------------------------------------------- //
+// Phase 37B — Active Agent Memory + Verification Layer contract types.
+//
+// Mirrors the backend Phase 37B shapes in
+// `apps/backend/app/models/active_memory.py` exactly (same snake_case wire
+// values, same property names, datetimes as ISO-8601 strings, `dict` as
+// HiveMetadata, Optional as `| null`). Contract-only: no endpoint, store,
+// persistence, ingestion, contradiction/active-state/packet logic, or UI exists
+// yet. Every enum value below is the stable wire contract and must stay
+// byte-for-byte identical to the backend StrEnum values. Rationale for each
+// design decision lives in docs/active-agent-memory-verification-layer.md.
+// ------------------------------------------------------------------------- //
+
+/** Stable wire version for the whole active-memory contract family. */
+export const ACTIVE_MEMORY_CONTRACT_VERSION = "active-memory.v1";
+
+// Closed record categories (backend MemoryRecordKind).
+export type MemoryRecordKind =
+  | "project_fact"
+  | "project_decision"
+  | "project_constraint"
+  | "phase_status"
+  | "repository_state"
+  | "capability";
+
+// Belief axis — kept separate from LifecycleState (backend VerificationState).
+export type VerificationState =
+  | "unverified"
+  | "partially_verified"
+  | "verified"
+  | "human_confirmed"
+  | "contradicted"
+  | "unresolvable";
+
+// In-force axis — kept separate from VerificationState (backend LifecycleState).
+export type LifecycleState =
+  | "active"
+  | "inactive"
+  | "superseded"
+  | "retracted"
+  | "stale"
+  | "archived";
+
+// Qualitative confidence band, separate from verification (backend ConfidenceBand).
+export type ConfidenceBand = "low" | "medium" | "high";
+
+// How to interpret a claim's bounded scalar value (backend ClaimValueKind).
+export type ClaimValueKind =
+  | "string"
+  | "boolean"
+  | "integer"
+  | "float"
+  | "timestamp"
+  | "identifier"
+  | "enum";
+
+// Closed scope axis (backend MemoryScopeType).
+export type MemoryScopeType =
+  | "project"
+  | "repository"
+  | "branch"
+  | "phase"
+  | "feature"
+  | "component"
+  | "session";
+
+// Source identity category — carries NO trust signal (backend MemorySourceType).
+export type MemorySourceType =
+  | "human"
+  | "claude_code"
+  | "codex"
+  | "chatgpt"
+  | "cli_report"
+  | "repository_observer"
+  | "ci_system"
+  | "imported_document"
+  | "unknown";
+
+// Closed evidence categories, not equal in strength (backend EvidenceType).
+export type EvidenceType =
+  | "human_confirmation"
+  | "repository_command_output"
+  | "commit"
+  | "branch"
+  | "pull_request"
+  | "test_output"
+  | "ci_output"
+  | "runtime_api_response"
+  | "source_code"
+  | "source_controlled_doc"
+  | "structured_cli_report"
+  | "structured_agent_report"
+  | "screenshot"
+  | "video"
+  | "conversational_summary"
+  | "inferred_context";
+
+// Bounded, inspectable evidence-reference pointer kinds (backend
+// EvidenceReferenceKind). No raw-command / arbitrary-path kind by design.
+export type EvidenceReferenceKind =
+  | "commit_hash"
+  | "branch_name"
+  | "pull_request_number"
+  | "file_path"
+  | "symbol_reference"
+  | "command_id"
+  | "test_run_id"
+  | "source_record_id"
+  | "artifact_id"
+  | "external_source_id";
+
+// Supersession/retraction link kinds. Only `supersedes`/`retracts` are stored;
+// `superseded_by`/`retracted_by` are derived inverses (backend SupersessionKind).
+export type SupersessionKind =
+  | "supersedes"
+  | "superseded_by"
+  | "retracts"
+  | "retracted_by";
+
+// The five Phase 37D MVP contradiction classes (backend ContradictionClass).
+export type ContradictionClass =
+  | "duplicate_phase_status"
+  | "pending_vs_merged"
+  | "frontend_only_vs_backend_modification"
+  | "current_vs_superseded_decision"
+  | "clean_vs_dirty_working_tree";
+
+// Contradiction resolution lifecycle (backend ContradictionResolutionState).
+export type ContradictionResolutionState = "open" | "resolved" | "archived";
+
+// Optional contradiction impact band (backend ContradictionSeverity).
+export type ContradictionSeverity = "info" | "warning" | "critical";
+
+// Per-slot active-state result — never a boolean (backend ActiveStateResult).
+export type ActiveStateResult =
+  | "active"
+  | "inactive"
+  | "unresolved"
+  | "no_eligible_record";
+
+export interface MemoryScope {
+  scope_type: MemoryScopeType;
+  scope_id: string;
+}
+
+export interface MemorySource {
+  source_type: MemorySourceType;
+  source_id: string;
+  display_label: string | null;
+  session_id: string | null;
+}
+
+export interface MemoryClaim {
+  subject: string;
+  predicate: string;
+  value: string;
+  value_kind: ClaimValueKind;
+  summary: string | null;
+}
+
+export interface EvidenceReference {
+  reference_kind: EvidenceReferenceKind;
+  value: string;
+  detail: string | null;
+}
+
+export interface SupersessionReference {
+  kind: SupersessionKind;
+  target_record_id: string;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface VerificationMetadata {
+  state: VerificationState;
+  checked_at: string | null;
+  checker: MemorySource | null;
+  evidence_ids: string[];
+  note: string | null;
+}
+
+export interface EvidenceRecord {
+  evidence_id: string;
+  evidence_type: EvidenceType;
+  reference: EvidenceReference;
+  scope: MemoryScope | null;
+  source: MemorySource | null;
+  captured_at: string;
+  valid_until: string | null;
+  summary: string | null;
+  metadata: HiveMetadata;
+}
+
+export interface MemoryRecord {
+  record_id: string;
+  kind: MemoryRecordKind;
+  claim: MemoryClaim;
+  project_id: string;
+  scope: MemoryScope | null;
+  source: MemorySource;
+  verification_state: VerificationState;
+  lifecycle_state: LifecycleState;
+  confidence: ConfidenceBand | null;
+  evidence_ids: string[];
+  verification: VerificationMetadata | null;
+  supersession_refs: SupersessionReference[];
+  observed_at: string | null;
+  created_at: string;
+  metadata: HiveMetadata;
+}
+
+export interface ContradictionRecord {
+  contradiction_id: string;
+  contradiction_class: ContradictionClass;
+  involved_record_ids: string[];
+  summary: string;
+  detection_source: MemorySource;
+  detected_at: string;
+  resolution_state: ContradictionResolutionState;
+  resolution_record_id: string | null;
+  resolution_source: MemorySource | null;
+  evidence_ids: string[];
+  severity: ContradictionSeverity | null;
+  metadata: HiveMetadata;
+}
+
+export interface VerificationSummary {
+  verified_count: number;
+  human_confirmed_count: number;
+  partially_verified_count: number;
+  unverified_count: number;
+  contradicted_count: number;
+  unresolvable_count: number;
+}
+
+export interface RepositoryBaseline {
+  project_id: string;
+  branch: string | null;
+  head_commit: string | null;
+  // `null` means unknown — never collapsed to `false`.
+  working_tree_clean: boolean | null;
+  observed_at: string | null;
+  evidence_ids: string[];
+  metadata: HiveMetadata;
+}
+
+export interface PacketWarning {
+  record_id: string;
+  lifecycle_state: LifecycleState;
+  reason: string;
+}
+
+export interface ContextPacket {
+  packet_version: string;
+  generated_at: string;
+  project_id: string;
+  repository_baseline: RepositoryBaseline | null;
+  active_track: string | null;
+  active_phase: string | null;
+  active_facts: MemoryRecord[];
+  active_decisions: MemoryRecord[];
+  active_constraints: MemoryRecord[];
+  known_capabilities: MemoryRecord[];
+  unresolved_contradictions: ContradictionRecord[];
+  warnings: PacketWarning[];
+  evidence_references: EvidenceReference[];
+  verification_summary: VerificationSummary;
+  prohibited_assumptions: string[];
+  read_only: boolean;
+}
+
