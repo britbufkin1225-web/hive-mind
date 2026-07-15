@@ -16,7 +16,7 @@ The problem Hive|Mind is solving is not "generate more content." It is the quiet
 
 The product direction is deliberately evidence-oriented. The app favors deterministic backend derivation, provenance, and read-only inspection before mutation or automation. The current Intelligence Report surfaces temporal decay, dreaming suggestions, provenance chains, and query trails as explainable outputs over existing store and graph structure.
 
-Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Phase 37B implements the backend and frontend wire contracts for that layer; runtime memory storage, contradiction detection, context packet generation, and UI inspection are planned next.
+Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Phase 37B implements the backend and frontend wire contracts for that layer, and Phase 37C adds a deterministic, backend-only in-memory store over those contracts (insert, retrieve, deterministic listing/filtering, explicit lifecycle transitions, and a serialize/restore boundary). Contradiction detection, context packet generation, and UI inspection are planned next.
 
 ## What Hive|Mind Does
 
@@ -44,9 +44,10 @@ Hive|Mind is also developing an **Active Memory and Verification** architecture:
 
 ### Active Memory Foundation
 
-- **Implemented:** `active-memory.v1` backend Pydantic models and mirrored frontend TypeScript types for memory records, evidence records, verification state, lifecycle state, contradiction records, active-state results, and context packets.
-- **Planned:** deterministic memory store, contradiction detection, pre-action context packet generation, and a read-only frontend inspector.
-- **Boundary:** no Active Memory persistence, endpoint, store, runtime verification, contradiction engine, packet generator, repository observer, or UI exists yet.
+- **Implemented (contracts):** `active-memory.v1` backend Pydantic models and mirrored frontend TypeScript types for memory records, evidence records, verification state, lifecycle state, contradiction records, active-state results, and context packets.
+- **Implemented (store):** a deterministic, backend-only in-memory Active Memory store over the `MemoryRecord` contract — insert with duplicate-id rejection, retrieve by id with explicit not-found behavior, deterministic `(created_at, record_id)` listing, contract-backed filtering, table-driven lifecycle transitions with evidence/provenance preservation, and a versioned serialize/restore snapshot boundary.
+- **Planned:** contradiction detection, active-state calculation, pre-action context packet generation, and a read-only frontend inspector.
+- **Boundary:** the store is in-memory with a serialize/restore boundary only — no database, file persistence, endpoint, ingestion, runtime verification, contradiction engine, active-state calculation, packet generator, repository observer, or UI exists yet.
 
 ### Experimental Interaction
 
@@ -117,7 +118,8 @@ More screenshot history and QA notes live in the [Phase 28C graph-primary eviden
 | Spatial Hive | Implemented / experimental | Presentation-only 2.5D graph interaction. |
 | Hand tracking | Experimental | Full-hand foundation exists; live tuning is paused. |
 | Active Memory contracts | Implemented | Backend/frontend `active-memory.v1` contract parity. |
-| Active Memory runtime | Planned | Store, detection, packet generation, observer, and UI are not implemented. |
+| Active Memory store | Implemented | Deterministic backend-only in-memory store: insert, retrieve, ordered listing/filtering, lifecycle transitions, serialize/restore. |
+| Active Memory runtime | Planned | Detection, active-state calculation, packet generation, observer, endpoint, and UI are not implemented. |
 
 ## Architecture And Stack
 
@@ -189,14 +191,13 @@ The root `check` script runs both validation commands.
 
 ## Current Limitations
 
-Hive|Mind is currently a local, single-user developer tool. It has no authentication, authorization, multi-user support, cloud sync, or production deployment hardening. Obsidian import is explicit and one-shot; there is no live vault watcher and no write-back. The Knowledge Graph and Intelligence Report are read-only, and suggestions are advisory only. Query-history persistence remains absent, so query-history-dependent categories stay deferred. Active Memory runtime behavior is not implemented yet. Gesture tracking remains experimental and needs live tuning. The product does not run autonomous agents or mutate repositories.
+Hive|Mind is currently a local, single-user developer tool. It has no authentication, authorization, multi-user support, cloud sync, or production deployment hardening. Obsidian import is explicit and one-shot; there is no live vault watcher and no write-back. The Knowledge Graph and Intelligence Report are read-only, and suggestions are advisory only. Query-history persistence remains absent, so query-history-dependent categories stay deferred. The Active Memory store is deterministic but in-memory only (a serialize/restore boundary, no committed persistence medium), and the rest of the Active Memory runtime — contradiction detection, active-state calculation, context packet generation, endpoint, and UI — is not implemented yet. Gesture tracking remains experimental and needs live tuning. The product does not run autonomous agents or mutate repositories.
 
 ## Roadmap
 
-The current controlled Track 2 sequence after Phase 37B is:
+The current controlled Track 2 sequence after Phase 37C is:
 
 ```text
-37C - Deterministic memory store MVP
 37D - Contradiction detection MVP
 37E - Pre-action context packet
 37F - Frontend memory inspector
