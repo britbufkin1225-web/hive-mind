@@ -66,8 +66,8 @@ bounded references, the separate verification and lifecycle state axes, source
 identity (without trust), supersession/retraction references, contradiction
 records (the five Phase 37D MVP classes), the active-state result enum, and the
 read-only context-packet response — versioned `active-memory.v1`, with
-byte-for-byte frontend/backend enum parity, and adding no dependency. **The
-active Track 2 phase is now Phase 37C — Deterministic Active Memory Store MVP:**
+byte-for-byte frontend/backend enum parity, and adding no dependency. **Phase 37C
+— Deterministic Active Memory Store MVP is complete:**
 a backend-only, in-memory store (`apps/backend/app/store/active_memory_store.py`)
 over the 37B `MemoryRecord` contract that inserts records under caller-supplied
 stable ids (no id generation), retrieves by id with explicit not-found behavior,
@@ -80,8 +80,22 @@ via defensive deep copies and immutable-record transitions, and serializes /
 restores through a versioned in-memory snapshot boundary (no database, no file
 watcher, no migrations). **Phase 37C adds no API endpoint, ingestion,
 contradiction detection, active-state calculation, context-packet generation, or
-UI, and adds no dependency.** **Phase 37D — Contradiction Detection MVP is
-next** after 37C. See the
+UI, and adds no dependency.** **Phase 37D — Deterministic Active Memory Contradiction Detection MVP is complete:** a backend-only,
+read-only derivation service
+(`apps/backend/app/services/active_memory_contradiction.py`) over the 37C store
+that derives contract-valid `ContradictionRecord` results from stored fields
+alone. It implements four of the five contract classes — `pending_vs_merged` and
+`clean_vs_dirty_working_tree` (mutually-exclusive value states),
+`duplicate_phase_status` (incompatible phase-status assertion), and
+`current_vs_superseded_decision` (an `active` decision still targeted by a
+`supersedes` link) — with stable content-derived contradiction ids, conservative
+trim+casefold normalization (no ontology, fuzzy matching, or LLM), `active`-only
+lifecycle eligibility, evidence preserved from the original records, and a stable
+severity-first result order. **`frontend_only_vs_backend_modification` is deferred**
+(it would require a path/scope ontology), and temporal/trust classes are not
+implemented (no validity-window or trust-disagreement contract data). **Phase 37D
+mutates nothing, never auto-resolves a contradiction, and adds no API endpoint,
+frontend surface, persistence, or dependency.** **The active Track 2 phase is now Phase 37E — Deterministic Pre-Action Context Packet MVP.** See the
 [Phase 37A planning doc](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
 and its [reusable reference](active-agent-memory-verification-layer.md) (§11
 records the settled 37B contract decisions and rationale). All implementation
