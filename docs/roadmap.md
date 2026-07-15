@@ -59,18 +59,29 @@ active, evidence-backed project memory across human and agent sessions (verified
 facts and decisions, current-vs-stale/superseded distinction, evidence attached
 to claims, deterministic contradiction detection, active-record calculation, and
 a read-only pre-action context packet), with humans retaining authority over
-decisions and mutation. **The active Track 2 phase is now Phase 37B — Active
-Memory Contract Types / Schema Alignment:** stable backend (Pydantic) and
-frontend (TypeScript) **wire contracts** for memory records, structured claims,
-evidence records and bounded references, the separate verification and lifecycle
-state axes, source identity (without trust), supersession/retraction references,
-contradiction records (the five Phase 37D MVP classes), the active-state result
-enum, and the read-only context-packet response — versioned `active-memory.v1`,
-with byte-for-byte frontend/backend enum parity. **Phase 37B is contracts only:
-no persistence, store, API endpoint, ingestion, contradiction execution,
-active-state calculation, context-packet generation, or UI exists yet**, and it
-adds no dependency. **Phase 37C — Deterministic Memory Store MVP is next** after
-37B. See the
+decisions and mutation. **Phase 37B — Active Memory Contract Types / Schema
+Alignment is complete:** stable backend (Pydantic) and frontend (TypeScript)
+**wire contracts** for memory records, structured claims, evidence records and
+bounded references, the separate verification and lifecycle state axes, source
+identity (without trust), supersession/retraction references, contradiction
+records (the five Phase 37D MVP classes), the active-state result enum, and the
+read-only context-packet response — versioned `active-memory.v1`, with
+byte-for-byte frontend/backend enum parity, and adding no dependency. **The
+active Track 2 phase is now Phase 37C — Deterministic Active Memory Store MVP:**
+a backend-only, in-memory store (`apps/backend/app/store/active_memory_store.py`)
+over the 37B `MemoryRecord` contract that inserts records under caller-supplied
+stable ids (no id generation), retrieves by id with explicit not-found behavior,
+lists in a deterministic `(created_at, record_id)` order, filters by
+contract-backed fields (project / kind / lifecycle state / verification state /
+scope type), transitions lifecycle state through an explicit transition table
+(idempotent self-transitions; terminal `superseded`/`retracted`/`archived`),
+rejects duplicate ids and invalid transitions, preserves evidence and provenance
+via defensive deep copies and immutable-record transitions, and serializes /
+restores through a versioned in-memory snapshot boundary (no database, no file
+watcher, no migrations). **Phase 37C adds no API endpoint, ingestion,
+contradiction detection, active-state calculation, context-packet generation, or
+UI, and adds no dependency.** **Phase 37D — Contradiction Detection MVP is
+next** after 37C. See the
 [Phase 37A planning doc](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
 and its [reusable reference](active-agent-memory-verification-layer.md) (§11
 records the settled 37B contract decisions and rationale). All implementation

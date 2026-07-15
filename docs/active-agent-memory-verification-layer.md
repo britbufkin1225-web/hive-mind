@@ -295,3 +295,89 @@ parity test (`test_active_memory_contracts.py`).
 - **Verification-event history.** 37B models the *latest* verification as optional
   `VerificationMetadata`; the full append-only `VerificationRecord` event trail
   (Phase 37A §4.9) is left to the 37C store, which owns immutability/append-only.
+
+---
+
+## 12. Phase 37C — deterministic Active Memory store MVP
+
+Phase 37C builds the first runtime storage layer over the 37B contracts:
+`apps/backend/app/store/active_memory_store.py` (implementation) and
+`apps/backend/tests/test_active_memory_store.py` (tests). It is **backend-only,
+local-first, deterministic, and read-safe**. It implements the storage domain and
+lifecycle behavior *only* — **no** API endpoint, ingestion, contradiction
+detection, active-state calculation, context-packet generation, or AI/LLM logic
+(those remain 37D–37H), and **no new dependency**.
+
+### 12.1 What the store does
+
+A small explicit abstraction — a `MemoryStore` `Protocol` plus an
+`InMemoryActiveMemoryStore` implementation — supporting: insert a `MemoryRecord`;
+retrieve by id (`get` raises `RecordNotFoundError`, `find` returns `None`); list
+in deterministic order; filter by a small set of contract-backed fields; transition
+lifecycle state through an explicit table; and serialize / restore through a
+versioned snapshot boundary.
+
+### 12.2 Persistence mechanism selected — and why
+
+**In-memory store + a deterministic serialize/restore boundary; no database, no
+file persistence.** Phase 37A/37B fix the record *contracts* but leave the 37C
+persistence *medium* open. Per the phase brief, an undecided medium defaults to a
+clean in-memory store plus a serialization boundary rather than committing
+permanent infrastructure (SQLite, migrations, remote storage, file watchers)
+prematurely. `serialize()` emits a JSON-compatible `{contract_version, records}`
+document (records contract-dumped, in stable order); `restore()`/`from_json()`
+rebuild all-or-nothing with full contract validation. Callers that later want
+durability own reading/writing that snapshot — the store itself never touches the
+filesystem.
+
+### 12.3 Determinism rules
+
+- **Ordering** is explicit and total: ascending `created_at`, then `record_id` as
+  a stable tiebreak. Insertion order never affects output; equal-timestamp records
+  never reorder between runs.
+- **Identifiers** are **caller-supplied** (`MemoryRecord.record_id` is a required
+  contract field); the store generates none — no random UUIDs in core logic.
+- **Timestamps** are never generated or rewritten inside storage operations;
+  `created_at` rides on the record.
+- **Serialization** is byte-stable for unchanged state (`to_json` uses sorted
+  keys); repeated reads never mutate stored records.
+- Tests inject fixed clocks/ids via contract-valid fixtures.
+
+### 12.4 Duplicate, not-found, and immutability behavior
+
+- **Duplicate ids** are rejected deterministically on insert
+  (`DuplicateRecordError`); snapshot restore rejects duplicate ids too.
+- **Not-found** is explicit: `get`/`transition_lifecycle` raise
+  `RecordNotFoundError`; `find` returns `None`.
+- **Immutability / defensive copies** — the store deep-copies on insert, on every
+  read, and on transition, so neither a caller's retained handle nor a returned
+  copy can mutate stored state (Phase 37A §9 immutable-record intent).
+
+### 12.5 Lifecycle transitions
+
+An explicit `LIFECYCLE_TRANSITIONS` table (Phase 37A §7.2/§9), not scattered
+conditionals: `active` → any leaving state (`inactive`/`superseded`/`retracted`/
+`stale`/`archived`); `inactive` ⇄ `active` or → `archived`; `stale` →
+`superseded`/`retracted`/`archived`; `superseded`/`retracted` → `archived` only
+(terminal-ish — reversal is a *new* record, never in-place); `archived` terminal.
+A transition to the current state is an idempotent no-op. Invalid transitions
+raise `InvalidLifecycleTransitionError` and leave the stored record untouched. A
+transition produces a **new record snapshot** (`model_copy`) that changes only
+`lifecycle_state` and carries every claim, evidence, provenance, verification, and
+supersession field forward unrewritten.
+
+### 12.6 Known limitations / deferred to later phases
+
+- **No append-only `VerificationRecord` event trail yet.** 37C stores the record's
+  head `lifecycle_state`/`verification_state` (transitions replace the stored
+  snapshot in-place under immutable-copy semantics); the full append-only event
+  history (Phase 37A §4.9) is deferred with the contradiction/verification phases.
+- **No active-state calculation, contradiction detection, or dedup** — 37C
+  stores and transitions records but never picks a winner, detects conflicts, or
+  keys by subject+predicate identity (37D/37E).
+- **Ordering assumes consistent timestamp awareness** across records (the repo's
+  naive-tolerant `datetime` convention); mixing naive and tz-aware `created_at`
+  values would break comparison, matching the 37B open question on strict
+  UTC-aware timestamps.
+- **No durability by default** — persistence is a serialize/restore boundary; no
+  medium is committed.
