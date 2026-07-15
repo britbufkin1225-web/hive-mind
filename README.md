@@ -166,23 +166,26 @@ SVG visualization.
   deferred**. Recommended next: a live-camera validation + conservative
   gesture-tuning pass over the new thresholds.
 
-- **Parallel track — Agent Intelligence Infrastructure (Track 2):**
-  `Phase 37A - Active Agent Memory + Verification Layer Planning`
-  (**documentation only**). A separate architecture/product-planning track that
-  designs how Hive|Mind could maintain active, evidence-backed project memory
-  across human and agent sessions — retaining verified facts and decisions,
-  distinguishing current from stale/superseded information, attaching evidence to
-  claims, detecting deterministic contradictions, computing which records are
-  active, and generating a read-only pre-action context packet — while keeping
-  humans in authority over decisions and mutation. **No memory runtime,
-  persistence, ingestion, contradiction engine, inspector, or repository observer
-  exists yet**; this phase writes the concept only, adds no dependency, and touches
-  no source. The next agent-memory phase is **Phase 37B** (contract types / schema
-  alignment). This track is **parallel to and independent of** the spatial-
-  interaction track above — **Phase 36K remains the active spatial-interaction
-  implementation track**, and live gesture tuning is **not** claimed complete. See
-  the [Phase 37A planning doc](docs/planning/phase-37a-active-agent-memory-verification-layer-planning.md)
-  and the reusable [Active Agent Memory + Verification Layer reference](docs/active-agent-memory-verification-layer.md).
+- **Active track — Agent Intelligence Infrastructure (Track 2):**
+  `Phase 37B - Active Memory Contract Types / Schema Alignment`
+  (**contracts only**). Phase 37A (planning) is **complete**; Phase 37B defines
+  the stable backend (Pydantic, `apps/backend/app/models/active_memory.py`) and
+  frontend (TypeScript, `apps/frontend/src/types/api.ts`) **wire contracts** for
+  the future memory layer: memory records with structured claims, evidence records
+  with bounded references, the separate `verification` and `lifecycle` state axes,
+  source identity without a trust flag, forward-only supersession/retraction
+  references, contradiction records (the five Phase 37D MVP classes), an explicit
+  active-state result enum, and a read-only context-packet response — versioned
+  `active-memory.v1` with byte-for-byte frontend/backend enum parity. **No
+  persistence, store, API endpoint, ingestion, contradiction execution,
+  active-state calculation, context-packet generation, or UI exists yet**, and no
+  dependency was added; **Phase 37C — Deterministic Memory Store MVP** is next.
+  This track is **parallel to and independent of** the spatial-interaction track
+  above — **Phase 36K remains paused (not completed)**, and live gesture tuning is
+  **not** claimed complete. See the
+  [Phase 37A planning doc](docs/planning/phase-37a-active-agent-memory-verification-layer-planning.md)
+  and the reusable [Active Agent Memory + Verification Layer reference](docs/active-agent-memory-verification-layer.md)
+  (§11 records the settled 37B contract decisions).
 
   The preceding **Phase 36I - Elastic Spatial Hive Live Interaction QA +
   Tuning** (**frontend-only**). A focused live-interaction QA and defensive pass over

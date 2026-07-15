@@ -142,4 +142,156 @@ memory store MVP → `37D` Contradiction detection MVP → `37E` Pre-action cont
 packet → `37F` Active-memory frontend inspector → `37G` Agent session ingestion
 planning → `37H` Repository observer planning. This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
-**Track 1 — Spatial Interaction** (active implementation phase: 36K).
+**Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
+is **paused — not completed**).
+
+---
+
+## 11. Phase 37B — settled contract decisions
+
+Phase 37B converts the Phase 37A concept into stable **wire contracts** — backend
+Pydantic models in `apps/backend/app/models/active_memory.py` and mirrored
+frontend TypeScript in `apps/frontend/src/types/api.ts`. **Contract only:** no
+persistence, store, service, router, endpoint, ingestion, contradiction
+detection, active-state calculation, context-packet generation, or AI/LLM logic
+was added; nothing can store or verify memories after this phase. Enums are
+`StrEnum` with `UPPER_SNAKE` members whose `snake_case` value is the wire
+contract; the frontend unions mirror those literals exactly, checked by a
+parity test (`test_active_memory_contracts.py`).
+
+### 11.1 Final enum wire values
+
+- **Record kind** (`MemoryRecordKind`): `project_fact` · `project_decision` ·
+  `project_constraint` · `phase_status` · `repository_state` · `capability`.
+- **Verification state** (`VerificationState`, belief axis): `unverified` ·
+  `partially_verified` · `verified` · `human_confirmed` · `contradicted` ·
+  `unresolvable`.
+- **Lifecycle state** (`LifecycleState`, in-force axis): `active` · `inactive` ·
+  `superseded` · `retracted` · `stale` · `archived`.
+- **Confidence** (`ConfidenceBand`): `low` · `medium` · `high` (optional).
+- **Claim value kind** (`ClaimValueKind`): `string` · `boolean` · `integer` ·
+  `float` · `timestamp` · `identifier` · `enum`.
+- **Scope type** (`MemoryScopeType`): `project` · `repository` · `branch` ·
+  `phase` · `feature` · `component` · `session`.
+- **Source type** (`MemorySourceType`): `human` · `claude_code` · `codex` ·
+  `chatgpt` · `cli_report` · `repository_observer` · `ci_system` ·
+  `imported_document` · `unknown`.
+- **Evidence type** (`EvidenceType`): `human_confirmation` ·
+  `repository_command_output` · `commit` · `branch` · `pull_request` ·
+  `test_output` · `ci_output` · `runtime_api_response` · `source_code` ·
+  `source_controlled_doc` · `structured_cli_report` · `structured_agent_report` ·
+  `screenshot` · `video` · `conversational_summary` · `inferred_context`.
+- **Evidence reference kind** (`EvidenceReferenceKind`): `commit_hash` ·
+  `branch_name` · `pull_request_number` · `file_path` · `symbol_reference` ·
+  `command_id` · `test_run_id` · `source_record_id` · `artifact_id` ·
+  `external_source_id`.
+- **Supersession kind** (`SupersessionKind`): `supersedes` · `superseded_by` ·
+  `retracts` · `retracted_by` (only the first and third are *stored*; the `_by`
+  values are derived inverses).
+- **Contradiction class** (`ContradictionClass`, the five Phase 37D MVP classes):
+  `duplicate_phase_status` · `pending_vs_merged` ·
+  `frontend_only_vs_backend_modification` · `current_vs_superseded_decision` ·
+  `clean_vs_dirty_working_tree`.
+- **Contradiction resolution state** (`ContradictionResolutionState`): `open` ·
+  `resolved` · `archived`. **Severity** (`ContradictionSeverity`, optional):
+  `info` · `warning` · `critical`.
+- **Active-state result** (`ActiveStateResult`): `active` · `inactive` ·
+  `unresolved` · `no_eligible_record`.
+
+### 11.2 Record, claim, evidence, source, contradiction, packet shapes
+
+- **Record identity** is explicit (`record_id` + claim `subject`/`predicate` +
+  `project_id` + optional narrower `scope` + `source` + `created_at`) — never
+  derived from display text. No dedup logic is implemented.
+- **Claim** is a structured `subject` / `predicate` / bounded scalar `value`
+  (tagged by `value_kind`) plus an optional human `summary` — not prose-only.
+- **Evidence reference** is a bounded pointer: `reference_kind` + `value` +
+  optional `detail` (e.g. a line range). No raw-command / arbitrary-path kind
+  exists; a reference is never executable content or a secret payload.
+- **Evidence record** carries `evidence_type`, the bounded `reference`, optional
+  `scope`/`source`, `captured_at`, an optional `valid_until` freshness window, and
+  a free-form `metadata` bag (where future strength/authority signals ride).
+- **Source identity** (`MemorySource`) is `source_type` + `source_id` + optional
+  `display_label` + optional `session_id`, and carries **no trust flag**.
+- **Supersession/retraction** are forward-only stored links
+  (`SupersessionReference`: `supersedes`/`retracts` → `target_record_id`); the
+  `_by` inverses are derived, never authored.
+- **Contradiction record** carries the class, ≥2 `involved_record_ids`, summary,
+  detection source + time, a resolution state that is never auto-advanced, an
+  optional resolution record/source, evidence refs, and optional severity.
+- **Context packet** is a read-only, bounded, kind-partitioned baseline
+  (`active_facts`/`active_decisions`/`active_constraints`/`known_capabilities`,
+  `unresolved_contradictions`, `warnings`, `evidence_references`,
+  `verification_summary`, `prohibited_assumptions`, a timestamped
+  `repository_baseline`). Only active records enter the baseline; bulky/derivable
+  data is carried by reference; every collection is length-bounded.
+- **Contract version** is a fixed wire literal, `active-memory.v1`
+  (`ACTIVE_MEMORY_CONTRACT_VERSION`), decoupled from the package version.
+
+### 11.3 Why these choices (rationale over alternatives)
+
+- **Separate verification and lifecycle axes** — Phase 37A §7 warned that one
+  overloaded enum makes `superseded` (a lifecycle fact) and `contradicted` (a
+  belief signal) ambiguous. 37B settles it by putting `superseded`/`retracted`/
+  `stale` on the lifecycle axis only; the two axes share **no** wire values, so a
+  consumer can never confuse "believe it?" with "is it in force?".
+- **Structured claims, not prose** — a prose paragraph cannot be compared
+  deterministically, which would make 37D contradiction rules and
+  subject+predicate identity keying impossible. A bounded scalar triple is
+  comparable and serializable and cannot grow into an unbounded recursive blob.
+- **Closed enums for wire values** — 37C/37D branch on record kind, evidence
+  type, and contradiction class; an open string would let a typo create an
+  uncomputable category. Closed sets also let the frontend union + parity test
+  guarantee exact cross-boundary agreement.
+- **Source identity separated from trust** — a recognized `source_type` never
+  implies the source is trusted (Phase 37A §5). Trust is a domain-aware policy
+  over *evidence*, computed later; storing a `trusted` flag on identity would
+  invite the exact "confident wrong report outranks hedged correct one" failure.
+- **Confidence separated from verification** — a qualitative band (not a float)
+  prevents false precision and the silent evidence-averaging Phase 37A §6.3
+  forbids, and keeps "strength of support" distinct from "standing".
+- **Explicit, bounded evidence references** — pointers (hash / PR number / path)
+  rather than payloads keep evidence inspectable and defend the §13 boundary (no
+  executable content, no secret-bearing blobs, DoS-resistant bounded sizes).
+- **Forward-only supersession direction** — one stored direction keeps chains
+  acyclic and the chain head deterministically computable; two independently
+  written link sets could disagree. The inverses are reserved in the vocabulary
+  so a read view can serialize them without storing them.
+- **Bounded context-packet collections** — the packet is a baseline, not a data
+  dump; inlining unlimited history would defeat "read this before acting" and
+  reopen the §13 DoS surface. Active records inline (bounded, kind-partitioned);
+  evidence and stale/superseded history are carried by reference/warning.
+- **Common record model over a discriminated union** — every record kind shares
+  the same identity/claim/evidence/state spine and differs only by `kind` and
+  claim vocabulary, matching the Phase 37A §4 "common conceptual spine". A single
+  `MemoryRecord` keyed by `kind` avoids six near-duplicate models and lets the
+  active-state calculation treat records uniformly; the discriminated union is
+  used where it *does* add safety (claim `value_kind`, supersession `kind`,
+  contradiction `class`).
+- **Timestamp semantics kept distinct** — record `created_at` vs. claimed
+  `observed_at` vs. evidence `captured_at`/`valid_until` vs. verification
+  `checked_at` vs. supersession `created_at` vs. contradiction `detected_at` vs.
+  packet `generated_at` are separate fields; none is silently substituted for
+  another (Phase 37A §13). Values are ISO-8601; UTC/timezone-aware is recommended
+  and enforcement of aware-only is deferred to avoid diverging from the repo's
+  existing naive-tolerant `datetime` convention (see §11.4).
+- **Scope as a closed type + bounded id** lets active state be computed per scope
+  (a decision active for one phase need not be active globally); no scope
+  inheritance is implemented.
+- **Contract version as a fixed literal** lets a client pin `active-memory.v1`
+  independent of the package version; no migration system is built.
+
+### 11.4 Open contract questions (not silently deferred into implementation)
+
+- **Timezone-aware timestamps.** Phase 37A §13 asks for timezone-aware contracts;
+  the repo's existing models use naive-tolerant `datetime`. 37B keeps the repo
+  convention (ISO-8601, tz-aware recommended) and rejects malformed timestamps
+  via Pydantic parsing, but does **not** enforce aware-only. If 37C wants strict
+  UTC-aware timestamps, that is a deliberate, coordinated contract tightening
+  across backend and frontend — not an implementation-time assumption.
+- **Evidence strength / source authority typing.** These ride in `metadata` for
+  now (additive, matching the repo's `metadata.evidence` pattern). Promoting them
+  to typed fields is a 37C+ decision once the trust policy is designed.
+- **Verification-event history.** 37B models the *latest* verification as optional
+  `VerificationMetadata`; the full append-only `VerificationRecord` event trail
+  (Phase 37A §4.9) is left to the 37C store, which owns immutability/append-only.
