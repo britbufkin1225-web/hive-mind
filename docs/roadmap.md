@@ -25,38 +25,36 @@ Implemented runtime capabilities include:
   pointer orbit, momentum, and elastic node manipulation.
 - Motion sandbox foundation using MediaPipe hand landmarks, with live gesture
   tuning still paused.
-- Active Memory foundation through Phase 37D: contract types, deterministic
-  backend-only in-memory store, and deterministic backend-only read-only
-  contradiction detection.
+- Active Memory foundation through Phase 37E: contract types, deterministic
+  backend-only in-memory store, deterministic backend-only read-only
+  contradiction detection, and backend-only deterministic context packet
+  generation.
 
 The product remains local, single-user, and review-oriented. It does not run
 autonomous agents, mutate repositories, persist Active Memory beyond the current
-serialize/restore boundary, or generate pre-action context packets yet.
+serialize/restore boundary, expose context packets through an endpoint, or
+authorize actions from packet data.
 
 ## Active Phase
 
-### Phase 37E — Pre-Action Context Packet MVP
+### Phase 37F — Active-memory Frontend Inspector
 
-Phase 37E is the next active implementation phase on Track 2 — Agent
+Phase 37F is the next planned implementation phase on Track 2 — Agent
 Intelligence Infrastructure.
 
-The goal is to assemble relevant, evidence-backed Active Memory into a bounded,
-deterministic, read-only context packet before an action or decision. The packet
-should make current facts, decisions, constraints, capabilities, unresolved
-contradictions, warnings, evidence references, and prohibited assumptions visible
-without mutating memory records or resolving uncertainty automatically.
-
-Phase 37E has not been implemented. Context packet contract shapes exist from
-Phase 37B, but packet generation logic, active-state calculation, endpoints,
-frontend inspection surfaces, repository observers, and AI/LLM interpretation
-remain planned work unless a later phase explicitly implements them.
+The goal is to expose Active Memory state for human inspection without claiming
+autonomous action, hidden mutation, automatic resolution, or repository
+observation. Phase 37E implemented backend-only deterministic packet generation;
+active-state calculation, endpoints, frontend inspection surfaces, repository
+observers, and AI/LLM interpretation remain planned work unless a later phase
+explicitly implements them.
 
 ## Immediate Sequence
 
 | Phase | Status | Purpose |
 | --- | --- | --- |
-| Phase 37E — Pre-Action Context Packet MVP | Next active | Generate a bounded, deterministic, read-only packet from implemented Active Memory contracts, store records, and contradiction results. |
-| Phase 37F — Active-memory frontend inspector | Planned | Expose Active Memory state for human inspection without claiming autonomous action or hidden mutation. |
+| Phase 37E — Pre-Action Context Packet MVP | Implemented | Generates a bounded, deterministic, read-only backend context packet from implemented Active Memory contracts, store records, and contradiction results. |
+| Phase 37F — Active-memory frontend inspector | Next planned | Expose Active Memory state for human inspection without claiming autonomous action or hidden mutation. |
 | Phase 37G — Agent session ingestion planning | Planned | Plan governed ingestion from session artifacts into evidence-backed records. |
 | Phase 37H — Repository observer planning | Planned | Plan repository-observer workflows and trust boundaries before any watcher/runtime automation exists. |
 
@@ -139,6 +137,15 @@ implementation track.
   conservative trim/casefold normalization, `active`-only lifecycle eligibility,
   preserved evidence, and stable ordering. The detector mutates nothing and never
   auto-resolves a contradiction.
+- **Phase 37E — Deterministic Pre-Action Context Packet MVP:** implemented. It
+  adds a backend-only, read-only packet builder over the 37C store and 37D
+  detector. The builder uses caller-supplied timestamps, exact project and
+  optional exact scope filtering, active-record kind partitioning, unresolved
+  contradiction inclusion, lifecycle warnings for non-active records, verification
+  counts, rigid prohibited-assumption templates, and empty top-level evidence
+  references until a real evidence resolver exists. It adds no endpoint,
+  frontend surface, persistence, action authorization, automatic contradiction
+  resolution, or dependency.
 
 `frontend_only_vs_backend_modification` is a contract class but is not
 implemented in Phase 37D because it needs a deterministic path/scope target model
@@ -161,7 +168,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 | --- | --- | --- |
 | Active Memory persistence | Choose a durable medium after contracts, store semantics, contradiction detection, and context packet generation are stable. | Current store is in-memory with serialize/restore only. |
 | Active-state calculation | Derive safe active baselines while preserving unresolved contradictions and missing evidence. | No "newest wins"; unresolved state must stay visible. |
-| Context packet endpoint/UI | Add reviewed runtime surfaces after Phase 37E generation logic is implemented. | No endpoint or frontend inspector exists yet. |
+| Context packet endpoint/UI | Add reviewed runtime surfaces after Phase 37E generation logic. | No endpoint or frontend inspector exists yet. |
 | Repository observer | Plan before implementation; keep evidence scoped and human-reviewable. | No watcher or automatic repository mutation exists. |
 | AI/LLM integration | Consider only after deterministic trust boundaries and inspection surfaces are stable. | No AI truth arbitration, autonomous resolution, or autonomous action. |
 | Intelligence report expansion | Source coverage, query persistence, and richer provenance/error states. | Read-only derivation over real store data. |
@@ -180,10 +187,11 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 - Query-history persistence does not exist, so query-history-dependent
   intelligence categories remain blocked.
 - Active Memory currently has contracts, a deterministic in-memory backend store,
-  and deterministic read-only contradiction detection. It does not yet have
-  committed persistence, endpoint exposure, ingestion, active-state calculation,
-  context packet generation, frontend inspection, repository observation, or
-  automatic resolution.
+  deterministic read-only contradiction detection, and backend-only context
+  packet generation. It does not yet have committed persistence, endpoint
+  exposure, ingestion, active-state calculation, frontend inspection, repository
+  observation, evidence resolution, action authorization, or automatic
+  resolution.
 - Gesture tracking remains experimental; Phase 36K live camera tuning is paused.
 
 ## Reference Documents

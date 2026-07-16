@@ -16,7 +16,7 @@ The problem Hive|Mind is solving is not "generate more content." It is the quiet
 
 The product direction is deliberately evidence-oriented. The app favors deterministic backend derivation, provenance, and read-only inspection before mutation or automation. The current Intelligence Report surfaces temporal decay, dreaming suggestions, provenance chains, and query trails as explainable outputs over existing store and graph structure.
 
-Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Phase 37B implements the backend and frontend wire contracts for that layer, Phase 37C adds a deterministic, backend-only in-memory store over those contracts (insert, retrieve, deterministic listing/filtering, explicit lifecycle transitions, and a serialize/restore boundary), and Phase 37D adds a backend-only, read-only contradiction-detection service that derives contract-valid contradiction records from stored fields without mutating anything or auto-resolving conflicts. Context packet generation and UI inspection are planned next.
+Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Phase 37B implements the backend and frontend wire contracts for that layer, Phase 37C adds a deterministic, backend-only in-memory store over those contracts (insert, retrieve, deterministic listing/filtering, explicit lifecycle transitions, and a serialize/restore boundary), Phase 37D adds a backend-only, read-only contradiction-detection service that derives contract-valid contradiction records from stored fields without mutating anything or auto-resolving conflicts, and Phase 37E adds backend-only deterministic context packet generation. UI inspection is planned next.
 
 ## What Hive|Mind Does
 
@@ -47,8 +47,9 @@ Hive|Mind is also developing an **Active Memory and Verification** architecture:
 - **Implemented (contracts):** `active-memory.v1` backend Pydantic models and mirrored frontend TypeScript types for memory records, evidence records, verification state, lifecycle state, contradiction records, active-state results, and context packets.
 - **Implemented (store):** a deterministic, backend-only in-memory Active Memory store over the `MemoryRecord` contract — insert with duplicate-id rejection, retrieve by id with explicit not-found behavior, deterministic `(created_at, record_id)` listing, contract-backed filtering, table-driven lifecycle transitions with evidence/provenance preservation, and a versioned serialize/restore snapshot boundary.
 - **Implemented (contradiction detection):** a backend-only, read-only derivation service over the store that produces contract-valid contradiction records from stored fields alone — `pending_vs_merged`, `clean_vs_dirty_working_tree`, `duplicate_phase_status`, and `current_vs_superseded_decision` — with stable content-derived ids, conservative normalization (no ontology, fuzzy matching, or LLM), `active`-only eligibility, and preserved evidence. It mutates nothing and never auto-resolves a contradiction.
-- **Planned:** active-state calculation, pre-action context packet generation, and a read-only frontend inspector.
-- **Boundary:** the store is in-memory with a serialize/restore boundary only, and contradiction detection is backend-derived and read-only — no database, file persistence, endpoint, ingestion, runtime verification, active-state calculation, packet generator, repository observer, automatic resolution, or UI exists yet.
+- **Implemented (context packets):** a backend-only, deterministic, read-only packet builder that assembles active records, unresolved contradiction results, lifecycle warnings, verification counts, and rigid prohibited-assumption strings without authorizing actions.
+- **Planned:** active-state calculation and a read-only frontend inspector.
+- **Boundary:** the store is in-memory with a serialize/restore boundary only, evidence resolution remains deferred, and packet generation has no API or frontend surface — no database, file persistence, endpoint, ingestion, runtime verification, repository observer, automatic resolution, action authorization, or UI exists yet.
 
 ### Experimental Interaction
 
@@ -77,11 +78,11 @@ Evidence
   -> memory record
   -> verification and lifecycle state
   -> contradiction analysis
-  -> planned active-state selection
-  -> planned bounded context packet
+  -> bounded context packet
+  -> planned active-state selection / inspection surfaces
 ```
 
-The first pipeline is implemented across the current app surfaces. The second pipeline currently exists as merged contracts, a deterministic backend-only in-memory store, and deterministic backend-only read-only contradiction detection; later phases will add active-state selection, packet generation, endpoint exposure, and inspector surfaces.
+The first pipeline is implemented across the current app surfaces. The second pipeline currently exists as merged contracts, a deterministic backend-only in-memory store, deterministic backend-only read-only contradiction detection, and backend-only context packet generation; later phases will add active-state selection, endpoint exposure, and inspector surfaces.
 
 ## Visual Evidence
 
@@ -121,7 +122,8 @@ More screenshot history and QA notes live in the [Phase 28C graph-primary eviden
 | Active Memory contracts | Implemented | Backend/frontend `active-memory.v1` contract parity. |
 | Active Memory store | Implemented | Deterministic backend-only in-memory store: insert, retrieve, ordered listing/filtering, lifecycle transitions, serialize/restore. |
 | Active Memory contradiction detection | Implemented | Backend-only, read-only derivation of four contract contradiction classes from stored fields; stable ids, `active`-only eligibility, no mutation or auto-resolution. |
-| Active Memory runtime | Planned | Active-state calculation, packet generation, observer, endpoint, and UI are not implemented. |
+| Active Memory context packets | Implemented | Backend-only deterministic packet builder; no endpoint, frontend surface, persistence, evidence resolver, action authorization, or automatic resolution. |
+| Active Memory runtime | Planned | Active-state calculation, observer, endpoint, and UI are not implemented. |
 
 ## Architecture And Stack
 
@@ -193,15 +195,15 @@ The root `check` script runs both validation commands.
 
 ## Current Limitations
 
-Hive|Mind is currently a local, single-user developer tool. It has no authentication, authorization, multi-user support, cloud sync, or production deployment hardening. Obsidian import is explicit and one-shot; there is no live vault watcher and no write-back. The Knowledge Graph and Intelligence Report are read-only, and suggestions are advisory only. Query-history persistence remains absent, so query-history-dependent categories stay deferred. The Active Memory store is deterministic but in-memory only (a serialize/restore boundary, no committed persistence medium); contradiction detection is backend-derived, read-only, and covers four of the five contract classes (`frontend_only_vs_backend_modification` is deferred, and no automatic resolution exists); and the rest of the Active Memory runtime — active-state calculation, context packet generation, endpoint, and UI — is not implemented yet. Gesture tracking remains experimental and needs live tuning. The product does not run autonomous agents or mutate repositories.
+Hive|Mind is currently a local, single-user developer tool. It has no authentication, authorization, multi-user support, cloud sync, or production deployment hardening. Obsidian import is explicit and one-shot; there is no live vault watcher and no write-back. The Knowledge Graph and Intelligence Report are read-only, and suggestions are advisory only. Query-history persistence remains absent, so query-history-dependent categories stay deferred. The Active Memory store is deterministic but in-memory only (a serialize/restore boundary, no committed persistence medium); contradiction detection is backend-derived, read-only, and covers four of the five contract classes (`frontend_only_vs_backend_modification` is deferred, and no automatic resolution exists); context packet generation is backend service-only with no endpoint, frontend surface, evidence resolver, or action authorization; and the rest of the Active Memory runtime — active-state calculation, observer, endpoint, and UI — is not implemented yet. Gesture tracking remains experimental and needs live tuning. The product does not run autonomous agents or mutate repositories.
 
 ## Roadmap
 
-The current controlled Track 2 sequence after the completed, validated, and merged Phase 37D is:
+The current controlled Track 2 sequence after the completed Phase 37E backend packet builder is:
 
 ```text
-37E - Pre-Action Context Packet MVP
 37F - Frontend memory inspector
+37G - Agent session ingestion planning
 ```
 
 Phase 36K remains paused, not canceled or completed. Gesture tuning can resume after the application's memory foundation reaches a usable state. The complete phase chronology belongs in the [roadmap](docs/roadmap.md).
