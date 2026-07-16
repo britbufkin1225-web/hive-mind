@@ -37,25 +37,26 @@ authorize actions from packet data.
 
 ## Active Phase
 
-### Phase 37F — Active-memory Frontend Inspector
+### Phase 37F — Read-Only Context Packet API Foundation
 
 Phase 37F is the next planned implementation phase on Track 2 — Agent
 Intelligence Infrastructure.
 
-The goal is to expose Active Memory state for human inspection without claiming
-autonomous action, hidden mutation, automatic resolution, or repository
-observation. Phase 37E implemented backend-only deterministic packet generation;
-active-state calculation, endpoints, frontend inspection surfaces, repository
-observers, and AI/LLM interpretation remain planned work unless a later phase
-explicitly implements them.
+The goal is to expose the existing Phase 37E context packet builder through a
+narrow read-only backend runtime surface. Planned scope is a thin endpoint over
+the existing `ContextPacket` response model, existing builder invocation, request
+validation, no mutation, no frontend work, and no new packet logic. Active-state
+calculation, frontend inspection surfaces, repository observers, and AI/LLM
+interpretation remain planned work unless a later phase explicitly implements
+them.
 
 ## Immediate Sequence
 
 | Phase | Status | Purpose |
 | --- | --- | --- |
 | Phase 37E — Pre-Action Context Packet MVP | Implemented | Generates a bounded, deterministic, read-only backend context packet from implemented Active Memory contracts, store records, and contradiction results. |
-| Phase 37F — Active-memory frontend inspector | Next planned | Expose Active Memory state for human inspection without claiming autonomous action or hidden mutation. |
-| Phase 37G — Agent session ingestion planning | Planned | Plan governed ingestion from session artifacts into evidence-backed records. |
+| Phase 37F — Read-Only Context Packet API Foundation | Next planned | Add a narrow read-only backend endpoint for the existing `ContextPacket` model and builder; no mutation, frontend work, or new packet logic. |
+| Phase 37G — Active Memory Frontend Inspector | Planned | Expose Active Memory state for human inspection without claiming autonomous action or hidden mutation. |
 | Phase 37H — Repository observer planning | Planned | Plan repository-observer workflows and trust boundaries before any watcher/runtime automation exists. |
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
@@ -168,7 +169,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 | --- | --- | --- |
 | Active Memory persistence | Choose a durable medium after contracts, store semantics, contradiction detection, and context packet generation are stable. | Current store is in-memory with serialize/restore only. |
 | Active-state calculation | Derive safe active baselines while preserving unresolved contradictions and missing evidence. | No "newest wins"; unresolved state must stay visible. |
-| Context packet endpoint/UI | Add reviewed runtime surfaces after Phase 37E generation logic. | No endpoint or frontend inspector exists yet. |
+| Context packet endpoint/UI | Add a read-only API foundation in Phase 37F, then a frontend inspector in Phase 37G. | No endpoint or frontend inspector exists yet. |
 | Repository observer | Plan before implementation; keep evidence scoped and human-reviewable. | No watcher or automatic repository mutation exists. |
 | AI/LLM integration | Consider only after deterministic trust boundaries and inspection surfaces are stable. | No AI truth arbitration, autonomous resolution, or autonomous action. |
 | Intelligence report expansion | Source coverage, query persistence, and richer provenance/error states. | Read-only derivation over real store data. |

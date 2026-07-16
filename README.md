@@ -16,7 +16,7 @@ The problem Hive|Mind is solving is not "generate more content." It is the quiet
 
 The product direction is deliberately evidence-oriented. The app favors deterministic backend derivation, provenance, and read-only inspection before mutation or automation. The current Intelligence Report surfaces temporal decay, dreaming suggestions, provenance chains, and query trails as explainable outputs over existing store and graph structure.
 
-Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Phase 37B implements the backend and frontend wire contracts for that layer, Phase 37C adds a deterministic, backend-only in-memory store over those contracts (insert, retrieve, deterministic listing/filtering, explicit lifecycle transitions, and a serialize/restore boundary), Phase 37D adds a backend-only, read-only contradiction-detection service that derives contract-valid contradiction records from stored fields without mutating anything or auto-resolving conflicts, and Phase 37E adds backend-only deterministic context packet generation. UI inspection is planned next.
+Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Phase 37B implements the backend and frontend wire contracts for that layer, Phase 37C adds a deterministic, backend-only in-memory store over those contracts (insert, retrieve, deterministic listing/filtering, explicit lifecycle transitions, and a serialize/restore boundary), Phase 37D adds a backend-only, read-only contradiction-detection service that derives contract-valid contradiction records from stored fields without mutating anything or auto-resolving conflicts, and Phase 37E adds backend-only deterministic context packet generation. A read-only API foundation is planned next, followed by UI inspection.
 
 ## What Hive|Mind Does
 
@@ -48,7 +48,7 @@ Hive|Mind is also developing an **Active Memory and Verification** architecture:
 - **Implemented (store):** a deterministic, backend-only in-memory Active Memory store over the `MemoryRecord` contract — insert with duplicate-id rejection, retrieve by id with explicit not-found behavior, deterministic `(created_at, record_id)` listing, contract-backed filtering, table-driven lifecycle transitions with evidence/provenance preservation, and a versioned serialize/restore snapshot boundary.
 - **Implemented (contradiction detection):** a backend-only, read-only derivation service over the store that produces contract-valid contradiction records from stored fields alone — `pending_vs_merged`, `clean_vs_dirty_working_tree`, `duplicate_phase_status`, and `current_vs_superseded_decision` — with stable content-derived ids, conservative normalization (no ontology, fuzzy matching, or LLM), `active`-only eligibility, and preserved evidence. It mutates nothing and never auto-resolves a contradiction.
 - **Implemented (context packets):** a backend-only, deterministic, read-only packet builder that assembles active records, unresolved contradiction results, lifecycle warnings, verification counts, and rigid prohibited-assumption strings without authorizing actions.
-- **Planned:** active-state calculation and a read-only frontend inspector.
+- **Planned:** a read-only context packet API foundation, active-state calculation, and a read-only frontend inspector.
 - **Boundary:** the store is in-memory with a serialize/restore boundary only, evidence resolution remains deferred, and packet generation has no API or frontend surface — no database, file persistence, endpoint, ingestion, runtime verification, repository observer, automatic resolution, action authorization, or UI exists yet.
 
 ### Experimental Interaction
@@ -82,7 +82,7 @@ Evidence
   -> planned active-state selection / inspection surfaces
 ```
 
-The first pipeline is implemented across the current app surfaces. The second pipeline currently exists as merged contracts, a deterministic backend-only in-memory store, deterministic backend-only read-only contradiction detection, and backend-only context packet generation; later phases will add active-state selection, endpoint exposure, and inspector surfaces.
+The first pipeline is implemented across the current app surfaces. The second pipeline currently exists as merged contracts, a deterministic backend-only in-memory store, deterministic backend-only read-only contradiction detection, and backend-only context packet generation; later phases will add a read-only context packet endpoint, active-state selection, and inspector surfaces.
 
 ## Visual Evidence
 
@@ -123,7 +123,7 @@ More screenshot history and QA notes live in the [Phase 28C graph-primary eviden
 | Active Memory store | Implemented | Deterministic backend-only in-memory store: insert, retrieve, ordered listing/filtering, lifecycle transitions, serialize/restore. |
 | Active Memory contradiction detection | Implemented | Backend-only, read-only derivation of four contract contradiction classes from stored fields; stable ids, `active`-only eligibility, no mutation or auto-resolution. |
 | Active Memory context packets | Implemented | Backend-only deterministic packet builder; no endpoint, frontend surface, persistence, evidence resolver, action authorization, or automatic resolution. |
-| Active Memory runtime | Planned | Active-state calculation, observer, endpoint, and UI are not implemented. |
+| Active Memory runtime | Planned | Read-only context packet endpoint, active-state calculation, observer, and UI are not implemented. |
 
 ## Architecture And Stack
 
@@ -202,11 +202,11 @@ Hive|Mind is currently a local, single-user developer tool. It has no authentica
 The current controlled Track 2 sequence after the completed Phase 37E backend packet builder is:
 
 ```text
-37F - Frontend memory inspector
-37G - Agent session ingestion planning
+37F - Read-Only Context Packet API Foundation
+37G - Active Memory Frontend Inspector
 ```
 
-Phase 36K remains paused, not canceled or completed. Gesture tuning can resume after the application's memory foundation reaches a usable state. The complete phase chronology belongs in the [roadmap](docs/roadmap.md).
+Phase 37F is planned as a narrow backend API phase: a read-only endpoint returning the existing `ContextPacket` response model through a thin router and existing builder invocation, with request validation, no mutation, no frontend work, and no new packet logic. Phase 36K remains paused, not canceled or completed. Gesture tuning can resume after the application's memory foundation reaches a usable state. The complete phase chronology belongs in the [roadmap](docs/roadmap.md).
 
 ## Documentation
 

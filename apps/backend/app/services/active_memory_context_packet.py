@@ -7,7 +7,8 @@ commands, resolves evidence, mutates records, or chooses winners.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
+import re
 from typing import Any, Iterable
 
 from app.models.active_memory import (
@@ -53,6 +54,11 @@ _UNVERIFIED_CAPABILITY_STATES = frozenset(
         VerificationState.UNVERIFIED,
         VerificationState.PARTIALLY_VERIFIED,
     }
+)
+
+_ISO_DATETIME_PATTERN = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}"
+    r"(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})?$"
 )
 
 
@@ -117,7 +123,9 @@ def build_context_packet(
         unresolved_contradictions=contradictions,
         warnings=warnings,
         evidence_references=[],
-        verification_summary=_verification_summary(active_records),
+        verification_summary=_verification_summary(
+            active_facts + active_decisions + active_constraints + known_capabilities
+        ),
         prohibited_assumptions=prohibited_assumptions,
         read_only=True,
     )
@@ -196,7 +204,14 @@ def _verification_summary(records: Iterable[MemoryRecord]) -> VerificationSummar
 def _repository_baseline(
     project_id: str, records: Iterable[MemoryRecord]
 ) -> RepositoryBaseline | None:
-    candidates: list[tuple[datetime, datetime, str, RepositoryBaseline]] = []
+    candidates: list[
+        tuple[
+            tuple[int, tuple[int, int, int, int, int, int, int]],
+            tuple[int, int, int, int, int, int, int],
+            str,
+            RepositoryBaseline,
+        ]
+    ] = []
     for record in records:
         if record.kind is not MemoryRecordKind.REPOSITORY_STATE:
             continue
@@ -206,8 +221,14 @@ def _repository_baseline(
         baseline = _baseline_from_metadata(project_id, record, raw)
         if baseline is None:
             continue
-        observed = baseline.observed_at or datetime.min
-        candidates.append((observed, record.created_at, record.record_id, baseline))
+        candidates.append(
+            (
+                _optional_datetime_sort_key(baseline.observed_at),
+                _datetime_sort_key(record.created_at),
+                record.record_id,
+                baseline,
+            )
+        )
     if not candidates:
         return None
     return sorted(candidates, key=lambda item: (item[0], item[1], item[2]))[-1][3]
@@ -219,7 +240,7 @@ def _baseline_from_metadata(
     branch = raw.get("branch")
     head_commit = raw.get("head_commit")
     working_tree_clean = raw.get("working_tree_clean")
-    observed_at = raw.get("observed_at", record.observed_at)
+    observed_at = _coerce_metadata_datetime(raw.get("observed_at", record.observed_at))
 
     if branch is not None and not isinstance(branch, str):
         return None
@@ -227,7 +248,7 @@ def _baseline_from_metadata(
         return None
     if working_tree_clean is not None and not isinstance(working_tree_clean, bool):
         return None
-    if observed_at is not None and not isinstance(observed_at, datetime):
+    if observed_at is _INVALID_DATETIME:
         return None
 
     return RepositoryBaseline(
@@ -242,15 +263,28 @@ def _baseline_from_metadata(
 
 
 def _active_status_value(records: Iterable[MemoryRecord], key: str) -> str | None:
-    candidates: list[tuple[datetime, datetime, str, str]] = []
+    candidates: list[
+        tuple[
+            tuple[int, tuple[int, int, int, int, int, int, int]],
+            tuple[int, int, int, int, int, int, int],
+            str,
+            str,
+        ]
+    ] = []
     for record in records:
         if record.kind is not MemoryRecordKind.PHASE_STATUS:
             continue
         value = record.metadata.get(key)
         if not isinstance(value, str) or not value.strip():
             continue
-        observed = record.observed_at or datetime.min
-        candidates.append((observed, record.created_at, record.record_id, value.strip()))
+        candidates.append(
+            (
+                _optional_datetime_sort_key(record.observed_at),
+                _datetime_sort_key(record.created_at),
+                record.record_id,
+                value.strip(),
+            )
+        )
     if not candidates:
         return None
     return sorted(candidates, key=lambda item: (item[0], item[1], item[2]))[-1][3]
@@ -264,11 +298,11 @@ def _prohibited_assumptions(
 ) -> list[str]:
     assumptions: list[str] = []
     assumptions.extend(
-        f'Do not assume constraint "{record.claim.subject}" may be violated.'
+        f'Do not assume constraint "{_assumption_subject(record)}" may be violated.'
         for record in constraints
     )
     assumptions.extend(
-        f'Do not assume capability "{record.claim.subject}" is verified.'
+        f'Do not assume capability "{_assumption_subject(record)}" is verified.'
         for record in capabilities
         if record.verification_state in _UNVERIFIED_CAPABILITY_STATES
     )
@@ -277,6 +311,51 @@ def _prohibited_assumptions(
         for contradiction in contradictions
     )
     return assumptions
+
+
+class _InvalidDatetime:
+    pass
+
+
+_INVALID_DATETIME = _InvalidDatetime()
+
+
+def _coerce_metadata_datetime(value: object) -> datetime | None | _InvalidDatetime:
+    if value is None or isinstance(value, datetime):
+        return value
+    if not isinstance(value, str) or not _ISO_DATETIME_PATTERN.match(value):
+        return _INVALID_DATETIME
+    raw = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        return datetime.fromisoformat(raw)
+    except ValueError:
+        return _INVALID_DATETIME
+
+
+def _optional_datetime_sort_key(
+    value: datetime | None,
+) -> tuple[int, tuple[int, int, int, int, int, int, int]]:
+    if value is None:
+        return (0, (0, 0, 0, 0, 0, 0, 0))
+    return (1, _datetime_sort_key(value))
+
+
+def _datetime_sort_key(value: datetime) -> tuple[int, int, int, int, int, int, int]:
+    if value.tzinfo is not None and value.utcoffset() is not None:
+        value = value.astimezone(timezone.utc).replace(tzinfo=None)
+    return (
+        value.year,
+        value.month,
+        value.day,
+        value.hour,
+        value.minute,
+        value.second,
+        value.microsecond,
+    )
+
+
+def _assumption_subject(record: MemoryRecord) -> str:
+    return " ".join(record.claim.subject.split())
 
 
 def _assert_collection_within_limit(name: str, values: list[object]) -> None:

@@ -148,8 +148,8 @@ prose**; reject/redact secrets; **no autonomous repository mutation**.
 `37A` Planning → `37B` Contract types / schema alignment (implemented) → `37C`
 Deterministic memory store MVP (implemented) → `37D` Contradiction detection MVP
 (implemented, validated, merged) → `37E` Pre-action context packet (implemented)
-→ `37F` Active-memory frontend inspector (next planned) → `37G` Agent session
-ingestion planning → `37H` Repository observer planning. This is a **Track 2 —
+→ `37F` Read-Only Context Packet API Foundation (next planned) → `37G` Active
+Memory Frontend Inspector → `37H` Repository observer planning. This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -493,9 +493,13 @@ detection as `detected_at`.
   only `open` contradictions, keeps contradictory records in their normal
   baseline sections, and never chooses a winning claim or resolves a
   contradiction.
-- Verification state is represented in `verification_summary`; active records are
-  not dropped merely because they are unverified, partially verified, contradicted,
-  or unresolvable.
+- Verification state for the visible baseline is represented in
+  `verification_summary`; it counts only records included in `active_facts`,
+  `active_decisions`, `active_constraints`, and `known_capabilities`. Records
+  used only to derive `repository_baseline`, `active_phase`, or `active_track`
+  are represented by those scalar fields and do not increase the summary totals.
+  Active visible records are not dropped merely because they are unverified,
+  partially verified, contradicted, or unresolvable.
 
 ### 14.2 Structured metadata and MVP limits
 

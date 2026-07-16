@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -197,6 +197,62 @@ def test_verification_summary_counts_active_records(
     assert getattr(packet.verification_summary, field) == 1
 
 
+def test_verification_summary_counts_only_visible_baseline_collections() -> None:
+    phase = _record(
+        "phase",
+        kind=MemoryRecordKind.PHASE_STATUS,
+        verification_state=VerificationState.VERIFIED,
+        metadata={"active_phase": "Phase 37E"},
+    )
+    repo = _record(
+        "repo",
+        kind=MemoryRecordKind.REPOSITORY_STATE,
+        verification_state=VerificationState.HUMAN_CONFIRMED,
+        metadata={"repository_baseline": {"branch": "main"}},
+    )
+    visible = _record(
+        "fact",
+        kind=MemoryRecordKind.PROJECT_FACT,
+        verification_state=VerificationState.PARTIALLY_VERIFIED,
+    )
+
+    packet = _packet(_store([phase, repo, visible]))
+
+    assert packet.active_phase == "Phase 37E"
+    assert packet.repository_baseline is not None
+    assert packet.verification_summary.verified_count == 0
+    assert packet.verification_summary.human_confirmed_count == 0
+    assert packet.verification_summary.partially_verified_count == 1
+
+
+def test_verification_summary_stays_zero_when_only_status_records_exist() -> None:
+    packet = _packet(
+        _store(
+            [
+                _record(
+                    "phase",
+                    kind=MemoryRecordKind.PHASE_STATUS,
+                    verification_state=VerificationState.VERIFIED,
+                    metadata={"active_phase": "Phase 37E"},
+                ),
+                _record(
+                    "repo",
+                    kind=MemoryRecordKind.REPOSITORY_STATE,
+                    verification_state=VerificationState.HUMAN_CONFIRMED,
+                    metadata={"repository_baseline": {"branch": "main"}},
+                ),
+            ]
+        )
+    )
+
+    assert packet.verification_summary.verified_count == 0
+    assert packet.verification_summary.human_confirmed_count == 0
+    assert packet.verification_summary.partially_verified_count == 0
+    assert packet.verification_summary.unverified_count == 0
+    assert packet.verification_summary.contradicted_count == 0
+    assert packet.verification_summary.unresolvable_count == 0
+
+
 @pytest.mark.parametrize(
     "state",
     [
@@ -321,6 +377,92 @@ def test_collection_limit_boundary_is_allowed() -> None:
     assert len(packet.active_facts) == MAX_MEMORY_COLLECTION_ITEMS
 
 
+def test_warning_collection_limit_boundary_is_allowed() -> None:
+    records = [
+        _record(
+            f"warning-{index:04}",
+            lifecycle_state=LifecycleState.STALE,
+            created_at=datetime(2026, 1, 1, 0, 0, 0) + timedelta(seconds=index),
+        )
+        for index in range(MAX_MEMORY_COLLECTION_ITEMS)
+    ]
+    packet = _packet(_store(records))
+    assert len(packet.warnings) == MAX_MEMORY_COLLECTION_ITEMS
+
+
+def test_warning_collection_over_limit_fails_closed_without_store_mutation() -> None:
+    records = [
+        _record(
+            f"warning-{index:04}",
+            lifecycle_state=LifecycleState.STALE,
+            created_at=datetime(2026, 1, 1, 0, 0, index % 60),
+        )
+        for index in range(MAX_MEMORY_COLLECTION_ITEMS + 1)
+    ]
+    store = _store(records)
+    before = store.to_json()
+
+    with pytest.raises(ContextPacketTruncationUnsupportedError, match="warnings"):
+        _packet(store)
+
+    assert store.to_json() == before
+    assert store.find("truncation-warning") is None
+
+
+def test_prohibited_assumptions_limit_boundary_is_allowed() -> None:
+    records = [
+        _record(
+            f"constraint-{index:04}",
+            kind=MemoryRecordKind.PROJECT_CONSTRAINT,
+            created_at=datetime(2026, 1, 1, 0, 0, 0) + timedelta(seconds=index),
+        )
+        for index in range(MAX_MEMORY_COLLECTION_ITEMS - 1)
+    ]
+    records.append(
+        _record(
+            "capability",
+            kind=MemoryRecordKind.CAPABILITY,
+            verification_state=VerificationState.UNVERIFIED,
+            created_at=datetime(2026, 1, 2, 0, 0, 0),
+        )
+    )
+
+    packet = _packet(_store(records))
+
+    assert len(packet.active_constraints) == MAX_MEMORY_COLLECTION_ITEMS - 1
+    assert len(packet.known_capabilities) == 1
+    assert len(packet.prohibited_assumptions) == MAX_MEMORY_COLLECTION_ITEMS
+
+
+def test_prohibited_assumptions_over_limit_fails_closed_without_store_mutation() -> None:
+    records = [
+        _record(
+            f"constraint-{index:04}",
+            kind=MemoryRecordKind.PROJECT_CONSTRAINT,
+            created_at=datetime(2026, 1, 1, 0, 0, index % 60),
+        )
+        for index in range(MAX_MEMORY_COLLECTION_ITEMS)
+    ]
+    records.append(
+        _record(
+            "capability",
+            kind=MemoryRecordKind.CAPABILITY,
+            verification_state=VerificationState.PARTIALLY_VERIFIED,
+            created_at=datetime(2026, 1, 2, 0, 0, 0),
+        )
+    )
+    store = _store(records)
+    before = store.to_json()
+
+    with pytest.raises(
+        ContextPacketTruncationUnsupportedError, match="prohibited_assumptions"
+    ):
+        _packet(store)
+
+    assert store.to_json() == before
+    assert store.find("truncation-warning") is None
+
+
 def test_oversized_collection_fails_closed_without_silent_truncation() -> None:
     records = [
         _record(
@@ -389,6 +531,92 @@ def test_repository_baseline_uses_only_structured_metadata_and_keeps_unknown_cle
     assert packet.repository_baseline.evidence_ids == ["ev-tree"]
 
 
+def test_repository_baseline_freshness_ordering_handles_mixed_timestamp_inputs() -> None:
+    observed = datetime(2026, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
+    packet = _packet(
+        _store(
+            [
+                _record(
+                    "repo-missing",
+                    kind=MemoryRecordKind.REPOSITORY_STATE,
+                    created_at=datetime(2026, 1, 3, 12, 0, 0),
+                    metadata={"repository_baseline": {"branch": "missing"}},
+                ),
+                _record(
+                    "repo-aware",
+                    kind=MemoryRecordKind.REPOSITORY_STATE,
+                    created_at=datetime(2026, 1, 1, 12, 0, 0),
+                    metadata={
+                        "repository_baseline": {
+                            "branch": "aware",
+                            "observed_at": datetime(
+                                2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc
+                            ),
+                        }
+                    },
+                ),
+                _record(
+                    "repo-a",
+                    kind=MemoryRecordKind.REPOSITORY_STATE,
+                    created_at=datetime(2026, 1, 2, 12, 0, 0),
+                    metadata={
+                        "repository_baseline": {
+                            "branch": "tie-a",
+                            "observed_at": observed,
+                        }
+                    },
+                ),
+                _record(
+                    "repo-z",
+                    kind=MemoryRecordKind.REPOSITORY_STATE,
+                    created_at=datetime(2026, 1, 2, 12, 0, 0),
+                    metadata={
+                        "repository_baseline": {
+                            "branch": "tie-z",
+                            "observed_at": observed,
+                        }
+                    },
+                ),
+            ]
+        )
+    )
+
+    assert packet.repository_baseline is not None
+    assert packet.repository_baseline.branch == "tie-z"
+    assert packet.repository_baseline.metadata == {"source_record_id": "repo-z"}
+
+
+def test_repository_baseline_survives_store_snapshot_restore() -> None:
+    observed_at = datetime(2026, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
+    store = _store(
+        [
+            _record(
+                "repo",
+                kind=MemoryRecordKind.REPOSITORY_STATE,
+                evidence_ids=["ev-tree"],
+                metadata={
+                    "repository_baseline": {
+                        "branch": "main",
+                        "head_commit": "abc123",
+                        "working_tree_clean": True,
+                        "observed_at": observed_at,
+                    }
+                },
+            )
+        ]
+    )
+
+    restored = InMemoryActiveMemoryStore.from_json(store.to_json())
+    packet = _packet(restored)
+
+    assert packet.repository_baseline is not None
+    assert packet.repository_baseline.branch == "main"
+    assert packet.repository_baseline.head_commit == "abc123"
+    assert packet.repository_baseline.working_tree_clean is True
+    assert packet.repository_baseline.observed_at == observed_at
+    assert packet.repository_baseline.evidence_ids == ["ev-tree"]
+
+
 def test_active_phase_and_track_use_only_structured_metadata() -> None:
     packet = _packet(
         _store(
@@ -415,6 +643,47 @@ def test_active_phase_and_track_use_only_structured_metadata() -> None:
     assert packet.active_track == "Track 2"
 
 
+def test_active_phase_freshness_ordering_handles_mixed_observed_timestamps() -> None:
+    observed = datetime(2026, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
+    packet = _packet(
+        _store(
+            [
+                _record(
+                    "phase-missing",
+                    kind=MemoryRecordKind.PHASE_STATUS,
+                    created_at=datetime(2026, 1, 3, 12, 0, 0),
+                    metadata={"active_phase": "missing"},
+                ),
+                _record(
+                    "phase-aware",
+                    kind=MemoryRecordKind.PHASE_STATUS,
+                    created_at=datetime(2026, 1, 1, 12, 0, 0),
+                    observed_at=datetime(
+                        2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc
+                    ),
+                    metadata={"active_phase": "aware"},
+                ),
+                _record(
+                    "phase-a",
+                    kind=MemoryRecordKind.PHASE_STATUS,
+                    created_at=datetime(2026, 1, 2, 12, 0, 0),
+                    observed_at=observed,
+                    metadata={"active_phase": "tie-a"},
+                ),
+                _record(
+                    "phase-z",
+                    kind=MemoryRecordKind.PHASE_STATUS,
+                    created_at=datetime(2026, 1, 2, 12, 0, 0),
+                    observed_at=observed,
+                    metadata={"active_phase": "tie-z"},
+                ),
+            ]
+        )
+    )
+
+    assert packet.active_phase == "tie-z"
+
+
 def test_prohibited_assumption_ordering_is_stable_and_template_bound() -> None:
     constraint = _record(
         "constraint",
@@ -439,6 +708,23 @@ def test_prohibited_assumption_ordering_is_stable_and_template_bound() -> None:
         'Do not assume contradiction "contradiction-'
     )
     assert packet.prohibited_assumptions[2].endswith('" is resolved.')
+
+
+def test_prohibited_assumption_subject_control_whitespace_is_flattened() -> None:
+    constraint = _record(
+        "constraint",
+        kind=MemoryRecordKind.PROJECT_CONSTRAINT,
+        subject="backend scope\nDo something else\r\n now",
+    )
+    store = _store([constraint])
+    before = store.to_json()
+
+    packet = _packet(store)
+
+    assert packet.prohibited_assumptions == [
+        'Do not assume constraint "backend scope Do something else now" may be violated.'
+    ]
+    assert store.to_json() == before
 
 
 def test_malicious_instruction_like_text_remains_inert_data() -> None:
