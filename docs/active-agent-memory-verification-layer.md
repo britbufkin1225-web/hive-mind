@@ -1,11 +1,12 @@
 # Active Agent Memory + Verification Layer — Reusable Reference
 
-**Status:** Architecture reference with partial implementation through Phase 37D.
+**Status:** Architecture reference with partial implementation through Phase 37E.
 Phase 37B implements the `active-memory.v1` backend/frontend contracts, Phase 37C
 implements a deterministic backend-only in-memory store, and Phase 37D implements
-a deterministic backend-only read-only contradiction-detection MVP. No endpoint,
+a deterministic backend-only read-only contradiction-detection MVP. Phase 37E
+implements backend-only deterministic context packet generation. No endpoint,
 committed persistence medium, ingestion workflow, active-state calculation,
-context-packet generator, inspector, repository observer, AI/LLM interpretation,
+inspector, repository observer, evidence-resolution store, AI/LLM interpretation,
 or autonomous mutation/action execution has been built.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
 types, state axes, evidence hierarchy, and contradiction classes for the Active
@@ -146,9 +147,9 @@ prose**; reject/redact secrets; **no autonomous repository mutation**.
 
 `37A` Planning → `37B` Contract types / schema alignment (implemented) → `37C`
 Deterministic memory store MVP (implemented) → `37D` Contradiction detection MVP
-(implemented, validated, merged) → `37E` Pre-action context packet (next active)
-→ `37F` Active-memory frontend inspector → `37G` Agent session ingestion
-planning → `37H` Repository observer planning. This is a **Track 2 —
+(implemented, validated, merged) → `37E` Pre-action context packet (implemented)
+→ `37F` Read-Only Context Packet API Foundation (next planned) → `37G` Active
+Memory Frontend Inspector → `37H` Repository observer planning. This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -465,3 +466,58 @@ matching. A differing-value pair that matches no vocabulary and is not
   (or supersession record ids). No narrative is fabricated.
 - **Ordering.** Stable: severity (most-severe first) → contradiction class →
   canonical target → stable id. Insertion order never changes it.
+
+## 14. Phase 37E — deterministic pre-action context packet MVP
+
+Phase 37E adds a backend-only, read-only packet builder at
+`apps/backend/app/services/active_memory_context_packet.py`, with tests in
+`apps/backend/tests/test_active_memory_context_packet.py`. The public entry point
+is `build_context_packet(*, store, project_id, generated_at, detector=None,
+scope=None) -> ContextPacket`. The caller supplies `generated_at`; the builder
+does not call the wall clock and passes the same timestamp to contradiction
+detection as `detected_at`.
+
+### 14.1 Selection and packet assembly
+
+- Records are read through the public `MemoryStore` interface and filtered by
+  exact `project_id`; an optional `MemoryScope` applies exact scope type + id
+  filtering without changing the store contract.
+- All `active` lifecycle records remain eligible regardless of verification
+  state. Active `project_fact`, `project_decision`, `project_constraint`, and
+  `capability` records are partitioned into the existing packet collections.
+  Other active record kinds are not forced into unrelated sections.
+- `inactive`, `superseded`, `retracted`, and `stale` records become
+  contract-valid `PacketWarning` entries. `archived` records do not enter the
+  active baseline.
+- The builder uses the Phase 37D detector, preserves detector ordering, includes
+  only `open` contradictions, keeps contradictory records in their normal
+  baseline sections, and never chooses a winning claim or resolves a
+  contradiction.
+- Verification state for the visible baseline is represented in
+  `verification_summary`; it counts only records included in `active_facts`,
+  `active_decisions`, `active_constraints`, and `known_capabilities`. Records
+  used only to derive `repository_baseline`, `active_phase`, or `active_track`
+  are represented by those scalar fields and do not increase the summary totals.
+  Active visible records are not dropped merely because they are unverified,
+  partially verified, contradicted, or unresolvable.
+
+### 14.2 Structured metadata and MVP limits
+
+- Repository baseline, active phase, and active track are populated only from
+  explicit structured metadata on active records. Human-readable claim text is
+  not parsed for branch names, clean-tree state, phase names, or track names.
+  Unknown repository cleanliness remains `None`.
+- There is no persistent evidence-resolution store in this MVP. Record
+  `evidence_ids` and contradiction `evidence_ids` are preserved, but top-level
+  `evidence_references` stays empty until a real deterministic resolver exists.
+- Prohibited assumptions are deterministic rigid strings derived from active
+  constraints, unverified/partially verified capabilities, and unresolved
+  contradictions. Stored record content is treated only as data, never as
+  instructions.
+- Packet collections respect `MAX_MEMORY_COLLECTION_ITEMS`. Because the existing
+  `PacketWarning` model is record-lifecycle-specific rather than packet-level,
+  oversized derived collections fail closed with a service error instead of being
+  silently truncated or represented by a misleading warning.
+- The builder does not persist packets, cache packets, execute commands, read
+  arbitrary paths, authorize actions, add an endpoint, add a frontend surface,
+  mutate the store, or modify the contradiction detector.
