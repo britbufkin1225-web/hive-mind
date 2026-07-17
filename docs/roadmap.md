@@ -25,38 +25,34 @@ Implemented runtime capabilities include:
   pointer orbit, momentum, and elastic node manipulation.
 - Motion sandbox foundation using MediaPipe hand landmarks, with live gesture
   tuning still paused.
-- Active Memory foundation through Phase 37E: contract types, deterministic
+- Active Memory foundation through Phase 37F: contract types, deterministic
   backend-only in-memory store, deterministic backend-only read-only
-  contradiction detection, and backend-only deterministic context packet
-  generation.
+  contradiction detection, backend-only deterministic context packet
+  generation, and a read-only context-packet API endpoint.
 
 The product remains local, single-user, and review-oriented. It does not run
 autonomous agents, mutate repositories, persist Active Memory beyond the current
-serialize/restore boundary, expose context packets through an endpoint, or
-authorize actions from packet data.
+serialize/restore boundary, or authorize actions from packet data. The context
+packet endpoint is read-only and stateless: it derives a packet from
+request-supplied records and mutates nothing.
 
 ## Active Phase
 
-### Phase 37F — Read-Only Context Packet API Foundation
+### Phase 37G — Active Memory Frontend Inspector
 
-Phase 37F is the next planned implementation phase on Track 2 — Agent
-Intelligence Infrastructure.
-
-The goal is to expose the existing Phase 37E context packet builder through a
-narrow read-only backend runtime surface. Planned scope is a thin endpoint over
-the existing `ContextPacket` response model, existing builder invocation, request
-validation, no mutation, no frontend work, and no new packet logic. Active-state
-calculation, frontend inspection surfaces, repository observers, and AI/LLM
-interpretation remain planned work unless a later phase explicitly implements
-them.
+Phase 37G is the next planned implementation phase on Track 2 — Agent
+Intelligence Infrastructure: expose Active Memory state for human inspection
+without claiming autonomous action or hidden mutation. Active-state
+calculation, repository observers, and AI/LLM interpretation remain planned
+work unless a later phase explicitly implements them.
 
 ## Immediate Sequence
 
 | Phase | Status | Purpose |
 | --- | --- | --- |
 | Phase 37E — Pre-Action Context Packet MVP | Implemented | Generates a bounded, deterministic, read-only backend context packet from implemented Active Memory contracts, store records, and contradiction results. |
-| Phase 37F — Read-Only Context Packet API Foundation | Next planned | Add a narrow read-only backend endpoint for the existing `ContextPacket` model and builder; no mutation, frontend work, or new packet logic. |
-| Phase 37G — Active Memory Frontend Inspector | Planned | Expose Active Memory state for human inspection without claiming autonomous action or hidden mutation. |
+| Phase 37F — Read-Only Context Packet API Foundation | Implemented | `POST /api/active-memory/context-packet`: a thin, read-only, non-mutating endpoint over the existing `ContextPacket` model and Phase 37E builder; no new packet logic. |
+| Phase 37G — Active Memory Frontend Inspector | Next planned | Expose Active Memory state for human inspection without claiming autonomous action or hidden mutation. |
 | Phase 37H — Repository observer planning | Planned | Plan repository-observer workflows and trust boundaries before any watcher/runtime automation exists. |
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
@@ -144,9 +140,18 @@ implementation track.
   optional exact scope filtering, active-record kind partitioning, unresolved
   contradiction inclusion, lifecycle warnings for non-active records, verification
   counts, rigid prohibited-assumption templates, and empty top-level evidence
-  references until a real evidence resolver exists. It adds no endpoint,
-  frontend surface, persistence, action authorization, automatic contradiction
+  references until a real evidence resolver exists. It adds no frontend
+  surface, persistence, action authorization, automatic contradiction
   resolution, or dependency.
+- **Phase 37F — Read-Only Context Packet API Foundation:** implemented. It adds
+  `POST /api/active-memory/context-packet`, a thin transport boundary over the
+  Phase 37E builder: a validated request (`project_id`, caller-supplied
+  `generated_at`, optional exact `scope`, and the record set) is converted into
+  an ephemeral request-scoped store, the existing builder runs unchanged, and
+  the existing `ContextPacket` contract is returned. The endpoint is
+  operationally read-only — no persistence, store mutation, filesystem write,
+  clock read, or AI/LLM behavior — and all packet rules and collection limits
+  stay in the service layer.
 
 `frontend_only_vs_backend_modification` is a contract class but is not
 implemented in Phase 37D because it needs a deterministic path/scope target model
@@ -169,7 +174,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 | --- | --- | --- |
 | Active Memory persistence | Choose a durable medium after contracts, store semantics, contradiction detection, and context packet generation are stable. | Current store is in-memory with serialize/restore only. |
 | Active-state calculation | Derive safe active baselines while preserving unresolved contradictions and missing evidence. | No "newest wins"; unresolved state must stay visible. |
-| Context packet endpoint/UI | Add a read-only API foundation in Phase 37F, then a frontend inspector in Phase 37G. | No endpoint or frontend inspector exists yet. |
+| Context packet UI | Add a frontend inspector in Phase 37G over the Phase 37F read-only endpoint. | The endpoint exists and is read-only; no frontend inspector exists yet. |
 | Repository observer | Plan before implementation; keep evidence scoped and human-reviewable. | No watcher or automatic repository mutation exists. |
 | AI/LLM integration | Consider only after deterministic trust boundaries and inspection surfaces are stable. | No AI truth arbitration, autonomous resolution, or autonomous action. |
 | Intelligence report expansion | Source coverage, query persistence, and richer provenance/error states. | Read-only derivation over real store data. |
@@ -188,11 +193,12 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 - Query-history persistence does not exist, so query-history-dependent
   intelligence categories remain blocked.
 - Active Memory currently has contracts, a deterministic in-memory backend store,
-  deterministic read-only contradiction detection, and backend-only context
-  packet generation. It does not yet have committed persistence, endpoint
-  exposure, ingestion, active-state calculation, frontend inspection, repository
-  observation, evidence resolution, action authorization, or automatic
-  resolution.
+  deterministic read-only contradiction detection, backend context packet
+  generation, and a read-only, stateless context-packet endpoint that derives
+  packets from request-supplied records. It does not yet have committed
+  persistence, write endpoints, ingestion, active-state calculation, frontend
+  inspection, repository observation, evidence resolution, action
+  authorization, or automatic resolution.
 - Gesture tracking remains experimental; Phase 36K live camera tuning is paused.
 
 ## Reference Documents

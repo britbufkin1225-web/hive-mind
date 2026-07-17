@@ -1,13 +1,15 @@
 # Active Agent Memory + Verification Layer — Reusable Reference
 
-**Status:** Architecture reference with partial implementation through Phase 37E.
+**Status:** Architecture reference with partial implementation through Phase 37F.
 Phase 37B implements the `active-memory.v1` backend/frontend contracts, Phase 37C
 implements a deterministic backend-only in-memory store, and Phase 37D implements
 a deterministic backend-only read-only contradiction-detection MVP. Phase 37E
-implements backend-only deterministic context packet generation. No endpoint,
-committed persistence medium, ingestion workflow, active-state calculation,
-inspector, repository observer, evidence-resolution store, AI/LLM interpretation,
-or autonomous mutation/action execution has been built.
+implements backend-only deterministic context packet generation, and Phase 37F
+exposes it through one read-only, stateless endpoint
+(`POST /api/active-memory/context-packet`). No write endpoint, committed
+persistence medium, ingestion workflow, active-state calculation, inspector,
+repository observer, evidence-resolution store, AI/LLM interpretation, or
+autonomous mutation/action execution has been built.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
 types, state axes, evidence hierarchy, and contradiction classes for the Active
 Agent Memory + Verification Layer, so later phases can cite a stable reference
@@ -148,8 +150,8 @@ prose**; reject/redact secrets; **no autonomous repository mutation**.
 `37A` Planning → `37B` Contract types / schema alignment (implemented) → `37C`
 Deterministic memory store MVP (implemented) → `37D` Contradiction detection MVP
 (implemented, validated, merged) → `37E` Pre-action context packet (implemented)
-→ `37F` Read-Only Context Packet API Foundation (next planned) → `37G` Active
-Memory Frontend Inspector → `37H` Repository observer planning. This is a **Track 2 —
+→ `37F` Read-Only Context Packet API Foundation (implemented) → `37G` Active
+Memory Frontend Inspector (next planned) → `37H` Repository observer planning. This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -521,3 +523,37 @@ detection as `detected_at`.
 - The builder does not persist packets, cache packets, execute commands, read
   arbitrary paths, authorize actions, add an endpoint, add a frontend surface,
   mutate the store, or modify the contradiction detector.
+
+## 15. Phase 37F — read-only context packet API foundation
+
+Phase 37F adds the first Active Memory API boundary: a thin router at
+`apps/backend/app/routers/active_memory.py` exposing
+**`POST /api/active-memory/context-packet`**, with the request schema in
+`apps/backend/app/models/active_memory_api.py` and endpoint tests in
+`apps/backend/tests/test_active_memory_context_packet_api.py`.
+
+- **Request** (`ContextPacketRequest`): `project_id`, required caller-supplied
+  `generated_at` (the endpoint never reads the wall clock), optional exact
+  `scope` (`MemoryScope`), and `records` (a list of contract `MemoryRecord`
+  objects). `POST` is used only because the input is a structured document; the
+  operation is read-only.
+- **Response:** the existing Phase 37B `ContextPacket` contract, returned
+  unchanged from the Phase 37E builder — identity, ordering, evidence and
+  reason metadata, verification summary, warnings, contradictions, and
+  prohibited assumptions are all owned by the service layer.
+- **Ownership boundary:** the router only validates transport input, converts
+  the supplied records into an ephemeral request-scoped in-memory store, calls
+  `build_context_packet`, and returns the result. It sorts nothing, detects
+  nothing, recalculates no limits, and holds no store state between requests.
+- **Errors:** malformed bodies fail through the standard FastAPI/Pydantic 422
+  path. Two contract-level service errors are translated to 422 with the
+  service's bounded message: a duplicate `record_id` in the supplied records,
+  and the Phase 37E fail-closed collection-overflow error. Unexpected failures
+  fall through to the existing generic 500 handler; no traceback, path, or
+  internal object is exposed.
+- **Limitations:** the endpoint is stateless — it derives packets only from
+  records supplied in the request (no server-side Active Memory store is wired
+  yet), it enforces no request-level cap on the `records` list (the service's
+  per-collection limits remain the single owner of bounds and fail closed), and
+  mixing timezone-aware and naive `created_at` values within one request is
+  rejected at the API validation boundary with HTTP 422 before store ordering.

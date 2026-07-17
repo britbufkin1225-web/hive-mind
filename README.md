@@ -48,8 +48,9 @@ Hive|Mind is also developing an **Active Memory and Verification** architecture:
 - **Implemented (store):** a deterministic, backend-only in-memory Active Memory store over the `MemoryRecord` contract — insert with duplicate-id rejection, retrieve by id with explicit not-found behavior, deterministic `(created_at, record_id)` listing, contract-backed filtering, table-driven lifecycle transitions with evidence/provenance preservation, and a versioned serialize/restore snapshot boundary.
 - **Implemented (contradiction detection):** a backend-only, read-only derivation service over the store that produces contract-valid contradiction records from stored fields alone — `pending_vs_merged`, `clean_vs_dirty_working_tree`, `duplicate_phase_status`, and `current_vs_superseded_decision` — with stable content-derived ids, conservative normalization (no ontology, fuzzy matching, or LLM), `active`-only eligibility, and preserved evidence. It mutates nothing and never auto-resolves a contradiction.
 - **Implemented (context packets):** a backend-only, deterministic, read-only packet builder that assembles active records, unresolved contradiction results, lifecycle warnings, verification counts, and rigid prohibited-assumption strings without authorizing actions.
-- **Planned:** a read-only context packet API foundation, active-state calculation, and a read-only frontend inspector.
-- **Boundary:** the store is in-memory with a serialize/restore boundary only, evidence resolution remains deferred, and packet generation has no API or frontend surface — no database, file persistence, endpoint, ingestion, runtime verification, repository observer, automatic resolution, action authorization, or UI exists yet.
+- **Implemented (context packet API):** `POST /api/active-memory/context-packet`, a thin, read-only, stateless endpoint over the existing builder — a validated request (`project_id`, caller-supplied `generated_at`, optional exact `scope`, and the record set) returns the existing `ContextPacket` contract. It derives packets from request-supplied records only and mutates nothing.
+- **Planned:** active-state calculation and a read-only frontend inspector.
+- **Boundary:** the store is in-memory with a serialize/restore boundary only, evidence resolution remains deferred, and the only API surface is the read-only context-packet endpoint — no database, file persistence, write endpoint, ingestion, runtime verification, repository observer, automatic resolution, action authorization, or UI exists yet.
 
 ### Experimental Interaction
 
@@ -122,8 +123,9 @@ More screenshot history and QA notes live in the [Phase 28C graph-primary eviden
 | Active Memory contracts | Implemented | Backend/frontend `active-memory.v1` contract parity. |
 | Active Memory store | Implemented | Deterministic backend-only in-memory store: insert, retrieve, ordered listing/filtering, lifecycle transitions, serialize/restore. |
 | Active Memory contradiction detection | Implemented | Backend-only, read-only derivation of four contract contradiction classes from stored fields; stable ids, `active`-only eligibility, no mutation or auto-resolution. |
-| Active Memory context packets | Implemented | Backend-only deterministic packet builder; no endpoint, frontend surface, persistence, evidence resolver, action authorization, or automatic resolution. |
-| Active Memory runtime | Planned | Read-only context packet endpoint, active-state calculation, observer, and UI are not implemented. |
+| Active Memory context packets | Implemented | Backend-only deterministic packet builder; no frontend surface, persistence, evidence resolver, action authorization, or automatic resolution. |
+| Active Memory context packet API | Implemented | `POST /api/active-memory/context-packet`: read-only, stateless, non-mutating endpoint over the existing builder and `ContextPacket` contract. |
+| Active Memory runtime | Planned | Active-state calculation, write endpoints, observer, and UI are not implemented. |
 
 ## Architecture And Stack
 
@@ -195,18 +197,18 @@ The root `check` script runs both validation commands.
 
 ## Current Limitations
 
-Hive|Mind is currently a local, single-user developer tool. It has no authentication, authorization, multi-user support, cloud sync, or production deployment hardening. Obsidian import is explicit and one-shot; there is no live vault watcher and no write-back. The Knowledge Graph and Intelligence Report are read-only, and suggestions are advisory only. Query-history persistence remains absent, so query-history-dependent categories stay deferred. The Active Memory store is deterministic but in-memory only (a serialize/restore boundary, no committed persistence medium); contradiction detection is backend-derived, read-only, and covers four of the five contract classes (`frontend_only_vs_backend_modification` is deferred, and no automatic resolution exists); context packet generation is backend service-only with no endpoint, frontend surface, evidence resolver, or action authorization; and the rest of the Active Memory runtime — active-state calculation, observer, endpoint, and UI — is not implemented yet. Gesture tracking remains experimental and needs live tuning. The product does not run autonomous agents or mutate repositories.
+Hive|Mind is currently a local, single-user developer tool. It has no authentication, authorization, multi-user support, cloud sync, or production deployment hardening. Obsidian import is explicit and one-shot; there is no live vault watcher and no write-back. The Knowledge Graph and Intelligence Report are read-only, and suggestions are advisory only. Query-history persistence remains absent, so query-history-dependent categories stay deferred. The Active Memory store is deterministic but in-memory only (a serialize/restore boundary, no committed persistence medium); contradiction detection is backend-derived, read-only, and covers four of the five contract classes (`frontend_only_vs_backend_modification` is deferred, and no automatic resolution exists); the context packet endpoint is read-only and stateless — it derives packets from records supplied in the request, with no server-side memory store, frontend surface, evidence resolver, or action authorization; and the rest of the Active Memory runtime — active-state calculation, write endpoints, observer, and UI — is not implemented yet. Gesture tracking remains experimental and needs live tuning. The product does not run autonomous agents or mutate repositories.
 
 ## Roadmap
 
-The current controlled Track 2 sequence after the completed Phase 37E backend packet builder is:
+The current controlled Track 2 sequence after the completed Phase 37F read-only context-packet endpoint is:
 
 ```text
-37F - Read-Only Context Packet API Foundation
 37G - Active Memory Frontend Inspector
+37H - Repository observer planning
 ```
 
-Phase 37F is planned as a narrow backend API phase: a read-only endpoint returning the existing `ContextPacket` response model through a thin router and existing builder invocation, with request validation, no mutation, no frontend work, and no new packet logic. Phase 36K remains paused, not canceled or completed. Gesture tuning can resume after the application's memory foundation reaches a usable state. The complete phase chronology belongs in the [roadmap](docs/roadmap.md).
+Phase 37F shipped as a narrow backend API phase: `POST /api/active-memory/context-packet` returns the existing `ContextPacket` response model through a thin router and existing builder invocation, with request validation, no mutation, no frontend work, and no new packet logic. Phase 36K remains paused, not canceled or completed. Gesture tuning can resume after the application's memory foundation reaches a usable state. The complete phase chronology belongs in the [roadmap](docs/roadmap.md).
 
 ## Documentation
 
