@@ -66,3 +66,20 @@ class ContextPacketRequest(BaseModel):
         if not value or not value.strip():
             raise ValueError("project_id must not be empty")
         return value.strip()
+
+    @field_validator("records")
+    @classmethod
+    def _created_at_timezone_awareness_is_consistent(
+        cls, value: list[MemoryRecord]
+    ) -> list[MemoryRecord]:
+        awareness = {
+            record.created_at.tzinfo is not None
+            and record.created_at.utcoffset() is not None
+            for record in value
+        }
+        if len(awareness) > 1:
+            raise ValueError(
+                "records created_at timestamps must be consistently "
+                "timezone-aware or timezone-naive"
+            )
+        return value

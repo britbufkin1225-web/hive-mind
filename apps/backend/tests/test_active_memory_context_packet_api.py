@@ -248,6 +248,63 @@ def test_input_record_ordering_does_not_change_output() -> None:
 # --------------------------------------------------------------------------- #
 # Timestamp handling at the serialization boundary
 # --------------------------------------------------------------------------- #
+def test_mixed_aware_and_naive_record_created_at_timestamps_are_rejected() -> None:
+    response = client.post(
+        URL,
+        json=_request(
+            [
+                _record("naive", created_at="2026-01-01T12:00:00"),
+                _record("aware", created_at="2026-01-01T12:00:00Z"),
+            ]
+        ),
+    )
+
+    assert response.status_code == 422
+    assert "created_at timestamps must be consistently" in response.text
+    assert "Traceback" not in response.text
+    assert "TypeError" not in response.text
+    assert "C:\\" not in response.text
+    assert "apps/backend" not in response.text
+    assert "apps\\backend" not in response.text
+
+
+def test_all_aware_record_created_at_timestamps_are_accepted() -> None:
+    response = client.post(
+        URL,
+        json=_request(
+            [
+                _record("with-z", created_at="2026-01-01T12:00:00Z"),
+                _record("with-offset", created_at="2026-01-01T07:00:00-05:00"),
+            ],
+            generated_at="2026-07-16T09:30:00+00:00",
+        ),
+    )
+
+    assert response.status_code == 200
+    assert [record["record_id"] for record in response.json()["active_facts"]] == [
+        "with-offset",
+        "with-z",
+    ]
+
+
+def test_all_naive_record_created_at_timestamps_are_accepted() -> None:
+    response = client.post(
+        URL,
+        json=_request(
+            [
+                _record("early", created_at="2026-01-01T12:00:00"),
+                _record("late", created_at="2026-01-02T12:00:00"),
+            ]
+        ),
+    )
+
+    assert response.status_code == 200
+    assert [record["record_id"] for record in response.json()["active_facts"]] == [
+        "early",
+        "late",
+    ]
+
+
 def test_timezone_aware_offset_and_trailing_z_timestamps_are_accepted() -> None:
     with_offset = client.post(
         URL,

@@ -556,5 +556,4 @@ Phase 37F adds the first Active Memory API boundary: a thin router at
   yet), it enforces no request-level cap on the `records` list (the service's
   per-collection limits remain the single owner of bounds and fail closed), and
   mixing timezone-aware and naive `created_at` values within one request is
-  rejected as a server error by the store's ordering contract rather than
-  handled specially.
+  rejected at the API validation boundary with HTTP 422 before store ordering.
