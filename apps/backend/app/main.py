@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from app.routers.active_memory import router as active_memory_router
 from app.routers.api import router
 from app.routers.obsidian import router as obsidian_router
 from app.routers.registry import router as registry_router
@@ -40,6 +41,7 @@ app.add_middleware(
 app.include_router(router)
 app.include_router(registry_router)
 app.include_router(obsidian_router)
+app.include_router(active_memory_router)
 
 
 @app.exception_handler(Exception)
