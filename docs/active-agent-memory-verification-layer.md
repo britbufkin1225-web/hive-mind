@@ -1,6 +1,6 @@
 # Active Agent Memory + Verification Layer — Reusable Reference
 
-**Status:** Architecture reference with partial implementation through Phase 37J.
+**Status:** Architecture reference with partial implementation through Phase 37K.
 Phase 37B implements the `active-memory.v1` backend/frontend contracts, Phase 37C
 implements a deterministic backend-only in-memory store, and Phase 37D implements
 a deterministic backend-only read-only contradiction-detection MVP. Phase 37E
@@ -13,10 +13,11 @@ Repository Observer evidence provider (see §17) but implements no observer,
 adapter, subprocess execution, or Git invocation. Phase 37I adds the
 `repo-observer.v1` backend contract/schema foundation for that planned observer
 (see §18). Phase 37J adds a backend-only deterministic, read-only Git adapter
-foundation over those contracts (see §19), but still implements no repository
-observation snapshot service, watcher, polling loop, endpoint, persistence,
-ingestion, evidence resolver, AI/LLM interpretation, or autonomous
-mutation/action execution.
+foundation over those contracts (see §19). Phase 37K adds a backend-only
+request-triggered repository observation snapshot service MVP over that adapter
+(see §20), but still implements no observation endpoint, watcher, polling loop,
+persistence, ingestion, evidence resolver, AI/LLM interpretation, frontend
+surface, or autonomous mutation/action execution.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
 types, state axes, evidence hierarchy, and contradiction classes for the Active
 Agent Memory + Verification Layer, so later phases can cite a stable reference
@@ -161,7 +162,8 @@ Deterministic memory store MVP (implemented) → `37D` Contradiction detection M
 Memory Frontend Inspector (implemented) → `37H` Repository Observer planning
 (documentation only; see §17) → `37I` Repository Observer contract types
 (implemented; see §18) → `37J` Deterministic Git Adapter Foundation
-(implemented; see §19). This is a **Track 2 —
+(implemented; see §19) → `37K` Repository Observation Snapshot Service MVP
+(implemented; see §20). This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -656,8 +658,9 @@ runtime behavior. The long-form contract lives in the
 - **Follow-on sequence (planned, not authorized here).** 37I contract types → 37J
   Git adapter → 37K snapshot service MVP → 37L observation API → 37M evidence
   ingestion → 37N contradiction integration → 37O read-only frontend inspector →
-  37P end-to-end QA. Phase 37J is now implemented as the adapter foundation only;
-  the 37K+ steps remain planned and unauthorized here.
+  37P end-to-end QA. Phase 37J is now implemented as the adapter foundation and
+  Phase 37K is now implemented as the snapshot service MVP; the 37L+ steps remain
+  planned and unauthorized here.
 
 Phase 36K remains paused and untouched.
 
@@ -735,9 +738,37 @@ is `partial`.
 
 ### 19.3 Boundaries and limitations
 
-Phase 37J does not add a repository observation snapshot service beyond the
-adapter conversion function, API route, request model, database schema,
-persistence, background task, polling loop, filesystem crawler, source-file
-reader, watcher, Active Memory ingestion, contradiction integration, GitHub API
-integration, frontend surface, new dependency, AI/LLM behavior, automatic
-remediation, or repository mutation. Phase 36K remains paused and untouched.
+Phase 37J does not add an API route, request model, database schema, persistence,
+background task, polling loop, filesystem crawler, source-file reader, watcher,
+Active Memory ingestion, contradiction integration, GitHub API integration,
+frontend surface, new dependency, AI/LLM behavior, automatic remediation, or
+repository mutation. Phase 36K remains paused and untouched.
+
+## 20. Phase 37K — repository observation snapshot service MVP
+
+Phase 37K adds a backend-only snapshot service in
+`apps/backend/app/services/repository_observation_snapshot.py`, with focused
+tests in `apps/backend/tests/test_repository_observation_snapshot.py`. The
+service is the request-triggered observation boundary for the Repository
+Observer MVP. It uses the Phase 37J adapter for allowlisted Git command
+execution, porcelain-v2 parsing, remote parsing, and deterministic low-level
+conversion helpers, then returns the existing Phase 37I `RepositorySnapshot`
+contract.
+
+The architecture overlap from Phase 37J is reconciled deliberately: adapter
+parsing and `convert_git_evidence_to_snapshot(...)` remain the single low-level
+conversion path, while the Phase 37K service owns orchestration. The adapter's
+older `observe_repository(...)` entry point is retained only as a compatibility
+wrapper that delegates to the service.
+
+The service preserves caller-supplied `observed_at`, maps conservative
+`ObserverScope` limits into adapter limits, rejects deferred scope features
+(`included_paths`, `excluded_paths`, file contents, ignored-file observation, and
+binary-file observation), verifies a supplied scope root against the resolved Git
+root, and preserves the fail-closed root evidence behavior from Phase 37J.
+
+Phase 37K does not add an API route, request model, database schema, persistence,
+background task, polling loop, filesystem crawler, source-file reader, watcher,
+Active Memory ingestion, contradiction integration, GitHub API integration,
+frontend surface, new dependency, AI/LLM behavior, automatic remediation, or
+repository mutation. Phase 36K remains paused and untouched.

@@ -268,34 +268,15 @@ def observe_repository(
     limits: GitAdapterLimits = DEFAULT_GIT_ADAPTER_LIMITS,
     executor: GitCommandExecutor | None = None,
 ) -> RepositorySnapshot:
-    """Observe one repository through bounded read-only Git commands."""
+    """Compatibility wrapper for the Phase 37K snapshot service."""
 
-    target = Path(repository_path)
-    command_executor = executor or GitCommandExecutor(limits=limits)
-    root_result = command_executor.run(GitReadOperation.RESOLVE_ROOT, target)
-    if root_result.stdout_truncated or root_result.stderr_truncated:
-        raise GitOutputLimitExceededError("repository root evidence exceeded command bounds")
-    root_text = _decode_text(root_result.stdout, "repository root").strip()
-    if not root_text:
-        raise GitPorcelainParseError("repository root evidence was empty")
-    root = Path(root_text)
+    from app.services.repository_observation_snapshot import observe_repository_snapshot
 
-    status_result = command_executor.run(GitReadOperation.STATUS, root)
-    remote_result = command_executor.run(GitReadOperation.REMOTES, root)
-    status = parse_porcelain_v2_z(
-        status_result.stdout,
-        output_complete=not status_result.stdout_truncated,
-    )
-    remotes = parse_remote_verbose(remote_result.stdout)
-
-    return convert_git_evidence_to_snapshot(
-        repository_root=root,
-        status=status,
-        remotes=remotes,
+    return observe_repository_snapshot(
+        repository_path=repository_path,
         observed_at=observed_at,
         limits=limits,
-        status_result=status_result,
-        remote_result=remote_result,
+        executor=executor,
     )
 
 
@@ -406,6 +387,7 @@ def convert_git_evidence_to_snapshot(
     limits: GitAdapterLimits = DEFAULT_GIT_ADAPTER_LIMITS,
     status_result: GitCommandResult | None = None,
     remote_result: GitCommandResult | None = None,
+    observer_version: str = OBSERVER_VERSION,
 ) -> RepositorySnapshot:
     root_text = _normalize_root(repository_root)
     repository_name = repository_root.name or root_text.rsplit("/", 1)[-1]
@@ -443,7 +425,7 @@ def convert_git_evidence_to_snapshot(
         snapshot_id=_stable_id("snapshot", root_text, observed_at.isoformat()),
         repository_identity=identity,
         observed_at=observed_at,
-        observer_version=OBSERVER_VERSION,
+        observer_version=observer_version,
         branch=identity.current_branch,
         commit=identity.current_commit,
         working_tree=working_tree,

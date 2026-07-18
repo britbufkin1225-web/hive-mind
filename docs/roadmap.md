@@ -25,14 +25,14 @@ Implemented runtime capabilities include:
   pointer orbit, momentum, and elastic node manipulation.
 - Motion sandbox foundation using MediaPipe hand landmarks, with live gesture
   tuning still paused.
-- Active Memory foundation through Phase 37J: contract types, deterministic
+- Active Memory foundation through Phase 37K: contract types, deterministic
   backend-only in-memory store, deterministic backend-only read-only
   contradiction detection, backend-only deterministic context packet
   generation, a read-only context-packet API endpoint, and a read-only frontend
   inspector over user-supplied records, plus backend-only Repository Observer
-  contract/schema types and a deterministic read-only Git adapter foundation.
-  No Repository Observer snapshot service, API, watcher, persistence, or
-  ingestion exists yet.
+  contract/schema types, a deterministic read-only Git adapter foundation, and
+  a backend-only request-triggered repository observation snapshot service. No
+  Repository Observer API, watcher, persistence, or ingestion exists yet.
 
 The product remains local, single-user, and review-oriented. It does not run
 autonomous agents, mutate repositories, persist Active Memory beyond the current
@@ -45,28 +45,28 @@ or mutation controls.
 
 ## Active Phase
 
-### Phase 37J — Deterministic Git Adapter Foundation
+### Phase 37K — Repository Observation Snapshot Service MVP
 
-Phase 37J follows the Phase 37H Repository Observer sequence and establishes the
-deterministic read-only Git adapter foundation over the Phase 37I
+Phase 37K follows the Phase 37H Repository Observer sequence and establishes the
+backend-only snapshot service MVP over the Phase 37J Git adapter and Phase 37I
 `repo-observer.v1` contracts.
 
-The implemented adapter lives in
-`apps/backend/app/services/repository_git_adapter.py`. It separates allowlisted
-Git command execution, porcelain-v2 parsing, and contract conversion; executes
-Git with `shell=False`, explicit `cwd`, bounded timeout and output limits; reads
-only `git rev-parse --show-toplevel`,
-`git status --porcelain=v2 -z --branch --untracked-files=all`, and
-`git remote -v`; converts repository identity, branch/commit, detached/unborn
-HEAD state, working-tree changes, rename/copy relationships, warnings,
-limitations, overflow metadata, and completeness into the existing Phase 37I
-models. It does not add a watcher, polling loop, API route, persistence,
-filesystem crawler, Active Memory ingestion, GitHub integration, dependency, or
+The implemented service lives in
+`apps/backend/app/services/repository_observation_snapshot.py`. It owns
+request-triggered snapshot orchestration, uses the adapter for allowlisted
+read-only Git execution and low-level parsing/conversion helpers, preserves
+caller-supplied observation timestamps, applies conservative `ObserverScope`
+limit handling, rejects deferred scope features such as path filters and file
+contents, and returns the existing `RepositorySnapshot` contract. The prior
+adapter `observe_repository` entry point is retained as a compatibility wrapper
+that delegates to the service, avoiding a duplicate snapshot implementation. It
+does not add a watcher, polling loop, API route, persistence, filesystem crawler,
+Active Memory ingestion, GitHub integration, dependency, frontend surface, or
 repository mutation.
 
 The prior Phase 37G frontend inspector remains implemented as a frontend-only,
 read-only inspector over the Phase 37F context-packet endpoint. Active-state
-calculation, the repository observation snapshot service, persistence, ingestion,
+calculation, the repository observation API, persistence, ingestion,
 evidence resolution, and AI/LLM interpretation remain planned work unless a
 later phase explicitly implements them.
 
@@ -80,11 +80,12 @@ later phase explicitly implements them.
 | Phase 37H — Repository Observer Planning | Documentation complete | Documentation-only plan for a future read-only repository-observer evidence provider: responsibilities, identity model, snapshot contract, evidence hierarchy, integration boundary, security model, bounded behavior, MVP, and follow-on sequence. No runtime. |
 | Phase 37I — Repository Observer Contract Types / Schema Alignment | Implemented | Backend-only `repo-observer.v1` Pydantic contract foundation for identity, scope, snapshots, working-tree state, file summaries, evidence, warnings, limitations, overflow, and completeness. No runtime. |
 | Phase 37J — Deterministic Git Adapter Foundation | Implemented | Backend-only read-only Git command adapter and porcelain-v2 parser over the Phase 37I contracts. No snapshot service, API, watcher, persistence, ingestion, or mutation. |
+| Phase 37K — Repository Observation Snapshot Service MVP | Implemented | Backend-only request-triggered snapshot service over the Phase 37J adapter and Phase 37I contracts. No API, watcher, persistence, ingestion, frontend, or mutation. |
 
-After Phase 37J, a conservative follow-on sequence is planned (not yet
-authorized): 37K snapshot service MVP → 37L observation API → 37M evidence
-ingestion → 37N contradiction integration → 37O read-only frontend inspector →
-37P end-to-end QA. Each phase remains independently scoped and reviewable.
+After Phase 37K, a conservative follow-on sequence is planned (not yet
+authorized): 37L observation API → 37M evidence ingestion → 37N contradiction
+integration → 37O read-only frontend inspector → 37P end-to-end QA. Each phase
+remains independently scoped and reviewable.
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
 implementation track.
@@ -230,6 +231,15 @@ implementation track.
   observation overflow, and honest snapshot completeness. No watcher, API,
   persistence, ingestion, filesystem crawler, GitHub integration, dependency,
   frontend, repository mutation, graph, Obsidian, or Phase 36K work was added.
+- **Phase 37K — Repository Observation Snapshot Service MVP:** implemented a
+  backend-only request-triggered service over the Phase 37J adapter. It owns
+  snapshot orchestration, preserves caller-supplied timestamps, maps conservative
+  `ObserverScope` limits into adapter limits, rejects deferred scope features,
+  keeps adapter parsing/conversion as the single snapshot-conversion path, and
+  returns the existing `RepositorySnapshot` contract. No API route, watcher,
+  polling loop, persistence, filesystem crawler, Active Memory ingestion, GitHub
+  integration, dependency, frontend surface, repository mutation, graph,
+  Obsidian, or Phase 36K work was added.
 
 `frontend_only_vs_backend_modification` is a contract class but is not
 implemented in Phase 37D because it needs a deterministic path/scope target model
@@ -253,7 +263,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 | Active Memory persistence | Choose a durable medium after contracts, store semantics, contradiction detection, and context packet generation are stable. | Current store is in-memory with serialize/restore only. |
 | Active-state calculation | Derive safe active baselines while preserving unresolved contradictions and missing evidence. | No "newest wins"; unresolved state must stay visible. |
 | Context packet UI | Keep the Phase 37G inspector read-only while future phases decide durable memory and observer boundaries. | The inspector exists and remains stateless over user-supplied records. |
-| Repository observer | Planned in Phase 37H as a read-only evidence provider; Phase 37I implements backend contract/schema types and Phase 37J implements the deterministic read-only Git adapter foundation. Snapshot service implementation remains deferred to Phase 37K+. Keep evidence scoped and human-reviewable. | No repository observation API, watcher, polling loop, persistence, ingestion, filesystem scanner, or automatic repository mutation exists. |
+| Repository observer | Planned in Phase 37H as a read-only evidence provider; Phase 37I implements backend contract/schema types, Phase 37J implements the deterministic read-only Git adapter foundation, and Phase 37K implements the backend-only snapshot service MVP. Keep evidence scoped and human-reviewable. | No repository observation API, watcher, polling loop, persistence, ingestion, filesystem scanner, frontend surface, or automatic repository mutation exists. |
 | AI/LLM integration | Consider only after deterministic trust boundaries and inspection surfaces are stable. | No AI truth arbitration, autonomous resolution, or autonomous action. |
 | Intelligence report expansion | Source coverage, query persistence, and richer provenance/error states. | Read-only derivation over real store data. |
 | Spatial interaction | Resume Phase 36K when the project chooses to return to live gesture tuning. | No gesture completion claim without live evidence. |
@@ -275,9 +285,10 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
   generation, and a read-only, stateless context-packet endpoint that derives
   packets from request-supplied records, plus a read-only frontend inspector for
   explicitly supplied records, backend-only Repository Observer contract types,
-  and a deterministic read-only Git adapter foundation. It does not yet have
+  a deterministic read-only Git adapter foundation, and a backend-only
+  repository observation snapshot service. It does not yet have
   committed persistence, write endpoints, ingestion, active-state calculation, a
-  repository observation snapshot service or API, evidence resolution, AI
+  repository observation API, evidence resolution, AI
   interpretation, action authorization, autonomous mutation, or automatic
   resolution.
 - Gesture tracking remains experimental; Phase 36K live camera tuning is paused.
