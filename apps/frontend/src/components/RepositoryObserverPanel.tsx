@@ -548,7 +548,11 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
                 min={0}
                 max={REPOSITORY_OBSERVER_MAX_FILE_COUNT}
                 step={1}
-                value={maxFileCount}
+                // Clearing a number input yields valueAsNumber === NaN; keep the
+                // NaN in state so validation still rejects an empty limit, but
+                // never feed NaN back into the controlled value prop (React logs
+                // a "Received NaN" warning for that).
+                value={Number.isNaN(maxFileCount) ? "" : maxFileCount}
                 onChange={(event) => setMaxFileCount(event.target.valueAsNumber)}
               />
             </label>
@@ -560,7 +564,7 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
                 min={0}
                 max={REPOSITORY_OBSERVER_MAX_SNAPSHOT_BYTES}
                 step={1024}
-                value={maxSnapshotBytes}
+                value={Number.isNaN(maxSnapshotBytes) ? "" : maxSnapshotBytes}
                 onChange={(event) =>
                   setMaxSnapshotBytes(event.target.valueAsNumber)
                 }
