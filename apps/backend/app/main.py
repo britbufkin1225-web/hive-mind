@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from app.routers.active_memory import router as active_memory_router
 from app.routers.api import router
 from app.routers.obsidian import router as obsidian_router
+from app.routers.repository_observer import router as repository_observer_router
 from app.routers.registry import router as registry_router
 
 logger = logging.getLogger("hivemind.api")
@@ -42,6 +43,7 @@ app.include_router(router)
 app.include_router(registry_router)
 app.include_router(obsidian_router)
 app.include_router(active_memory_router)
+app.include_router(repository_observer_router)
 
 
 @app.exception_handler(Exception)

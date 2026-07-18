@@ -1,6 +1,6 @@
 # Active Agent Memory + Verification Layer — Reusable Reference
 
-**Status:** Architecture reference with partial implementation through Phase 37K.
+**Status:** Architecture reference with partial implementation through Phase 37L.
 Phase 37B implements the `active-memory.v1` backend/frontend contracts, Phase 37C
 implements a deterministic backend-only in-memory store, and Phase 37D implements
 a deterministic backend-only read-only contradiction-detection MVP. Phase 37E
@@ -15,9 +15,10 @@ adapter, subprocess execution, or Git invocation. Phase 37I adds the
 (see §18). Phase 37J adds a backend-only deterministic, read-only Git adapter
 foundation over those contracts (see §19). Phase 37K adds a backend-only
 request-triggered repository observation snapshot service MVP over that adapter
-(see §20), but still implements no observation endpoint, watcher, polling loop,
-persistence, ingestion, evidence resolver, AI/LLM interpretation, frontend
-surface, or autonomous mutation/action execution.
+(see §20). Phase 37L exposes that service through a thin read-only HTTP API
+(see §21), but still implements no watcher, polling loop, persistence,
+ingestion, evidence resolver, AI/LLM interpretation, frontend surface, or
+autonomous mutation/action execution.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
 types, state axes, evidence hierarchy, and contradiction classes for the Active
 Agent Memory + Verification Layer, so later phases can cite a stable reference
@@ -163,7 +164,8 @@ Memory Frontend Inspector (implemented) → `37H` Repository Observer planning
 (documentation only; see §17) → `37I` Repository Observer contract types
 (implemented; see §18) → `37J` Deterministic Git Adapter Foundation
 (implemented; see §19) → `37K` Repository Observation Snapshot Service MVP
-(implemented; see §20). This is a **Track 2 —
+(implemented; see §20) → `37L` Read-Only Repository Observation API Foundation
+(implemented; see §21). This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -658,9 +660,10 @@ runtime behavior. The long-form contract lives in the
 - **Follow-on sequence (planned, not authorized here).** 37I contract types → 37J
   Git adapter → 37K snapshot service MVP → 37L observation API → 37M evidence
   ingestion → 37N contradiction integration → 37O read-only frontend inspector →
-  37P end-to-end QA. Phase 37J is now implemented as the adapter foundation and
-  Phase 37K is now implemented as the snapshot service MVP; the 37L+ steps remain
-  planned and unauthorized here.
+  37P end-to-end QA. Phase 37J is now implemented as the adapter foundation,
+  Phase 37K is now implemented as the snapshot service MVP, and Phase 37L is now
+  implemented as the read-only observation API; the 37M+ steps remain planned
+  and unauthorized here.
 
 Phase 36K remains paused and untouched.
 
@@ -772,3 +775,47 @@ background task, polling loop, filesystem crawler, source-file reader, watcher,
 Active Memory ingestion, contradiction integration, GitHub API integration,
 frontend surface, new dependency, AI/LLM behavior, automatic remediation, or
 repository mutation. Phase 36K remains paused and untouched.
+
+## 21. Phase 37L — read-only repository observation API foundation
+
+Phase 37L adds a backend-only read-only HTTP boundary in
+`apps/backend/app/routers/repository_observer.py`, with request schema in
+`apps/backend/app/models/repository_observer_api.py` and focused API tests in
+`apps/backend/tests/test_repository_observer_api.py`.
+
+The endpoint is **`POST /api/repository-observer/snapshot`**. `POST` is used
+because the request is structured; the operation itself remains read-only. The
+request requires a local absolute `repository_root` and caller-supplied
+`observed_at`, supports bounded `max_file_count` and `max_snapshot_bytes`, and
+may carry the existing Phase 37I `ObserverScope`. Empty roots, malformed paths,
+relative paths, parent traversal, negative bounds, oversized bounds, unsupported
+scope behavior, and unexpected request fields are rejected at the transport or
+service boundary.
+
+The response is the existing Phase 37I `RepositorySnapshot` contract, not a
+flattened presentation model. Repository identity, identity status,
+working-tree state, changed-file observations, rename/copy relationships,
+repository evidence, evidence authority, warnings, limitations, overflow,
+truncation, omitted paths, completeness, and `read_only` semantics remain intact.
+
+The dependency flow is intentionally narrow:
+
+```text
+API router
+  -> repository observation snapshot service
+  -> deterministic Git adapter
+  -> read-only Git subprocess calls
+```
+
+The router owns client-safe error mapping only. Repository-not-found and
+non-directory paths return stable client errors; non-Git directories, access
+denial, expected bounded adapter/service failures, unavailable Git capability,
+and unexpected failures are reported without exposing tracebacks, credentials,
+raw subprocess commands, environment values, or sensitive filesystem internals.
+
+Phase 37L does not add repository mutation, arbitrary command execution, fetch,
+pull, checkout, branch management, commits, persistence, historical snapshot
+storage, diffing across time, watcher/polling behavior, Active Memory ingestion,
+contradiction integration, frontend UI, graph changes, Obsidian changes,
+MediaPipe work, AI/LLM behavior, or new package dependencies. Phase 36K remains
+paused and untouched.
