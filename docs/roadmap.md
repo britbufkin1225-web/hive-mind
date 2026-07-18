@@ -25,11 +25,12 @@ Implemented runtime capabilities include:
   pointer orbit, momentum, and elastic node manipulation.
 - Motion sandbox foundation using MediaPipe hand landmarks, with live gesture
   tuning still paused.
-- Active Memory foundation through Phase 37F: contract types, deterministic
+- Active Memory foundation through Phase 37I: contract types, deterministic
   backend-only in-memory store, deterministic backend-only read-only
   contradiction detection, backend-only deterministic context packet
   generation, a read-only context-packet API endpoint, and a read-only frontend
-  inspector over user-supplied records.
+  inspector over user-supplied records, plus backend-only Repository Observer
+  contract/schema types. No Repository Observer runtime exists yet.
 
 The product remains local, single-user, and review-oriented. It does not run
 autonomous agents, mutate repositories, persist Active Memory beyond the current
@@ -42,22 +43,12 @@ or mutation controls.
 
 ## Active Phase
 
-### Phase 37H — Repository Observer Planning
+### Phase 37J — Deterministic Git Adapter Foundation
 
-Phase 37H is a **documentation-only** planning phase on Track 2 — Agent
-Intelligence Infrastructure. It specifies a *future* read-only **Repository
-Observer**: a backend evidence provider that would inspect a single local Git
-repository without mutating it and emit a bounded, deterministically ordered,
-immutable observation snapshot plus derived evidence and candidate records for
-the existing Active Memory ingestion, contradiction, and context-packet
-services. It defines the observer's responsibilities and non-responsibilities,
-repository identity model, snapshot contract, evidence hierarchy, integration
-boundary, deterministic contradiction opportunities, security/trust model,
-bounded-behavior and overflow rules, a narrow MVP, deferred scope, a test
-strategy, and a conservative follow-on phase sequence. **No observer, Git
-adapter, subprocess execution, filesystem scan, watcher, endpoint, schema,
-dependency, or runtime behavior is implemented.** The long-form plan is the
-[Phase 37H planning doc](planning/phase-37h-repository-observer-planning.md).
+Phase 37J is the next planned Track 2 phase from the Phase 37H Repository
+Observer sequence. It is expected to establish the deterministic read-only Git
+adapter foundation over the Phase 37I `repo-observer.v1` contracts. It is not
+implemented yet.
 
 The prior Phase 37G frontend inspector remains implemented as a frontend-only,
 read-only inspector over the Phase 37F context-packet endpoint. Active-state
@@ -73,9 +64,10 @@ explicitly implements them.
 | Phase 37F — Read-Only Context Packet API Foundation | Implemented | `POST /api/active-memory/context-packet`: a thin, read-only, non-mutating endpoint over the existing `ContextPacket` model and Phase 37E builder; no new packet logic. |
 | Phase 37G — Active Memory Frontend Inspector | Implemented | Read-only contextual frontend inspector over the stateless Phase 37F endpoint; records are explicitly supplied by the user and kept only in React state. |
 | Phase 37H — Repository Observer Planning | Documentation complete | Documentation-only plan for a future read-only repository-observer evidence provider: responsibilities, identity model, snapshot contract, evidence hierarchy, integration boundary, security model, bounded behavior, MVP, and follow-on sequence. No runtime. |
+| Phase 37I — Repository Observer Contract Types / Schema Alignment | Implemented | Backend-only `repo-observer.v1` Pydantic contract foundation for identity, scope, snapshots, working-tree state, file summaries, evidence, warnings, limitations, overflow, and completeness. No runtime. |
 
-After Phase 37H, a conservative follow-on sequence is planned (not yet
-authorized): 37I contract types → 37J Git adapter → 37K snapshot service MVP →
+After Phase 37I, a conservative follow-on sequence is planned (not yet
+authorized): 37J Git adapter → 37K snapshot service MVP →
 37L observation API → 37M evidence ingestion → 37N contradiction integration →
 37O read-only frontend inspector → 37P end-to-end QA. Each phase remains
 independently scoped and reviewable.
@@ -201,6 +193,17 @@ implementation track.
   test strategy, and a conservative follow-on sequence (37I–37P). No observer,
   Git adapter, subprocess execution, endpoint, schema, dependency, or runtime
   behavior was implemented.
+- **Phase 37I — Repository Observer Contract Types / Schema Alignment:**
+  implemented backend-only `repo-observer.v1` Pydantic contract types and focused
+  tests for the planned Repository Observer. The contracts cover repository
+  identity/status, conservative observer scope, working-tree state, changed-file
+  summaries, rename/copy path relationships, bounded repository evidence,
+  evidence authority, warnings, limitations, overflow/truncation metadata, and
+  snapshot completeness. They add validation for negative limits/counts, unsafe
+  repository-relative paths, malformed rename/copy records, unbounded excerpts,
+  impossible overflow metadata, and contradictory complete/truncated snapshots.
+  No observer runtime, Git execution, filesystem scanning, endpoint, persistence,
+  ingestion, frontend, dependency, graph, Obsidian, or Phase 36K work was added.
 
 `frontend_only_vs_backend_modification` is a contract class but is not
 implemented in Phase 37D because it needs a deterministic path/scope target model
@@ -224,7 +227,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 | Active Memory persistence | Choose a durable medium after contracts, store semantics, contradiction detection, and context packet generation are stable. | Current store is in-memory with serialize/restore only. |
 | Active-state calculation | Derive safe active baselines while preserving unresolved contradictions and missing evidence. | No "newest wins"; unresolved state must stay visible. |
 | Context packet UI | Keep the Phase 37G inspector read-only while future phases decide durable memory and observer boundaries. | The inspector exists and remains stateless over user-supplied records. |
-| Repository observer | Planned in Phase 37H as a read-only evidence provider; implementation deferred to the 37I–37P sequence. Keep evidence scoped and human-reviewable. | Documentation only; no observer, Git adapter, subprocess execution, watcher, or automatic repository mutation exists. |
+| Repository observer | Planned in Phase 37H as a read-only evidence provider; Phase 37I implements only backend contract/schema types. Runtime implementation remains deferred to Phase 37J+. Keep evidence scoped and human-reviewable. | No observer runtime, Git adapter, subprocess execution, filesystem scanner, watcher, endpoint, or automatic repository mutation exists. |
 | AI/LLM integration | Consider only after deterministic trust boundaries and inspection surfaces are stable. | No AI truth arbitration, autonomous resolution, or autonomous action. |
 | Intelligence report expansion | Source coverage, query persistence, and richer provenance/error states. | Read-only derivation over real store data. |
 | Spatial interaction | Resume Phase 36K when the project chooses to return to live gesture tuning. | No gesture completion claim without live evidence. |
@@ -245,10 +248,11 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
   deterministic read-only contradiction detection, backend context packet
   generation, and a read-only, stateless context-packet endpoint that derives
   packets from request-supplied records, plus a read-only frontend inspector for
-  explicitly supplied records. It does not yet have committed persistence, write
-  endpoints, ingestion, active-state calculation, repository observation,
-  evidence resolution, AI interpretation, action authorization, autonomous
-  mutation, or automatic resolution.
+  explicitly supplied records and backend-only Repository Observer contract
+  types. It does not yet have committed persistence, write endpoints, ingestion,
+  active-state calculation, repository observation runtime, evidence resolution,
+  AI interpretation, action authorization, autonomous mutation, or automatic
+  resolution.
 - Gesture tracking remains experimental; Phase 36K live camera tuning is paused.
 
 ## Reference Documents
