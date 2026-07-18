@@ -10,6 +10,8 @@ import pytest
 
 from app.models.repository_observer import (
     FileChangeKind,
+    ObserverWarningCategory,
+    OverflowLimitKind,
     SnapshotCompleteness,
     WorkingTreeState,
 )
@@ -339,4 +341,151 @@ def test_observe_repository_rejects_root_output_truncation() -> None:
             )
 
     with pytest.raises(GitOutputLimitExceededError, match="root"):
+        observe_repository(repository_path="C:/repo", observed_at=FIXED_TS, executor=Executor())
+
+
+def test_remote_parsing_preserves_spaces_in_local_path() -> None:
+    remotes = parse_remote_verbose(
+        b"origin\tC:/My Repos/hive-mind (fetch)\n"
+        b"origin\tC:/My Repos/hive-mind (push)\n"
+    )
+
+    assert len(remotes) == 1
+    assert remotes[0].name == "origin"
+    assert remotes[0].url == "C:/My Repos/hive-mind"
+
+
+def test_remote_evidence_excerpt_redacts_embedded_credentials() -> None:
+    remote_stdout = (
+        b"origin\thttps://ghp_SUPERSECRETTOKEN@github.com/u/r.git (fetch)\n"
+        b"origin\thttps://ghp_SUPERSECRETTOKEN@github.com/u/r.git (push)\n"
+    )
+    remote_result = GitCommandResult(
+        operation=GitReadOperation.REMOTES,
+        args=READ_ONLY_GIT_COMMANDS[GitReadOperation.REMOTES],
+        cwd="C:/repo",
+        returncode=0,
+        stdout=remote_stdout,
+        stderr=b"",
+    )
+    snapshot = convert_git_evidence_to_snapshot(
+        repository_root=Path("C:/repo"),
+        status=parse_porcelain_v2_z(_status_output(b"# branch.oid abc", b"# branch.head main")),
+        remotes=parse_remote_verbose(remote_stdout),
+        observed_at=FIXED_TS,
+        remote_result=remote_result,
+    )
+
+    excerpt = next(
+        e.bounded_excerpt for e in snapshot.evidence if e.evidence_id == "evidence-git-remotes"
+    )
+    assert "ghp_SUPERSECRETTOKEN" not in (excerpt or "")
+    assert "https://github.com/u/r.git" in (excerpt or "")
+    assert snapshot.repository_identity.remotes[0].url == "https://github.com/u/r.git"
+
+
+def test_truncated_status_drops_partial_record_without_fabricating_path() -> None:
+    record = b"1 .M N... 100644 100644 100644 aaaaaa bbbbbb apps/backend/really_long_module_name.py"
+    full = b"# branch.oid abc\0# branch.head main\0" + record + b"\0"
+    cut = full.index(b"bbbbbb ") + len(b"bbbbbb ") + 7  # sever the path mid-way
+    truncated = full[:cut]
+
+    # A truncated stream would otherwise retain the full field count with a
+    # severed path and fabricate a file that does not exist.
+    complete = parse_porcelain_v2_z(truncated, output_complete=True)
+    assert [item.path for item in complete.files] == ["apps/ba"]
+
+    partial = parse_porcelain_v2_z(truncated, output_complete=False)
+    assert partial.files == ()
+
+    status_result = GitCommandResult(
+        operation=GitReadOperation.STATUS,
+        args=READ_ONLY_GIT_COMMANDS[GitReadOperation.STATUS],
+        cwd="C:/repo",
+        returncode=0,
+        stdout=truncated,
+        stderr=b"",
+        stdout_truncated=True,
+    )
+    snapshot = convert_git_evidence_to_snapshot(
+        repository_root=Path("C:/repo"),
+        status=partial,
+        remotes=(),
+        observed_at=FIXED_TS,
+        status_result=status_result,
+    )
+    assert snapshot.changed_files == []
+    assert snapshot.completeness is SnapshotCompleteness.PARTIAL
+    assert WorkingTreeState.CLEAN not in snapshot.working_tree.states
+    assert any(w.category is ObserverWarningCategory.BYTE_LIMIT_REACHED for w in snapshot.warnings)
+
+
+def test_truncated_rename_record_missing_source_path_is_dropped() -> None:
+    truncated = (
+        b"# branch.oid abc\0# branch.head main\0"
+        b"2 R. N... 100644 100644 100644 aaaaaa bbbbbb R100 docs/new.md\0"
+        b"docs/ol"  # source path severed by truncation
+    )
+    # Naively treating truncated output as complete fabricates the severed source
+    # path as the rename's prior path.
+    complete = parse_porcelain_v2_z(truncated, output_complete=True)
+    assert [item.prior_path for item in complete.files] == ["docs/ol"]
+
+    # Truncation-aware parsing drops the incomplete rename tail entirely.
+    assert parse_porcelain_v2_z(truncated, output_complete=False).files == ()
+
+
+def test_byte_truncation_does_not_emit_file_count_warning() -> None:
+    status = parse_porcelain_v2_z(_status_output(b"# branch.oid abc", b"# branch.head main"))
+    status_result = GitCommandResult(
+        operation=GitReadOperation.STATUS,
+        args=READ_ONLY_GIT_COMMANDS[GitReadOperation.STATUS],
+        cwd="C:/repo",
+        returncode=0,
+        stdout=b"# branch.oid abc",
+        stderr=b"",
+        stdout_truncated=True,
+    )
+    snapshot = convert_git_evidence_to_snapshot(
+        repository_root=Path("C:/repo"),
+        status=status,
+        remotes=(),
+        observed_at=FIXED_TS,
+        status_result=status_result,
+    )
+    categories = {w.category for w in snapshot.warnings}
+    assert ObserverWarningCategory.BYTE_LIMIT_REACHED in categories
+    assert ObserverWarningCategory.FILE_LIMIT_REACHED not in categories
+    assert all(o.limit_kind is not OverflowLimitKind.FILE_COUNT for o in snapshot.overflow)
+
+
+def test_command_executor_passes_read_only_git_env() -> None:
+    calls: list[dict[str, object]] = []
+
+    def runner(*args: object, **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        calls.append({"args": args, "kwargs": kwargs})
+        return _completed(args[0], stdout=b"C:/repo\n")  # type: ignore[arg-type]
+
+    GitCommandExecutor(runner=runner).run(GitReadOperation.RESOLVE_ROOT, Path("C:/repo"))
+
+    env = calls[0]["kwargs"]["env"]
+    assert isinstance(env, dict)
+    assert env["GIT_OPTIONAL_LOCKS"] == "0"
+    assert env["GIT_TERMINAL_PROMPT"] == "0"
+    assert calls[0]["kwargs"]["shell"] is False
+
+
+def test_observe_repository_rejects_empty_root_evidence() -> None:
+    class Executor:
+        def run(self, operation: GitReadOperation, repository_root: Path):  # noqa: ANN001
+            return GitCommandResult(
+                operation=operation,
+                args=READ_ONLY_GIT_COMMANDS[operation],
+                cwd=str(repository_root),
+                returncode=0,
+                stdout=b"\n",
+                stderr=b"",
+            )
+
+    with pytest.raises(GitPorcelainParseError, match="empty"):
         observe_repository(repository_path="C:/repo", observed_at=FIXED_TS, executor=Executor())

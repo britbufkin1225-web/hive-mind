@@ -12,7 +12,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 import hashlib
+import os
 from pathlib import Path
+import re
 import subprocess
 from typing import Callable, Iterable, Sequence
 
@@ -198,6 +200,7 @@ class GitCommandExecutor:
                 capture_output=True,
                 timeout=self._limits.command_timeout_seconds,
                 check=False,
+                env=_read_only_git_env(),
             )
         except FileNotFoundError as exc:
             raise GitExecutableUnavailableError("git executable is unavailable") from exc
@@ -242,6 +245,22 @@ class GitCommandExecutor:
                 )
 
 
+def _read_only_git_env() -> dict[str, str]:
+    """Return a per-subprocess environment hardened for read-only observation.
+
+    ``GIT_OPTIONAL_LOCKS=0`` keeps ``git status`` from opportunistically taking
+    the index lock to refresh its stat cache, so observation never writes to
+    ``.git/index``. ``GIT_TERMINAL_PROMPT=0`` prevents any command from blocking
+    on an interactive credential prompt. Both are process-local and change no
+    repository or user Git configuration.
+    """
+
+    env = dict(os.environ)
+    env["GIT_OPTIONAL_LOCKS"] = "0"
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
+
+
 def observe_repository(
     *,
     repository_path: str | Path,
@@ -256,13 +275,17 @@ def observe_repository(
     root_result = command_executor.run(GitReadOperation.RESOLVE_ROOT, target)
     if root_result.stdout_truncated or root_result.stderr_truncated:
         raise GitOutputLimitExceededError("repository root evidence exceeded command bounds")
-    root = Path(_decode_text(root_result.stdout, "repository root").strip())
-    if not str(root):
+    root_text = _decode_text(root_result.stdout, "repository root").strip()
+    if not root_text:
         raise GitPorcelainParseError("repository root evidence was empty")
+    root = Path(root_text)
 
     status_result = command_executor.run(GitReadOperation.STATUS, root)
     remote_result = command_executor.run(GitReadOperation.REMOTES, root)
-    status = parse_porcelain_v2_z(status_result.stdout)
+    status = parse_porcelain_v2_z(
+        status_result.stdout,
+        output_complete=not status_result.stdout_truncated,
+    )
     remotes = parse_remote_verbose(remote_result.stdout)
 
     return convert_git_evidence_to_snapshot(
@@ -276,12 +299,25 @@ def observe_repository(
     )
 
 
-def parse_porcelain_v2_z(output: bytes) -> GitStatusEvidence:
-    """Parse NUL-delimited ``git status --porcelain=v2 -z --branch`` evidence."""
+def parse_porcelain_v2_z(output: bytes, *, output_complete: bool = True) -> GitStatusEvidence:
+    """Parse NUL-delimited ``git status --porcelain=v2 -z --branch`` evidence.
+
+    ``output_complete`` must be ``False`` whenever the raw stdout was truncated by
+    the command byte bound. A complete ``-z`` stream terminates every record with a
+    NUL, so its final split element is empty; a truncated stream instead leaves a
+    partial trailing record. That partial record is dropped rather than parsed,
+    because a truncated ordinary record can still retain the right field count with
+    a severed path (fabricating a file that does not exist) and a truncated
+    rename/copy record can be severed from its source-path token.
+    """
 
     if output == b"":
         return GitStatusEvidence(branch=GitBranchInfo(), files=())
-    tokens = [token for token in output.split(b"\0") if token]
+    raw_tokens = output.split(b"\0")
+    trailing_partial = raw_tokens[-1] != b""
+    tokens = [token for token in raw_tokens if token]
+    if not output_complete and trailing_partial and tokens:
+        tokens = tokens[:-1]
     branch = GitBranchInfo()
     files: list[GitFileStatus] = []
     warnings: list[str] = []
@@ -299,6 +335,10 @@ def parse_porcelain_v2_z(output: bytes) -> GitStatusEvidence:
             continue
         if marker == b"2":
             if index + 1 >= len(tokens):
+                if not output_complete:
+                    # Truncation severed a rename/copy record from its source-path
+                    # token; drop the incomplete tail instead of fabricating a path.
+                    break
                 raise GitPorcelainParseError("rename/copy record is missing prior path")
             files.append(_parse_rename_or_copy_status(token, tokens[index + 1]))
             index += 2
@@ -329,14 +369,22 @@ def parse_remote_verbose(output: bytes) -> tuple[RepositoryRemote, ...]:
     remotes: dict[tuple[str, str], RepositoryRemote] = {}
     text = _decode_text(output, "remote output")
     for raw_line in text.splitlines():
+        # ``git remote -v`` prints ``<name>\t<url> (<direction>)``. Split on the
+        # tab first and take the direction off the end so URLs or Windows local
+        # paths that legitimately contain spaces are preserved intact.
         line = raw_line.strip()
-        if not line:
+        if "\t" not in line:
             continue
-        parts = line.split()
-        if len(parts) < 3 or parts[2] not in ("(fetch)", "(push)"):
+        name, _, rest = line.partition("\t")
+        name = name.strip()
+        url, sep, direction = rest.rpartition(" ")
+        url = url.strip()
+        direction = direction.strip()
+        if not sep or direction not in ("(fetch)", "(push)"):
             continue
-        name, url, direction = parts[0], parts[1], parts[2]
         if direction != "(fetch)":
+            continue
+        if not name or not url:
             continue
         remotes[(name, url)] = RepositoryRemote(
             name=name,
@@ -747,7 +795,7 @@ def _warnings_for(
                 evidence_ids=["evidence-git-remotes"],
             )
         )
-    if overflow:
+    if any(item.limit_kind is OverflowLimitKind.FILE_COUNT for item in overflow):
         warnings.append(
             ObserverWarning(
                 warning_id="warning-file-limit-reached",
@@ -845,8 +893,17 @@ def _decode_text(raw: bytes, label: str) -> str:
         raise GitPorcelainParseError(f"{label} contained undecodable UTF-8") from exc
 
 
+# Matches ``scheme://userinfo@`` so credential-bearing remote URLs never survive
+# into a bounded excerpt or error message.
+_CREDENTIAL_RE = re.compile(r"([A-Za-z][A-Za-z0-9+.\-]*://)[^/\s@]+@")
+
+
+def _redact_credentials(text: str) -> str:
+    return _CREDENTIAL_RE.sub(r"\1", text)
+
+
 def _safe_excerpt(raw: bytes, limit: int = 120) -> str:
-    text = raw.decode("utf-8", errors="replace")
+    text = _redact_credentials(raw.decode("utf-8", errors="replace"))
     safe = "".join(ch if ch >= " " and ch != "\x7f" else " " for ch in text)
     return " ".join(safe.split())[:limit]
 
