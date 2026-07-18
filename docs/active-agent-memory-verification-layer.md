@@ -1,6 +1,6 @@
 # Active Agent Memory + Verification Layer — Reusable Reference
 
-**Status:** Architecture reference with partial implementation through Phase 37I.
+**Status:** Architecture reference with partial implementation through Phase 37J.
 Phase 37B implements the `active-memory.v1` backend/frontend contracts, Phase 37C
 implements a deterministic backend-only in-memory store, and Phase 37D implements
 a deterministic backend-only read-only contradiction-detection MVP. Phase 37E
@@ -12,9 +12,11 @@ user. Phase 37H is **documentation-only**: it plans a future read-only
 Repository Observer evidence provider (see §17) but implements no observer,
 adapter, subprocess execution, or Git invocation. Phase 37I adds the
 `repo-observer.v1` backend contract/schema foundation for that planned observer
-(see §18), but still implements no observer runtime, Git adapter, filesystem
-scanner, endpoint, persistence, ingestion, evidence resolver, AI/LLM
-interpretation, or autonomous mutation/action execution.
+(see §18). Phase 37J adds a backend-only deterministic, read-only Git adapter
+foundation over those contracts (see §19), but still implements no repository
+observation snapshot service, watcher, polling loop, endpoint, persistence,
+ingestion, evidence resolver, AI/LLM interpretation, or autonomous
+mutation/action execution.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
 types, state axes, evidence hierarchy, and contradiction classes for the Active
 Agent Memory + Verification Layer, so later phases can cite a stable reference
@@ -158,7 +160,8 @@ Deterministic memory store MVP (implemented) → `37D` Contradiction detection M
 → `37F` Read-Only Context Packet API Foundation (implemented) → `37G` Active
 Memory Frontend Inspector (implemented) → `37H` Repository Observer planning
 (documentation only; see §17) → `37I` Repository Observer contract types
-(implemented; see §18). This is a **Track 2 —
+(implemented; see §18) → `37J` Deterministic Git Adapter Foundation
+(implemented; see §19). This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -653,7 +656,8 @@ runtime behavior. The long-form contract lives in the
 - **Follow-on sequence (planned, not authorized here).** 37I contract types → 37J
   Git adapter → 37K snapshot service MVP → 37L observation API → 37M evidence
   ingestion → 37N contradiction integration → 37O read-only frontend inspector →
-  37P end-to-end QA.
+  37P end-to-end QA. Phase 37J is now implemented as the adapter foundation only;
+  the 37K+ steps remain planned and unauthorized here.
 
 Phase 36K remains paused and untouched.
 
@@ -682,6 +686,58 @@ and limitations are structured for future API exposure, and local secrets,
 stack traces, arbitrary exception strings, environment variables, and unrestricted
 absolute filesystem paths are not modeled as automatic payloads.
 
-The next planned Repository Observer phase is **Phase 37J — Deterministic Git
-Adapter Foundation**. That later phase owns read-only argument-array Git adapter
-behavior; Phase 37I does not authorize or implement it.
+Phase 37J now owns read-only argument-array Git adapter behavior; Phase 37I did
+not authorize or implement it.
+
+## 19. Phase 37J — deterministic Git adapter foundation
+
+Phase 37J adds a backend-only deterministic Git adapter foundation in
+`apps/backend/app/services/repository_git_adapter.py`, with focused tests in
+`apps/backend/tests/test_repository_git_adapter.py`. The adapter is read-only and
+translates bounded Git CLI evidence into the existing Phase 37I
+`repo-observer.v1` models; it does not create a competing contract.
+
+### 19.1 Implemented command boundary
+
+The application command set is intentionally small and internal:
+
+- `git rev-parse --show-toplevel`
+- `git status --porcelain=v2 -z --branch --untracked-files=all`
+- `git remote -v`
+
+Commands are executed with argument arrays and `shell=False`, an explicit
+repository `cwd`, a 5 second per-command timeout, 262,144 stdout bytes, 8,192
+stderr bytes, and bounded excerpts of 512 characters. Mutating Git subcommands
+such as add, commit, checkout, switch, reset, clean, stash, fetch, pull, push,
+update-index, config, merge, rebase, cherry-pick, restore, rm, and mv are
+excluded from the application command set. Phase implementation still used Git
+normally for branch and commit workflow outside the adapter.
+
+### 19.2 Parsing and conversion
+
+Porcelain-v2 status output was selected because it is stable, machine-readable,
+and avoids human-readable `git status` parsing. The parser handles branch
+headers, detached HEAD, unborn initial branches, missing upstream metadata,
+ordinary tracked records, staged and unstaged changes, untracked paths, unmerged
+records, renames, copies, paths containing spaces, and NUL-delimited records.
+Malformed records, undecodable paths, unsafe absolute paths, drive paths, parent
+traversal, and unexpected record types fail with typed bounded adapter errors
+rather than raw tracebacks.
+
+Conversion preserves repository-relative paths, rename/copy prior/current
+relationships, direct-Git evidence authority, metadata-only limitations,
+deterministic ordering by normalized path, working-tree clean/dirty counts,
+detached/unborn branch behavior, warning records, overflow metadata, and honest
+snapshot completeness. File observations default to 200 retained records; when
+that limit is exceeded, the first records by deterministic path order are kept,
+omitted paths are recorded, `FILE_COUNT` overflow is populated, and completeness
+is `partial`.
+
+### 19.3 Boundaries and limitations
+
+Phase 37J does not add a repository observation snapshot service beyond the
+adapter conversion function, API route, request model, database schema,
+persistence, background task, polling loop, filesystem crawler, source-file
+reader, watcher, Active Memory ingestion, contradiction integration, GitHub API
+integration, frontend surface, new dependency, AI/LLM behavior, automatic
+remediation, or repository mutation. Phase 36K remains paused and untouched.
