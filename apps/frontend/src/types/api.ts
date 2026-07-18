@@ -593,3 +593,284 @@ export interface ContextPacketRequest {
   records: MemoryRecord[];
 }
 
+// ------------------------------------------------------------------------- //
+// Phase 37I/37L/37M — Repository Observer contract types.
+//
+// Mirrors the backend repository_observer.py and repository_observer_api.py
+// wire shapes. The frontend inspector is read-only and snapshot-based; these
+// types deliberately preserve backend evidence, warning, limitation, overflow,
+// completeness, truncation, and identity fields without reinterpreting them.
+// ------------------------------------------------------------------------- //
+
+export const REPOSITORY_OBSERVER_CONTRACT_VERSION = "repo-observer.v1";
+
+export type RepositoryIdentityStatus =
+  | "verified"
+  | "unverified"
+  | "mismatched_root"
+  | "mismatched_remote"
+  | "missing_git_metadata"
+  | "unsafe_location";
+
+export type RepositoryOperationState =
+  | "normal"
+  | "merging"
+  | "rebasing"
+  | "cherry_picking"
+  | "bisecting"
+  | "detached"
+  | "bare"
+  | "unavailable"
+  | "unknown";
+
+export type WorkingTreeState =
+  | "clean"
+  | "modified"
+  | "staged"
+  | "untracked"
+  | "conflicted"
+  | "unavailable"
+  | "unknown";
+
+export type FileChangeKind =
+  | "added"
+  | "modified"
+  | "deleted"
+  | "renamed"
+  | "copied"
+  | "untracked"
+  | "conflicted"
+  | "unchanged"
+  | "unknown";
+
+export type FileObservationCategory =
+  | "git_status"
+  | "file_metadata"
+  | "bounded_text_excerpt"
+  | "repository_configuration"
+  | "exclusion_record"
+  | "unsupported_data"
+  | "unknown";
+
+export type FileContentKind =
+  | "text"
+  | "binary"
+  | "symlink"
+  | "directory"
+  | "submodule"
+  | "unknown"
+  | "unavailable";
+
+export type RepositoryEvidenceCategory =
+  | "git_metadata"
+  | "working_tree_metadata"
+  | "file_metadata"
+  | "bounded_text_excerpt"
+  | "repository_configuration"
+  | "validation_result"
+  | "exclusion_record"
+  | "externally_supplied_claim"
+  | "unsupported_data";
+
+export type RepositoryEvidenceAuthority =
+  | "direct_git_output"
+  | "direct_filesystem_metadata"
+  | "parsed_repository_document"
+  | "validated_execution_source"
+  | "user_supplied_statement"
+  | "agent_generated_summary"
+  | "unsupported_assumption"
+  | "unavailable_information";
+
+export type RepositoryTruncationState =
+  | "not_truncated"
+  | "truncated"
+  | "omitted"
+  | "unknown";
+
+export type ObserverWarningCategory =
+  | "repository_identity_mismatch"
+  | "unsafe_repository_path"
+  | "inaccessible_path"
+  | "unsupported_file_type"
+  | "binary_content_omitted"
+  | "ignored_content_omitted"
+  | "excluded_path"
+  | "evidence_truncated"
+  | "file_limit_reached"
+  | "byte_limit_reached"
+  | "evidence_limit_reached"
+  | "git_metadata_unavailable"
+  | "partial_snapshot"
+  | "observer_capability_unavailable"
+  | "timestamp_ambiguity"
+  | "unknown_observer_error";
+
+export type ObserverLimitationCategory =
+  | "metadata_only"
+  | "file_contents_not_allowed"
+  | "ignored_files_not_included"
+  | "untracked_files_not_included"
+  | "binary_files_not_included"
+  | "excluded_paths_applied"
+  | "bounded_collection"
+  | "unsupported_data"
+  | "unavailable_information";
+
+export type OverflowLimitKind =
+  | "file_count"
+  | "evidence_count"
+  | "text_bytes"
+  | "snapshot_bytes"
+  | "warning_count"
+  | "limitation_count"
+  | "unknown";
+
+export type SnapshotCompleteness =
+  | "complete"
+  | "partial"
+  | "unavailable"
+  | "invalid"
+  | "rejected";
+
+export interface RepositoryRemote {
+  name: string;
+  url: string;
+  normalized_url: string | null;
+}
+
+export interface RepositoryIdentity {
+  repository_id: string;
+  canonical_root: string;
+  normalized_root: string;
+  repository_name: string;
+  remotes: RepositoryRemote[];
+  primary_remote_url: string | null;
+  current_branch: string | null;
+  current_commit: string | null;
+  upstream_reference: string | null;
+  default_branch: string | null;
+  operation_state: RepositoryOperationState;
+  status: RepositoryIdentityStatus;
+  warning_ids: string[];
+}
+
+export interface RepositoryObserverScope {
+  repository_root: string;
+  included_paths: string[];
+  excluded_paths: string[];
+  max_file_count: number;
+  max_evidence_entries: number;
+  max_text_bytes: number;
+  max_snapshot_bytes: number;
+  include_untracked_files: boolean;
+  include_ignored_files: boolean;
+  include_binary_files: boolean;
+  allow_file_contents: boolean;
+  metadata_only: boolean;
+}
+
+export interface RepositoryObservationSnapshotRequest {
+  repository_root: string;
+  observed_at: string;
+  max_file_count: number;
+  max_snapshot_bytes: number;
+  scope?: RepositoryObserverScope | null;
+}
+
+export interface WorkingTreeStatus {
+  states: WorkingTreeState[];
+  staged_count: number;
+  unstaged_count: number;
+  untracked_count: number;
+  conflicted_count: number;
+}
+
+export interface PathRelationship {
+  change_kind: FileChangeKind;
+  prior_path: string;
+  current_path: string;
+}
+
+export interface FileObservationSummary {
+  file_id: string;
+  repository_relative_path: string;
+  normalized_path: string;
+  change_kind: FileChangeKind;
+  observation_category: FileObservationCategory;
+  size_bytes: number | null;
+  content_kind: FileContentKind;
+  tracked: boolean | null;
+  ignored: boolean | null;
+  staged: boolean | null;
+  content_digest: string | null;
+  path_relationship: PathRelationship | null;
+  evidence_ids: string[];
+  omission_reason: string | null;
+  warning_ids: string[];
+}
+
+export interface RepositoryEvidence {
+  evidence_id: string;
+  category: RepositoryEvidenceCategory;
+  authority: RepositoryEvidenceAuthority;
+  source: string;
+  repository_relative_path: string | null;
+  summary: string;
+  bounded_excerpt: string | null;
+  excerpt_limit: number | null;
+  digest: string | null;
+  captured_at: string | null;
+  truncation_state: RepositoryTruncationState;
+  omission_reason: string | null;
+  related_file_ids: string[];
+}
+
+export interface ObserverWarning {
+  warning_id: string;
+  category: ObserverWarningCategory;
+  summary: string;
+  path: string | null;
+  evidence_ids: string[];
+}
+
+export interface ObserverLimitation {
+  limitation_id: string;
+  category: ObserverLimitationCategory;
+  summary: string;
+  path: string | null;
+}
+
+export interface OverflowMetadata {
+  overflow_id: string;
+  limit_kind: OverflowLimitKind;
+  truncated: boolean;
+  configured_limit: number;
+  observed_count: number | null;
+  observed_size_bytes: number | null;
+  retained_count: number;
+  omitted_count: number | null;
+  deterministic_cutoff: string;
+  snapshot_partial: boolean;
+}
+
+export interface RepositorySnapshot {
+  snapshot_id: string;
+  contract_version: string;
+  repository_identity: RepositoryIdentity;
+  observed_at: string;
+  observer_version: string;
+  branch: string | null;
+  commit: string | null;
+  working_tree: WorkingTreeStatus;
+  changed_files: FileObservationSummary[];
+  evidence: RepositoryEvidence[];
+  warnings: ObserverWarning[];
+  limitations: ObserverLimitation[];
+  omitted_paths: string[];
+  overflow: OverflowMetadata[];
+  deterministic_ordering: string[];
+  completeness: SnapshotCompleteness;
+  read_only: boolean;
+}
+

@@ -5,6 +5,8 @@ import type {
   KnowledgeGraphResponse,
   ObsidianImportRequest,
   ObsidianImportSummary,
+  RepositoryObservationSnapshotRequest,
+  RepositorySnapshot,
   SourceRegistryListResponse,
 } from "../types/api";
 
@@ -41,11 +43,24 @@ export interface ConsoleExecuteResponse {
   error: string | null;
 }
 
+export class ApiClientError extends Error {
+  constructor(
+    message: string,
+    readonly status: number | null,
+  ) {
+    super(message);
+    this.name = "ApiClientError";
+  }
+}
+
 async function get<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`);
 
   if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
+    throw new ApiClientError(
+      `API request failed with status ${response.status}`,
+      response.status,
+    );
   }
 
   return response.json() as Promise<T>;
@@ -83,7 +98,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(await errorMessage(response));
+    throw new ApiClientError(await errorMessage(response), response.status);
   }
 
   return response.json() as Promise<T>;
@@ -103,6 +118,8 @@ export const apiClient = {
     get<IntelligenceReport>("/intelligence/report"),
   buildContextPacket: (request: ContextPacketRequest) =>
     post<ContextPacket>("/active-memory/context-packet", request),
+  observeRepositorySnapshot: (request: RepositoryObservationSnapshotRequest) =>
+    post<RepositorySnapshot>("/repository-observer/snapshot", request),
   importObsidianVault: (request: ObsidianImportRequest) =>
     post<ObsidianImportSummary>("/obsidian/import", request),
 };
