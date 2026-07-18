@@ -210,7 +210,7 @@ The current controlled Track 2 sequence after the completed Phase 37G read-only 
 37H - Repository observer planning
 ```
 
-Phase 37G shipped as a frontend-only inspector: the existing dock can submit user-supplied `MemoryRecord` arrays to `POST /api/active-memory/context-packet` and render the returned `ContextPacket` without adding persistence, ingestion, repository observation, AI interpretation, mutation controls, or backend changes. Phase 36K remains paused, not canceled or completed. Gesture tuning can resume after the application's memory foundation reaches a usable state. Phase 37H remains repository-observer planning unless a later roadmap update says otherwise. The complete phase chronology belongs in the [roadmap](docs/roadmap.md).
+Phase 37G shipped as a frontend-only inspector: the existing dock can submit user-supplied `MemoryRecord` arrays to `POST /api/active-memory/context-packet` and render the returned `ContextPacket` without adding persistence, ingestion, repository observation, AI interpretation, mutation controls, or backend changes. Phase 37H is documentation-only: it plans a future read-only Repository Observer — an evidence provider that would inspect a local Git repository without mutating it and hand deterministic, evidence-scoped observations to the Active Memory layer — but implements no observer, Git adapter, subprocess execution, watcher, or endpoint (see the [repository observer plan](docs/planning/phase-37h-repository-observer-planning.md)). Phase 36K remains paused, not canceled or completed. Gesture tuning can resume after the application's memory foundation reaches a usable state. The complete phase chronology belongs in the [roadmap](docs/roadmap.md).
 
 ## Documentation
 
@@ -218,6 +218,7 @@ Phase 37G shipped as a frontend-only inspector: the existing dock can submit use
 - [API contract](docs/api-contract.md)
 - [Active Memory and Verification reference](docs/active-agent-memory-verification-layer.md)
 - [Phase 37A Active Memory planning](docs/planning/phase-37a-active-agent-memory-verification-layer-planning.md)
+- [Phase 37H Repository Observer planning](docs/planning/phase-37h-repository-observer-planning.md)
 - [Intelligence Surface Plan](docs/intelligence-surface-plan.md)
 - [Security threat model and vulnerability test plan](docs/security/threat-model-and-vulnerability-test-plan.md)
 - [Demo guide](docs/demo-guide.md)
