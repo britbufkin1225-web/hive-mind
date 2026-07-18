@@ -28,23 +28,29 @@ Implemented runtime capabilities include:
 - Active Memory foundation through Phase 37F: contract types, deterministic
   backend-only in-memory store, deterministic backend-only read-only
   contradiction detection, backend-only deterministic context packet
-  generation, and a read-only context-packet API endpoint.
+  generation, a read-only context-packet API endpoint, and a read-only frontend
+  inspector over user-supplied records.
 
 The product remains local, single-user, and review-oriented. It does not run
 autonomous agents, mutate repositories, persist Active Memory beyond the current
 serialize/restore boundary, or authorize actions from packet data. The context
 packet endpoint is read-only and stateless: it derives a packet from
-request-supplied records and mutates nothing.
+request-supplied records and mutates nothing. The frontend inspector keeps
+entered records only in React state and adds no persistence, ingestion,
+repository observer, evidence resolver, AI interpretation, action authorization,
+or mutation controls.
 
 ## Active Phase
 
 ### Phase 37G — Active Memory Frontend Inspector
 
-Phase 37G is the next planned implementation phase on Track 2 — Agent
-Intelligence Infrastructure: expose Active Memory state for human inspection
-without claiming autonomous action or hidden mutation. Active-state
-calculation, repository observers, and AI/LLM interpretation remain planned
-work unless a later phase explicitly implements them.
+Phase 37G is implemented on Track 2 — Agent Intelligence Infrastructure — as a
+frontend-only, read-only inspector over the Phase 37F context-packet endpoint.
+It lets a human enter an explicit `MemoryRecord` JSON array, submit it to the
+stateless endpoint, and inspect the returned `ContextPacket` sections.
+Active-state calculation, repository observers, persistence, ingestion,
+evidence resolution, and AI/LLM interpretation remain planned work unless a
+later phase explicitly implements them.
 
 ## Immediate Sequence
 
@@ -52,7 +58,7 @@ work unless a later phase explicitly implements them.
 | --- | --- | --- |
 | Phase 37E — Pre-Action Context Packet MVP | Implemented | Generates a bounded, deterministic, read-only backend context packet from implemented Active Memory contracts, store records, and contradiction results. |
 | Phase 37F — Read-Only Context Packet API Foundation | Implemented | `POST /api/active-memory/context-packet`: a thin, read-only, non-mutating endpoint over the existing `ContextPacket` model and Phase 37E builder; no new packet logic. |
-| Phase 37G — Active Memory Frontend Inspector | Next planned | Expose Active Memory state for human inspection without claiming autonomous action or hidden mutation. |
+| Phase 37G — Active Memory Frontend Inspector | Implemented | Read-only contextual frontend inspector over the stateless Phase 37F endpoint; records are explicitly supplied by the user and kept only in React state. |
 | Phase 37H — Repository observer planning | Planned | Plan repository-observer workflows and trust boundaries before any watcher/runtime automation exists. |
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
@@ -152,6 +158,17 @@ implementation track.
   operationally read-only — no persistence, store mutation, filesystem write,
   clock read, or AI/LLM behavior — and all packet rules and collection limits
   stay in the service layer.
+- **Phase 37G — Active Memory Frontend Inspector:** implemented. It adds a
+  frontend-only read-only inspector panel to the existing contextual dock. The
+  panel provides editable request fields for `project_id`, caller-supplied
+  `generated_at`, optional exact scope, and a JSON array of `MemoryRecord`
+  objects, then renders the backend `ContextPacket` as structured sections:
+  packet identity, repository baseline, verification summary, active record
+  collections, unresolved contradictions, warnings, prohibited assumptions, and
+  evidence references. It adds no backend changes, no package changes, no
+  storage, no browser persistence, no ingestion, no repository observer, no
+  evidence resolver, no AI interpretation, no action authorization, and no
+  mutation controls.
 
 `frontend_only_vs_backend_modification` is a contract class but is not
 implemented in Phase 37D because it needs a deterministic path/scope target model
@@ -174,7 +191,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 | --- | --- | --- |
 | Active Memory persistence | Choose a durable medium after contracts, store semantics, contradiction detection, and context packet generation are stable. | Current store is in-memory with serialize/restore only. |
 | Active-state calculation | Derive safe active baselines while preserving unresolved contradictions and missing evidence. | No "newest wins"; unresolved state must stay visible. |
-| Context packet UI | Add a frontend inspector in Phase 37G over the Phase 37F read-only endpoint. | The endpoint exists and is read-only; no frontend inspector exists yet. |
+| Context packet UI | Keep the Phase 37G inspector read-only while future phases decide durable memory and observer boundaries. | The inspector exists and remains stateless over user-supplied records. |
 | Repository observer | Plan before implementation; keep evidence scoped and human-reviewable. | No watcher or automatic repository mutation exists. |
 | AI/LLM integration | Consider only after deterministic trust boundaries and inspection surfaces are stable. | No AI truth arbitration, autonomous resolution, or autonomous action. |
 | Intelligence report expansion | Source coverage, query persistence, and richer provenance/error states. | Read-only derivation over real store data. |
@@ -195,10 +212,11 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 - Active Memory currently has contracts, a deterministic in-memory backend store,
   deterministic read-only contradiction detection, backend context packet
   generation, and a read-only, stateless context-packet endpoint that derives
-  packets from request-supplied records. It does not yet have committed
-  persistence, write endpoints, ingestion, active-state calculation, frontend
-  inspection, repository observation, evidence resolution, action
-  authorization, or automatic resolution.
+  packets from request-supplied records, plus a read-only frontend inspector for
+  explicitly supplied records. It does not yet have committed persistence, write
+  endpoints, ingestion, active-state calculation, repository observation,
+  evidence resolution, AI interpretation, action authorization, autonomous
+  mutation, or automatic resolution.
 - Gesture tracking remains experimental; Phase 36K live camera tuning is paused.
 
 ## Reference Documents

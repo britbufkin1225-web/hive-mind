@@ -1,4 +1,6 @@
 import type {
+  ContextPacket,
+  ContextPacketRequest,
   IntelligenceReport,
   KnowledgeGraphResponse,
   ObsidianImportRequest,
@@ -99,8 +101,9 @@ export const apiClient = {
     get<KnowledgeGraphResponse>("/knowledge-graph"),
   getIntelligenceReport: () =>
     get<IntelligenceReport>("/intelligence/report"),
+  buildContextPacket: (request: ContextPacketRequest) =>
+    post<ContextPacket>("/active-memory/context-packet", request),
   importObsidianVault: (request: ObsidianImportRequest) =>
     post<ObsidianImportSummary>("/obsidian/import", request),
-  
 };
 

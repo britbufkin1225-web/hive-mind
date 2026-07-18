@@ -6217,3 +6217,412 @@ body,
 .viewfinder-canvas-wrap.graph-node-grabbing * {
   cursor: grabbing;
 }
+
+/* ============================================================================
+   Phase 37G — Active Memory Frontend Inspector
+   Read-only contextual dock pane over the stateless context-packet endpoint.
+   Namespaced to avoid graph, Spatial Hive, and Motion Sandbox behavior changes.
+   ============================================================================ */
+
+.active-memory-panel {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.memory-panel-grid {
+  display: grid;
+  grid-template-columns: minmax(17rem, 0.86fr) minmax(20rem, 1.14fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.memory-editor,
+.memory-inspector {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  background: rgba(3, 7, 18, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  padding: 0.9rem;
+}
+
+.memory-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.memory-editor-head h3,
+.memory-section h3 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 0.78rem;
+  line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.memory-field {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  min-width: 0;
+}
+
+.memory-field span {
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.memory-field input,
+.memory-field select,
+.memory-records-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(255, 255, 255, 0.9);
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.memory-field select {
+  color-scheme: dark;
+}
+
+.memory-records-input {
+  min-height: 16rem;
+  resize: vertical;
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  tab-size: 2;
+}
+
+.memory-field input:focus,
+.memory-field select:focus,
+.memory-records-input:focus,
+.memory-actions button:focus-visible,
+.memory-details summary:focus-visible {
+  outline: none;
+  border-color: rgba(148, 163, 184, 0.84);
+  box-shadow:
+    0 0 0 3px rgba(148, 163, 184, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.memory-scope-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1fr);
+  gap: 0.65rem;
+}
+
+.memory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.memory-actions button {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.55rem 0.72rem;
+}
+
+.memory-actions button:first-child {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.memory-actions button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.memory-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.memory-error {
+  margin-top: 0.85rem;
+  border: 1px solid rgba(248, 113, 113, 0.36);
+  border-radius: var(--radius-sm);
+  background: rgba(127, 29, 29, 0.22);
+  color: rgba(254, 226, 226, 0.94);
+  padding: 0.7rem;
+}
+
+.memory-error p {
+  margin: 0.35rem 0 0;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
+.memory-result {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.memory-section {
+  min-width: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 0.8rem;
+}
+
+.memory-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.memory-section h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.55rem;
+}
+
+.memory-section-contradictions {
+  border-color: rgba(248, 113, 113, 0.42);
+}
+
+.memory-kv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.memory-kv-grid div {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.045);
+  padding: 0.48rem 0.55rem;
+}
+
+.memory-kv-grid dt {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.memory-kv-grid dd {
+  margin: 0.18rem 0 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.memory-chip,
+.memory-count {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0.28rem 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.memory-chip-strong {
+  border-color: rgba(248, 113, 113, 0.42);
+  background: rgba(127, 29, 29, 0.24);
+  color: rgba(254, 202, 202, 0.96);
+}
+
+.memory-empty {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.memory-empty-large {
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 1rem;
+}
+
+.memory-record-list,
+.memory-warning-list,
+.memory-evidence-list,
+.memory-prohibited-list,
+.memory-nested-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memory-record-card,
+.memory-contradiction-card,
+.memory-warning-list li,
+.memory-evidence-list li,
+.memory-prohibited-list li {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.045);
+  padding: 0.68rem;
+}
+
+.memory-contradiction-card {
+  border-color: rgba(248, 113, 113, 0.38);
+  background: rgba(127, 29, 29, 0.18);
+  box-shadow: inset 3px 0 0 rgba(248, 113, 113, 0.62);
+}
+
+.memory-record-head,
+.memory-evidence-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.memory-record-id,
+.memory-record-id code,
+.memory-evidence-list code,
+.memory-warning-list code,
+.memory-nested-list code {
+  min-width: 0;
+  color: rgba(226, 232, 240, 0.94);
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.74rem;
+  overflow-wrap: anywhere;
+}
+
+.memory-record-card .memory-kv-grid,
+.memory-contradiction-card .memory-kv-grid {
+  margin-top: 0.65rem;
+}
+
+.memory-record-summary,
+.memory-contradiction-summary {
+  margin: 0.65rem 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.83rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.memory-contradiction-summary {
+  color: rgba(254, 226, 226, 0.95);
+  font-weight: 700;
+}
+
+.memory-details {
+  margin-top: 0.65rem;
+}
+
+.memory-details summary {
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.memory-details pre {
+  max-width: 100%;
+  max-height: 18rem;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.32);
+  color: rgba(226, 232, 240, 0.9);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  padding: 0.65rem;
+}
+
+.memory-warning-list li {
+  display: grid;
+  gap: 0.3rem;
+  border-color: rgba(250, 204, 21, 0.28);
+  background: rgba(113, 63, 18, 0.16);
+}
+
+.memory-warning-list span {
+  color: rgba(254, 240, 138, 0.9);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.memory-warning-list p {
+  margin: 0;
+  color: rgba(255, 251, 235, 0.86);
+  overflow-wrap: anywhere;
+}
+
+.memory-evidence-list li {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.memory-prohibited-list li {
+  color: rgba(255, 255, 255, 0.84);
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.memory-nested-list {
+  margin-top: 0.6rem;
+}
+
+.memory-nested-list li {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.77rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 980px) {
+  .memory-panel-grid,
+  .memory-scope-row,
+  .memory-kv-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .memory-actions button,
+  .memory-field input,
+  .memory-field select,
+  .memory-records-input {
+    transition: none;
+  }
+}
