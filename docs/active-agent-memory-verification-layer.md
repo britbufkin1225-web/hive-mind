@@ -1,15 +1,16 @@
 # Active Agent Memory + Verification Layer — Reusable Reference
 
-**Status:** Architecture reference with partial implementation through Phase 37F.
+**Status:** Architecture reference with partial implementation through Phase 37G.
 Phase 37B implements the `active-memory.v1` backend/frontend contracts, Phase 37C
 implements a deterministic backend-only in-memory store, and Phase 37D implements
 a deterministic backend-only read-only contradiction-detection MVP. Phase 37E
 implements backend-only deterministic context packet generation, and Phase 37F
 exposes it through one read-only, stateless endpoint
-(`POST /api/active-memory/context-packet`). No write endpoint, committed
-persistence medium, ingestion workflow, active-state calculation, inspector,
-repository observer, evidence-resolution store, AI/LLM interpretation, or
-autonomous mutation/action execution has been built.
+(`POST /api/active-memory/context-packet`). Phase 37G adds a frontend-only,
+read-only inspector over that endpoint for records explicitly supplied by the
+user. No write endpoint, committed persistence medium, ingestion workflow,
+active-state calculation, repository observer, evidence-resolution store, AI/LLM
+interpretation, or autonomous mutation/action execution has been built.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
 types, state axes, evidence hierarchy, and contradiction classes for the Active
 Agent Memory + Verification Layer, so later phases can cite a stable reference
@@ -151,7 +152,8 @@ prose**; reject/redact secrets; **no autonomous repository mutation**.
 Deterministic memory store MVP (implemented) → `37D` Contradiction detection MVP
 (implemented, validated, merged) → `37E` Pre-action context packet (implemented)
 → `37F` Read-Only Context Packet API Foundation (implemented) → `37G` Active
-Memory Frontend Inspector (next planned) → `37H` Repository observer planning. This is a **Track 2 —
+Memory Frontend Inspector (implemented) → `37H` Repository observer planning.
+This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -557,3 +559,37 @@ Phase 37F adds the first Active Memory API boundary: a thin router at
   per-collection limits remain the single owner of bounds and fail closed), and
   mixing timezone-aware and naive `created_at` values within one request is
   rejected at the API validation boundary with HTTP 422 before store ordering.
+
+## 16. Phase 37G — active memory frontend inspector
+
+Phase 37G adds the first frontend surface for Active Memory: a read-only
+inspector panel mounted in the existing graph-primary contextual dock. It uses
+the Phase 37F endpoint and changes no backend service or endpoint behavior.
+
+- **Request editor:** a human explicitly supplies `project_id`,
+  caller-editable `generated_at`, optional exact scope (`scope_type` +
+  `scope_id` together), and a JSON array of `MemoryRecord` objects. The default
+  record payload is `[]`; no fake Active Memory records are preloaded.
+- **Validation:** the frontend safely parses JSON, requires the top-level value
+  to be an array, rejects malformed JSON, and rejects partial scope input before
+  submitting. Backend/Pydantic validation remains authoritative for the record
+  contract and HTTP 422 details.
+- **Response inspector:** the returned `ContextPacket` is rendered as structured
+  sections: packet identity, repository baseline, verification summary, active
+  facts, active decisions, active constraints, known capabilities, unresolved
+  contradictions, packet warnings, prohibited assumptions, and packet-level
+  evidence references. Missing active track/phase and unknown repository
+  cleanliness stay visibly unavailable rather than being fabricated.
+- **Contradictions:** unresolved contradictions are highlighted, but the
+  frontend never chooses a winning record, resolves a conflict, supersedes,
+  retracts, verifies, edits, or deletes records.
+- **Evidence limitation:** empty packet-level `evidence_references` are explained
+  as the current MVP's missing connected evidence resolver, not a frontend
+  failure.
+- **State boundary:** entered request data lives only in React state. The panel
+  adds no `localStorage`, `sessionStorage`, IndexedDB, cookies, files, backend
+  persistence, ingestion, repository observer, AI interpretation, action
+  authorization, autonomous mutation, or hidden Active Memory storage.
+
+Phase 36K remains paused and untouched. Phase 37H remains repository-observer
+planning unless a later roadmap update explicitly changes that.

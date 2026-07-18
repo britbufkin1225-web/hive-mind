@@ -8,6 +8,7 @@ import ConsolePanel from "./components/ConsolePanel";
 import SourceRegistryPanel from "./components/SourceRegistryPanel";
 import KnowledgeGraphPanel from "./components/KnowledgeGraphPanel";
 import IntelligenceReportPanel from "./components/IntelligenceReportPanel";
+import ActiveMemoryInspectorPanel from "./components/ActiveMemoryInspectorPanel";
 import MotionSandboxPanel from "./components/MotionSandboxPanel";
 import { ZERO_MOTION, type MotionCommand } from "./handLandmarkMotion";
 
@@ -19,12 +20,19 @@ import { ZERO_MOTION, type MotionCommand } from "./handLandmarkMotion";
    sidebar column. All panes stay mounted (just hidden) so toggling between
    them never re-triggers their data fetch — only the active pane is
    visible/focusable at a time. */
-type PanelKey = "vault" | "sources" | "intelligence" | "console" | "motion";
+type PanelKey =
+  | "vault"
+  | "sources"
+  | "intelligence"
+  | "memory"
+  | "console"
+  | "motion";
 
 const RAIL_ITEMS: Array<{ key: PanelKey; label: string; glyph: string }> = [
   { key: "vault", label: "Vault", glyph: "V" },
   { key: "sources", label: "Sources", glyph: "S" },
   { key: "intelligence", label: "Intelligence", glyph: "I" },
+  { key: "memory", label: "Active Memory", glyph: "A" },
   { key: "console", label: "Console", glyph: "C" },
   // Phase 32B — Motion Sandbox: an isolated webcam-motion probe opened from the
   // same contextual rail as every other overlay. It never touches the graph.
@@ -35,6 +43,7 @@ const PANEL_LABELS: Record<PanelKey, string> = {
   vault: "Vault & Status",
   sources: "Source Registry",
   intelligence: "Intelligence Report",
+  memory: "Active Memory Inspector",
   console: "Console",
   motion: "Motion Sandbox",
 };
@@ -312,6 +321,13 @@ function App() {
               hidden={activePanel !== "intelligence"}
             >
               <IntelligenceReportPanel id="intelligence-report" />
+            </div>
+
+            <div
+              className="shell-dock-pane"
+              hidden={activePanel !== "memory"}
+            >
+              <ActiveMemoryInspectorPanel id="active-memory-inspector" />
             </div>
 
             <div

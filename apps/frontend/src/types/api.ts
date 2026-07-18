@@ -586,3 +586,10 @@ export interface ContextPacket {
   read_only: boolean;
 }
 
+export interface ContextPacketRequest {
+  project_id: string;
+  generated_at: string;
+  scope: MemoryScope | null;
+  records: MemoryRecord[];
+}
+
