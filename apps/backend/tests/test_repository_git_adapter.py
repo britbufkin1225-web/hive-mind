@@ -475,6 +475,53 @@ def test_command_executor_passes_read_only_git_env() -> None:
     assert calls[0]["kwargs"]["shell"] is False
 
 
+def test_read_only_git_env_strips_inherited_git_redirection_variables(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Inherited GIT_* variables can redirect discovery, object storage, the
+    # index, configuration, and hook resolution away from the observed cwd. The
+    # hardened per-subprocess env must drop them all and fail closed.
+    for redirector in (
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_COMMON_DIR",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_INDEX_FILE",
+        "GIT_CEILING_DIRECTORIES",
+        "GIT_NAMESPACE",
+        "GIT_CONFIG_GLOBAL",
+        "GIT_CONFIG_SYSTEM",
+        "GIT_CONFIG_COUNT",
+        "GIT_CONFIG_KEY_0",
+        "GIT_CONFIG_VALUE_0",
+    ):
+        monkeypatch.setenv(redirector, "/attacker/controlled")
+    monkeypatch.setenv("PATH", "/usr/bin")
+
+    calls: list[dict[str, object]] = []
+
+    def runner(*args: object, **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        calls.append({"args": args, "kwargs": kwargs})
+        return _completed(args[0], stdout=b"C:/repo\n")  # type: ignore[arg-type]
+
+    GitCommandExecutor(runner=runner).run(GitReadOperation.RESOLVE_ROOT, Path("C:/repo"))
+
+    env = calls[0]["kwargs"]["env"]
+    assert isinstance(env, dict)
+    assert not any(key.startswith("GIT_CONFIG") for key in env)
+    assert "GIT_DIR" not in env
+    assert "GIT_WORK_TREE" not in env
+    assert "GIT_OBJECT_DIRECTORY" not in env
+    assert "GIT_INDEX_FILE" not in env
+    assert "GIT_NAMESPACE" not in env
+    assert env["GIT_OPTIONAL_LOCKS"] == "0"
+    assert env["GIT_TERMINAL_PROMPT"] == "0"
+    # Non-Git inherited variables (e.g. PATH) must still pass through so git can
+    # be located and run normally.
+    assert env["PATH"] == "/usr/bin"
+
+
 def test_observe_repository_rejects_empty_root_evidence() -> None:
     class Executor:
         def run(self, operation: GitReadOperation, repository_root: Path):  # noqa: ANN001

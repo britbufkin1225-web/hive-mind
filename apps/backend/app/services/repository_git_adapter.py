@@ -248,14 +248,29 @@ class GitCommandExecutor:
 def _read_only_git_env() -> dict[str, str]:
     """Return a per-subprocess environment hardened for read-only observation.
 
-    ``GIT_OPTIONAL_LOCKS=0`` keeps ``git status`` from opportunistically taking
-    the index lock to refresh its stat cache, so observation never writes to
-    ``.git/index``. ``GIT_TERMINAL_PROMPT=0`` prevents any command from blocking
-    on an interactive credential prompt. Both are process-local and change no
+    Every inherited ``GIT_*`` variable is dropped so the ambient environment
+    cannot redirect the observation away from the repository at ``cwd``. Without
+    this, an inherited ``GIT_DIR``/``GIT_WORK_TREE``/``GIT_COMMON_DIR`` could make
+    ``git status`` observe a *different* repository than the requested root;
+    ``GIT_OBJECT_DIRECTORY``/``GIT_ALTERNATE_OBJECT_DIRECTORIES`` could redirect
+    object lookup; ``GIT_INDEX_FILE`` could point observation at a foreign index;
+    ``GIT_CONFIG_*`` (including the numbered ``GIT_CONFIG_COUNT``/
+    ``GIT_CONFIG_KEY_n``/``GIT_CONFIG_VALUE_n`` triples and
+    ``GIT_CONFIG_GLOBAL``/``GIT_CONFIG_SYSTEM``) could inject configuration such as
+    ``core.hooksPath``; and ``GIT_CEILING_DIRECTORIES``/``GIT_NAMESPACE`` could
+    distort discovery. Stripping the whole prefix fails closed and keeps
+    discovery grounded solely in the explicit ``cwd``.
+
+    ``GIT_OPTIONAL_LOCKS=0`` is then set so ``git status`` never opportunistically
+    takes the index lock to refresh its stat cache, so observation never writes to
+    ``.git/index``. ``GIT_TERMINAL_PROMPT=0`` prevents any command from blocking on
+    an interactive credential prompt. Both are process-local and change no
     repository or user Git configuration.
     """
 
-    env = dict(os.environ)
+    env = {
+        key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+    }
     env["GIT_OPTIONAL_LOCKS"] = "0"
     env["GIT_TERMINAL_PROMPT"] = "0"
     return env
