@@ -1,6 +1,6 @@
 # Active Agent Memory + Verification Layer — Reusable Reference
 
-**Status:** Architecture reference with partial implementation through Phase 37L.
+**Status:** Architecture reference with partial implementation through Phase 37M.
 Phase 37B implements the `active-memory.v1` backend/frontend contracts, Phase 37C
 implements a deterministic backend-only in-memory store, and Phase 37D implements
 a deterministic backend-only read-only contradiction-detection MVP. Phase 37E
@@ -16,9 +16,10 @@ adapter, subprocess execution, or Git invocation. Phase 37I adds the
 foundation over those contracts (see §19). Phase 37K adds a backend-only
 request-triggered repository observation snapshot service MVP over that adapter
 (see §20). Phase 37L exposes that service through a thin read-only HTTP API
-(see §21), but still implements no watcher, polling loop, persistence,
-ingestion, evidence resolver, AI/LLM interpretation, frontend surface, or
-autonomous mutation/action execution.
+(see §21). Phase 37M adds a frontend-only read-only contextual inspector over
+that endpoint (see §22), but still implements no watcher, polling loop,
+persistence, ingestion, evidence resolver, AI/LLM interpretation, Git dashboard,
+or autonomous mutation/action execution.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
 types, state axes, evidence hierarchy, and contradiction classes for the Active
 Agent Memory + Verification Layer, so later phases can cite a stable reference
@@ -165,7 +166,8 @@ Memory Frontend Inspector (implemented) → `37H` Repository Observer planning
 (implemented; see §18) → `37J` Deterministic Git Adapter Foundation
 (implemented; see §19) → `37K` Repository Observation Snapshot Service MVP
 (implemented; see §20) → `37L` Read-Only Repository Observation API Foundation
-(implemented; see §21). This is a **Track 2 —
+(implemented; see §21) → `37M` Read-Only Repository Observer Frontend Inspector
+MVP (implemented; see §22). This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -658,12 +660,13 @@ runtime behavior. The long-form contract lives in the
   background polling, mutation, diff-content ingestion, semantic indexing, AI/LLM
   summarization, frontend visualization, and persistence are deferred.
 - **Follow-on sequence (planned, not authorized here).** 37I contract types → 37J
-  Git adapter → 37K snapshot service MVP → 37L observation API → 37M evidence
-  ingestion → 37N contradiction integration → 37O read-only frontend inspector →
-  37P end-to-end QA. Phase 37J is now implemented as the adapter foundation,
-  Phase 37K is now implemented as the snapshot service MVP, and Phase 37L is now
-  implemented as the read-only observation API; the 37M+ steps remain planned
-  and unauthorized here.
+  Git adapter → 37K snapshot service MVP → 37L observation API → 37M read-only
+  frontend inspector → later evidence ingestion, contradiction integration, and
+  end-to-end QA. Phase 37J is now implemented as the adapter foundation, Phase
+  37K is now implemented as the snapshot service MVP, Phase 37L is now
+  implemented as the read-only observation API, and Phase 37M is now implemented
+  as the read-only frontend inspector; ingestion and contradiction integration
+  remain planned and unauthorized here.
 
 Phase 36K remains paused and untouched.
 
@@ -819,3 +822,40 @@ storage, diffing across time, watcher/polling behavior, Active Memory ingestion,
 contradiction integration, frontend UI, graph changes, Obsidian changes,
 MediaPipe work, AI/LLM behavior, or new package dependencies. Phase 36K remains
 paused and untouched.
+
+## 22. Phase 37M — read-only repository observer frontend inspector MVP
+
+Phase 37M adds a frontend-only read-only inspector mounted in the existing
+graph-primary contextual dock. It uses the Phase 37L endpoint,
+**`POST /api/repository-observer/snapshot`**, and changes no backend service,
+Git adapter, endpoint, or snapshot contract behavior.
+
+- **API integration:** `apps/frontend/src/api/client.ts` adds a narrow
+  `observeRepositorySnapshot` client method. `apps/frontend/src/types/api.ts`
+  mirrors the existing `repo-observer.v1` backend snapshot and request wire
+  shapes so the UI consumes the backend-owned contract instead of inventing a
+  flattened presentation model.
+- **Request controls:** the panel exposes only the contract-valid MVP fields:
+  absolute repository root, caller-supplied observation timestamp, file limit,
+  and snapshot byte limit. Numeric bounds match the Phase 37L request limits.
+  Optional `ObserverScope` remains deferred because this MVP does not expose its
+  path and content toggles.
+- **Response inspector:** the returned `RepositorySnapshot` is rendered as
+  structured sections for snapshot status, repository identity, branch/HEAD,
+  working-tree state, changed files, rename/copy relationships, evidence and
+  evidence authority, warnings, limitations, overflow/truncation, omitted paths,
+  deterministic ordering, completeness, and `read_only`.
+- **State and errors:** idle, loading, successful clean/dirty snapshots, empty
+  file observations, partial/truncated snapshots, identity uncertainty, contract
+  validation failures, invalid/not-found roots, backend unavailability, and
+  unexpected server errors have readable states. Raw stack traces and unfiltered
+  server bodies are not displayed.
+- **Boundary:** request data lives only in React state. The inspector adds no
+  `localStorage`, `sessionStorage`, IndexedDB, cookies, file persistence,
+  watcher, polling loop, WebSocket, Server-Sent Event, Git mutation, Active
+  Memory ingestion, contradiction integration, AI review, source registry
+  mutation, graph mutation, or dashboard replacement.
+
+The inspector is contextual because Repository Observer evidence is supporting
+visibility for the graph-first workspace. It is intentionally not an IDE, file
+explorer, source-control client, or repository repair surface.

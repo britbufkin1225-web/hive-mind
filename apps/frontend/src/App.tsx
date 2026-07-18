@@ -9,6 +9,7 @@ import SourceRegistryPanel from "./components/SourceRegistryPanel";
 import KnowledgeGraphPanel from "./components/KnowledgeGraphPanel";
 import IntelligenceReportPanel from "./components/IntelligenceReportPanel";
 import ActiveMemoryInspectorPanel from "./components/ActiveMemoryInspectorPanel";
+import RepositoryObserverPanel from "./components/RepositoryObserverPanel";
 import MotionSandboxPanel from "./components/MotionSandboxPanel";
 import { ZERO_MOTION, type MotionCommand } from "./handLandmarkMotion";
 
@@ -25,6 +26,7 @@ type PanelKey =
   | "sources"
   | "intelligence"
   | "memory"
+  | "repository"
   | "console"
   | "motion";
 
@@ -33,6 +35,7 @@ const RAIL_ITEMS: Array<{ key: PanelKey; label: string; glyph: string }> = [
   { key: "sources", label: "Sources", glyph: "S" },
   { key: "intelligence", label: "Intelligence", glyph: "I" },
   { key: "memory", label: "Active Memory", glyph: "A" },
+  { key: "repository", label: "Repository Observer", glyph: "R" },
   { key: "console", label: "Console", glyph: "C" },
   // Phase 32B — Motion Sandbox: an isolated webcam-motion probe opened from the
   // same contextual rail as every other overlay. It never touches the graph.
@@ -44,6 +47,7 @@ const PANEL_LABELS: Record<PanelKey, string> = {
   sources: "Source Registry",
   intelligence: "Intelligence Report",
   memory: "Active Memory Inspector",
+  repository: "Repository Observer",
   console: "Console",
   motion: "Motion Sandbox",
 };
@@ -328,6 +332,13 @@ function App() {
               hidden={activePanel !== "memory"}
             >
               <ActiveMemoryInspectorPanel id="active-memory-inspector" />
+            </div>
+
+            <div
+              className="shell-dock-pane"
+              hidden={activePanel !== "repository"}
+            >
+              <RepositoryObserverPanel id="repository-observer" />
             </div>
 
             <div
