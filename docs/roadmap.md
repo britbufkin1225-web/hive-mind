@@ -42,15 +42,28 @@ or mutation controls.
 
 ## Active Phase
 
-### Phase 37G — Active Memory Frontend Inspector
+### Phase 37H — Repository Observer Planning
 
-Phase 37G is implemented on Track 2 — Agent Intelligence Infrastructure — as a
-frontend-only, read-only inspector over the Phase 37F context-packet endpoint.
-It lets a human enter an explicit `MemoryRecord` JSON array, submit it to the
-stateless endpoint, and inspect the returned `ContextPacket` sections.
-Active-state calculation, repository observers, persistence, ingestion,
-evidence resolution, and AI/LLM interpretation remain planned work unless a
-later phase explicitly implements them.
+Phase 37H is a **documentation-only** planning phase on Track 2 — Agent
+Intelligence Infrastructure. It specifies a *future* read-only **Repository
+Observer**: a backend evidence provider that would inspect a single local Git
+repository without mutating it and emit a bounded, deterministically ordered,
+immutable observation snapshot plus derived evidence and candidate records for
+the existing Active Memory ingestion, contradiction, and context-packet
+services. It defines the observer's responsibilities and non-responsibilities,
+repository identity model, snapshot contract, evidence hierarchy, integration
+boundary, deterministic contradiction opportunities, security/trust model,
+bounded-behavior and overflow rules, a narrow MVP, deferred scope, a test
+strategy, and a conservative follow-on phase sequence. **No observer, Git
+adapter, subprocess execution, filesystem scan, watcher, endpoint, schema,
+dependency, or runtime behavior is implemented.** The long-form plan is the
+[Phase 37H planning doc](planning/phase-37h-repository-observer-planning.md).
+
+The prior Phase 37G frontend inspector remains implemented as a frontend-only,
+read-only inspector over the Phase 37F context-packet endpoint. Active-state
+calculation, the repository observer runtime, persistence, ingestion, evidence
+resolution, and AI/LLM interpretation remain planned work unless a later phase
+explicitly implements them.
 
 ## Immediate Sequence
 
@@ -59,7 +72,13 @@ later phase explicitly implements them.
 | Phase 37E — Pre-Action Context Packet MVP | Implemented | Generates a bounded, deterministic, read-only backend context packet from implemented Active Memory contracts, store records, and contradiction results. |
 | Phase 37F — Read-Only Context Packet API Foundation | Implemented | `POST /api/active-memory/context-packet`: a thin, read-only, non-mutating endpoint over the existing `ContextPacket` model and Phase 37E builder; no new packet logic. |
 | Phase 37G — Active Memory Frontend Inspector | Implemented | Read-only contextual frontend inspector over the stateless Phase 37F endpoint; records are explicitly supplied by the user and kept only in React state. |
-| Phase 37H — Repository observer planning | Planned | Plan repository-observer workflows and trust boundaries before any watcher/runtime automation exists. |
+| Phase 37H — Repository Observer Planning | Documentation complete | Documentation-only plan for a future read-only repository-observer evidence provider: responsibilities, identity model, snapshot contract, evidence hierarchy, integration boundary, security model, bounded behavior, MVP, and follow-on sequence. No runtime. |
+
+After Phase 37H, a conservative follow-on sequence is planned (not yet
+authorized): 37I contract types → 37J Git adapter → 37K snapshot service MVP →
+37L observation API → 37M evidence ingestion → 37N contradiction integration →
+37O read-only frontend inspector → 37P end-to-end QA. Each phase remains
+independently scoped and reviewable.
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
 implementation track.
@@ -169,6 +188,19 @@ implementation track.
   storage, no browser persistence, no ingestion, no repository observer, no
   evidence resolver, no AI interpretation, no action authorization, and no
   mutation controls.
+- **Phase 37H — Repository Observer Planning:** complete documentation-only plan
+  for a future read-only Repository Observer evidence provider. It defines the
+  observer's responsibilities and non-responsibilities, a deterministic
+  repository identity model, an immutable bounded observation snapshot contract,
+  a repo-scoped evidence hierarchy (local Git history alone does not prove remote
+  pull-request state), the Active Memory integration boundary (the observer emits
+  evidence and candidate records; separate services own normalization, dedup,
+  contradiction detection, context-packet selection, persistence, and policy),
+  deterministic contradiction opportunities, a defensive security/trust model,
+  bounded-behavior and overflow rules, a narrow MVP, deferred scope, a hermetic
+  test strategy, and a conservative follow-on sequence (37I–37P). No observer,
+  Git adapter, subprocess execution, endpoint, schema, dependency, or runtime
+  behavior was implemented.
 
 `frontend_only_vs_backend_modification` is a contract class but is not
 implemented in Phase 37D because it needs a deterministic path/scope target model
@@ -192,7 +224,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 | Active Memory persistence | Choose a durable medium after contracts, store semantics, contradiction detection, and context packet generation are stable. | Current store is in-memory with serialize/restore only. |
 | Active-state calculation | Derive safe active baselines while preserving unresolved contradictions and missing evidence. | No "newest wins"; unresolved state must stay visible. |
 | Context packet UI | Keep the Phase 37G inspector read-only while future phases decide durable memory and observer boundaries. | The inspector exists and remains stateless over user-supplied records. |
-| Repository observer | Plan before implementation; keep evidence scoped and human-reviewable. | No watcher or automatic repository mutation exists. |
+| Repository observer | Planned in Phase 37H as a read-only evidence provider; implementation deferred to the 37I–37P sequence. Keep evidence scoped and human-reviewable. | Documentation only; no observer, Git adapter, subprocess execution, watcher, or automatic repository mutation exists. |
 | AI/LLM integration | Consider only after deterministic trust boundaries and inspection surfaces are stable. | No AI truth arbitration, autonomous resolution, or autonomous action. |
 | Intelligence report expansion | Source coverage, query persistence, and richer provenance/error states. | Read-only derivation over real store data. |
 | Spatial interaction | Resume Phase 36K when the project chooses to return to live gesture tuning. | No gesture completion claim without live evidence. |
@@ -224,6 +256,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 - [README](../README.md)
 - [Active Agent Memory + Verification Layer reference](active-agent-memory-verification-layer.md)
 - [Phase 37A Active Agent Memory + Verification Layer Planning](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
+- [Phase 37H Repository Observer Planning](planning/phase-37h-repository-observer-planning.md)
 - [Intelligence Surface Plan](intelligence-surface-plan.md)
 - [Security Threat Model + Vulnerability Test Plan](security/threat-model-and-vulnerability-test-plan.md)
 - [Demo Guide](demo-guide.md)

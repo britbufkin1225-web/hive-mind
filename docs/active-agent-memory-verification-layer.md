@@ -8,9 +8,12 @@ implements backend-only deterministic context packet generation, and Phase 37F
 exposes it through one read-only, stateless endpoint
 (`POST /api/active-memory/context-packet`). Phase 37G adds a frontend-only,
 read-only inspector over that endpoint for records explicitly supplied by the
-user. No write endpoint, committed persistence medium, ingestion workflow,
-active-state calculation, repository observer, evidence-resolution store, AI/LLM
-interpretation, or autonomous mutation/action execution has been built.
+user. Phase 37H is **documentation-only**: it plans a future read-only
+Repository Observer evidence provider (see §17) but implements no observer,
+adapter, subprocess execution, or Git invocation. No write endpoint, committed
+persistence medium, ingestion workflow, active-state calculation, repository
+observer runtime, evidence-resolution store, AI/LLM interpretation, or
+autonomous mutation/action execution has been built.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
 types, state axes, evidence hierarchy, and contradiction classes for the Active
 Agent Memory + Verification Layer, so later phases can cite a stable reference
@@ -152,8 +155,8 @@ prose**; reject/redact secrets; **no autonomous repository mutation**.
 Deterministic memory store MVP (implemented) → `37D` Contradiction detection MVP
 (implemented, validated, merged) → `37E` Pre-action context packet (implemented)
 → `37F` Read-Only Context Packet API Foundation (implemented) → `37G` Active
-Memory Frontend Inspector (implemented) → `37H` Repository observer planning.
-This is a **Track 2 —
+Memory Frontend Inspector (implemented) → `37H` Repository Observer planning
+(documentation only; see §17). This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -593,3 +596,61 @@ the Phase 37F endpoint and changes no backend service or endpoint behavior.
 
 Phase 36K remains paused and untouched. Phase 37H remains repository-observer
 planning unless a later roadmap update explicitly changes that.
+
+## 17. Phase 37H — repository observer planning (documentation only)
+
+Phase 37H is a **documentation-only** planning phase that specifies a *future*
+**Repository Observer**: a read-only backend evidence provider that would inspect
+a single local Git repository without mutating it and emit a bounded,
+deterministically ordered, immutable observation snapshot plus derived evidence
+and candidate records for this layer's separate ingestion, contradiction, and
+context-packet services. **Nothing is implemented** — no observer, Git adapter,
+subprocess execution, filesystem scan, watcher, endpoint, schema, dependency, or
+runtime behavior. The long-form contract lives in the
+[Phase 37H planning doc](planning/phase-37h-repository-observer-planning.md).
+
+- **Evidence provider, not a developer.** The planned observer never edits,
+  commits, amends, switches/creates/deletes branches, stashes, resets, cleans,
+  pushes, pulls, merges, rebases, executes hooks or project code, changes Git
+  config, or mutates memory. Mutation is fail-closed.
+- **Direct observation, honestly scoped.** It may observe repository identity,
+  branch/HEAD/upstream, ahead/behind, clean/dirty working tree, staged/unstaged/
+  untracked paths, bounded recent commits, changed paths (with renames/deletes),
+  diff *statistics*, remotes, tags, and merge/rebase/cherry-pick/bisect operation
+  state. Each item is classified as a direct fact, derived fact, externally
+  supplied claim, unverified assumption, or unsupported gap.
+- **Evidence hierarchy (repo-scoped).** Direct Git output > direct filesystem
+  metadata > parsed repository documents > validated test/build output (never run
+  by the observer) > user statements > agent summaries > unsupported assumptions.
+  **Local Git history alone does not prove remote pull-request state, CI results,
+  or remote-branch deletion** — those require verified external GitHub/execution
+  evidence and are otherwise reported as unverified.
+- **Integration boundary.** The observer produces evidence and candidate records
+  (`repository_state`, `project_fact`, `capability`, `EvidenceRecord`, and
+  contradiction *signals*) and hands a snapshot to a separate ingestion decision.
+  Record normalization, deduplication, contradiction detection (Phase 37D),
+  context-packet selection (Phase 37E), persistence, policy, and presentation stay
+  owned by the existing services. The observer never writes the store.
+- **Security posture.** Repository content is untrusted input: argument-array
+  process execution (never shell interpolation), no hook or script execution,
+  strict repository-root confinement, no symlink escape, bounded output/history/
+  file counts, per-command and whole-observation timeouts, structured parsing,
+  secret redaction, terminal-escape neutralization, structured errors, and
+  fail-closed mutation behavior.
+- **Determinism and overflow.** Every collection is totally ordered with stable
+  tiebreaks; the snapshot is byte-reproducible for identical state and caller
+  inputs (the observation timestamp is caller-supplied, matching the store and
+  detector convention); bounds truncate deterministically with explicit overflow
+  metadata, never silent drops.
+- **MVP vs. deferred.** The MVP is a backend-only, read-only, single-repository
+  snapshot (identity, branch, HEAD, upstream, ahead/behind, clean/dirty, staged/
+  unstaged/untracked, bounded commits, remotes, operation state, warnings) with
+  focused hermetic tests. GitHub API integration, PR/issue ingestion, a watcher,
+  background polling, mutation, diff-content ingestion, semantic indexing, AI/LLM
+  summarization, frontend visualization, and persistence are deferred.
+- **Follow-on sequence (planned, not authorized here).** 37I contract types → 37J
+  Git adapter → 37K snapshot service MVP → 37L observation API → 37M evidence
+  ingestion → 37N contradiction integration → 37O read-only frontend inspector →
+  37P end-to-end QA.
+
+Phase 36K remains paused and untouched.
