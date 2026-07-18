@@ -768,6 +768,26 @@ roadmap requires):
 Each phase remains independently scoped and reviewable, and none is authorized by
 this planning phase.
 
+### 20.1 Phase 37J implementation reconciliation
+
+Phase 37J later implemented the planned Git adapter foundation only. The
+implemented backend module is
+`apps/backend/app/services/repository_git_adapter.py`, with tests in
+`apps/backend/tests/test_repository_git_adapter.py`. It uses an internal
+allowlist of read-only Git commands, argument-array execution with `shell=False`,
+explicit repository `cwd`, a 5 second per-command timeout, 262,144 stdout bytes,
+8,192 stderr bytes, 512-character bounded excerpts, and a 200 file-observation
+limit. It parses NUL-delimited porcelain-v2 status output and converts direct Git
+evidence into the existing Phase 37I `repo-observer.v1` contracts with
+deterministic path ordering, warning records, limitations, overflow metadata, and
+honest completeness.
+
+The implementation does not change this planning document's deferred scope:
+there is still no snapshot service phase, API route, watcher, polling loop,
+filesystem crawler, source-file reading, persistence, Active Memory ingestion,
+GitHub integration, frontend visibility, AI/LLM behavior, automatic remediation,
+or repository mutation.
+
 ---
 
 ## 21. Contradiction opportunities
