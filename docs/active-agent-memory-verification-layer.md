@@ -1,6 +1,6 @@
 # Active Agent Memory + Verification Layer — Reusable Reference
 
-**Status:** Architecture reference with partial implementation through Phase 37G.
+**Status:** Architecture reference with partial implementation through Phase 37I.
 Phase 37B implements the `active-memory.v1` backend/frontend contracts, Phase 37C
 implements a deterministic backend-only in-memory store, and Phase 37D implements
 a deterministic backend-only read-only contradiction-detection MVP. Phase 37E
@@ -10,10 +10,11 @@ exposes it through one read-only, stateless endpoint
 read-only inspector over that endpoint for records explicitly supplied by the
 user. Phase 37H is **documentation-only**: it plans a future read-only
 Repository Observer evidence provider (see §17) but implements no observer,
-adapter, subprocess execution, or Git invocation. No write endpoint, committed
-persistence medium, ingestion workflow, active-state calculation, repository
-observer runtime, evidence-resolution store, AI/LLM interpretation, or
-autonomous mutation/action execution has been built.
+adapter, subprocess execution, or Git invocation. Phase 37I adds the
+`repo-observer.v1` backend contract/schema foundation for that planned observer
+(see §18), but still implements no observer runtime, Git adapter, filesystem
+scanner, endpoint, persistence, ingestion, evidence resolver, AI/LLM
+interpretation, or autonomous mutation/action execution.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
 types, state axes, evidence hierarchy, and contradiction classes for the Active
 Agent Memory + Verification Layer, so later phases can cite a stable reference
@@ -156,7 +157,8 @@ Deterministic memory store MVP (implemented) → `37D` Contradiction detection M
 (implemented, validated, merged) → `37E` Pre-action context packet (implemented)
 → `37F` Read-Only Context Packet API Foundation (implemented) → `37G` Active
 Memory Frontend Inspector (implemented) → `37H` Repository Observer planning
-(documentation only; see §17). This is a **Track 2 —
+(documentation only; see §17) → `37I` Repository Observer contract types
+(implemented; see §18). This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -654,3 +656,32 @@ runtime behavior. The long-form contract lives in the
   37P end-to-end QA.
 
 Phase 36K remains paused and untouched.
+
+## 18. Phase 37I — repository observer contract types / schema alignment
+
+Phase 37I adds the backend-only `repo-observer.v1` contract foundation in
+`apps/backend/app/models/repository_observer.py`, with focused model tests in
+`apps/backend/tests/test_repository_observer_models.py`. These contracts define
+read-only, bounded, JSON-safe shapes for repository identity, observer scope,
+working-tree state, changed-file summaries, rename/copy relationships,
+repository evidence, evidence authority, warnings, limitations, overflow and
+truncation metadata, and snapshot completeness.
+
+The contracts are a schema floor only. They do not resolve paths, inspect Git
+metadata, walk the filesystem, scan file contents, derive snapshots, create
+candidate memory records, ingest evidence, persist data, expose an API, or change
+context-packet and contradiction behavior. Timestamps remain caller-supplied;
+validators reject malformed contract data such as negative limits, unsafe
+repository-relative paths, malformed rename/copy records, unbounded excerpts,
+impossible overflow counts, and complete snapshots that claim truncation.
+
+Security and bounded-observation rules from Phase 37H remain preserved: file
+contents are absent by default, excerpts are optional and explicitly bounded,
+absolute and parent-traversing repository-relative paths are rejected, warnings
+and limitations are structured for future API exposure, and local secrets,
+stack traces, arbitrary exception strings, environment variables, and unrestricted
+absolute filesystem paths are not modeled as automatic payloads.
+
+The next planned Repository Observer phase is **Phase 37J — Deterministic Git
+Adapter Foundation**. That later phase owns read-only argument-array Git adapter
+behavior; Phase 37I does not authorize or implement it.

@@ -16,7 +16,7 @@ The problem Hive|Mind is solving is not "generate more content." It is the quiet
 
 The product direction is deliberately evidence-oriented. The app favors deterministic backend derivation, provenance, and read-only inspection before mutation or automation. The current Intelligence Report surfaces temporal decay, dreaming suggestions, provenance chains, and query trails as explainable outputs over existing store and graph structure.
 
-Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Phase 37B implements the backend and frontend wire contracts for that layer, Phase 37C adds a deterministic, backend-only in-memory store over those contracts (insert, retrieve, deterministic listing/filtering, explicit lifecycle transitions, and a serialize/restore boundary), Phase 37D adds a backend-only, read-only contradiction-detection service that derives contract-valid contradiction records from stored fields without mutating anything or auto-resolving conflicts, Phase 37E adds backend-only deterministic context packet generation, Phase 37F exposes that builder through a read-only stateless endpoint, and Phase 37G adds a frontend-only read-only inspector over that endpoint.
+Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Phase 37B implements the backend and frontend wire contracts for that layer, Phase 37C adds a deterministic, backend-only in-memory store over those contracts (insert, retrieve, deterministic listing/filtering, explicit lifecycle transitions, and a serialize/restore boundary), Phase 37D adds a backend-only, read-only contradiction-detection service that derives contract-valid contradiction records from stored fields without mutating anything or auto-resolving conflicts, Phase 37E adds backend-only deterministic context packet generation, Phase 37F exposes that builder through a read-only stateless endpoint, Phase 37G adds a frontend-only read-only inspector over that endpoint, Phase 37H plans a future Repository Observer, and Phase 37I adds backend-only contract/schema types for that planned observer without adding observer runtime behavior.
 
 ## What Hive|Mind Does
 
@@ -50,8 +50,9 @@ Hive|Mind is also developing an **Active Memory and Verification** architecture:
 - **Implemented (context packets):** a backend-only, deterministic, read-only packet builder that assembles active records, unresolved contradiction results, lifecycle warnings, verification counts, and rigid prohibited-assumption strings without authorizing actions.
 - **Implemented (context packet API):** `POST /api/active-memory/context-packet`, a thin, read-only, stateless endpoint over the existing builder — a validated request (`project_id`, caller-supplied `generated_at`, optional exact `scope`, and the record set) returns the existing `ContextPacket` contract. It derives packets from request-supplied records only and mutates nothing.
 - **Implemented (frontend inspector):** a read-only Active Memory dock panel where a human explicitly supplies `MemoryRecord` JSON, calls the stateless context-packet endpoint, and inspects the returned `ContextPacket` sections. It keeps entered data only in React state and provides no edit/delete/verify/supersede/retract/resolve controls.
-- **Planned:** active-state calculation, repository-observer planning, evidence resolution, and any persistent Active Memory runtime.
-- **Boundary:** the store is in-memory with a serialize/restore boundary only, evidence resolution remains deferred, and the API/UI surfaces remain read-only and stateless over caller-supplied records — no database, file persistence, write endpoint, ingestion, runtime verification, repository observer, automatic resolution, action authorization, AI interpretation, autonomous mutation, or hidden Active Memory store exists yet.
+- **Implemented (repository observer contracts):** backend-only `repo-observer.v1` Pydantic contract types for the planned Repository Observer, covering repository identity, conservative scope, snapshots, working-tree state, changed-file summaries, bounded evidence, evidence authority, warnings, limitations, overflow/truncation metadata, and completeness.
+- **Planned:** active-state calculation, deterministic Repository Observer implementation, evidence resolution, and any persistent Active Memory runtime.
+- **Boundary:** the store is in-memory with a serialize/restore boundary only, evidence resolution remains deferred, and the API/UI surfaces remain read-only and stateless over caller-supplied records — no database, file persistence, write endpoint, ingestion, runtime verification, repository observer runtime, automatic resolution, action authorization, AI interpretation, autonomous mutation, or hidden Active Memory store exists yet.
 
 ### Experimental Interaction
 
@@ -85,7 +86,7 @@ Evidence
   -> planned active-state selection
 ```
 
-The first pipeline is implemented across the current app surfaces. The second pipeline currently exists as merged contracts, a deterministic backend-only in-memory store, deterministic backend-only read-only contradiction detection, backend-only context packet generation, a read-only stateless context-packet endpoint, and a read-only frontend inspector for user-supplied records; later phases will add active-state selection and repository-observer planning.
+The first pipeline is implemented across the current app surfaces. The second pipeline currently exists as merged contracts, a deterministic backend-only in-memory store, deterministic backend-only read-only contradiction detection, backend-only context packet generation, a read-only stateless context-packet endpoint, a read-only frontend inspector for user-supplied records, and backend-only Repository Observer schema contracts; later phases will add active-state selection and deterministic observer runtime work.
 
 ## Visual Evidence
 
@@ -128,7 +129,8 @@ More screenshot history and QA notes live in the [Phase 28C graph-primary eviden
 | Active Memory context packets | Implemented | Backend-only deterministic packet builder; no persistence, evidence resolver, action authorization, or automatic resolution. |
 | Active Memory context packet API | Implemented | `POST /api/active-memory/context-packet`: read-only, stateless, non-mutating endpoint over the existing builder and `ContextPacket` contract. |
 | Active Memory frontend inspector | Implemented | Read-only contextual dock panel over the stateless endpoint; records are explicitly supplied by the user and kept only in React state. |
-| Active Memory runtime | Planned | Active-state calculation, write endpoints, repository observer, durable memory, and evidence resolver are not implemented. |
+| Repository Observer contracts | Implemented | Backend-only `repo-observer.v1` schema foundation; no observer runtime, Git adapter, filesystem scan, endpoint, or persistence. |
+| Active Memory runtime | Planned | Active-state calculation, write endpoints, repository observer runtime, durable memory, and evidence resolver are not implemented. |
 
 ## Architecture And Stack
 
@@ -200,17 +202,17 @@ The root `check` script runs both validation commands.
 
 ## Current Limitations
 
-Hive|Mind is currently a local, single-user developer tool. It has no authentication, authorization, multi-user support, cloud sync, or production deployment hardening. Obsidian import is explicit and one-shot; there is no live vault watcher and no write-back. The Knowledge Graph and Intelligence Report are read-only, and suggestions are advisory only. Query-history persistence remains absent, so query-history-dependent categories stay deferred. The Active Memory store is deterministic but in-memory only (a serialize/restore boundary, no committed persistence medium); contradiction detection is backend-derived, read-only, and covers four of the five contract classes (`frontend_only_vs_backend_modification` is deferred, and no automatic resolution exists); the context packet endpoint and inspector are read-only and stateless — they derive packets from records explicitly supplied in the current request, with no server-side memory store, persistence, ingestion, repository observer, evidence resolver, AI interpretation, action authorization, or mutation controls; and the rest of the Active Memory runtime — active-state calculation, write endpoints, observer, and durable memory — is not implemented yet. Gesture tracking remains experimental and needs live tuning. The product does not run autonomous agents or mutate repositories.
+Hive|Mind is currently a local, single-user developer tool. It has no authentication, authorization, multi-user support, cloud sync, or production deployment hardening. Obsidian import is explicit and one-shot; there is no live vault watcher and no write-back. The Knowledge Graph and Intelligence Report are read-only, and suggestions are advisory only. Query-history persistence remains absent, so query-history-dependent categories stay deferred. The Active Memory store is deterministic but in-memory only (a serialize/restore boundary, no committed persistence medium); contradiction detection is backend-derived, read-only, and covers four of the five contract classes (`frontend_only_vs_backend_modification` is deferred, and no automatic resolution exists); the context packet endpoint and inspector are read-only and stateless — they derive packets from records explicitly supplied in the current request, with no server-side memory store, persistence, ingestion, repository observer runtime, evidence resolver, AI interpretation, action authorization, or mutation controls; the Repository Observer exists only as backend schema contracts; and the rest of the Active Memory runtime — active-state calculation, write endpoints, observer implementation, and durable memory — is not implemented yet. Gesture tracking remains experimental and needs live tuning. The product does not run autonomous agents or mutate repositories.
 
 ## Roadmap
 
-The current controlled Track 2 sequence after the completed Phase 37G read-only frontend inspector is:
+The current controlled Track 2 sequence after the completed Phase 37I Repository Observer contract types is:
 
 ```text
-37H - Repository observer planning
+37J - Deterministic Git Adapter Foundation
 ```
 
-Phase 37G shipped as a frontend-only inspector: the existing dock can submit user-supplied `MemoryRecord` arrays to `POST /api/active-memory/context-packet` and render the returned `ContextPacket` without adding persistence, ingestion, repository observation, AI interpretation, mutation controls, or backend changes. Phase 37H is documentation-only: it plans a future read-only Repository Observer — an evidence provider that would inspect a local Git repository without mutating it and hand deterministic, evidence-scoped observations to the Active Memory layer — but implements no observer, Git adapter, subprocess execution, watcher, or endpoint (see the [repository observer plan](docs/planning/phase-37h-repository-observer-planning.md)). Phase 36K remains paused, not canceled or completed. Gesture tuning can resume after the application's memory foundation reaches a usable state. The complete phase chronology belongs in the [roadmap](docs/roadmap.md).
+Phase 37I adds backend-only `repo-observer.v1` schema contracts for the planned read-only Repository Observer. It does not add an observer runtime, Git adapter, filesystem scanner, watcher, endpoint, persistence, or Active Memory ingestion behavior. Phase 37J is the next planned step from the [repository observer plan](docs/planning/phase-37h-repository-observer-planning.md). Phase 36K remains paused, not canceled or completed. Gesture tuning can resume after the application's memory foundation reaches a usable state. The complete phase chronology belongs in the [roadmap](docs/roadmap.md).
 
 ## Documentation
 
