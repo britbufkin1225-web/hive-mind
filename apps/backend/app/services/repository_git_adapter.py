@@ -248,14 +248,29 @@ class GitCommandExecutor:
 def _read_only_git_env() -> dict[str, str]:
     """Return a per-subprocess environment hardened for read-only observation.
 
-    ``GIT_OPTIONAL_LOCKS=0`` keeps ``git status`` from opportunistically taking
-    the index lock to refresh its stat cache, so observation never writes to
-    ``.git/index``. ``GIT_TERMINAL_PROMPT=0`` prevents any command from blocking
-    on an interactive credential prompt. Both are process-local and change no
+    Every inherited ``GIT_*`` variable is dropped so the ambient environment
+    cannot redirect the observation away from the repository at ``cwd``. Without
+    this, an inherited ``GIT_DIR``/``GIT_WORK_TREE``/``GIT_COMMON_DIR`` could make
+    ``git status`` observe a *different* repository than the requested root;
+    ``GIT_OBJECT_DIRECTORY``/``GIT_ALTERNATE_OBJECT_DIRECTORIES`` could redirect
+    object lookup; ``GIT_INDEX_FILE`` could point observation at a foreign index;
+    ``GIT_CONFIG_*`` (including the numbered ``GIT_CONFIG_COUNT``/
+    ``GIT_CONFIG_KEY_n``/``GIT_CONFIG_VALUE_n`` triples and
+    ``GIT_CONFIG_GLOBAL``/``GIT_CONFIG_SYSTEM``) could inject configuration such as
+    ``core.hooksPath``; and ``GIT_CEILING_DIRECTORIES``/``GIT_NAMESPACE`` could
+    distort discovery. Stripping the whole prefix fails closed and keeps
+    discovery grounded solely in the explicit ``cwd``.
+
+    ``GIT_OPTIONAL_LOCKS=0`` is then set so ``git status`` never opportunistically
+    takes the index lock to refresh its stat cache, so observation never writes to
+    ``.git/index``. ``GIT_TERMINAL_PROMPT=0`` prevents any command from blocking on
+    an interactive credential prompt. Both are process-local and change no
     repository or user Git configuration.
     """
 
-    env = dict(os.environ)
+    env = {
+        key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+    }
     env["GIT_OPTIONAL_LOCKS"] = "0"
     env["GIT_TERMINAL_PROMPT"] = "0"
     return env
@@ -268,34 +283,15 @@ def observe_repository(
     limits: GitAdapterLimits = DEFAULT_GIT_ADAPTER_LIMITS,
     executor: GitCommandExecutor | None = None,
 ) -> RepositorySnapshot:
-    """Observe one repository through bounded read-only Git commands."""
+    """Compatibility wrapper for the Phase 37K snapshot service."""
 
-    target = Path(repository_path)
-    command_executor = executor or GitCommandExecutor(limits=limits)
-    root_result = command_executor.run(GitReadOperation.RESOLVE_ROOT, target)
-    if root_result.stdout_truncated or root_result.stderr_truncated:
-        raise GitOutputLimitExceededError("repository root evidence exceeded command bounds")
-    root_text = _decode_text(root_result.stdout, "repository root").strip()
-    if not root_text:
-        raise GitPorcelainParseError("repository root evidence was empty")
-    root = Path(root_text)
+    from app.services.repository_observation_snapshot import observe_repository_snapshot
 
-    status_result = command_executor.run(GitReadOperation.STATUS, root)
-    remote_result = command_executor.run(GitReadOperation.REMOTES, root)
-    status = parse_porcelain_v2_z(
-        status_result.stdout,
-        output_complete=not status_result.stdout_truncated,
-    )
-    remotes = parse_remote_verbose(remote_result.stdout)
-
-    return convert_git_evidence_to_snapshot(
-        repository_root=root,
-        status=status,
-        remotes=remotes,
+    return observe_repository_snapshot(
+        repository_path=repository_path,
         observed_at=observed_at,
         limits=limits,
-        status_result=status_result,
-        remote_result=remote_result,
+        executor=executor,
     )
 
 
@@ -406,6 +402,7 @@ def convert_git_evidence_to_snapshot(
     limits: GitAdapterLimits = DEFAULT_GIT_ADAPTER_LIMITS,
     status_result: GitCommandResult | None = None,
     remote_result: GitCommandResult | None = None,
+    observer_version: str = OBSERVER_VERSION,
 ) -> RepositorySnapshot:
     root_text = _normalize_root(repository_root)
     repository_name = repository_root.name or root_text.rsplit("/", 1)[-1]
@@ -443,7 +440,7 @@ def convert_git_evidence_to_snapshot(
         snapshot_id=_stable_id("snapshot", root_text, observed_at.isoformat()),
         repository_identity=identity,
         observed_at=observed_at,
-        observer_version=OBSERVER_VERSION,
+        observer_version=observer_version,
         branch=identity.current_branch,
         commit=identity.current_commit,
         working_tree=working_tree,
