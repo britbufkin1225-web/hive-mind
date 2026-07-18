@@ -363,6 +363,34 @@ def test_validation_rejects_negative_and_oversized_bounds(tmp_path: Path) -> Non
     ).status_code == 422
 
 
+def test_scope_limits_cannot_exceed_api_bounds_and_fail_before_service(
+    tmp_path: Path,
+) -> None:
+    service = FakeSnapshotService()
+    oversized_file_count = _post_with_service(
+        tmp_path,
+        service,
+        {"scope": {"repository_root": str(tmp_path), "max_file_count": 999_999}},
+    )
+    oversized_bytes = _post_with_service(
+        tmp_path,
+        service,
+        {"scope": {"repository_root": str(tmp_path), "max_snapshot_bytes": 10_000_000}},
+    )
+
+    assert oversized_file_count.status_code == 422
+    assert oversized_bytes.status_code == 422
+    # A scope that stays within the API caps must still reach the service.
+    within_bounds = _post_with_service(
+        tmp_path,
+        service,
+        {"scope": {"repository_root": str(tmp_path), "max_file_count": 1024}},
+    )
+    assert within_bounds.status_code == 200
+    # Only the in-bounds request should have invoked the snapshot service.
+    assert len(service.calls) == 1
+
+
 def test_validation_rejects_unexpected_request_fields(tmp_path: Path) -> None:
     response = TestClient(app).post(
         "/api/repository-observer/snapshot",

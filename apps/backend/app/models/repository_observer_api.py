@@ -11,7 +11,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import PurePosixPath, PureWindowsPath
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.repository_observer import (
     MAX_REPOSITORY_OBSERVER_COLLECTION_ITEMS,
@@ -62,3 +62,26 @@ class RepositoryObservationSnapshotRequest(BaseModel):
             raise ValueError("repository_root must not traverse parents")
 
         return root
+
+    @model_validator(mode="after")
+    def _scope_limits_within_api_bounds(self) -> "RepositoryObservationSnapshotRequest":
+        # The optional ``ObserverScope`` (Phase 37I) leaves ``max_file_count`` and
+        # ``max_snapshot_bytes`` unbounded above, and the Phase 37K service adopts
+        # ``scope.max_file_count`` as the retained-observation limit. Without this
+        # guard a caller could pass a scope whose limits exceed the API's own
+        # ``max_file_count``/``max_snapshot_bytes`` caps, silently bypassing the
+        # bound advertised on the top-level request fields. Reject out-of-range
+        # scope limits at the transport boundary so both channels honor the same
+        # ceiling.
+        scope = self.scope
+        if scope is None:
+            return self
+        if scope.max_file_count > MAX_REPOSITORY_OBSERVER_COLLECTION_ITEMS:
+            raise ValueError(
+                "scope.max_file_count must not exceed the request max_file_count bound"
+            )
+        if scope.max_snapshot_bytes > MAX_REPOSITORY_OBSERVER_API_SNAPSHOT_BYTES:
+            raise ValueError(
+                "scope.max_snapshot_bytes must not exceed the request max_snapshot_bytes bound"
+            )
+        return self
