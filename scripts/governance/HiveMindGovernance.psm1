@@ -5,6 +5,8 @@ $script:Roles = @('primary-implementer','independent-auditor-hardener','speciali
 $script:Capabilities = @('L0','L1','L2','L3','L4')
 $script:CompositionModes = @('sequential-isolated','sequential-audit','parallel-read-only','parallel-isolated','integration-composition','adversarial-verification')
 $script:WriteAuthorities = @('none','documentation-only','tests-only','bounded-path-write','full-locked-phase-scope')
+$script:ManifestVersion = 'agent-composition.v1'
+$script:ContractVersion = 'agent-contribution.v1'
 
 function New-GovernanceCheck {
     param([string]$Id,[string]$Category,[ValidateSet('PASS','WARNING','BLOCKED')][string]$Status,[string]$Message,[AllowNull()]$Expected,[AllowNull()]$Actual,[AllowNull()]$Evidence)
@@ -33,7 +35,14 @@ function ConvertTo-NormalizedRemote {
         $uri = [Uri]$value
         $path = $uri.AbsolutePath.Trim('/'); if ($path.EndsWith('.git',[StringComparison]::OrdinalIgnoreCase)) { $path=$path.Substring(0,$path.Length-4) }
         return ($uri.Host.ToLowerInvariant() + '/' + $path.ToLowerInvariant())
-    } catch { return $value.TrimEnd('/').TrimEnd('.git').ToLowerInvariant() }
+    } catch {
+        # TrimEnd('.git') would trim the character *set* {'.','g','i','t'}, over-trimming
+        # values like 'foo-testing'. Strip a single '.git' suffix instead, matching the
+        # URI branch above.
+        $fallback = $value.TrimEnd('/')
+        if ($fallback.EndsWith('.git',[System.StringComparison]::OrdinalIgnoreCase)) { $fallback = $fallback.Substring(0,$fallback.Length-4) }
+        return $fallback.ToLowerInvariant()
+    }
 }
 
 function Get-ObjectProperty {
@@ -41,7 +50,13 @@ function Get-ObjectProperty {
     if ($null -eq $Object) { return $null }
     $property = $Object.PSObject.Properties[$Name]
     if ($null -eq $property) { return $null }
-    $property.Value
+    $value = $property.Value
+    # Comma-wrap non-string collections so an empty array survives the return as an
+    # empty array instead of collapsing to $null (which Test-RequiredValue would
+    # misread as a missing field). Per the agent-composition manifest, empty lists
+    # are explicit, valid evidence.
+    if ($null -ne $value -and $value -isnot [string] -and $value -is [System.Collections.IEnumerable]) { return ,$value }
+    $value
 }
 
 function Test-RequiredValue {
@@ -69,6 +84,10 @@ function Test-Manifest {
         @('handoff',(Get-ObjectProperty $manifest 'handoff'))
     )
     foreach($item in $required){ Test-RequiredValue $Checks "manifest.required.$($item[0])" 'Manifest' $item[0] $item[1] }
+    foreach($pin in @(@('manifest_version',(Get-ObjectProperty $manifest 'manifest_version'),$script:ManifestVersion),@('contract_version',(Get-ObjectProperty $manifest 'contract_version'),$script:ContractVersion))){
+        $pinned = "$($pin[1])" -ceq $pin[2]
+        $Checks.Add((New-GovernanceCheck "manifest.version.$($pin[0])" 'Manifest' $(if($pinned){'PASS'}else{'BLOCKED'}) "Manifest $($pin[0]) must be the Phase 38A contract value, not a competing schema." $pin[2] $pin[1] $null))
+    }
     $project=Get-ObjectProperty $manifest 'project'; $phase=Get-ObjectProperty $manifest 'phase'; $agent=Get-ObjectProperty $manifest 'agent'; $authority=Get-ObjectProperty $manifest 'authority'; $git=Get-ObjectProperty $manifest 'git'
     foreach($name in @('name','parent_label','repository_root','remote_url')){ Test-RequiredValue $Checks "manifest.required.project.$name" 'Manifest' "project.$name" (Get-ObjectProperty $project $name) }
     foreach($name in @('id','name','status_at_start','status_at_end','paused_tracks')){ Test-RequiredValue $Checks "manifest.required.phase.$name" 'Manifest' "phase.$name" (Get-ObjectProperty $phase $name) }

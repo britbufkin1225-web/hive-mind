@@ -35,8 +35,11 @@ fixtures, not normal Hive|Mind sessions.
 Add `-ManifestPath .\path\manifest.json` to validate a JSON serialization of the
 existing `agent-composition.v1` structure. JSON is the dependency-free executable
 serialization supported in Phase 38B; the field names and nesting remain those
-defined by the Phase 38A composition manifest. Commands or paths in a manifest
-are never executed. The manifest must be inside the repository.
+defined by the Phase 38A composition manifest. The `manifest_version` and
+`contract_version` identifiers must match the Phase 38A contract values, so a
+competing schema is blocked rather than silently accepted. Empty lists are valid,
+explicit evidence and are not treated as missing fields. Commands or paths in a
+manifest are never executed. The manifest must be inside the repository.
 
 Human output emits `[PASS]`, `[WARNING]`, and `[BLOCKED]` lines. Add `-Json` for
 one pure JSON value on stdout:
