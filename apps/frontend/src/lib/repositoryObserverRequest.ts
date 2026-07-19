@@ -1,4 +1,7 @@
-import type { RepositoryObservationSnapshotRequest } from "../types/api";
+import type {
+  RepositoryDriftAnalysisRequest,
+  RepositoryObservationSnapshotRequest,
+} from "../types/api";
 
 export const REPOSITORY_OBSERVER_MAX_FILE_COUNT = 1024;
 export const REPOSITORY_OBSERVER_MAX_SNAPSHOT_BYTES = 262_144;
@@ -14,6 +17,18 @@ export interface RepositoryObserverRequestInput {
 export interface RepositoryObserverRequestResult {
   request: RepositoryObservationSnapshotRequest | null;
   error: string | null;
+}
+
+export interface RepositoryDriftRequestResult {
+  request: RepositoryDriftAnalysisRequest | null;
+  error: string | null;
+}
+
+interface ValidatedRepositoryObserverRequest {
+  repository_root: string;
+  observed_at: string;
+  max_file_count: number;
+  max_snapshot_bytes: number;
 }
 
 function isAbsoluteLocalPath(value: string): boolean {
@@ -41,9 +56,9 @@ function integerWithin(value: number, min: number, max: number): boolean {
   return Number.isInteger(value) && value >= min && value <= max;
 }
 
-export function buildRepositoryObserverSnapshotRequest(
+function validateRepositoryObserverRequest(
   input: RepositoryObserverRequestInput,
-): RepositoryObserverRequestResult {
+): { request: ValidatedRepositoryObserverRequest | null; error: string | null } {
   const repositoryRoot = input.repositoryRoot.trim();
   if (repositoryRoot === "") {
     return { request: null, error: "Enter an absolute repository path." };
@@ -102,5 +117,24 @@ export function buildRepositoryObserverSnapshotRequest(
       max_file_count: input.maxFileCount,
       max_snapshot_bytes: input.maxSnapshotBytes,
     },
+  };
+}
+
+export function buildRepositoryObserverSnapshotRequest(
+  input: RepositoryObserverRequestInput,
+): RepositoryObserverRequestResult {
+  return validateRepositoryObserverRequest(input);
+}
+
+export function buildRepositoryDriftAnalysisRequest(
+  input: RepositoryObserverRequestInput,
+): RepositoryDriftRequestResult {
+  const result = validateRepositoryObserverRequest(input);
+  if (!result.request) {
+    return { request: null, error: result.error };
+  }
+  return {
+    error: null,
+    request: { ...result.request, baseline_reference: "HEAD" },
   };
 }

@@ -25,7 +25,7 @@ Implemented runtime capabilities include:
   pointer orbit, momentum, and elastic node manipulation.
 - Motion sandbox foundation using MediaPipe hand landmarks, with live gesture
   tuning still paused.
-- Active Memory foundation through Phase 37O: contract types, deterministic
+- Active Memory foundation through Phase 37P: contract types, deterministic
   backend-only in-memory store, deterministic backend-only read-only
   contradiction detection, backend-only deterministic context packet
   generation, a read-only context-packet API endpoint, and a read-only frontend
@@ -34,8 +34,9 @@ Implemented runtime capabilities include:
   backend-only request-triggered repository observation snapshot service, and a
   thin read-only Repository Observer snapshot API with a contextual read-only
   frontend inspector hardened by frontend integration QA, plus backend-only
-  deterministic drift analysis from the current `HEAD` baseline. No watcher,
-  persistence, mutation, AI review, frontend drift UI, or ingestion exists yet.
+  deterministic drift analysis from the current `HEAD` baseline and an
+  on-demand frontend drift inspector. No watcher, persistence, mutation, AI
+  review, background monitoring, or ingestion exists.
 
 The product remains local, single-user, and review-oriented. It does not run
 autonomous agents, mutate repositories, persist Active Memory beyond the current
@@ -49,11 +50,11 @@ explicit request and keeps repository paths only in React state.
 
 ## Active Phase
 
-### Phase 37O — Deterministic Repository Drift Analysis MVP
+### Phase 37P — Repository Drift API + Frontend Inspector Integration
 
-Phase 37O follows the Phase 37N frontend integration hardening and adds a
-backend-only deterministic drift-analysis capability over the existing
-Repository Observer foundation.
+Phase 37P is implemented locally and pending independent audit. It reuses the
+Phase 37O deterministic service and existing `RepositoryDriftAnalysis` response
+contract without introducing another drift algorithm.
 
 The endpoint is `POST /api/repository-observer/drift`. It accepts an absolute
 local repository root, caller-supplied observation timestamp, supported baseline
@@ -74,9 +75,15 @@ read, no Git hooks or repository-controlled scripts are executed, and no
 checkout, reset, clean, stash, add, commit, fetch, pull, push, merge, rebase, or
 other mutation is exposed.
 
-Phase 37O adds no frontend work, persistence, watcher, polling loop, Active
-Memory ingestion, contradiction generation, graph mutation, GitHub integration,
-dependency, AI/LLM behavior, or repository repair behavior.
+The existing Repository Observer panel now provides an explicit Analyze Drift
+action and displays status, repository/baseline identity, counts, bounded file
+records, evidence, warnings, limitations, completeness, omitted paths, and
+overflow. Requests remain on-demand and stale responses cannot replace newer
+repository results. No persistence, watcher, polling loop, background work,
+Active Memory ingestion, AI/LLM behavior, or repository mutation was added.
+
+The likely next continuation is **Phase 38A — Deterministic Active Project State
++ Status Manifest MVP**, planned only and not implemented here.
 
 The prior Phase 37G frontend inspector remains implemented as a frontend-only,
 read-only inspector over the Phase 37F context-packet endpoint. Active-state
@@ -99,10 +106,11 @@ them.
 | Phase 37M — Read-Only Repository Observer Frontend Inspector MVP | Implemented | Contextual graph-first dock panel over the Phase 37L endpoint. Renders the backend snapshot contract without watcher, persistence, ingestion, AI review, Git dashboard, or mutation. |
 | Phase 37N — Repository Observer Frontend Integration QA + Hardening | Implemented | Verified and lightly hardened the Phase 37M frontend inspector against the Phase 37L endpoint contract. No backend, schema, dependency, persistence, ingestion, AI review, Git dashboard, or mutation changes. |
 | Phase 37O — Deterministic Repository Drift Analysis MVP | Implemented | Backend-only `POST /api/repository-observer/drift` over current `HEAD`, with deterministic file-level drift classification, evidence, bounds, overflow, and safe errors. No persistence, frontend, ingestion, AI/LLM behavior, or mutation. |
+| Phase 37P — Repository Drift API + Frontend Inspector Integration | Implemented locally / pending independent audit | Reuses Phase 37O through the existing drift API and adds an explicit, bounded, newest-request-only drift inspector to the Repository Observer panel. No persistence, watcher, monitoring, or mutation. |
+| Phase 38A — Deterministic Active Project State + Status Manifest MVP | Planned only | Likely next continuation; no Phase 38A implementation is included in Phase 37P. |
 
-After Phase 37O, a conservative follow-on sequence remains planned (not yet
-authorized): evidence ingestion → contradiction integration → end-to-end QA.
-Each phase remains independently scoped and reviewable.
+After Phase 37P, Phase 38A remains the likely planned continuation. Each phase
+remains independently scoped and reviewable.
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
 implementation track.

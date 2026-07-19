@@ -6788,6 +6788,13 @@ body,
   gap: 0.9rem;
 }
 
+.repo-inspector-divider {
+  min-width: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
 .repo-section {
   min-width: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
