@@ -7,8 +7,8 @@ Contract version: `agent-contribution.v1`
 This contract applies to every agent contribution to Hive|Mind. It makes scope,
 authority, provenance, validation, and composition explicit. It exists to
 prevent repository mistakes, overlapping writes, unverifiable claims, and
-provider-name-based authority. A later Phase 38B may automate deterministic
-checks; this document remains the policy source.
+provider-name-based authority. Phase 38B automates a deterministic subset through
+the local PowerShell preflight; this document remains the policy source.
 
 ## Authority and evidence
 
@@ -179,8 +179,9 @@ data loss.
 
 Hive|Mind remains standalone under parent label devdevbuilds. Backend and
 frontend work remain separated unless integration is explicit. Phase 36K is
-paused. Phase 38A is documentation-only; Phase 38B enforcement is planned, not
-active. Human-controlled composition and merge remain mandatory.
+paused. Phase 38A is documentation-only; Phase 38B local enforcement is
+implemented pending independent audit. Human-controlled composition and merge
+remain mandatory.
 
 These decisions treat Hive|Mind as a real coordination, knowledge-consistency,
 provenance, and workflow-acceleration system. Phase 38B may automate path,
