@@ -85,6 +85,11 @@ const offsetTimestamp = buildRepositoryObserverSnapshotRequest({
   maxSnapshotBytes: 4096,
 });
 assert(offsetTimestamp.request !== null, "explicit-offset timestamp should be accepted");
+assertEqual(
+  offsetTimestamp.request?.observed_at,
+  "2026-07-18T12:00:00-04:00",
+  "explicit-offset timestamp should be preserved verbatim",
+);
 
 const cases: Array<[string, ReturnType<typeof buildRepositoryObserverSnapshotRequest>]> = [
   [
@@ -155,6 +160,15 @@ const cases: Array<[string, ReturnType<typeof buildRepositoryObserverSnapshotReq
     buildRepositoryObserverSnapshotRequest({
       repositoryRoot: "C:\\Users\\britb\\Documents\\hive-mind",
       observedAt: "not-a-date",
+      maxFileCount: 1,
+      maxSnapshotBytes: 1,
+    }),
+  ],
+  [
+    "missing timestamp",
+    buildRepositoryObserverSnapshotRequest({
+      repositoryRoot: "C:\\Users\\britb\\Documents\\hive-mind",
+      observedAt: "   ",
       maxFileCount: 1,
       maxSnapshotBytes: 1,
     }),

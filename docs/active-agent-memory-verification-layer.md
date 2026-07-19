@@ -1,6 +1,6 @@
 # Active Agent Memory + Verification Layer — Reusable Reference
 
-**Status:** Architecture reference with partial implementation through Phase 37M.
+**Status:** Architecture reference with partial implementation through Phase 37N.
 Phase 37B implements the `active-memory.v1` backend/frontend contracts, Phase 37C
 implements a deterministic backend-only in-memory store, and Phase 37D implements
 a deterministic backend-only read-only contradiction-detection MVP. Phase 37E
@@ -17,7 +17,8 @@ foundation over those contracts (see §19). Phase 37K adds a backend-only
 request-triggered repository observation snapshot service MVP over that adapter
 (see §20). Phase 37L exposes that service through a thin read-only HTTP API
 (see §21). Phase 37M adds a frontend-only read-only contextual inspector over
-that endpoint (see §22), but still implements no watcher, polling loop,
+that endpoint (see §22), and Phase 37N verifies and hardens that frontend
+integration (see §23), but still implements no watcher, polling loop,
 persistence, ingestion, evidence resolver, AI/LLM interpretation, Git dashboard,
 or autonomous mutation/action execution.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
@@ -167,7 +168,8 @@ Memory Frontend Inspector (implemented) → `37H` Repository Observer planning
 (implemented; see §19) → `37K` Repository Observation Snapshot Service MVP
 (implemented; see §20) → `37L` Read-Only Repository Observation API Foundation
 (implemented; see §21) → `37M` Read-Only Repository Observer Frontend Inspector
-MVP (implemented; see §22). This is a **Track 2 —
+MVP (implemented; see §22) → `37N` Repository Observer Frontend Integration QA
+and Hardening (implemented; see §23). This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -661,12 +663,14 @@ runtime behavior. The long-form contract lives in the
   summarization, frontend visualization, and persistence are deferred.
 - **Follow-on sequence (planned, not authorized here).** 37I contract types → 37J
   Git adapter → 37K snapshot service MVP → 37L observation API → 37M read-only
-  frontend inspector → later evidence ingestion, contradiction integration, and
-  end-to-end QA. Phase 37J is now implemented as the adapter foundation, Phase
+  frontend inspector → 37N frontend integration QA and hardening → later
+  evidence ingestion, contradiction integration, and end-to-end QA. Phase 37J is
+  now implemented as the adapter foundation, Phase
   37K is now implemented as the snapshot service MVP, Phase 37L is now
-  implemented as the read-only observation API, and Phase 37M is now implemented
-  as the read-only frontend inspector; ingestion and contradiction integration
-  remain planned and unauthorized here.
+  implemented as the read-only observation API, Phase 37M is now implemented as
+  the read-only frontend inspector, and Phase 37N is now implemented as the
+  frontend integration QA/hardening pass; ingestion and contradiction
+  integration remain planned and unauthorized here.
 
 Phase 36K remains paused and untouched.
 
@@ -859,3 +863,29 @@ Git adapter, endpoint, or snapshot contract behavior.
 The inspector is contextual because Repository Observer evidence is supporting
 visibility for the graph-first workspace. It is intentionally not an IDE, file
 explorer, source-control client, or repository repair surface.
+
+## 23. Phase 37N — repository observer frontend integration QA and hardening
+
+Phase 37N verifies the Phase 37M frontend inspector against the Phase 37L
+`POST /api/repository-observer/snapshot` endpoint and makes a narrow
+frontend-only hardening pass. It changes no backend service, Git adapter,
+endpoint, request schema, or snapshot contract behavior.
+
+- **Contract verification:** the frontend request builder continues to emit only
+  the contract-valid top-level fields: `repository_root`, `observed_at`,
+  `max_file_count`, and `max_snapshot_bytes`. Optional `ObserverScope` remains
+  unexposed because path/content toggles are outside the current inspector MVP.
+- **State hardening:** the inspector tracks request order so an older async
+  response cannot overwrite the newest submitted state. The previous successful
+  snapshot remains visible after a later failed request, which preserves useful
+  evidence while still surfacing the error.
+- **Error and layout hardening:** server failures render a client-safe message,
+  the UI shows the exact `/api` endpoint, and long endpoint/path/status tokens
+  wrap inside inspector cards instead of breaking the dock layout.
+- **Self-test coverage:** the request-builder self-test covers timestamp
+  preservation and blank timestamp rejection in addition to the existing root,
+  boundary, UNC, traversal, and omitted-scope cases.
+- **Boundary:** Phase 37N adds no watcher, polling loop, persistence, ingestion,
+  evidence resolver, AI/LLM interpretation, Git dashboard, repository mutation,
+  graph mutation, Obsidian behavior, MediaPipe behavior, dependency change, or
+  Phase 36K work.

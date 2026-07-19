@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ApiClientError, apiClient } from "../api/client";
 import {
   buildRepositoryObserverSnapshotRequest,
@@ -117,6 +117,16 @@ function errorTitle(kind: ErrorKind): string {
     case "unexpected":
       return "Repository snapshot failed.";
   }
+}
+
+function clientSafeErrorMessage(error: unknown, kind: ErrorKind): string {
+  if (!(error instanceof ApiClientError)) {
+    return "Network request failed. Is the backend running?";
+  }
+  if (kind === "server") {
+    return "Internal server error";
+  }
+  return error.message;
 }
 
 function KeyValueGrid({
@@ -450,6 +460,7 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
   const [errorKind, setErrorKind] = useState<ErrorKind>("unexpected");
   const [snapshot, setSnapshot] = useState<RepositorySnapshot | null>(null);
   const [submittedRoot, setSubmittedRoot] = useState<string | null>(null);
+  const requestSequenceRef = useRef(0);
 
   const dirtySummary = useMemo(() => {
     if (!snapshot) {
@@ -461,6 +472,8 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
   }, [snapshot]);
 
   const submit = async (): Promise<void> => {
+    const requestSequence = requestSequenceRef.current + 1;
+    requestSequenceRef.current = requestSequence;
     const { request, error: validationError } =
       buildRepositoryObserverSnapshotRequest({
         repositoryRoot,
@@ -480,15 +493,18 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
     setSubmittedRoot(request.repository_root);
     try {
       const response = await apiClient.observeRepositorySnapshot(request);
+      if (requestSequence !== requestSequenceRef.current) {
+        return;
+      }
       setSnapshot(response);
       setState("success");
     } catch (requestError: unknown) {
-      setErrorKind(errorKindFrom(requestError));
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Network request failed. Is the backend running?",
-      );
+      if (requestSequence !== requestSequenceRef.current) {
+        return;
+      }
+      const kind = errorKindFrom(requestError);
+      setErrorKind(kind);
+      setError(clientSafeErrorMessage(requestError, kind));
       setState("error");
     }
   };
@@ -517,7 +533,7 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
         >
           <div className="repo-editor-head">
             <h3>Snapshot Request</h3>
-            <span className="repo-chip">POST /repository-observer/snapshot</span>
+            <span className="repo-chip">POST /api/repository-observer/snapshot</span>
           </div>
 
           <label className="repo-field">

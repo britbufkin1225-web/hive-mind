@@ -25,7 +25,7 @@ Implemented runtime capabilities include:
   pointer orbit, momentum, and elastic node manipulation.
 - Motion sandbox foundation using MediaPipe hand landmarks, with live gesture
   tuning still paused.
-- Active Memory foundation through Phase 37M: contract types, deterministic
+- Active Memory foundation through Phase 37N: contract types, deterministic
   backend-only in-memory store, deterministic backend-only read-only
   contradiction detection, backend-only deterministic context packet
   generation, a read-only context-packet API endpoint, and a read-only frontend
@@ -33,8 +33,8 @@ Implemented runtime capabilities include:
   contract/schema types, a deterministic read-only Git adapter foundation, a
   backend-only request-triggered repository observation snapshot service, and a
   thin read-only Repository Observer snapshot API with a contextual read-only
-  frontend inspector. No watcher, persistence, mutation, AI review, or ingestion
-  exists yet.
+  frontend inspector hardened by frontend integration QA. No watcher,
+  persistence, mutation, AI review, or ingestion exists yet.
 
 The product remains local, single-user, and review-oriented. It does not run
 autonomous agents, mutate repositories, persist Active Memory beyond the current
@@ -48,29 +48,28 @@ explicit request and keeps repository paths only in React state.
 
 ## Active Phase
 
-### Phase 37M — Read-Only Repository Observer Frontend Inspector MVP
+### Phase 37N — Repository Observer Frontend Integration QA + Hardening
 
-Phase 37M follows the Phase 37H Repository Observer sequence and establishes the
-first frontend visibility surface over the Phase 37L snapshot endpoint, Phase
-37K snapshot service, Phase 37J Git adapter, and Phase 37I `repo-observer.v1`
-contracts.
+Phase 37N follows the Phase 37M frontend inspector and verifies the existing
+frontend flow against the Phase 37L snapshot endpoint, Phase 37K snapshot
+service, Phase 37J Git adapter, and Phase 37I `repo-observer.v1` contracts.
 
-The implemented inspector is mounted in the existing graph-primary contextual
-dock, not as a separate Git dashboard. A human submits one bounded request with
-an absolute repository root, caller-supplied observation timestamp, file limit,
-and snapshot byte limit. The frontend sends only contract-valid top-level fields
-to `POST /api/repository-observer/snapshot` and renders the existing
+The inspector remains mounted in the existing graph-primary contextual dock, not
+as a separate Git dashboard. Phase 37N verifies that a human-submitted bounded
+request sends only contract-valid top-level fields to
+`POST /api/repository-observer/snapshot` and renders the existing
 `RepositorySnapshot` contract: repository identity, identity status, branch,
 HEAD commit, working-tree state, changed-file observations, rename/copy
 relationships, evidence authority, warnings, limitations, overflow/truncation
 metadata, omitted paths, deterministic ordering, and snapshot completeness.
 
-The frontend owns only request serialization, readable validation, client-safe
-error display, and structured rendering. Snapshot derivation stays in Phase 37K;
-Git execution and parsing stay in Phase 37J; transport validation stays in
-Phase 37L. It does not add a watcher, polling loop, persistence, filesystem
-crawler, Active Memory ingestion, GitHub integration, dependency, AI/LLM
-behavior, code review, or repository mutation.
+The hardening is intentionally small: newest-request-only async state updates,
+client-safe server-error display, exact endpoint presentation, additional
+request-builder self-test coverage, and long token wrapping in inspector cards.
+Snapshot derivation stays in Phase 37K; Git execution and parsing stay in Phase
+37J; transport validation stays in Phase 37L. Phase 37N does not add a watcher,
+polling loop, persistence, filesystem crawler, Active Memory ingestion, GitHub
+integration, dependency, AI/LLM behavior, code review, or repository mutation.
 
 The prior Phase 37G frontend inspector remains implemented as a frontend-only,
 read-only inspector over the Phase 37F context-packet endpoint. Active-state
@@ -91,11 +90,11 @@ them.
 | Phase 37K — Repository Observation Snapshot Service MVP | Implemented | Backend-only request-triggered snapshot service over the Phase 37J adapter and Phase 37I contracts. No watcher, persistence, ingestion, frontend, or mutation. |
 | Phase 37L — Read-Only Repository Observation API Foundation | Implemented | `POST /api/repository-observer/snapshot`: thin read-only API over Phase 37K and the existing `RepositorySnapshot` contract. No persistence, ingestion, frontend, AI/LLM behavior, or mutation. |
 | Phase 37M — Read-Only Repository Observer Frontend Inspector MVP | Implemented | Contextual graph-first dock panel over the Phase 37L endpoint. Renders the backend snapshot contract without watcher, persistence, ingestion, AI review, Git dashboard, or mutation. |
+| Phase 37N — Repository Observer Frontend Integration QA + Hardening | Implemented | Verified and lightly hardened the Phase 37M frontend inspector against the Phase 37L endpoint contract. No backend, schema, dependency, persistence, ingestion, AI review, Git dashboard, or mutation changes. |
 
-After Phase 37M, a conservative follow-on sequence is planned (not yet
+After Phase 37N, a conservative follow-on sequence remains planned (not yet
 authorized): evidence ingestion → contradiction integration → end-to-end QA.
-Each phase remains
-independently scoped and reviewable.
+Each phase remains independently scoped and reviewable.
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
 implementation track.
@@ -271,6 +270,16 @@ implementation track.
   It keeps request state in React only and adds no backend behavior, watcher,
   polling, browser persistence, Active Memory ingestion, AI/LLM behavior, Git
   dashboard, repository mutation, or Phase 36K work.
+- **Phase 37N — Repository Observer Frontend Integration QA + Hardening:**
+  verified the Phase 37M inspector against the Phase 37L request/response
+  contract and made a narrow frontend-only resilience pass. The inspector now
+  ignores stale async responses from older submissions, displays server failures
+  without echoing backend internals, shows the exact `/api` endpoint, wraps long
+  endpoint/path/status tokens more reliably, and extends request-builder
+  self-tests for timestamp preservation and blank timestamp rejection. It adds no
+  backend changes, schema changes, dependency changes, persistence, ingestion,
+  watcher, polling loop, AI review, Git dashboard, repository mutation, or Phase
+  36K work.
 
 `frontend_only_vs_backend_modification` is a contract class but is not
 implemented in Phase 37D because it needs a deterministic path/scope target model
@@ -294,7 +303,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 | Active Memory persistence | Choose a durable medium after contracts, store semantics, contradiction detection, and context packet generation are stable. | Current store is in-memory with serialize/restore only. |
 | Active-state calculation | Derive safe active baselines while preserving unresolved contradictions and missing evidence. | No "newest wins"; unresolved state must stay visible. |
 | Context packet UI | Keep the Phase 37G inspector read-only while future phases decide durable memory and observer boundaries. | The inspector exists and remains stateless over user-supplied records. |
-| Repository observer | Planned in Phase 37H as a read-only evidence provider; Phase 37I implements backend contract/schema types, Phase 37J implements the deterministic read-only Git adapter foundation, Phase 37K implements the backend-only snapshot service MVP, Phase 37L exposes a thin read-only snapshot API, and Phase 37M adds a contextual frontend inspector. Keep evidence scoped and human-reviewable. | No watcher, polling loop, persistence, ingestion, filesystem scanner, AI review, Git dashboard, or automatic repository mutation exists. |
+| Repository observer | Planned in Phase 37H as a read-only evidence provider; Phase 37I implements backend contract/schema types, Phase 37J implements the deterministic read-only Git adapter foundation, Phase 37K implements the backend-only snapshot service MVP, Phase 37L exposes a thin read-only snapshot API, Phase 37M adds a contextual frontend inspector, and Phase 37N hardens that inspector's endpoint integration. Keep evidence scoped and human-reviewable. | No watcher, polling loop, persistence, ingestion, filesystem scanner, AI review, Git dashboard, or automatic repository mutation exists. |
 | AI/LLM integration | Consider only after deterministic trust boundaries and inspection surfaces are stable. | No AI truth arbitration, autonomous resolution, or autonomous action. |
 | Intelligence report expansion | Source coverage, query persistence, and richer provenance/error states. | Read-only derivation over real store data. |
 | Spatial interaction | Resume Phase 36K when the project chooses to return to live gesture tuning. | No gesture completion claim without live evidence. |
@@ -318,7 +327,8 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
   explicitly supplied records, backend-only Repository Observer contract types,
   a deterministic read-only Git adapter foundation, and a backend-only
   repository observation snapshot service with a thin read-only API and
-  contextual frontend inspector. It does not yet have committed persistence,
+  contextual frontend inspector, plus a frontend integration QA/hardening pass
+  over that inspector. It does not yet have committed persistence,
   write endpoints, ingestion, active-state
   calculation, evidence resolution, AI
   interpretation, action authorization, autonomous mutation, or automatic

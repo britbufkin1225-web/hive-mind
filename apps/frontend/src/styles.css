@@ -6851,6 +6851,7 @@ body,
 .repo-count {
   display: inline-flex;
   align-items: center;
+  min-width: 0;
   flex: none;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
@@ -6862,6 +6863,7 @@ body,
   padding: 0.28rem 0.45rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  overflow-wrap: anywhere;
 }
 
 .repo-chip-success {
@@ -6922,6 +6924,7 @@ body,
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 0.55rem;
   margin-bottom: 0.65rem;
 }
