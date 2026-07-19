@@ -755,15 +755,19 @@ roadmap requires):
 - **Phase 37L — Repository Observation API Foundation** — a thin, read-only
   endpoint over the snapshot service (mirroring the Phase 37F pattern); no
   persistence.
-- **Phase 37M — Active Memory Repository Evidence Ingestion** — a separate
-  ingestion decision that turns snapshots into candidate records/evidence in the
-  store; owned outside the observer.
-- **Phase 37N — Repository Contradiction Integration** — feed observer evidence
-  into the Phase 37D detector for the deterministic §21-eligible contradictions.
-- **Phase 37O — Read-Only Repository Observer Frontend Inspector** — a read-only
-  inspector over the observation snapshot (mirroring the Phase 37G pattern).
-- **Phase 37P — Repository Observer End-to-End QA and Evidence** — deterministic,
-  hermetic end-to-end validation and evidence.
+- **Phase 37M — Read-Only Repository Observer Frontend Inspector** — implemented
+  a read-only inspector over the observation snapshot (mirroring the Phase 37G
+  pattern).
+- **Phase 37N — Repository Observer Frontend Integration QA + Hardening** —
+  verified and lightly hardened the Phase 37M inspector.
+- **Phase 37O — Deterministic Repository Drift Analysis MVP** — implemented
+  backend-only read-only working-state drift analysis from the current `HEAD`
+  baseline, without persistence or ingestion.
+- **Phase 37P and later — Active Memory Repository Evidence Ingestion,
+  contradiction integration, and end-to-end QA** — separate future decisions
+  that turn observer output into candidate records/evidence, feed eligible
+  contradictions into the Phase 37D detector, and validate the full path; owned
+  outside the observer.
 
 Each phase remains independently scoped and reviewable, and none is authorized by
 this planning phase.

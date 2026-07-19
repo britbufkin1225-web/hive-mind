@@ -23,6 +23,10 @@ from app.models.repository_observer import (
     OverflowLimitKind,
     OverflowMetadata,
     PathRelationship,
+    RepositoryDriftAnalysis,
+    RepositoryDriftFile,
+    RepositoryDriftStatus,
+    RepositoryDriftSummary,
     RepositoryEvidence,
     RepositoryIdentity,
     RepositoryIdentityStatus,
@@ -252,6 +256,7 @@ def test_enum_wire_values_cover_contract_vocabularies() -> None:
         "renamed",
         "copied",
         "untracked",
+        "type_changed",
         "conflicted",
         "unchanged",
         "unknown",
@@ -474,3 +479,186 @@ def test_stable_defaults_and_deterministic_serialization() -> None:
         "limitations_by_category_id",
         "overflow_by_limit_kind_id",
     ]
+
+
+def _drift_evidence() -> RepositoryEvidence:
+    return RepositoryEvidence(
+        evidence_id="evidence-git-status",
+        category=EvidenceCategory.GIT_METADATA,
+        authority=EvidenceAuthority.DIRECT_GIT_OUTPUT,
+        source="git status --porcelain=v2 -z --branch",
+        summary="Bounded Git status evidence.",
+        bounded_excerpt="# branch.oid abc",
+        excerpt_limit=512,
+        captured_at=FIXED_TS,
+    )
+
+
+def test_valid_clean_repository_drift_analysis_contract() -> None:
+    drift = RepositoryDriftAnalysis(
+        drift_id="drift-clean",
+        repository_identity=_identity(RepositoryIdentityStatus.VERIFIED),
+        observed_at=FIXED_TS,
+        baseline_reference="HEAD",
+        baseline_commit_hash="abc",
+        drift_status=RepositoryDriftStatus.CLEAN,
+        summary=RepositoryDriftSummary(),
+        evidence=[_drift_evidence()],
+        completeness=SnapshotCompleteness.COMPLETE,
+    )
+
+    assert drift.read_only is True
+    assert drift.summary.total_changed_files == 0
+    assert drift.files == []
+    assert drift.model_dump(mode="json")["drift_status"] == "clean"
+
+
+def test_valid_dirty_repository_drift_analysis_contract() -> None:
+    drift_file = RepositoryDriftFile(
+        file_id="drift-file-docs",
+        change_kind=FileChangeKind.MODIFIED,
+        current_path="docs/roadmap.md",
+        normalized_path="docs/roadmap.md",
+        staged=False,
+        unstaged=True,
+        tracked=True,
+        evidence_ids=["evidence-git-status"],
+    )
+    drift = RepositoryDriftAnalysis(
+        drift_id="drift-dirty",
+        repository_identity=_identity(RepositoryIdentityStatus.VERIFIED),
+        observed_at=FIXED_TS,
+        baseline_reference="HEAD",
+        baseline_commit_hash="abc",
+        drift_status=RepositoryDriftStatus.DRIFTED,
+        summary=RepositoryDriftSummary(
+            total_changed_files=1,
+            retained_file_count=1,
+            unstaged_count=1,
+            modified_count=1,
+        ),
+        files=[drift_file],
+        evidence=[_drift_evidence()],
+        completeness=SnapshotCompleteness.COMPLETE,
+    )
+
+    assert drift.files[0].change_kind is FileChangeKind.MODIFIED
+    assert drift.summary.modified_count == 1
+
+
+def test_drift_file_rejects_unsafe_paths_and_missing_evidence() -> None:
+    with pytest.raises(ValidationError):
+        RepositoryDriftFile(
+            file_id="drift-unsafe",
+            change_kind=FileChangeKind.MODIFIED,
+            current_path="../secret.md",
+            normalized_path="../secret.md",
+            unstaged=True,
+            tracked=True,
+            evidence_ids=["evidence-git-status"],
+        )
+    with pytest.raises(ValidationError):
+        RepositoryDriftFile(
+            file_id="drift-no-evidence",
+            change_kind=FileChangeKind.MODIFIED,
+            current_path="docs/file.md",
+            normalized_path="docs/file.md",
+            unstaged=True,
+            tracked=True,
+            evidence_ids=[],
+        )
+
+
+def test_drift_rejects_negative_or_impossible_summary_counts() -> None:
+    with pytest.raises(ValidationError):
+        RepositoryDriftSummary(total_changed_files=-1)
+    with pytest.raises(ValidationError):
+        RepositoryDriftSummary(
+            total_changed_files=1,
+            retained_file_count=2,
+            modified_count=2,
+        )
+    with pytest.raises(ValidationError):
+        RepositoryDriftSummary(
+            total_changed_files=1,
+            retained_file_count=1,
+            modified_count=0,
+        )
+
+
+def test_drift_rejects_malformed_rename_copy_relationships_and_contradictions() -> None:
+    with pytest.raises(ValidationError):
+        RepositoryDriftFile(
+            file_id="drift-rename",
+            change_kind=FileChangeKind.RENAMED,
+            current_path="docs/new.md",
+            normalized_path="docs/new.md",
+            staged=True,
+            tracked=True,
+            evidence_ids=["evidence-git-status"],
+        )
+    with pytest.raises(ValidationError):
+        RepositoryDriftFile(
+            file_id="drift-contradictory",
+            change_kind=FileChangeKind.UNTRACKED,
+            current_path="docs/new.md",
+            normalized_path="docs/new.md",
+            staged=True,
+            untracked=True,
+            tracked=False,
+            evidence_ids=["evidence-git-status"],
+        )
+
+
+def test_drift_analysis_rejects_missing_or_partial_evidence_and_bad_status() -> None:
+    drift_file = RepositoryDriftFile(
+        file_id="drift-file",
+        change_kind=FileChangeKind.MODIFIED,
+        current_path="docs/file.md",
+        normalized_path="docs/file.md",
+        unstaged=True,
+        tracked=True,
+        evidence_ids=["missing-evidence"],
+    )
+    with pytest.raises(ValidationError):
+        RepositoryDriftAnalysis(
+            drift_id="drift-bad-evidence",
+            repository_identity=_identity(),
+            observed_at=FIXED_TS,
+            baseline_reference="HEAD",
+            drift_status=RepositoryDriftStatus.DRIFTED,
+            summary=RepositoryDriftSummary(
+                total_changed_files=1,
+                retained_file_count=1,
+                unstaged_count=1,
+                modified_count=1,
+            ),
+            files=[drift_file],
+            evidence=[_drift_evidence()],
+        )
+    with pytest.raises(ValidationError):
+        RepositoryDriftAnalysis(
+            drift_id="drift-clean-with-files",
+            repository_identity=_identity(),
+            observed_at=FIXED_TS,
+            baseline_reference="HEAD",
+            drift_status=RepositoryDriftStatus.CLEAN,
+            summary=RepositoryDriftSummary(
+                total_changed_files=1,
+                retained_file_count=1,
+                unstaged_count=1,
+                modified_count=1,
+            ),
+            files=[
+                RepositoryDriftFile(
+                    file_id="drift-file",
+                    change_kind=FileChangeKind.MODIFIED,
+                    current_path="docs/file.md",
+                    normalized_path="docs/file.md",
+                    unstaged=True,
+                    tracked=True,
+                    evidence_ids=["evidence-git-status"],
+                )
+            ],
+            evidence=[_drift_evidence()],
+        )

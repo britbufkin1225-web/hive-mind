@@ -85,3 +85,40 @@ class RepositoryObservationSnapshotRequest(BaseModel):
                 "scope.max_snapshot_bytes must not exceed the request max_snapshot_bytes bound"
             )
         return self
+
+
+class RepositoryDriftAnalysisRequest(BaseModel):
+    """Structured input for one deterministic, read-only repository drift analysis."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    repository_root: str = Field(max_length=MAX_REPOSITORY_OBSERVER_PATH_LENGTH)
+    observed_at: datetime
+    baseline_reference: str = Field(default="HEAD", max_length=128)
+    max_file_count: int = Field(
+        default=200,
+        ge=0,
+        le=MAX_REPOSITORY_OBSERVER_COLLECTION_ITEMS,
+    )
+    max_snapshot_bytes: int = Field(
+        default=MAX_REPOSITORY_OBSERVER_API_SNAPSHOT_BYTES,
+        ge=0,
+        le=MAX_REPOSITORY_OBSERVER_API_SNAPSHOT_BYTES,
+    )
+
+    @field_validator("repository_root")
+    @classmethod
+    def _repository_root_is_safe_absolute_path(cls, value: str) -> str:
+        return RepositoryObservationSnapshotRequest._repository_root_is_safe_absolute_path(
+            value
+        )
+
+    @field_validator("baseline_reference")
+    @classmethod
+    def _baseline_reference_is_supported(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("baseline_reference must not be empty")
+        reference = value.strip()
+        if reference != "HEAD":
+            raise ValueError("only the HEAD baseline is supported")
+        return reference

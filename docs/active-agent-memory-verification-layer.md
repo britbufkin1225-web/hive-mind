@@ -1,6 +1,6 @@
 # Active Agent Memory + Verification Layer — Reusable Reference
 
-**Status:** Architecture reference with partial implementation through Phase 37N.
+**Status:** Architecture reference with partial implementation through Phase 37O.
 Phase 37B implements the `active-memory.v1` backend/frontend contracts, Phase 37C
 implements a deterministic backend-only in-memory store, and Phase 37D implements
 a deterministic backend-only read-only contradiction-detection MVP. Phase 37E
@@ -17,10 +17,11 @@ foundation over those contracts (see §19). Phase 37K adds a backend-only
 request-triggered repository observation snapshot service MVP over that adapter
 (see §20). Phase 37L exposes that service through a thin read-only HTTP API
 (see §21). Phase 37M adds a frontend-only read-only contextual inspector over
-that endpoint (see §22), and Phase 37N verifies and hardens that frontend
-integration (see §23), but still implements no watcher, polling loop,
-persistence, ingestion, evidence resolver, AI/LLM interpretation, Git dashboard,
-or autonomous mutation/action execution.
+that endpoint (see §22), Phase 37N verifies and hardens that frontend
+integration (see §23), and Phase 37O adds backend-only deterministic repository
+drift analysis from the current `HEAD` baseline (see §24), but still implements
+no watcher, polling loop, persistence, ingestion, evidence resolver, AI/LLM
+interpretation, Git dashboard, or autonomous mutation/action execution.
 **Purpose:** a durable, contract-facing distillation of the vocabulary, record
 types, state axes, evidence hierarchy, and contradiction classes for the Active
 Agent Memory + Verification Layer, so later phases can cite a stable reference
@@ -169,7 +170,8 @@ Memory Frontend Inspector (implemented) → `37H` Repository Observer planning
 (implemented; see §20) → `37L` Read-Only Repository Observation API Foundation
 (implemented; see §21) → `37M` Read-Only Repository Observer Frontend Inspector
 MVP (implemented; see §22) → `37N` Repository Observer Frontend Integration QA
-and Hardening (implemented; see §23). This is a **Track 2 —
+and Hardening (implemented; see §23) → `37O` Deterministic Repository Drift
+Analysis MVP (implemented; see §24). This is a **Track 2 —
 Agent Intelligence Infrastructure** effort, parallel to and independent of
 **Track 1 — Spatial Interaction** (whose active implementation phase, **36K**,
 is **paused — not completed**).
@@ -889,3 +891,46 @@ endpoint, request schema, or snapshot contract behavior.
   evidence resolver, AI/LLM interpretation, Git dashboard, repository mutation,
   graph mutation, Obsidian behavior, MediaPipe behavior, dependency change, or
   Phase 36K work.
+
+## 24. Phase 37O — deterministic repository drift analysis MVP
+
+Phase 37O adds a backend-only deterministic drift-analysis service in
+`apps/backend/app/services/repository_drift_analysis.py`, drift-specific
+`repo-observer.v1` contracts in
+`apps/backend/app/models/repository_observer.py`, request schema in
+`apps/backend/app/models/repository_observer_api.py`, and a thin read-only
+endpoint in `apps/backend/app/routers/repository_observer.py`.
+
+The endpoint is **`POST /api/repository-observer/drift`**. The request requires
+a local absolute `repository_root` and caller-supplied `observed_at`, supports a
+bounded `max_file_count` and `max_snapshot_bytes`, and accepts only the current
+`HEAD` baseline. Other baseline references are rejected rather than treated as
+arbitrary Git command fragments or history-browsing instructions.
+
+The response is a typed `RepositoryDriftAnalysis` result. It includes repository
+identity, `baseline_reference`, resolved `baseline_commit_hash` when available,
+drift status, summary counts, bounded file-level drift records, staged versus
+unstaged flags, untracked state, old/current paths for Git-reported rename/copy
+records, direct-Git evidence, warnings, limitations, omitted paths, overflow,
+deterministic ordering, completeness, and `read_only`.
+
+Supported deterministic classifications are `added`, `modified`, `deleted`,
+`renamed`, `copied`, `untracked`, `type_changed`, `conflicted`, and `unknown`.
+Rename and copy certainty comes only from porcelain-v2 Git status relationship
+records; the service does not infer relationships from filename similarity.
+Repositories with no HEAD commit report the unsupported baseline explicitly.
+
+The drift analysis is metadata-only and read-only. It uses the existing
+allowlisted Git adapter commands, executes no shell-interpolated command string,
+reads no file contents, executes no hooks or repository-controlled scripts, and
+does not run checkout, reset, clean, stash, add, commit, fetch, pull, push,
+merge, rebase, or repair operations. Expected failures are mapped to bounded,
+client-safe API errors, and unexpected failures use the generic internal-error
+shape without exposing tracebacks, commands, credentials, host paths, or
+exception internals.
+
+Phase 37O does not persist observations, create Active Memory records, generate
+contradictions, integrate pre-action packets, add frontend UI, add dependencies,
+contact GitHub or remotes, mutate graph/source data, or resume Phase 36K. Active
+Memory verification integration remains deferred to a later explicitly scoped
+phase.

@@ -63,6 +63,7 @@ class FileChangeKind(StrEnum):
     RENAMED = "renamed"
     COPIED = "copied"
     UNTRACKED = "untracked"
+    TYPE_CHANGED = "type_changed"
     CONFLICTED = "conflicted"
     UNCHANGED = "unchanged"
     UNKNOWN = "unknown"
@@ -165,6 +166,14 @@ class SnapshotCompleteness(StrEnum):
     UNAVAILABLE = "unavailable"
     INVALID = "invalid"
     REJECTED = "rejected"
+
+
+class RepositoryDriftStatus(StrEnum):
+    CLEAN = "clean"
+    DRIFTED = "drifted"
+    PARTIAL = "partial"
+    UNSUPPORTED = "unsupported"
+    UNAVAILABLE = "unavailable"
 
 
 def _clean_identifier(value: str, field_name: str) -> str:
@@ -535,4 +544,171 @@ class RepositorySnapshot(BaseModel):
             raise ValueError("complete snapshots cannot contain truncation metadata")
         if has_partial_overflow and self.completeness is not SnapshotCompleteness.PARTIAL:
             raise ValueError("partial overflow requires partial snapshot completeness")
+        return self
+
+
+class RepositoryDriftSummary(BaseModel):
+    total_changed_files: int = Field(default=0, ge=0)
+    retained_file_count: int = Field(default=0, ge=0)
+    staged_count: int = Field(default=0, ge=0)
+    unstaged_count: int = Field(default=0, ge=0)
+    untracked_count: int = Field(default=0, ge=0)
+    conflicted_count: int = Field(default=0, ge=0)
+    added_count: int = Field(default=0, ge=0)
+    modified_count: int = Field(default=0, ge=0)
+    deleted_count: int = Field(default=0, ge=0)
+    renamed_count: int = Field(default=0, ge=0)
+    copied_count: int = Field(default=0, ge=0)
+    type_changed_count: int = Field(default=0, ge=0)
+    unknown_count: int = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def _counts_are_possible(self) -> "RepositoryDriftSummary":
+        if self.retained_file_count > self.total_changed_files:
+            raise ValueError("retained_file_count cannot exceed total_changed_files")
+        classified_total = (
+            self.added_count
+            + self.modified_count
+            + self.deleted_count
+            + self.renamed_count
+            + self.copied_count
+            + self.untracked_count
+            + self.conflicted_count
+            + self.type_changed_count
+            + self.unknown_count
+        )
+        if classified_total != self.retained_file_count:
+            raise ValueError("classification counts must equal retained_file_count")
+        return self
+
+
+class RepositoryDriftFile(BaseModel):
+    file_id: str = Field(max_length=MAX_REPOSITORY_OBSERVER_ID_LENGTH)
+    change_kind: FileChangeKind
+    current_path: str = Field(max_length=MAX_REPOSITORY_OBSERVER_PATH_LENGTH)
+    normalized_path: str = Field(max_length=MAX_REPOSITORY_OBSERVER_PATH_LENGTH)
+    old_path: str | None = Field(
+        default=None, max_length=MAX_REPOSITORY_OBSERVER_PATH_LENGTH
+    )
+    staged: bool = False
+    unstaged: bool = False
+    untracked: bool = False
+    tracked: bool | None = None
+    evidence_ids: list[str] = Field(
+        default_factory=list, min_length=1, max_length=MAX_REPOSITORY_OBSERVER_COLLECTION_ITEMS
+    )
+    warning_ids: list[str] = Field(
+        default_factory=list, max_length=MAX_REPOSITORY_OBSERVER_COLLECTION_ITEMS
+    )
+
+    @field_validator("file_id")
+    @classmethod
+    def _drift_file_id_not_blank(cls, value: str) -> str:
+        return _clean_identifier(value, "file_id")
+
+    @field_validator("current_path", "normalized_path", "old_path")
+    @classmethod
+    def _drift_paths_are_relative(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_relative_path(value)
+
+    @model_validator(mode="after")
+    def _drift_file_state_is_consistent(self) -> "RepositoryDriftFile":
+        if self.change_kind in (FileChangeKind.RENAMED, FileChangeKind.COPIED):
+            if self.old_path is None:
+                raise ValueError("renamed or copied drift records require old_path")
+            if self.old_path == self.current_path:
+                raise ValueError("renamed or copied drift records require distinct paths")
+        elif self.old_path is not None:
+            raise ValueError("old_path is only valid for renamed or copied drift records")
+
+        if self.untracked:
+            if self.change_kind is not FileChangeKind.UNTRACKED:
+                raise ValueError("untracked state requires untracked change kind")
+            if self.staged or self.unstaged or self.tracked:
+                raise ValueError("untracked drift cannot be staged, unstaged, or tracked")
+        else:
+            if self.change_kind is FileChangeKind.UNTRACKED:
+                raise ValueError("untracked change kind requires untracked state")
+            if not self.staged and not self.unstaged:
+                raise ValueError("tracked drift requires staged or unstaged evidence")
+        return self
+
+
+class RepositoryDriftAnalysis(BaseModel):
+    drift_id: str = Field(max_length=MAX_REPOSITORY_OBSERVER_ID_LENGTH)
+    contract_version: str = REPOSITORY_OBSERVER_CONTRACT_VERSION
+    repository_identity: RepositoryIdentity
+    observed_at: datetime
+    observer_version: str = REPOSITORY_OBSERVER_CONTRACT_VERSION
+    baseline_reference: str = Field(max_length=MAX_REPOSITORY_OBSERVER_LABEL_LENGTH)
+    baseline_commit_hash: str | None = Field(
+        default=None, max_length=MAX_REPOSITORY_OBSERVER_ID_LENGTH
+    )
+    drift_status: RepositoryDriftStatus = RepositoryDriftStatus.UNAVAILABLE
+    summary: RepositoryDriftSummary = Field(default_factory=RepositoryDriftSummary)
+    files: list[RepositoryDriftFile] = Field(
+        default_factory=list, max_length=MAX_REPOSITORY_OBSERVER_COLLECTION_ITEMS
+    )
+    evidence: list[RepositoryEvidence] = Field(
+        default_factory=list, max_length=MAX_REPOSITORY_OBSERVER_COLLECTION_ITEMS
+    )
+    warnings: list[ObserverWarning] = Field(
+        default_factory=list, max_length=MAX_REPOSITORY_OBSERVER_COLLECTION_ITEMS
+    )
+    limitations: list[ObserverLimitation] = Field(
+        default_factory=list, max_length=MAX_REPOSITORY_OBSERVER_COLLECTION_ITEMS
+    )
+    omitted_paths: list[str] = Field(default_factory=list)
+    overflow: list[OverflowMetadata] = Field(
+        default_factory=list, max_length=MAX_REPOSITORY_OBSERVER_COLLECTION_ITEMS
+    )
+    deterministic_ordering: list[str] = Field(
+        default_factory=lambda: [
+            "files_by_normalized_path",
+            "evidence_by_authority_category_id",
+            "warnings_by_category_id",
+            "limitations_by_category_id",
+            "overflow_by_limit_kind_id",
+        ]
+    )
+    completeness: SnapshotCompleteness = SnapshotCompleteness.UNAVAILABLE
+    read_only: bool = True
+
+    @field_validator("drift_id", "contract_version", "observer_version", "baseline_reference")
+    @classmethod
+    def _drift_required_text_not_blank(cls, value: str) -> str:
+        return _clean_identifier(value, "drift analysis field")
+
+    @field_validator("omitted_paths")
+    @classmethod
+    def _drift_omitted_paths_are_relative(cls, value: list[str]) -> list[str]:
+        return [_validate_relative_path(item) for item in value]
+
+    @model_validator(mode="after")
+    def _drift_analysis_is_consistent(self) -> "RepositoryDriftAnalysis":
+        if self.summary.retained_file_count != len(self.files):
+            raise ValueError("summary retained_file_count must match files length")
+        file_evidence = {evidence_id for item in self.files for evidence_id in item.evidence_ids}
+        available_evidence = {item.evidence_id for item in self.evidence}
+        if not file_evidence.issubset(available_evidence):
+            raise ValueError("file drift evidence_ids must reference included evidence")
+
+        has_truncation = any(item.truncated for item in self.overflow)
+        has_partial_overflow = any(item.snapshot_partial for item in self.overflow)
+        if self.completeness is SnapshotCompleteness.COMPLETE and (
+            has_truncation or has_partial_overflow
+        ):
+            raise ValueError("complete drift analyses cannot contain truncation metadata")
+        if has_partial_overflow and self.completeness is not SnapshotCompleteness.PARTIAL:
+            raise ValueError("partial overflow requires partial drift completeness")
+        if self.drift_status is RepositoryDriftStatus.CLEAN and (
+            self.files or self.summary.total_changed_files > 0
+        ):
+            raise ValueError("clean drift status cannot include changed files")
+        if self.drift_status is RepositoryDriftStatus.DRIFTED and (
+            self.summary.total_changed_files == 0
+        ):
+            raise ValueError("drifted status requires at least one changed file")
         return self
