@@ -169,6 +169,29 @@ def test_no_commit_repository_reports_unsupported_baseline(tmp_path: Path) -> No
     assert any(w.warning_id == "warning-baseline-head-unavailable" for w in drift.warnings)
 
 
+def test_no_commit_repository_with_overflow_stays_consistent(tmp_path: Path) -> None:
+    repo = tmp_path / "empty-overflow"
+    repo.mkdir()
+    subprocess.run(["git", "init", str(repo)], shell=False, check=True, capture_output=True)
+    for index in range(5):
+        _write(repo / f"file_{index:02d}.md", "x\n")
+
+    drift = analyze_repository_drift(
+        repository_path=repo,
+        observed_at=FIXED_TS,
+        max_file_count=2,
+        limits=GitAdapterLimits(max_file_observations=2),
+    )
+
+    assert drift.drift_status is RepositoryDriftStatus.UNSUPPORTED
+    assert drift.baseline_commit_hash is None
+    assert drift.files == []
+    assert drift.summary.total_changed_files == 0
+    assert drift.overflow == []
+    assert drift.completeness is SnapshotCompleteness.UNAVAILABLE
+    assert any(w.warning_id == "warning-baseline-head-unavailable" for w in drift.warnings)
+
+
 def test_invalid_path_and_non_repository_fail_safely(tmp_path: Path) -> None:
     with pytest.raises(RepositoryDriftPathError):
         analyze_repository_drift(repository_path="relative/repo", observed_at=FIXED_TS)

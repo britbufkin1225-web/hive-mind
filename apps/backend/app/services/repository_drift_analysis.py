@@ -150,7 +150,15 @@ class RepositoryDriftAnalysisService:
                 warnings=_ordered_warnings(warnings),
                 limitations=limitations,
                 omitted_paths=[],
-                overflow=snapshot.overflow,
+                # An unborn repository yields an UNSUPPORTED result with no drift
+                # files and total_changed_files == 0. Snapshot-observation overflow
+                # (partial file-count/byte truncation) describes a snapshot we do
+                # not surface here; forwarding it both contradicts the zero-file
+                # summary and violates the model's "partial overflow requires
+                # PARTIAL completeness" invariant (with UNAVAILABLE completeness).
+                # The truncation/limit signal remains reported via the forwarded
+                # snapshot warnings.
+                overflow=[],
                 completeness=SnapshotCompleteness.UNAVAILABLE,
             )
 
