@@ -778,6 +778,21 @@ export interface RepositoryObservationSnapshotRequest {
   scope?: RepositoryObserverScope | null;
 }
 
+export interface RepositoryDriftAnalysisRequest {
+  repository_root: string;
+  observed_at: string;
+  baseline_reference: "HEAD";
+  max_file_count: number;
+  max_snapshot_bytes: number;
+}
+
+export type RepositoryDriftStatus =
+  | "clean"
+  | "drifted"
+  | "partial"
+  | "unsupported"
+  | "unavailable";
+
 export interface WorkingTreeStatus {
   states: WorkingTreeState[];
   staged_count: number;
@@ -864,6 +879,57 @@ export interface RepositorySnapshot {
   commit: string | null;
   working_tree: WorkingTreeStatus;
   changed_files: FileObservationSummary[];
+  evidence: RepositoryEvidence[];
+  warnings: ObserverWarning[];
+  limitations: ObserverLimitation[];
+  omitted_paths: string[];
+  overflow: OverflowMetadata[];
+  deterministic_ordering: string[];
+  completeness: SnapshotCompleteness;
+  read_only: boolean;
+}
+
+export interface RepositoryDriftSummary {
+  total_changed_files: number;
+  retained_file_count: number;
+  staged_count: number;
+  unstaged_count: number;
+  untracked_count: number;
+  conflicted_count: number;
+  added_count: number;
+  modified_count: number;
+  deleted_count: number;
+  renamed_count: number;
+  copied_count: number;
+  type_changed_count: number;
+  unknown_count: number;
+}
+
+export interface RepositoryDriftFile {
+  file_id: string;
+  change_kind: FileChangeKind;
+  current_path: string;
+  normalized_path: string;
+  old_path: string | null;
+  staged: boolean;
+  unstaged: boolean;
+  untracked: boolean;
+  tracked: boolean | null;
+  evidence_ids: string[];
+  warning_ids: string[];
+}
+
+export interface RepositoryDriftAnalysis {
+  drift_id: string;
+  contract_version: string;
+  repository_identity: RepositoryIdentity;
+  observed_at: string;
+  observer_version: string;
+  baseline_reference: string;
+  baseline_commit_hash: string | null;
+  drift_status: RepositoryDriftStatus;
+  summary: RepositoryDriftSummary;
+  files: RepositoryDriftFile[];
   evidence: RepositoryEvidence[];
   warnings: ObserverWarning[];
   limitations: ObserverLimitation[];

@@ -1,5 +1,6 @@
 import {
   buildRepositoryObserverSnapshotRequest,
+  buildRepositoryDriftAnalysisRequest,
   REPOSITORY_OBSERVER_MAX_FILE_COUNT,
   REPOSITORY_OBSERVER_MAX_SNAPSHOT_BYTES,
 } from "./repositoryObserverRequest.ts";
@@ -40,6 +41,25 @@ assert(
   !Object.prototype.hasOwnProperty.call(valid.request, "scope"),
   "scope should not be sent when the MVP does not expose it",
 );
+
+const validDrift = buildRepositoryDriftAnalysisRequest({
+  repositoryRoot: " C:\\Users\\britb\\Documents\\hive-mind ",
+  observedAt: "2026-07-18T12:00:00.000Z",
+  maxFileCount: 25,
+  maxSnapshotBytes: 4096,
+});
+assert(validDrift.request !== null, "valid drift request should serialize");
+assertEqual(validDrift.request?.baseline_reference, "HEAD", "drift baseline should be HEAD");
+assertEqual(validDrift.request?.max_file_count, 25, "drift file limit should serialize");
+
+const invalidDrift = buildRepositoryDriftAnalysisRequest({
+  repositoryRoot: "relative/repo",
+  observedAt: "2026-07-18T12:00:00.000Z",
+  maxFileCount: 25,
+  maxSnapshotBytes: 4096,
+});
+assert(invalidDrift.request === null, "invalid drift path should fail shared validation");
+assert(invalidDrift.error !== null, "invalid drift path should have a safe error");
 
 // Boundary minimums (0/0) and maximums must be accepted, not rejected — the
 // backend bounds are inclusive (ge=0, le=MAX), so the frontend must not tighten

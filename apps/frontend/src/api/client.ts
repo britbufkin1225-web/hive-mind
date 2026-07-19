@@ -6,6 +6,8 @@ import type {
   ObsidianImportRequest,
   ObsidianImportSummary,
   RepositoryObservationSnapshotRequest,
+  RepositoryDriftAnalysis,
+  RepositoryDriftAnalysisRequest,
   RepositorySnapshot,
   SourceRegistryListResponse,
 } from "../types/api";
@@ -120,6 +122,8 @@ export const apiClient = {
     post<ContextPacket>("/active-memory/context-packet", request),
   observeRepositorySnapshot: (request: RepositoryObservationSnapshotRequest) =>
     post<RepositorySnapshot>("/repository-observer/snapshot", request),
+  analyzeRepositoryDrift: (request: RepositoryDriftAnalysisRequest) =>
+    post<RepositoryDriftAnalysis>("/repository-observer/drift", request),
   importObsidianVault: (request: ObsidianImportRequest) =>
     post<ObsidianImportSummary>("/obsidian/import", request),
 };

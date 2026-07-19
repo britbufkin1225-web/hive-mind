@@ -934,3 +934,25 @@ contradictions, integrate pre-action packets, add frontend UI, add dependencies,
 contact GitHub or remotes, mutate graph/source data, or resume Phase 36K. Active
 Memory verification integration remains deferred to a later explicitly scoped
 phase.
+
+## 25. Phase 37P — repository drift API + frontend inspector integration
+
+Phase 37P is implemented locally and pending independent audit. It preserves
+the Phase 37O `RepositoryDriftAnalysisService`, transport request, and result
+model, and integrates the existing `POST /api/repository-observer/drift` route
+into the Repository Observer frontend inspector.
+
+Drift analysis remains an explicit human action. The inspector reports the
+actual service fields: drift status, baseline and current repository identity,
+category counts, bounded file-level observations, direct evidence, warnings,
+limitations, completeness, omitted paths, and overflow. Shared request
+validation keeps snapshot and drift payload bounds aligned, while request
+sequencing prevents an older asynchronous response from overwriting a newer
+repository request.
+
+The workflow is deterministic, bounded, metadata-only, and read-only. It adds
+no persistence, watcher, polling loop, background monitoring, repository
+mutation, remote Git operation, Active Memory ingestion, AI/LLM interpretation,
+or new dependency. Phase 36K remains paused and untouched. The likely next
+continuation is Phase 38A — Deterministic Active Project State + Status Manifest
+MVP, which remains planned only.

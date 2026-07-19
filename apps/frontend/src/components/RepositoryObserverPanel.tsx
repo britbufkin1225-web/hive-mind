@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { ApiClientError, apiClient } from "../api/client";
 import {
   buildRepositoryObserverSnapshotRequest,
+  buildRepositoryDriftAnalysisRequest,
   REPOSITORY_OBSERVER_MAX_FILE_COUNT,
   REPOSITORY_OBSERVER_MAX_SNAPSHOT_BYTES,
 } from "../lib/repositoryObserverRequest";
@@ -10,11 +11,14 @@ import type {
   ObserverLimitation,
   ObserverWarning,
   OverflowMetadata,
+  RepositoryDriftAnalysis,
+  RepositoryDriftFile,
   RepositoryEvidence,
   RepositorySnapshot,
 } from "../types/api";
 
 type SnapshotState = "idle" | "loading" | "success" | "error";
+type DriftState = "idle" | "analyzing" | "success" | "error";
 type ErrorKind =
   | "validation"
   | "invalid_root"
@@ -77,6 +81,15 @@ function hasPartialOrTruncatedSnapshot(snapshot: RepositorySnapshot): boolean {
     snapshot.evidence.some(
       (evidence) => evidence.truncation_state !== "not_truncated",
     )
+  );
+}
+
+function hasPartialOrTruncatedDrift(drift: RepositoryDriftAnalysis): boolean {
+  return (
+    drift.drift_status === "partial" ||
+    drift.completeness !== "complete" ||
+    drift.overflow.some((item) => item.truncated || item.snapshot_partial) ||
+    drift.evidence.some((item) => item.truncation_state !== "not_truncated")
   );
 }
 
@@ -450,6 +463,112 @@ function SnapshotInspector({
   );
 }
 
+function DriftFileCard({ file }: { file: RepositoryDriftFile }) {
+  return (
+    <li className="repo-file-card">
+      <div className="repo-card-head">
+        <code>{file.current_path}</code>
+        <span className="repo-chip">{file.change_kind}</span>
+      </div>
+      <KeyValueGrid
+        items={[
+          ["Normalized path", file.normalized_path],
+          ["Prior path", display(file.old_path)],
+          ["Tracked", yesNo(file.tracked)],
+          ["Staged", yesNo(file.staged)],
+          ["Unstaged", yesNo(file.unstaged)],
+          ["Untracked", yesNo(file.untracked)],
+          ["Evidence IDs", joinList(file.evidence_ids)],
+          ["Warning IDs", joinList(file.warning_ids)],
+        ]}
+      />
+    </li>
+  );
+}
+
+function DriftInspector({
+  drift,
+  submittedRoot,
+}: {
+  drift: RepositoryDriftAnalysis;
+  submittedRoot: string;
+}) {
+  const partial = hasPartialOrTruncatedDrift(drift);
+  const summary = drift.summary;
+  return (
+    <div className="repo-result">
+      <section className="repo-section">
+        <h3>Drift Status</h3>
+        <div className="repo-badge-row" aria-label="Drift analysis status">
+          <span className={drift.drift_status === "clean" ? "repo-chip repo-chip-success" : "repo-chip repo-chip-warn"}>
+            {drift.drift_status === "clean" ? "No detected drift" : `Drift ${drift.drift_status}`}
+          </span>
+          <span className={partial ? "repo-chip repo-chip-warn" : "repo-chip"}>
+            {partial ? "Partial or truncated" : "Complete analysis"}
+          </span>
+          <span className="repo-chip">{drift.read_only ? "Read-only" : "Read-only flag unavailable"}</span>
+        </div>
+        <KeyValueGrid items={[
+          ["Drift ID", drift.drift_id],
+          ["Contract", drift.contract_version],
+          ["Observer version", drift.observer_version],
+          ["Observed", formatTimestamp(drift.observed_at)],
+          ["Completeness", drift.completeness],
+          ["Submitted target", submittedRoot],
+          ["Baseline", drift.baseline_reference],
+          ["Baseline commit", display(drift.baseline_commit_hash)],
+        ]} />
+      </section>
+      <section className="repo-section">
+        <h3>Repository Identity</h3>
+        <KeyValueGrid items={[
+          ["Repository", drift.repository_identity.repository_name],
+          ["Repository ID", drift.repository_identity.repository_id],
+          ["Canonical root", drift.repository_identity.canonical_root],
+          ["Current branch", display(drift.repository_identity.current_branch)],
+          ["Current commit", display(drift.repository_identity.current_commit)],
+          ["Identity status", drift.repository_identity.status],
+        ]} />
+      </section>
+      <section className="repo-section">
+        <h3>Drift Counts</h3>
+        <KeyValueGrid items={[
+          ["Total changed", summary.total_changed_files], ["Retained", summary.retained_file_count],
+          ["Staged", summary.staged_count], ["Unstaged", summary.unstaged_count],
+          ["Untracked", summary.untracked_count], ["Conflicted", summary.conflicted_count],
+          ["Added", summary.added_count], ["Modified", summary.modified_count],
+          ["Deleted", summary.deleted_count], ["Renamed", summary.renamed_count],
+          ["Copied", summary.copied_count], ["Type changed", summary.type_changed_count],
+          ["Unknown", summary.unknown_count],
+        ]} />
+      </section>
+      <section className="repo-section">
+        <h3>File-level Drift <span className="repo-count">{drift.files.length}</span></h3>
+        {drift.files.length === 0 ? <p className="repo-empty">No detected file drift.</p> : (
+          <ul className="repo-card-list">{drift.files.map((file) => <DriftFileCard key={file.file_id} file={file} />)}</ul>
+        )}
+      </section>
+      <section className="repo-section">
+        <h3>Evidence <span className="repo-count">{drift.evidence.length}</span></h3>
+        <ul className="repo-card-list">{drift.evidence.map((item) => <EvidenceCard key={item.evidence_id} evidence={item} />)}</ul>
+      </section>
+      <section className="repo-section">
+        <h3>Warnings <span className="repo-count">{drift.warnings.length}</span></h3>
+        {drift.warnings.length === 0 ? <p className="repo-empty">No backend warnings were returned.</p> : <ul className="repo-card-list">{drift.warnings.map((item) => <WarningCard key={item.warning_id} warning={item} />)}</ul>}
+      </section>
+      <section className="repo-section">
+        <h3>Limitations <span className="repo-count">{drift.limitations.length}</span></h3>
+        {drift.limitations.length === 0 ? <p className="repo-empty">No backend limitations were returned.</p> : <ul className="repo-card-list">{drift.limitations.map((item) => <LimitationCard key={item.limitation_id} limitation={item} />)}</ul>}
+      </section>
+      <section className="repo-section">
+        <h3>Overflow and Ordering <span className="repo-count">{drift.overflow.length}</span></h3>
+        {drift.overflow.length === 0 ? <p className="repo-empty">No overflow metadata was returned.</p> : <ul className="repo-card-list">{drift.overflow.map((item) => <OverflowCard key={item.overflow_id} overflow={item} />)}</ul>}
+        <KeyValueGrid items={[["Omitted paths", joinList(drift.omitted_paths)], ["Deterministic ordering", joinList(drift.deterministic_ordering)]]} />
+      </section>
+    </div>
+  );
+}
+
 function RepositoryObserverPanel({ id }: { id?: string }) {
   const [repositoryRoot, setRepositoryRoot] = useState("");
   const [observedAt, setObservedAt] = useState(isoNow);
@@ -460,6 +579,12 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
   const [errorKind, setErrorKind] = useState<ErrorKind>("unexpected");
   const [snapshot, setSnapshot] = useState<RepositorySnapshot | null>(null);
   const [submittedRoot, setSubmittedRoot] = useState<string | null>(null);
+  const [driftState, setDriftState] = useState<DriftState>("idle");
+  const [driftError, setDriftError] = useState<string | null>(null);
+  const [driftErrorKind, setDriftErrorKind] = useState<ErrorKind>("unexpected");
+  const [drift, setDrift] = useState<RepositoryDriftAnalysis | null>(null);
+  const [driftSubmittedRoot, setDriftSubmittedRoot] = useState<string | null>(null);
+  const [supersededNotice, setSupersededNotice] = useState(false);
   const requestSequenceRef = useRef(0);
 
   const dirtySummary = useMemo(() => {
@@ -472,6 +597,7 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
   }, [snapshot]);
 
   const submit = async (): Promise<void> => {
+    const supersedesRequest = state === "loading" || driftState === "analyzing";
     const requestSequence = requestSequenceRef.current + 1;
     requestSequenceRef.current = requestSequence;
     const { request, error: validationError } =
@@ -482,6 +608,10 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
         maxSnapshotBytes,
       });
     if (!request || validationError) {
+      if (driftState === "analyzing") {
+        setDriftState("idle");
+      }
+      setSupersededNotice(supersedesRequest);
       setError(validationError);
       setErrorKind("validation");
       setState("error");
@@ -489,6 +619,10 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
     }
 
     setState("loading");
+    if (driftState === "analyzing") {
+      setDriftState("idle");
+    }
+    setSupersededNotice(supersedesRequest);
     setError(null);
     setSubmittedRoot(request.repository_root);
     try {
@@ -506,6 +640,46 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
       setErrorKind(kind);
       setError(clientSafeErrorMessage(requestError, kind));
       setState("error");
+    }
+  };
+
+  const analyzeDrift = async (): Promise<void> => {
+    const supersedesRequest = state === "loading" || driftState === "analyzing";
+    const requestSequence = requestSequenceRef.current + 1;
+    requestSequenceRef.current = requestSequence;
+    const { request, error: validationError } = buildRepositoryDriftAnalysisRequest({ repositoryRoot, observedAt, maxFileCount, maxSnapshotBytes });
+    if (!request || validationError) {
+      if (state === "loading") {
+        setState("idle");
+      }
+      setSupersededNotice(supersedesRequest);
+      setDriftError(validationError);
+      setDriftErrorKind("validation");
+      setDriftState("error");
+      return;
+    }
+    setDriftState("analyzing");
+    if (state === "loading") {
+      setState("idle");
+    }
+    setSupersededNotice(supersedesRequest);
+    setDriftError(null);
+    setDriftSubmittedRoot(request.repository_root);
+    try {
+      const response = await apiClient.analyzeRepositoryDrift(request);
+      if (requestSequence !== requestSequenceRef.current) {
+        return;
+      }
+      setDrift(response);
+      setDriftState("success");
+    } catch (requestError: unknown) {
+      if (requestSequence !== requestSequenceRef.current) {
+        return;
+      }
+      const kind = errorKindFrom(requestError);
+      setDriftErrorKind(kind);
+      setDriftError(clientSafeErrorMessage(requestError, kind));
+      setDriftState("error");
     }
   };
 
@@ -592,6 +766,9 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
             <button type="submit" disabled={state === "loading"}>
               {state === "loading" ? "Observing..." : "Observe snapshot"}
             </button>
+            <button type="button" disabled={driftState === "analyzing"} onClick={() => void analyzeDrift()}>
+              {driftState === "analyzing" ? "Analyzing..." : "Analyze Drift"}
+            </button>
             <button
               type="button"
               disabled={state === "loading"}
@@ -599,6 +776,12 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
             >
               Refresh timestamp
             </button>
+          </div>
+
+          <div aria-live="polite" aria-busy={driftState === "analyzing"}>
+            {driftState === "analyzing" && <p className="console-hint">Requesting one bounded read-only drift analysis...</p>}
+            {supersededNotice && <p className="console-hint">The previous request was superseded by this newer repository request.</p>}
+            {driftState === "error" && driftError && <div className="repo-error" role="alert"><strong>{errorTitle(driftErrorKind)}</strong><p>{driftError}</p>{drift && <p className="console-hint">The previous successful drift analysis remains visible.</p>}</div>}
           </div>
 
           <div aria-live="polite" aria-busy={state === "loading"}>
@@ -650,6 +833,14 @@ function RepositoryObserverPanel({ id }: { id?: string }) {
               overflow, and completeness after a successful backend response.
             </p>
           )}
+
+          <div className="repo-inspector-divider">
+            <div className="repo-editor-head">
+              <h3>Drift Inspector</h3>
+              <span className="repo-chip">RepositoryDriftAnalysis</span>
+            </div>
+            {drift ? <DriftInspector drift={drift} submittedRoot={driftSubmittedRoot ?? repositoryRoot} /> : <p className="repo-empty repo-empty-large">Choose Analyze Drift to compare the current working state with the supported HEAD baseline. Analysis is on-demand, bounded, and read-only.</p>}
+          </div>
         </div>
       </div>
     </section>
