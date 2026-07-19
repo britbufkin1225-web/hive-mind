@@ -16,7 +16,7 @@ The problem Hive|Mind is solving is not "generate more content." It is the quiet
 
 The product direction is deliberately evidence-oriented. The app favors deterministic backend derivation, provenance, and read-only inspection before mutation or automation. The current Intelligence Report surfaces temporal decay, dreaming suggestions, provenance chains, and query trails as explainable outputs over existing store and graph structure.
 
-Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Its implemented foundation includes deterministic context packets and a read-only inspector, plus a Repository Observer with bounded snapshot and drift APIs. Phase 37P integrates the existing Phase 37O deterministic drift analysis into the Repository Observer frontend as an explicit, on-demand, read-only workflow.
+Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Its implemented foundation includes deterministic context packets and a read-only inspector, plus a Repository Observer with bounded snapshot and drift APIs. Phase 37P completed and merged the explicit, on-demand drift workflow. The documentation-only Phase 38A Agent Lab layer now governs safe multi-agent repository contributions and is implemented locally pending independent audit.
 
 ## What Hive|Mind Does
 
@@ -55,7 +55,7 @@ Hive|Mind is also developing an **Active Memory and Verification** architecture:
 - **Implemented (repository observation snapshot service):** backend-only, request-triggered snapshot orchestration over the Git adapter. The service owns the Phase 37K observation boundary, applies conservative `ObserverScope` limit handling, rejects deferred scope features, preserves caller-supplied timestamps, and returns the existing `RepositorySnapshot` contract without duplicating adapter parsing or conversion logic.
 - **Implemented (repository observation API):** `POST /api/repository-observer/snapshot`, a thin read-only endpoint over the Phase 37K snapshot service. The request carries a local absolute `repository_root`, caller-supplied `observed_at`, bounded file/snapshot limits, and optional existing `ObserverScope`; the response is the existing `RepositorySnapshot` contract with repository identity, working-tree state, changed files, evidence authority, warnings, limitations, overflow/truncation metadata, and completeness preserved.
 - **Implemented (repository observer frontend inspector):** a read-only contextual dock panel over `POST /api/repository-observer/snapshot`. A human submits one bounded local repository observation request and inspects the returned `RepositorySnapshot` sections, including repository identity, branch/HEAD, working-tree state, changed files, evidence, warnings, limitations, overflow/truncation, and completeness. Phase 37N verified and lightly hardened the integration for newest-request-only state updates, safe server-error display, exact endpoint presentation, and long-token wrapping. It keeps request data only in React state and adds no Git mutation controls, browser persistence, watcher, polling loop, ingestion, AI review, or dashboard replacement.
-- **Implemented locally / pending independent audit (repository drift analysis):** `POST /api/repository-observer/drift` remains the thin read-only API over the Phase 37O deterministic service, and the existing Repository Observer inspector now provides an explicit **Analyze Drift** action. It presents status, baseline/current identity, change counts, bounded file observations, evidence, warnings, limitations, completeness, and overflow without persistence, watchers, background monitoring, or repository mutation.
+- **Implemented (repository drift analysis):** `POST /api/repository-observer/drift` remains the thin read-only API over the Phase 37O deterministic service, and the existing Repository Observer inspector provides an explicit **Analyze Drift** action. It presents status, baseline/current identity, change counts, bounded file observations, evidence, warnings, limitations, completeness, and overflow without persistence, watchers, background monitoring, or repository mutation.
 - **Planned:** active-state calculation, evidence resolution, ingestion, and any persistent Active Memory runtime.
 - **Boundary:** the store is in-memory with a serialize/restore boundary only, evidence resolution remains deferred, and the API/UI surfaces remain read-only and stateless over caller-supplied records or explicit local repository observation requests — no database, file persistence, write endpoint, ingestion, runtime verification API, repository watcher, automatic resolution, action authorization, AI interpretation, autonomous mutation, or hidden Active Memory store exists yet.
 
@@ -142,7 +142,8 @@ More screenshot history and QA notes live in the [Phase 28C graph-primary eviden
 | Repository snapshot service | Implemented | Backend-only request-triggered service over the Git adapter; no watcher, persistence, ingestion, frontend, or mutation. |
 | Repository observation API | Implemented | `POST /api/repository-observer/snapshot`: thin read-only endpoint over Phase 37K using the existing snapshot contract. |
 | Repository observer frontend inspector | Implemented | Contextual graph-first dock panel over the snapshot API, verified and hardened in Phase 37N; no Git dashboard, watcher, persistence, ingestion, AI review, or mutation. |
-| Repository drift analysis | Implemented locally / pending independent audit | `POST /api/repository-observer/drift` plus an explicit frontend inspector action over the Phase 37O service; no persistence, watcher, background monitoring, Active Memory ingestion, AI/LLM behavior, or mutation. |
+| Repository drift analysis | Implemented / merged | `POST /api/repository-observer/drift` plus an explicit frontend inspector action over the Phase 37O service; no persistence, watcher, background monitoring, Active Memory ingestion, AI/LLM behavior, or mutation. |
+| Agent Lab contribution governance | Implemented locally / pending independent audit | Documentation contracts for session authority, preflight, roles/capabilities, composition, evidence, and human merge gates; Phase 38B enforcement remains planned. |
 | Active Memory runtime | Planned | Active-state calculation, write endpoints, durable memory, ingestion, and evidence resolver are not implemented. |
 
 ## Architecture And Stack
@@ -219,19 +220,21 @@ Hive|Mind is currently a local, single-user developer tool. It has no authentica
 
 ## Roadmap
 
-The likely next continuation after the locally implemented Phase 37P integration is:
+The active local contribution is:
 
 ```text
-38A - Deterministic Active Project State + Status Manifest MVP (planned only)
+38A - Multi-Agent Contribution Contracts + Composition Governance
+      (implemented locally / pending independent audit)
 ```
 
-Phase 37P completes the first on-demand drift-analysis workflow by exposing the existing Phase 37O result in the Repository Observer frontend. The integration remains deterministic, bounded, read-only, and newest-request-only; it adds no persistence, watcher, background monitoring, or repository mutation. Phase 36K remains paused, not canceled or completed. Phase 38A is planned only. The complete phase chronology belongs in the [roadmap](docs/roadmap.md).
+Phase 37P is complete and merged. Phase 38A adds the documentation-only [Agent Lab contribution contracts](docs/agent-lab/README.md) and remains pending independent audit; Phase 38B PowerShell enforcement is planned, not active. Phase 36K remains paused, not canceled or completed. Active Memory continues to govern project data and verification architecture while Agent Lab governs contribution workflow. The complete chronology belongs in the [roadmap](docs/roadmap.md).
 
 ## Documentation
 
 - [Full roadmap](docs/roadmap.md)
 - [API contract](docs/api-contract.md)
 - [Active Memory and Verification reference](docs/active-agent-memory-verification-layer.md)
+- [Agent Lab contribution governance](docs/agent-lab/README.md)
 - [Phase 37A Active Memory planning](docs/planning/phase-37a-active-agent-memory-verification-layer-planning.md)
 - [Phase 37H Repository Observer planning](docs/planning/phase-37h-repository-observer-planning.md)
 - [Intelligence Surface Plan](docs/intelligence-surface-plan.md)
