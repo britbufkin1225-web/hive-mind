@@ -82,9 +82,11 @@ causes `STOP AND REPORT`; agents do not take it over or repair it.
 
 Composition follows declared dependency order, then declared integration order.
 Earlier contributions remain distinct commits. Silent cherry-picking, amendment,
-rebasing shared commits, squashing existing contributions, and “newest commit
-wins” conflict handling are prohibited. These rules preserve authorship,
-reviewability, and contradiction evidence.
+rebasing existing commits — including an agent's own commits on an isolated
+branch — squashing existing contributions, and “newest commit wins” conflict
+handling are prohibited without explicit human authorization. History rewriting
+is a destructive Git operation and is human-only. These rules preserve
+authorship, reviewability, and contradiction evidence.
 
 Implementation and audit/hardening are separate contributions and commits.
 Hardening needs a separate commit only when verified defects are corrected. An

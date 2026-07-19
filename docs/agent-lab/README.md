@@ -18,6 +18,34 @@ The contribution contract governs stable policy. A locked session header narrows
 that policy for one contribution and cannot silently expand it. The checklist
 governs execution gates, and the manifest records what actually happened.
 
+## Existing Agent Lab knowledge and source data
+
+The governance documents above complement — and do not delete — the Agent Lab
+knowledge and source data that predate Phase 38A. Where any earlier document
+describes contribution roles, authority, or workflow, the governance documents
+above are authoritative; the earlier material remains as background, source data,
+and reusable assets:
+
+- [Agent model and source registry](agent-model-source-registry.md) — canonical
+  agent registry and playbook, with machine-readable data under
+  [`registry/`](registry/) and official links in
+  [`sources/`](sources/official-agent-source-links.md).
+- [Agent Ops roadmap](agent-ops-roadmap.md) and
+  [future implementation plan](future-implementation-plan.md) — the documented
+  path toward later Agent Ops app functionality.
+- [Agent user workflows](agent-user-workflows.md),
+  [prompt-pack strategy](prompt-pack-strategy.md),
+  [context-pack strategy](context-pack-strategy.md), and
+  [decision-log strategy](decision-log-strategy.md) — human/agent workflow
+  patterns and strategy notes, with reusable prompt packs under
+  [`prompts/`](prompts/).
+- [Session entry template](templates/agent-session-entry-template.md) and
+  [review rubric](templates/agent-review-rubric.md) — per-run session notes
+  (stored under [`sessions/`](sessions/)) and the evaluation rubric.
+
+These records remain documentation and source data only; they grant no runtime
+authority and do not override the governance documents above.
+
 ## Shared-state boundary
 
 Agents do not automatically share ChatGPT conversation context, project memory,
