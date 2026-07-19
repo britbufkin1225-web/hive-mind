@@ -1,82 +1,70 @@
-# Agent Lab — Agent Ops Documentation Layer
+# Hive|Mind Agent Lab
 
-> **Status:** Documentation and source-data first. App implementation later.
-> **Scope:** Governed AI-assisted development workflow for Hive|Mind.
+Agent Lab is the repository governance layer for predictable, composable,
+auditable, and safe contributions by Codex, Claude, Jules, Antigravity, and
+future agents. It governs contribution workflow; it does not grant runtime
+authority to Hive|Mind or replace the product's Active Memory architecture.
 
-## What this folder is
+## Canonical reading order
 
-`docs/agent-lab/` tracks how AI agents are used on Hive|Mind as **first-class project
-knowledge**. It records:
+1. This `README.md` for boundaries and document routing.
+2. [Contribution contract](agent-contribution-contract.md) for governing rules.
+3. [Role and capability matrix](agent-role-capability-matrix.md) for eligibility.
+4. [Session header lockup](agent-session-header-lockup.md) for active authority.
+5. [Preflight checklist](agent-preflight-checklist.md) for repository checks.
+6. [Composition manifest](agent-composition-manifest.md) for evidence and handoff.
 
-- AI agent use and the roles each agent plays.
-- Project source data and official source links for each agent.
-- Reusable prompt packs for builders, reviewers, and shared workflows.
-- Workflow governance and branch rules.
-- Evaluation results and the human decisions that gate every merge.
+The contribution contract governs stable policy. A locked session header narrows
+that policy for one contribution and cannot silently expand it. The checklist
+governs execution gates, and the manifest records what actually happened.
 
-This is not "we used AI tools." This is a **governed AI-assisted development workflow** with
-auditable sessions, branch governance, and human decision gates.
+## Existing Agent Lab knowledge and source data
 
-## Why it exists
+The governance documents above complement — and do not delete — the Agent Lab
+knowledge and source data that predate Phase 38A. Where any earlier document
+describes contribution roles, authority, or workflow, the governance documents
+above are authoritative; the earlier material remains as background, source data,
+and reusable assets:
 
-- **Prevent agent drift.** Every agent run has a defined scope, allowed files, and forbidden
-  scope.
-- **Prevent branch collisions.** One implementation agent per branch; nobody touches `main`.
-- **Prevent undocumented AI-assisted changes.** Every run gets a session note with branch,
-  task, files changed, validation result, review result, and human decision.
-- **Build source data for the product.** These records are shaped so a future Agent Ops panel
-  inside the app can ingest them directly.
+- [Agent model and source registry](agent-model-source-registry.md) — canonical
+  agent registry and playbook, with machine-readable data under
+  [`registry/`](registry/) and official links in
+  [`sources/`](sources/official-agent-source-links.md).
+- [Agent Ops roadmap](agent-ops-roadmap.md) and
+  [future implementation plan](future-implementation-plan.md) — the documented
+  path toward later Agent Ops app functionality.
+- [Agent user workflows](agent-user-workflows.md),
+  [prompt-pack strategy](prompt-pack-strategy.md),
+  [context-pack strategy](context-pack-strategy.md), and
+  [decision-log strategy](decision-log-strategy.md) — human/agent workflow
+  patterns and strategy notes, with reusable prompt packs under
+  [`prompts/`](prompts/).
+- [Session entry template](templates/agent-session-entry-template.md) and
+  [review rubric](templates/agent-review-rubric.md) — per-run session notes
+  (stored under [`sessions/`](sessions/)) and the evaluation rubric.
 
-## What lives here
+These records remain documentation and source data only; they grant no runtime
+authority and do not override the governance documents above.
 
-```
-docs/agent-lab/
-├─ README.md                       ← you are here
-├─ agent-model-source-registry.md  ← canonical registry + playbook (source of truth)
-├─ agent-model-source-registry.docx← canonical original
-├─ agent-ops-roadmap.md            ← phased roadmap (A–G)
-├─ agent-user-workflows.md         ← human + agent workflow patterns
-├─ future-implementation-plan.md   ← how this becomes app functionality
-├─ context-pack-strategy.md        ← future context-pack generator design
-├─ decision-log-strategy.md        ← how human decisions are captured
-├─ prompt-pack-strategy.md         ← prompt pack categories and rules
-├─ registry/                       ← machine-readable registry (YAML)
-├─ prompts/                        ← reusable prompt packs (Claude / Codex / shared)
-├─ sources/                        ← official source links
-├─ templates/                      ← session + rubric templates
-└─ sessions/                       ← one note per agent run
-```
+## Shared-state boundary
 
-## Positioning
+Agents do not automatically share ChatGPT conversation context, project memory,
+another agent's session state, another agent's working directory, or another
+agent's completion claims. Repository documents and direct repository evidence
+are the shared source. Chat messages and agent summaries are inputs to verify,
+not canonical state.
 
-Documentation and source data come first. The
-[`agent-ops-roadmap.md`](agent-ops-roadmap.md) lays out the path from documentation foundation
-to a read-only Agent Registry API and, eventually, an Agent Lab frontend panel. **Do not
-implement the future app phases yet** — they are documented so future phases can build them
-cleanly against stable source shapes.
+## Phase boundary
 
-## Current coordination model
+Phase 38A adds documentation contracts only. It adds no scripts, hooks, CI,
+runtime enforcement, dependencies, application code, repository mutation
+features, or agent services. Phase 38B may implement deterministic PowerShell
+validation of these contracts after independent audit and human authorization.
 
-- **devdevbuilds** is the creator, main developer, and merge gate.
-- **ChatGPT** is project manager/coordinator/scope guard.
-- **Claude Code** owns UI Dynamics and frontend visual QA on scoped branches.
-- **Codex** owns repo organization, documentation cohesion, API/app consistency,
-  branch hygiene, and demo documentation.
-- Other agents experiment only on isolated branches with explicit scope.
+Active Memory continues to govern project data, memory, contradiction, and
+verification architecture. Agent Lab complements it by governing how humans and
+agents contribute to the repository.
 
-Agent Lab is documentation/source data for this coordination model. It is not an
-implemented app feature yet.
-
-## Start here
-
-- New to the registry? Read [`agent-model-source-registry.md`](agent-model-source-registry.md).
-- Want the roadmap? Read [`agent-ops-roadmap.md`](agent-ops-roadmap.md).
-- Running an agent today? Copy the session template from
-  [`templates/agent-session-entry-template.md`](templates/agent-session-entry-template.md) and
-  follow the workflows in [`agent-user-workflows.md`](agent-user-workflows.md).
-
-## One-line operating rule
-
-> **devdevbuilds owns the merge gate. ChatGPT guards scope. Claude Code handles
-> UI Dynamics. Codex keeps repo/docs/API/demo cohesion. Nobody touches main
-> directly.**
+Every merge remains human-gated. Agents may prepare commits, evidence, audits,
+hardening, pull requests, and merge-readiness recommendations; the human project
+owner retains final merge and phase-completion authority.

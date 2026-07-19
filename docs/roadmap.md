@@ -50,40 +50,24 @@ explicit request and keeps repository paths only in React state.
 
 ## Active Phase
 
-### Phase 37P — Repository Drift API + Frontend Inspector Integration
+### Phase 38A — Multi-Agent Contribution Contracts + Composition Governance
 
-Phase 37P is implemented locally and pending independent audit. It reuses the
-Phase 37O deterministic service and existing `RepositoryDriftAnalysis` response
-contract without introducing another drift algorithm.
+Phase 38A is implemented locally and pending independent audit. It adds the
+documentation-only [Agent Lab governance layer](agent-lab/README.md): contribution
+contract, locked session-header template, role/capability matrix, preflight and
+postflight checklists, and composition manifest. These documents govern agent
+authority, path ownership, branch/worktree isolation, provenance, evidence,
+completion terminology, stop conditions, and human merge gates.
 
-The endpoint is `POST /api/repository-observer/drift`. It accepts an absolute
-local repository root, caller-supplied observation timestamp, supported baseline
-reference, and bounded result limits. The only supported baseline is current
-`HEAD`; arbitrary commit-to-commit history browsing remains deferred. The
-response returns the existing repository identity and evidence vocabulary plus
-drift-specific status, summary counts, bounded file-level records,
-staged/unstaged/untracked flags, old/current paths for authoritative Git
-rename/copy records, warnings, limitations, overflow/truncation metadata, and
-completeness.
+Phase 38A changes no application source, dependency, script, hook, CI workflow,
+or runtime behavior. Phase 38B deterministic PowerShell enforcement is planned,
+not active. Active Memory remains the authority for project data, memory,
+contradiction, and verification architecture; Agent Lab governs repository
+contribution workflow. Neither replaces the other.
 
-The service uses the Phase 37J read-only Git adapter and porcelain-v2 status
-parsing. Supported deterministic change classes are `added`, `modified`,
-`deleted`, `renamed`, `copied`, `untracked`, `type_changed`, `conflicted`, and
-`unknown`. Rename/copy certainty is never inferred from filename similarity; it
-is reported only when Git emits relationship evidence. No file contents are
-read, no Git hooks or repository-controlled scripts are executed, and no
-checkout, reset, clean, stash, add, commit, fetch, pull, push, merge, rebase, or
-other mutation is exposed.
-
-The existing Repository Observer panel now provides an explicit Analyze Drift
-action and displays status, repository/baseline identity, counts, bounded file
-records, evidence, warnings, limitations, completeness, omitted paths, and
-overflow. Requests remain on-demand and stale responses cannot replace newer
-repository results. No persistence, watcher, polling loop, background work,
-Active Memory ingestion, AI/LLM behavior, or repository mutation was added.
-
-The likely next continuation is **Phase 38A — Deterministic Active Project State
-+ Status Manifest MVP**, planned only and not implemented here.
+Phase 37P — Repository Drift API + Frontend Inspector Integration is complete
+and merged at `0b901ef0a02857745afe9e5cf4cab0486ba7a6bb`. Its bounded,
+read-only behavior remains unchanged.
 
 The prior Phase 37G frontend inspector remains implemented as a frontend-only,
 read-only inspector over the Phase 37F context-packet endpoint. Active-state
@@ -106,11 +90,12 @@ them.
 | Phase 37M — Read-Only Repository Observer Frontend Inspector MVP | Implemented | Contextual graph-first dock panel over the Phase 37L endpoint. Renders the backend snapshot contract without watcher, persistence, ingestion, AI review, Git dashboard, or mutation. |
 | Phase 37N — Repository Observer Frontend Integration QA + Hardening | Implemented | Verified and lightly hardened the Phase 37M frontend inspector against the Phase 37L endpoint contract. No backend, schema, dependency, persistence, ingestion, AI review, Git dashboard, or mutation changes. |
 | Phase 37O — Deterministic Repository Drift Analysis MVP | Implemented | Backend-only `POST /api/repository-observer/drift` over current `HEAD`, with deterministic file-level drift classification, evidence, bounds, overflow, and safe errors. No persistence, frontend, ingestion, AI/LLM behavior, or mutation. |
-| Phase 37P — Repository Drift API + Frontend Inspector Integration | Implemented locally / pending independent audit | Reuses Phase 37O through the existing drift API and adds an explicit, bounded, newest-request-only drift inspector to the Repository Observer panel. No persistence, watcher, monitoring, or mutation. |
-| Phase 38A — Deterministic Active Project State + Status Manifest MVP | Planned only | Likely next continuation; no Phase 38A implementation is included in Phase 37P. |
+| Phase 37P — Repository Drift API + Frontend Inspector Integration | Implemented / merged | Reuses Phase 37O through the existing drift API and adds an explicit, bounded, newest-request-only drift inspector to the Repository Observer panel. No persistence, watcher, monitoring, or mutation. |
+| Phase 38A — Multi-Agent Contribution Contracts + Composition Governance | Implemented locally / pending independent audit | Documentation-only Agent Lab governance for contribution authority, isolation, evidence, composition, and human merge gates. |
+| Phase 38B — Agent Contract PowerShell Enforcement | Planned only | Future deterministic validation of Phase 38A contracts; no script, hook, CI, or runtime enforcement exists yet. |
 
-After Phase 37P, Phase 38A remains the likely planned continuation. Each phase
-remains independently scoped and reviewable.
+After Phase 38A independent audit, Phase 38B remains the planned enforcement
+continuation. Each phase remains independently scoped and reviewable.
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
 implementation track.

@@ -937,7 +937,7 @@ phase.
 
 ## 25. Phase 37P — repository drift API + frontend inspector integration
 
-Phase 37P is implemented locally and pending independent audit. It preserves
+Phase 37P is complete and merged. It preserves
 the Phase 37O `RepositoryDriftAnalysisService`, transport request, and result
 model, and integrates the existing `POST /api/repository-observer/drift` route
 into the Repository Observer frontend inspector.
@@ -953,6 +953,19 @@ repository request.
 The workflow is deterministic, bounded, metadata-only, and read-only. It adds
 no persistence, watcher, polling loop, background monitoring, repository
 mutation, remote Git operation, Active Memory ingestion, AI/LLM interpretation,
-or new dependency. Phase 36K remains paused and untouched. The likely next
-continuation is Phase 38A — Deterministic Active Project State + Status Manifest
-MVP, which remains planned only.
+or new dependency. Phase 36K remains paused and untouched.
+
+## 26. Phase 38A — multi-agent contribution contracts and composition governance
+
+Phase 38A is implemented locally and pending independent audit. Its
+documentation-only [Agent Lab governance layer](agent-lab/README.md) defines how
+agent contributions verify repository state, receive bounded session authority,
+isolate branches and worktrees, preserve commit provenance, report validation,
+compose changes, and stop on unexpected conditions. Phase 38B PowerShell
+enforcement is planned and not active.
+
+Agent Lab does not replace Active Memory. This document continues to govern
+project data, memory, contradictions, and verification architecture; Agent Lab
+governs the repository contribution workflow around that architecture. Phase
+38A adds no runtime, persistence, ingestion, application code, dependency, or
+repository mutation feature. Phase 36K remains paused and untouched.
