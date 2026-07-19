@@ -24,6 +24,10 @@ from app.models.repository_observer import (
     OverflowLimitKind,
     OverflowMetadata,
     PathRelationship,
+    RepositoryDriftAnalysis,
+    RepositoryDriftFile,
+    RepositoryDriftStatus,
+    RepositoryDriftSummary,
     RepositoryEvidence,
     RepositoryIdentity,
     RepositoryIdentityStatus,
@@ -45,6 +49,10 @@ from app.services.repository_observation_snapshot import (
     RepositoryObservationScopeError,
     RepositoryObservationSnapshotRequest,
 )
+from app.services.repository_drift_analysis import (
+    RepositoryDriftAnalysisRequest,
+    RepositoryDriftBaselineError,
+)
 
 
 FIXED_TS = datetime(2026, 7, 18, 14, 0, 0)
@@ -65,6 +73,23 @@ class FakeSnapshotService:
         if self.error is not None:
             raise self.error
         return self.snapshot
+
+
+class FakeDriftService:
+    def __init__(
+        self,
+        drift: RepositoryDriftAnalysis | None = None,
+        error: Exception | None = None,
+    ) -> None:
+        self.drift = drift or _drift()
+        self.error = error
+        self.calls: list[RepositoryDriftAnalysisRequest] = []
+
+    def analyze(self, request: RepositoryDriftAnalysisRequest) -> RepositoryDriftAnalysis:
+        self.calls.append(request)
+        if self.error is not None:
+            raise self.error
+        return self.drift
 
 
 def _snapshot(
@@ -137,6 +162,68 @@ def _snapshot(
     )
 
 
+def _drift(
+    *,
+    drift_status: RepositoryDriftStatus = RepositoryDriftStatus.CLEAN,
+    files: list[RepositoryDriftFile] | None = None,
+    summary: RepositoryDriftSummary | None = None,
+    overflow: list[OverflowMetadata] | None = None,
+    completeness: SnapshotCompleteness = SnapshotCompleteness.COMPLETE,
+) -> RepositoryDriftAnalysis:
+    observed_at = FIXED_TS
+    return RepositoryDriftAnalysis(
+        drift_id="drift-api-test",
+        repository_identity=RepositoryIdentity(
+            repository_id="repo-api-test",
+            canonical_root="C:/repo",
+            normalized_root="c:/repo",
+            repository_name="repo",
+            current_branch="main",
+            current_commit="abc123",
+            status=RepositoryIdentityStatus.VERIFIED,
+        ),
+        observed_at=observed_at,
+        observer_version="repo-observer.v1-phase-37o",
+        baseline_reference="HEAD",
+        baseline_commit_hash="abc123",
+        drift_status=drift_status,
+        summary=summary or RepositoryDriftSummary(),
+        files=files or [],
+        evidence=[
+            RepositoryEvidence(
+                evidence_id="evidence-baseline-head",
+                category=EvidenceCategory.GIT_METADATA,
+                authority=EvidenceAuthority.DIRECT_GIT_OUTPUT,
+                source="git status --porcelain=v2 -z --branch",
+                summary="Resolved supported baseline HEAD to current HEAD commit.",
+                bounded_excerpt="abc123",
+                excerpt_limit=512,
+                captured_at=observed_at,
+            ),
+            RepositoryEvidence(
+                evidence_id="evidence-git-status",
+                category=EvidenceCategory.GIT_METADATA,
+                authority=EvidenceAuthority.DIRECT_GIT_OUTPUT,
+                source="git status --porcelain=v2 -z --branch --untracked-files=all",
+                summary="Bounded porcelain-v2 Git status output.",
+                bounded_excerpt="# branch.head main",
+                excerpt_limit=512,
+                captured_at=observed_at,
+            ),
+        ],
+        limitations=[
+            ObserverLimitation(
+                limitation_id="limitation-head-baseline-only",
+                category=ObserverLimitationCategory.UNSUPPORTED_DATA,
+                summary="Only the current HEAD baseline is supported.",
+            )
+        ],
+        omitted_paths=["docs/omitted.md"] if overflow else [],
+        overflow=overflow or [],
+        completeness=completeness,
+    )
+
+
 def _file(path: str, kind: FileChangeKind) -> FileObservationSummary:
     relationship = None
     if kind is FileChangeKind.RENAMED:
@@ -165,6 +252,20 @@ def _file(path: str, kind: FileChangeKind) -> FileObservationSummary:
     )
 
 
+def _drift_file(path: str, kind: FileChangeKind) -> RepositoryDriftFile:
+    return RepositoryDriftFile(
+        file_id=f"drift-{path.replace('/', '-')}",
+        change_kind=kind,
+        current_path=path,
+        normalized_path=path,
+        staged=kind is not FileChangeKind.UNTRACKED,
+        unstaged=False,
+        untracked=kind is FileChangeKind.UNTRACKED,
+        tracked=kind is not FileChangeKind.UNTRACKED,
+        evidence_ids=["evidence-baseline-head", "evidence-git-status"],
+    )
+
+
 def _post_with_service(tmp_path: Path, service: FakeSnapshotService, payload: dict | None = None):
     app.dependency_overrides[
         router_module.get_repository_observation_snapshot_service
@@ -177,6 +278,26 @@ def _post_with_service(tmp_path: Path, service: FakeSnapshotService, payload: di
         if payload:
             request.update(payload)
         return TestClient(app).post("/api/repository-observer/snapshot", json=request)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def _post_drift_with_service(
+    tmp_path: Path,
+    service: FakeDriftService,
+    payload: dict | None = None,
+):
+    app.dependency_overrides[
+        router_module.get_repository_drift_analysis_service
+    ] = lambda: service
+    try:
+        request = {
+            "repository_root": str(tmp_path),
+            "observed_at": FIXED_TS.isoformat(),
+        }
+        if payload:
+            request.update(payload)
+        return TestClient(app).post("/api/repository-observer/drift", json=request)
     finally:
         app.dependency_overrides.clear()
 
@@ -483,6 +604,125 @@ def test_router_source_does_not_parse_git_output_or_use_subprocess() -> None:
 def test_service_dependency_can_be_replaced_in_tests(tmp_path: Path) -> None:
     service = FakeSnapshotService()
     response = _post_with_service(tmp_path, service)
+
+    assert response.status_code == 200
+    assert len(service.calls) == 1
+
+
+def test_valid_repository_drift_request_returns_clean_response(tmp_path: Path) -> None:
+    service = FakeDriftService()
+    response = _post_drift_with_service(tmp_path, service)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["baseline_reference"] == "HEAD"
+    assert body["baseline_commit_hash"] == "abc123"
+    assert body["drift_status"] == "clean"
+    assert body["summary"]["total_changed_files"] == 0
+    assert body["files"] == []
+    assert body["evidence"][0]["authority"] == "direct_git_output"
+    assert body["read_only"] is True
+    assert len(service.calls) == 1
+    assert service.calls[0].repository_path == tmp_path
+
+
+def test_valid_repository_drift_request_returns_dirty_response(tmp_path: Path) -> None:
+    files = [
+        _drift_file("apps/backend/app.py", FileChangeKind.MODIFIED),
+        _drift_file("docs/new.md", FileChangeKind.UNTRACKED),
+    ]
+    service = FakeDriftService(
+        _drift(
+            drift_status=RepositoryDriftStatus.DRIFTED,
+            files=files,
+            summary=RepositoryDriftSummary(
+                total_changed_files=2,
+                retained_file_count=2,
+                staged_count=1,
+                untracked_count=1,
+                modified_count=1,
+            ),
+        )
+    )
+    response = _post_drift_with_service(tmp_path, service, {"max_file_count": 20})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["drift_status"] == "drifted"
+    assert [item["change_kind"] for item in body["files"]] == ["modified", "untracked"]
+    assert body["summary"]["staged_count"] == 1
+    assert body["summary"]["untracked_count"] == 1
+    assert service.calls[0].limits.max_file_observations == 20
+
+
+def test_repository_drift_validation_rejects_invalid_request(tmp_path: Path) -> None:
+    client = TestClient(app)
+    assert client.post(
+        "/api/repository-observer/drift",
+        json={"repository_root": "relative/repo", "observed_at": FIXED_TS.isoformat()},
+    ).status_code == 422
+    assert client.post(
+        "/api/repository-observer/drift",
+        json={
+            "repository_root": str(tmp_path),
+            "observed_at": FIXED_TS.isoformat(),
+            "baseline_reference": "origin/main",
+        },
+    ).status_code == 422
+    assert client.post(
+        "/api/repository-observer/drift",
+        json={
+            "repository_root": str(tmp_path),
+            "observed_at": FIXED_TS.isoformat(),
+            "command": "git diff",
+        },
+    ).status_code == 422
+
+
+def test_repository_drift_non_repository_path_returns_safe_error(tmp_path: Path) -> None:
+    response = _post_drift_with_service(
+        tmp_path,
+        FakeDriftService(error=GitCommandFailedError("fatal: not a git repository")),
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "Repository root is not an observable Git repository"
+    }
+
+
+def test_repository_drift_expected_and_internal_failures_are_client_safe(
+    tmp_path: Path,
+) -> None:
+    expected = _post_drift_with_service(
+        tmp_path,
+        FakeDriftService(error=GitPorcelainParseError("Traceback C:/secret git status")),
+    )
+    internal = _post_drift_with_service(
+        tmp_path,
+        FakeDriftService(error=RuntimeError("credential=ghp_SECRET C:/private/file")),
+    )
+
+    assert expected.status_code == 502
+    assert "Traceback" not in expected.text
+    assert "git status" not in expected.text
+    assert "C:/secret" not in expected.text
+    assert internal.status_code == 500
+    assert internal.json() == {"detail": "Internal server error"}
+    assert "ghp_SECRET" not in internal.text
+    assert "C:/private" not in internal.text
+
+
+def test_repository_drift_router_invokes_service_without_calling_git_directly(
+    monkeypatch, tmp_path: Path
+) -> None:
+    service = FakeDriftService()
+
+    def fail_subprocess(*args, **kwargs):  # noqa: ANN001
+        raise AssertionError("router must not invoke subprocess")
+
+    monkeypatch.setattr(subprocess, "run", fail_subprocess)
+    response = _post_drift_with_service(tmp_path, service)
 
     assert response.status_code == 200
     assert len(service.calls) == 1

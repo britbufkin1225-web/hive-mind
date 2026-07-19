@@ -25,7 +25,7 @@ Implemented runtime capabilities include:
   pointer orbit, momentum, and elastic node manipulation.
 - Motion sandbox foundation using MediaPipe hand landmarks, with live gesture
   tuning still paused.
-- Active Memory foundation through Phase 37N: contract types, deterministic
+- Active Memory foundation through Phase 37O: contract types, deterministic
   backend-only in-memory store, deterministic backend-only read-only
   contradiction detection, backend-only deterministic context packet
   generation, a read-only context-packet API endpoint, and a read-only frontend
@@ -33,8 +33,9 @@ Implemented runtime capabilities include:
   contract/schema types, a deterministic read-only Git adapter foundation, a
   backend-only request-triggered repository observation snapshot service, and a
   thin read-only Repository Observer snapshot API with a contextual read-only
-  frontend inspector hardened by frontend integration QA. No watcher,
-  persistence, mutation, AI review, or ingestion exists yet.
+  frontend inspector hardened by frontend integration QA, plus backend-only
+  deterministic drift analysis from the current `HEAD` baseline. No watcher,
+  persistence, mutation, AI review, frontend drift UI, or ingestion exists yet.
 
 The product remains local, single-user, and review-oriented. It does not run
 autonomous agents, mutate repositories, persist Active Memory beyond the current
@@ -48,28 +49,34 @@ explicit request and keeps repository paths only in React state.
 
 ## Active Phase
 
-### Phase 37N — Repository Observer Frontend Integration QA + Hardening
+### Phase 37O — Deterministic Repository Drift Analysis MVP
 
-Phase 37N follows the Phase 37M frontend inspector and verifies the existing
-frontend flow against the Phase 37L snapshot endpoint, Phase 37K snapshot
-service, Phase 37J Git adapter, and Phase 37I `repo-observer.v1` contracts.
+Phase 37O follows the Phase 37N frontend integration hardening and adds a
+backend-only deterministic drift-analysis capability over the existing
+Repository Observer foundation.
 
-The inspector remains mounted in the existing graph-primary contextual dock, not
-as a separate Git dashboard. Phase 37N verifies that a human-submitted bounded
-request sends only contract-valid top-level fields to
-`POST /api/repository-observer/snapshot` and renders the existing
-`RepositorySnapshot` contract: repository identity, identity status, branch,
-HEAD commit, working-tree state, changed-file observations, rename/copy
-relationships, evidence authority, warnings, limitations, overflow/truncation
-metadata, omitted paths, deterministic ordering, and snapshot completeness.
+The endpoint is `POST /api/repository-observer/drift`. It accepts an absolute
+local repository root, caller-supplied observation timestamp, supported baseline
+reference, and bounded result limits. The only supported baseline is current
+`HEAD`; arbitrary commit-to-commit history browsing remains deferred. The
+response returns the existing repository identity and evidence vocabulary plus
+drift-specific status, summary counts, bounded file-level records,
+staged/unstaged/untracked flags, old/current paths for authoritative Git
+rename/copy records, warnings, limitations, overflow/truncation metadata, and
+completeness.
 
-The hardening is intentionally small: newest-request-only async state updates,
-client-safe server-error display, exact endpoint presentation, additional
-request-builder self-test coverage, and long token wrapping in inspector cards.
-Snapshot derivation stays in Phase 37K; Git execution and parsing stay in Phase
-37J; transport validation stays in Phase 37L. Phase 37N does not add a watcher,
-polling loop, persistence, filesystem crawler, Active Memory ingestion, GitHub
-integration, dependency, AI/LLM behavior, code review, or repository mutation.
+The service uses the Phase 37J read-only Git adapter and porcelain-v2 status
+parsing. Supported deterministic change classes are `added`, `modified`,
+`deleted`, `renamed`, `copied`, `untracked`, `type_changed`, `conflicted`, and
+`unknown`. Rename/copy certainty is never inferred from filename similarity; it
+is reported only when Git emits relationship evidence. No file contents are
+read, no Git hooks or repository-controlled scripts are executed, and no
+checkout, reset, clean, stash, add, commit, fetch, pull, push, merge, rebase, or
+other mutation is exposed.
+
+Phase 37O adds no frontend work, persistence, watcher, polling loop, Active
+Memory ingestion, contradiction generation, graph mutation, GitHub integration,
+dependency, AI/LLM behavior, or repository repair behavior.
 
 The prior Phase 37G frontend inspector remains implemented as a frontend-only,
 read-only inspector over the Phase 37F context-packet endpoint. Active-state
@@ -91,8 +98,9 @@ them.
 | Phase 37L — Read-Only Repository Observation API Foundation | Implemented | `POST /api/repository-observer/snapshot`: thin read-only API over Phase 37K and the existing `RepositorySnapshot` contract. No persistence, ingestion, frontend, AI/LLM behavior, or mutation. |
 | Phase 37M — Read-Only Repository Observer Frontend Inspector MVP | Implemented | Contextual graph-first dock panel over the Phase 37L endpoint. Renders the backend snapshot contract without watcher, persistence, ingestion, AI review, Git dashboard, or mutation. |
 | Phase 37N — Repository Observer Frontend Integration QA + Hardening | Implemented | Verified and lightly hardened the Phase 37M frontend inspector against the Phase 37L endpoint contract. No backend, schema, dependency, persistence, ingestion, AI review, Git dashboard, or mutation changes. |
+| Phase 37O — Deterministic Repository Drift Analysis MVP | Implemented | Backend-only `POST /api/repository-observer/drift` over current `HEAD`, with deterministic file-level drift classification, evidence, bounds, overflow, and safe errors. No persistence, frontend, ingestion, AI/LLM behavior, or mutation. |
 
-After Phase 37N, a conservative follow-on sequence remains planned (not yet
+After Phase 37O, a conservative follow-on sequence remains planned (not yet
 authorized): evidence ingestion → contradiction integration → end-to-end QA.
 Each phase remains independently scoped and reviewable.
 
@@ -280,6 +288,20 @@ implementation track.
   backend changes, schema changes, dependency changes, persistence, ingestion,
   watcher, polling loop, AI review, Git dashboard, repository mutation, or Phase
   36K work.
+- **Phase 37O — Deterministic Repository Drift Analysis MVP:** implemented a
+  backend-only read-only drift-analysis service and
+  `POST /api/repository-observer/drift` endpoint over the existing
+  Repository Observer contracts and Git adapter. The MVP supports current
+  `HEAD` as the local baseline, resolves the baseline commit from direct Git
+  status evidence when available, classifies bounded file-level drift as
+  `added`, `modified`, `deleted`, `renamed`, `copied`, `untracked`,
+  `type_changed`, `conflicted`, or `unknown`, preserves staged/unstaged and
+  untracked flags, reports old/current paths only for authoritative Git
+  rename/copy records, and returns evidence, warnings, limitations, overflow,
+  and completeness without reading file contents. It adds no frontend,
+  persistence, Active Memory ingestion, contradiction integration, GitHub API
+  behavior, dependency, AI/LLM interpretation, repository mutation, or Phase 36K
+  work.
 
 `frontend_only_vs_backend_modification` is a contract class but is not
 implemented in Phase 37D because it needs a deterministic path/scope target model
@@ -303,7 +325,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 | Active Memory persistence | Choose a durable medium after contracts, store semantics, contradiction detection, and context packet generation are stable. | Current store is in-memory with serialize/restore only. |
 | Active-state calculation | Derive safe active baselines while preserving unresolved contradictions and missing evidence. | No "newest wins"; unresolved state must stay visible. |
 | Context packet UI | Keep the Phase 37G inspector read-only while future phases decide durable memory and observer boundaries. | The inspector exists and remains stateless over user-supplied records. |
-| Repository observer | Planned in Phase 37H as a read-only evidence provider; Phase 37I implements backend contract/schema types, Phase 37J implements the deterministic read-only Git adapter foundation, Phase 37K implements the backend-only snapshot service MVP, Phase 37L exposes a thin read-only snapshot API, Phase 37M adds a contextual frontend inspector, and Phase 37N hardens that inspector's endpoint integration. Keep evidence scoped and human-reviewable. | No watcher, polling loop, persistence, ingestion, filesystem scanner, AI review, Git dashboard, or automatic repository mutation exists. |
+| Repository observer | Planned in Phase 37H as a read-only evidence provider; Phase 37I implements backend contract/schema types, Phase 37J implements the deterministic read-only Git adapter foundation, Phase 37K implements the backend-only snapshot service MVP, Phase 37L exposes a thin read-only snapshot API, Phase 37M adds a contextual frontend inspector, Phase 37N hardens that inspector's endpoint integration, and Phase 37O adds backend-only drift analysis from current `HEAD`. Keep evidence scoped and human-reviewable. | No watcher, polling loop, persistence, ingestion, filesystem scanner, frontend drift UI, AI review, Git dashboard, or automatic repository mutation exists. |
 | AI/LLM integration | Consider only after deterministic trust boundaries and inspection surfaces are stable. | No AI truth arbitration, autonomous resolution, or autonomous action. |
 | Intelligence report expansion | Source coverage, query persistence, and richer provenance/error states. | Read-only derivation over real store data. |
 | Spatial interaction | Resume Phase 36K when the project chooses to return to live gesture tuning. | No gesture completion claim without live evidence. |
@@ -325,10 +347,11 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
   generation, and a read-only, stateless context-packet endpoint that derives
   packets from request-supplied records, plus a read-only frontend inspector for
   explicitly supplied records, backend-only Repository Observer contract types,
-  a deterministic read-only Git adapter foundation, and a backend-only
+  a deterministic read-only Git adapter foundation, a backend-only
   repository observation snapshot service with a thin read-only API and
-  contextual frontend inspector, plus a frontend integration QA/hardening pass
-  over that inspector. It does not yet have committed persistence,
+  contextual frontend inspector, a frontend integration QA/hardening pass over
+  that inspector, and backend-only deterministic repository drift analysis from
+  current `HEAD`. It does not yet have committed persistence,
   write endpoints, ingestion, active-state
   calculation, evidence resolution, AI
   interpretation, action authorization, autonomous mutation, or automatic

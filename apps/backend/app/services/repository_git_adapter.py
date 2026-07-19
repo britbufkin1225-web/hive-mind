@@ -602,6 +602,24 @@ def _status_from_xy(path: str, index_status: str, worktree_status: str) -> GitFi
     )
 
 
+def git_file_status_has_staged_change(status: GitFileStatus) -> bool:
+    """Return whether porcelain-v2 reports an index-side change."""
+
+    return status.index_status not in (None, ".", "?")
+
+
+def git_file_status_has_unstaged_change(status: GitFileStatus) -> bool:
+    """Return whether porcelain-v2 reports a worktree-side change."""
+
+    return status.worktree_status not in (None, ".", "?")
+
+
+def git_file_status_is_untracked(status: GitFileStatus) -> bool:
+    """Return whether porcelain-v2 reports an untracked path."""
+
+    return status.change_kind is FileChangeKind.UNTRACKED
+
+
 def _change_kind(status: str) -> FileChangeKind:
     return {
         "A": FileChangeKind.ADDED,
@@ -609,6 +627,7 @@ def _change_kind(status: str) -> FileChangeKind:
         "D": FileChangeKind.DELETED,
         "R": FileChangeKind.RENAMED,
         "C": FileChangeKind.COPIED,
+        "T": FileChangeKind.TYPE_CHANGED,
         "U": FileChangeKind.CONFLICTED,
         "?": FileChangeKind.UNTRACKED,
         ".": FileChangeKind.UNKNOWN,
