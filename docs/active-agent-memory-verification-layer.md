@@ -969,3 +969,97 @@ project data, memory, contradictions, and verification architecture; Agent Lab
 governs the repository contribution workflow around that architecture. Phase
 38A adds no runtime, persistence, ingestion, application code, dependency, or
 repository mutation feature. Phase 36K remains paused and untouched.
+
+## 27. Phase 39A — deterministic repository evidence projection MVP
+
+Phase 39A is implemented locally and pending completed hardening and final
+review. It adds a
+backend-only, deterministic, request/input-driven projection service
+(`app.services.repository_evidence_projection` over
+`app.models.repository_evidence_projection`) that transforms existing
+Repository Observer results — a `RepositorySnapshot` plus an optional
+`RepositoryDriftAnalysis` — into bounded **candidate** Active Memory records.
+It is a pure, read-only transformation over supplied models: it never invokes
+Git, reads the filesystem or a clock, persists anything, inserts into an
+Active Memory store, resolves contradictions, calculates active state,
+deduplicates against a store, exposes an endpoint, or uses AI/LLM
+interpretation.
+
+Settled Phase 39A decisions:
+
+- **Closed candidate vocabulary.** `MemoryRecordKind.REPOSITORY_STATE`
+  candidates scoped to the stable `RepositoryIdentity.repository_id`
+  (`MemoryScopeType.REPOSITORY`), limited to: `identity_status`,
+  `current_commit`, `current_branch`, `working_tree_state`,
+  `operation_state`, `snapshot_completeness`, `upstream_reference`,
+  `default_branch`, compact staged/unstaged/untracked/conflicted working-tree
+  count aggregates, and — when drift input exists — `drift_status`,
+  `drift_baseline_commit`, `drifted_file_count`, and the change-kind totals
+  `added_count`, `modified_count`, `deleted_count`, `renamed_count`,
+  `copied_count`, `type_changed_count`, and `unknown_count`. No per-file
+  records exist; changed files appear only as bounded, sorted path summaries
+  with explicit omitted counts inside evidence metadata, and the default
+  candidate limit holds the full claim set.
+- **Working-tree mapping** stays compatible with the
+  `clean_vs_dirty_working_tree` contradiction vocabulary: any dirty state or
+  nonzero dirty count → `dirty`; an exactly clean observation → `clean`;
+  unavailable/unknown observations omit the candidate and record a skipped
+  observation (never a serialized `None`).
+- **Verification is claim-dependent, never automatic.** Repository Observer
+  evidence — including Git-derived evidence — is not automatically trusted:
+  `verified` requires a verified repository identity and no warning, material
+  limitation, or truncation undermining that specific claim family; partial
+  snapshots, relevant observer warnings, and material limitations downgrade to
+  `partially_verified`; an unverified identity leaves every claim
+  `unverified`. A drift analysis with `complete` completeness but a material
+  warning, limitation, or truncation is *not* automatically `verified`.
+  Observer limitations are projected as bounded skipped-observation
+  descriptors rather than silently discarded. `confidence` is never set.
+- **Projection never activates records.** Every projected candidate is
+  `LifecycleState.INACTIVE`; active standing is reserved for later
+  active-state selection under the existing Phase 37A/37B lifecycle contract
+  and is never asserted by projection.
+- **Identity gating.** `unsafe_location`, `mismatched_root`, and
+  `mismatched_remote` identity statuses are fatal domain errors rather than
+  manufactured records. A drift analysis must describe the *same* repository as
+  the snapshot across the stable identity fields — `repository_id`,
+  `normalized_root`, `canonical_root`, and the primary remote identity when
+  both are present — not by `repository_id` alone; a mismatch is fatal and its
+  message never echoes secret-bearing remote text. A detached HEAD is an
+  observed `operation_state` value, never fatal.
+- **Deterministic identifiers** are content-derived via canonical JSON +
+  SHA-256 over *all* output-driving data, so a different semantic output always
+  yields a different id: the projection id folds in the project, repository,
+  snapshot and optional drift identities, both observation times, the recording
+  time, and the configured limits; a candidate id folds in the source snapshot
+  id, the source drift id when applicable, the full claim, scope, source, both
+  timestamps, the verification standing, and the sorted evidence ids. Bounded
+  length; duplicate generated ids raise an explicit domain error. No UUIDs, no
+  wall clock, no input-order dependence.
+- **Timestamps are input-owned on distinct axes.** `snapshot.observed_at` is
+  the observation time; `drift.observed_at` is the drift evidence capture time;
+  `request.recorded_at` is the recording time and the deterministic
+  `created_at` of projected candidates — observation time and recording time
+  are never substituted for one another. Awareness must be consistent (all
+  naive or all aware), `drift.observed_at` may not precede
+  `snapshot.observed_at`, and `recorded_at` may not precede the observation it
+  records. Evidence `captured_at` prefers each observer item's own capture
+  time; `valid_until` is always `None`; naive datetimes are never normalized
+  through the host-local timezone.
+- **Bounds are explicit and referentially sound.** Named projection limits
+  cover evidence records, candidate records, warnings, skipped observations,
+  and file-path summaries, each capped at `MAX_MEMORY_COLLECTION_ITEMS` at the
+  contract edge. Candidate bounding is deterministic and happens first;
+  evidence a retained candidate references is always retained and prioritized
+  over unreferenced evidence, so no dangling `evidence_ids` are ever emitted. A
+  `max_evidence_records` too small to retain that referenced evidence is a
+  focused projection limit error, not a silent removal of support. Overflow is
+  reported with exact omitted counts and a documented deterministic cutoff
+  (core identity/state candidates before optional aggregates), and result
+  completeness downgrades instead of silently truncating.
+
+Phase 39A produces candidates only — nothing enters an Active Memory store,
+and projection does not decide whether a record should later win active-state
+selection. It remains implemented locally, pending completed hardening and
+final review; the frontend-design track remains deferred and Phase 36K remains
+paused and untouched.

@@ -102,11 +102,17 @@ them.
 | Phase 38A — Multi-Agent Contribution Contracts + Composition Governance | Implemented locally / pending independent audit | Documentation-only Agent Lab governance for contribution authority, isolation, evidence, composition, and human merge gates. |
 | Phase 38B — PowerShell Governance Enforcement | Implemented locally / pending independent audit | Dependency-free local validation of repository identity, Git state, session declarations, and JSON composition manifests; no hook, CI, runtime service, or Git repair. |
 | Phase 38C — Governance Adoption + Agent Session Pack Integration | Implemented locally / pending independent audit | Documentation-only Agent Session Pack — launch guide, unavailability/fallback guide, and JSON session-header and composition-manifest templates — connecting Phase 38A policy to the Phase 38B preflight. No executable governance behavior changes. |
+| Phase 39A — Deterministic Repository Evidence Projection MVP | Implemented locally / pending completed hardening and final review | Backend-only, deterministic, request/input-driven, read-only projection of existing Repository Observer results into bounded, always-inactive candidate Active Memory records and evidence records with claim-dependent verification (limitations degrade verification where relevant), distinct observation and caller-supplied recording timestamps, snapshot/drift identity consistency, credential-safe remote handling, referentially sound evidence bounding (no dangling references), aggregate drift claims (baseline commit plus change-kind totals), and explicit warnings, skipped observations, and overflow. No endpoint, persistence, ingestion, Active Memory store insertion, watcher, active-state calculation, contradiction resolution, AI/LLM behavior, or repository mutation. |
 
 Phase 38B remains locally implemented pending independent audit and hardening.
 Phase 38C is documentation-only, implemented locally and pending independent
-Jules audit; it adds no executable governance behavior. Each phase remains
-independently scoped and reviewable.
+Jules audit; it adds no executable governance behavior. Phase 39A is
+implemented locally and pending completed hardening and final review; it
+produces candidates only — every projected candidate is `inactive`, projection
+never activates records, Repository Observer evidence is never automatically
+trusted, no dangling evidence references are permitted, and no record enters an
+Active Memory store. The frontend-design track remains deferred. Each phase
+remains independently scoped and reviewable.
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
 implementation track.
