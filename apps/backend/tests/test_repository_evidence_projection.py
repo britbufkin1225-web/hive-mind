@@ -10,12 +10,13 @@ from __future__ import annotations
 import builtins
 import inspect
 import subprocess
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from pydantic import ValidationError
 
 from app.models.active_memory import (
+    ClaimValueKind,
     EvidenceReferenceKind,
     EvidenceType,
     LifecycleState,
@@ -35,8 +36,12 @@ from app.models.repository_observer import (
     EvidenceCategory,
     FileChangeKind,
     FileObservationSummary,
+    ObserverLimitation,
+    ObserverLimitationCategory,
     ObserverWarning,
     ObserverWarningCategory,
+    OverflowLimitKind,
+    OverflowMetadata,
     RepositoryDriftAnalysis,
     RepositoryDriftFile,
     RepositoryDriftStatus,
@@ -56,12 +61,17 @@ from app.services.repository_evidence_projection import (
     ProjectionDuplicateIdError,
     ProjectionIdentityError,
     ProjectionInputMismatchError,
+    ProjectionLimitError,
     ProjectionTimestampError,
     RepositoryEvidenceProjectionService,
+    _remote_reference_is_safe,
     project_repository_evidence,
 )
 
 OBSERVED_AT = datetime(2026, 7, 18, 12, 0, 0)
+# Recording time is a distinct axis from observation time and, being the moment
+# of recording, is at or after the observation it records.
+RECORDED_AT = datetime(2026, 7, 18, 12, 5, 0)
 COMMIT = "a" * 40
 
 
@@ -161,11 +171,13 @@ def _request(
     drift: RepositoryDriftAnalysis | None = None,
     project_id: str = "hive-mind",
     limits: RepositoryEvidenceProjectionLimits | None = None,
+    recorded_at: datetime = RECORDED_AT,
 ) -> RepositoryEvidenceProjectionRequest:
     return RepositoryEvidenceProjectionRequest(
         project_id=project_id,
         snapshot=snapshot or _snapshot(),
         drift_analysis=drift,
+        recorded_at=recorded_at,
         limits=limits or RepositoryEvidenceProjectionLimits(),
     )
 
@@ -329,10 +341,10 @@ def test_candidate_shape_uses_repository_scope_and_observer_source() -> None:
         assert record.scope.scope_type is MemoryScopeType.REPOSITORY
         assert record.scope.scope_id == "repo-hive-mind"
         assert record.source.source_type is MemorySourceType.REPOSITORY_OBSERVER
-        assert record.lifecycle_state is LifecycleState.ACTIVE
+        assert record.lifecycle_state is LifecycleState.INACTIVE
         assert record.confidence is None
         assert record.observed_at == OBSERVED_AT
-        assert record.created_at == OBSERVED_AT
+        assert record.created_at == RECORDED_AT
 
 
 def test_partial_snapshot_downgrades_working_tree_claims() -> None:
@@ -613,13 +625,16 @@ def test_identity_mismatch_cannot_produce_falsely_verified_candidates() -> None:
 # --------------------------------------------------------------------------- #
 # Bounds and overflow
 # --------------------------------------------------------------------------- #
-def test_evidence_overflow_is_explicit_and_prioritizes_anchors() -> None:
+def test_evidence_overflow_omits_only_unreferenced_evidence() -> None:
+    # 4 candidate-referenced anchors + 6 unreferenced observer items. A limit
+    # above the referenced count overflows only unreferenced evidence, never
+    # support a retained candidate cites.
     snapshot = _snapshot(
         evidence=[_observer_evidence(f"ev-{index}") for index in range(6)]
     )
-    limits = RepositoryEvidenceProjectionLimits(max_evidence_records=3)
+    limits = RepositoryEvidenceProjectionLimits(max_evidence_records=6)
     result = _project(snapshot=snapshot, limits=limits)
-    assert len(result.evidence_records) == 3
+    assert len(result.evidence_records) == 6
     entries = [
         item
         for item in result.overflow
@@ -627,8 +642,47 @@ def test_evidence_overflow_is_explicit_and_prioritizes_anchors() -> None:
     ]
     assert len(entries) == 1
     assert entries[0].observed_count == 10  # 4 anchors + 6 observer items
-    assert entries[0].omitted_count == 7
+    assert entries[0].omitted_count == 4  # only unreferenced observer items
     assert result.completeness is SnapshotCompleteness.PARTIAL
+    # Referential integrity: every retained candidate's evidence survives.
+    evidence_ids = {record.evidence_id for record in result.evidence_records}
+    for record in result.candidate_records:
+        assert set(record.evidence_ids) <= evidence_ids
+
+
+@pytest.mark.parametrize("max_evidence_records", [1, 2, 3])
+def test_evidence_limit_below_referenced_count_is_fatal(max_evidence_records) -> None:
+    # The default snapshot has 4 candidate-referenced anchors (snapshot, commit,
+    # branch, remote). A limit below that cannot retain them without producing
+    # dangling references, so projection fails closed instead.
+    limits = RepositoryEvidenceProjectionLimits(
+        max_evidence_records=max_evidence_records
+    )
+    with pytest.raises(ProjectionLimitError):
+        _project(limits=limits)
+
+
+def test_evidence_limit_exactly_referenced_count_retains_all_support() -> None:
+    limits = RepositoryEvidenceProjectionLimits(max_evidence_records=4)
+    result = _project(limits=limits)
+    assert len(result.evidence_records) == 4
+    evidence_ids = {record.evidence_id for record in result.evidence_records}
+    for record in result.candidate_records:
+        assert set(record.evidence_ids) <= evidence_ids
+    assert not [
+        item
+        for item in result.overflow
+        if item.kind is ProjectionOverflowKind.EVIDENCE_RECORD_COUNT
+    ]
+
+
+def test_default_bounds_retain_all_evidence_and_candidate_support() -> None:
+    result = _project(drift=_clean_drift())
+    evidence_ids = {record.evidence_id for record in result.evidence_records}
+    for record in result.candidate_records:
+        assert record.evidence_ids
+        assert set(record.evidence_ids) <= evidence_ids
+    assert not result.overflow
 
 
 def test_candidate_overflow_retains_documented_priority_order() -> None:
@@ -837,3 +891,405 @@ def test_module_level_helper_matches_service_output() -> None:
         project_repository_evidence(request).model_dump_json()
         == RepositoryEvidenceProjectionService().project(request).model_dump_json()
     )
+
+
+# --------------------------------------------------------------------------- #
+# Candidate lifecycle (Phase 39A §2)
+# --------------------------------------------------------------------------- #
+def test_every_projected_candidate_is_inactive() -> None:
+    result = _project(drift=_drifted_drift())
+    assert result.candidate_records
+    for record in result.candidate_records:
+        assert record.lifecycle_state is LifecycleState.INACTIVE
+
+
+# --------------------------------------------------------------------------- #
+# Recorded timestamp contract (Phase 39A §3)
+# --------------------------------------------------------------------------- #
+def test_recorded_at_is_created_at_distinct_from_observed_at() -> None:
+    result = _project(drift=_clean_drift())
+    for record in result.candidate_records:
+        assert record.observed_at == OBSERVED_AT
+        assert record.created_at == RECORDED_AT
+    assert OBSERVED_AT != RECORDED_AT
+
+
+def test_aware_timestamps_are_accepted_and_serialize_stably() -> None:
+    observed = datetime(2026, 7, 18, 12, 0, tzinfo=timezone.utc)
+    recorded = datetime(2026, 7, 18, 12, 5, tzinfo=timezone.utc)
+    snapshot = _snapshot(observed_at=observed)
+    drift = _clean_drift(observed_at=observed)
+    first = RepositoryEvidenceProjectionService().project(
+        _request(snapshot=snapshot, drift=drift, recorded_at=recorded)
+    )
+    second = RepositoryEvidenceProjectionService().project(
+        _request(snapshot=snapshot, drift=drift, recorded_at=recorded)
+    )
+    assert first.model_dump_json() == second.model_dump_json()
+    for record in first.candidate_records:
+        assert record.created_at == recorded
+
+
+def test_mixed_awareness_timestamps_are_fatal() -> None:
+    aware = datetime(2026, 7, 18, 12, 5, tzinfo=timezone.utc)
+    with pytest.raises(ProjectionTimestampError):
+        _project(recorded_at=aware)  # naive snapshot + aware recorded_at
+
+
+def test_recorded_at_before_observation_is_fatal() -> None:
+    with pytest.raises(ProjectionTimestampError):
+        _project(recorded_at=OBSERVED_AT - timedelta(minutes=1))
+
+
+def test_drift_observed_before_snapshot_observed_is_fatal() -> None:
+    drift = _clean_drift(observed_at=OBSERVED_AT - timedelta(minutes=1))
+    with pytest.raises(ProjectionTimestampError):
+        _project(drift=drift)
+
+
+def test_recorded_at_before_drift_observation_is_fatal() -> None:
+    later = OBSERVED_AT + timedelta(hours=1)
+    snapshot = _snapshot(observed_at=OBSERVED_AT)
+    drift = _clean_drift(observed_at=later)
+    # recorded_at sits between the two observations: valid vs the snapshot but
+    # earlier than the drift observation it records.
+    with pytest.raises(ProjectionTimestampError):
+        _project(
+            snapshot=snapshot,
+            drift=drift,
+            recorded_at=OBSERVED_AT + timedelta(minutes=1),
+        )
+
+
+# --------------------------------------------------------------------------- #
+# Stable identity inputs (Phase 39A §4)
+# --------------------------------------------------------------------------- #
+def test_different_limits_produce_different_projection_ids() -> None:
+    wide = _project()
+    narrow = _project(limits=RepositoryEvidenceProjectionLimits(max_candidate_records=5))
+    assert wide.projection_id != narrow.projection_id
+
+
+def test_different_snapshot_ids_produce_different_candidate_ids() -> None:
+    first = _claims(_project(snapshot=_snapshot(snapshot_id="snapshot-1")))
+    second = _claims(_project(snapshot=_snapshot(snapshot_id="snapshot-2")))
+    assert (
+        first["identity_status"].record_id != second["identity_status"].record_id
+    )
+
+
+def test_changed_verification_standing_changes_candidate_id() -> None:
+    # Same working_tree_state value ("clean") and same snapshot id, but a
+    # different completeness changes the verification standing — and therefore
+    # the candidate id.
+    complete = _claims(
+        _project(snapshot=_snapshot(completeness=SnapshotCompleteness.COMPLETE))
+    )["working_tree_state"]
+    partial = _claims(
+        _project(snapshot=_snapshot(completeness=SnapshotCompleteness.PARTIAL))
+    )["working_tree_state"]
+    assert complete.claim.value == partial.claim.value == "clean"
+    assert complete.verification_state is not partial.verification_state
+    assert complete.record_id != partial.record_id
+
+
+def test_different_recorded_at_changes_candidate_id() -> None:
+    early = _claims(_project(recorded_at=RECORDED_AT))["identity_status"]
+    late = _claims(
+        _project(recorded_at=RECORDED_AT + timedelta(hours=1))
+    )["identity_status"]
+    assert early.record_id != late.record_id
+
+
+# --------------------------------------------------------------------------- #
+# Trust / limitation policy (Phase 39A §5)
+# --------------------------------------------------------------------------- #
+def _drift_warning(category=ObserverWarningCategory.GIT_METADATA_UNAVAILABLE):
+    return ObserverWarning(warning_id="dw-1", category=category, summary="drift warning")
+
+
+def _drift_limitation(category=ObserverLimitationCategory.UNAVAILABLE_INFORMATION):
+    return ObserverLimitation(
+        limitation_id="dl-1", category=category, summary="drift limitation"
+    )
+
+
+def test_complete_drift_with_material_warning_is_not_verified() -> None:
+    drift = _clean_drift(warnings=[_drift_warning()])
+    claims = _claims(_project(drift=drift))
+    assert claims["drift_status"].verification_state is (
+        VerificationState.PARTIALLY_VERIFIED
+    )
+
+
+def test_complete_drift_with_material_limitation_is_not_verified() -> None:
+    drift = _clean_drift(limitations=[_drift_limitation()])
+    claims = _claims(_project(drift=drift))
+    assert claims["drift_status"].verification_state is (
+        VerificationState.PARTIALLY_VERIFIED
+    )
+
+
+def test_truncated_drift_is_not_verified() -> None:
+    overflow = OverflowMetadata(
+        overflow_id="drift-of-1",
+        limit_kind=OverflowLimitKind.FILE_COUNT,
+        truncated=True,
+        configured_limit=1,
+        observed_count=5,
+        retained_count=1,
+        omitted_count=4,
+        deterministic_cutoff="first N by path",
+        snapshot_partial=True,
+    )
+    drift = _drifted_drift(
+        drift_status=RepositoryDriftStatus.PARTIAL,
+        completeness=SnapshotCompleteness.PARTIAL,
+        overflow=[overflow],
+    )
+    claims = _claims(_project(drift=drift))
+    assert claims["drift_status"].verification_state is (
+        VerificationState.PARTIALLY_VERIFIED
+    )
+
+
+def test_snapshot_material_limitation_downgrades_working_tree_claims() -> None:
+    snapshot = _snapshot(
+        limitations=[
+            ObserverLimitation(
+                limitation_id="sl-1",
+                category=ObserverLimitationCategory.UNAVAILABLE_INFORMATION,
+                summary="snapshot limitation",
+            )
+        ]
+    )
+    claims = _claims(_project(snapshot=snapshot))
+    assert claims["working_tree_state"].verification_state is (
+        VerificationState.PARTIALLY_VERIFIED
+    )
+    assert claims["current_branch"].verification_state is (
+        VerificationState.PARTIALLY_VERIFIED
+    )
+
+
+def test_unrelated_warning_does_not_degrade_unrelated_claims() -> None:
+    snapshot = _snapshot(
+        warnings=[
+            ObserverWarning(
+                warning_id="w-binary",
+                category=ObserverWarningCategory.BINARY_CONTENT_OMITTED,
+                summary="a binary file's content was omitted",
+            )
+        ]
+    )
+    claims = _claims(_project(snapshot=snapshot))
+    assert claims["working_tree_state"].verification_state is VerificationState.VERIFIED
+    assert claims["current_branch"].verification_state is VerificationState.VERIFIED
+
+
+def test_limitations_are_projected_as_skipped_observations() -> None:
+    snapshot = _snapshot(
+        limitations=[
+            ObserverLimitation(
+                limitation_id="sl-9",
+                category=ObserverLimitationCategory.BOUNDED_COLLECTION,
+                summary="bounded collection",
+            )
+        ]
+    )
+    result = _project(snapshot=snapshot)
+    assert any(
+        "snapshot-limitation sl-9" in item for item in result.skipped_observations
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Snapshot/drift identity consistency (Phase 39A §6)
+# --------------------------------------------------------------------------- #
+def test_same_repo_id_but_different_root_is_fatal() -> None:
+    drift = _clean_drift(
+        repository_identity=_identity(normalized_root="c:/other/root")
+    )
+    with pytest.raises(ProjectionInputMismatchError):
+        _project(drift=drift)
+
+
+def test_same_repo_id_but_different_remote_is_fatal() -> None:
+    drift = _clean_drift(
+        repository_identity=_identity(
+            primary_remote_url="https://github.com/example/other.git"
+        )
+    )
+    with pytest.raises(ProjectionInputMismatchError):
+        _project(drift=drift)
+
+
+def test_identity_mismatch_error_never_echoes_remote_secret() -> None:
+    drift = _clean_drift(
+        repository_identity=_identity(
+            primary_remote_url="https://user:topsecret@github.com/example/other.git"
+        )
+    )
+    snapshot = _snapshot(
+        repository_identity=_identity(
+            primary_remote_url="https://user:othersecret@github.com/example/hive-mind.git"
+        )
+    )
+    with pytest.raises(ProjectionInputMismatchError) as excinfo:
+        _project(snapshot=snapshot, drift=drift)
+    assert "topsecret" not in str(excinfo.value)
+    assert "othersecret" not in str(excinfo.value)
+
+
+# --------------------------------------------------------------------------- #
+# Remote reference safety (Phase 39A §7)
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize(
+    "url,expected_safe",
+    [
+        ("https://user:secret@github.com/example/hive-mind.git", False),
+        ("https://github.com/example/hive-mind.git?token=abc", False),
+        ("https://github.com/example/hive-mind.git#tok", False),
+        ("https://user%40evil@github.com/example/hive-mind.git", False),
+        ("https://token@github.com/example/hive-mind.git", False),
+        ("https://github.com/example/hive-mind.git", True),
+        ("git@github.com:example/hive-mind.git", True),
+        ("ssh://git@github.com/example/hive-mind.git", True),
+    ],
+)
+def test_remote_reference_safety_classification(url, expected_safe) -> None:
+    assert _remote_reference_is_safe(url) is expected_safe
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://user:secret@github.com/example/hive-mind.git",
+        "https://github.com/example/hive-mind.git?token=secret",
+        "https://github.com/example/hive-mind.git#secret",
+        "https://user%40secret@github.com/example/hive-mind.git",
+    ],
+)
+def test_adversarial_remotes_are_never_projected(url) -> None:
+    result = _project(snapshot=_snapshot(repository_identity=_identity(primary_remote_url=url)))
+    assert all("secret" not in record.reference.value for record in result.evidence_records)
+    assert all("secret" not in item for item in result.skipped_observations)
+    assert any("configured_remote" in item for item in result.skipped_observations)
+
+
+def test_safe_ssh_remote_is_projected() -> None:
+    result = _project(
+        snapshot=_snapshot(
+            repository_identity=_identity(
+                primary_remote_url="git@github.com:example/hive-mind.git"
+            )
+        )
+    )
+    remotes = [
+        record
+        for record in result.evidence_records
+        if record.reference.reference_kind is EvidenceReferenceKind.EXTERNAL_SOURCE_ID
+    ]
+    assert len(remotes) == 1
+    assert remotes[0].reference.value == "git@github.com:example/hive-mind.git"
+
+
+# --------------------------------------------------------------------------- #
+# Aggregate drift claims (Phase 39A §8)
+# --------------------------------------------------------------------------- #
+def test_drift_aggregate_claims_are_projected() -> None:
+    summary = RepositoryDriftSummary(
+        total_changed_files=4,
+        retained_file_count=4,
+        unstaged_count=4,
+        added_count=1,
+        modified_count=1,
+        deleted_count=1,
+        renamed_count=0,
+        copied_count=0,
+        type_changed_count=1,
+        unknown_count=0,
+    )
+    files = [
+        RepositoryDriftFile(
+            file_id=f"df-{i}",
+            change_kind=FileChangeKind.MODIFIED,
+            current_path=f"src/f{i}.py",
+            normalized_path=f"src/f{i}.py",
+            unstaged=True,
+            evidence_ids=["ev-git-status"],
+        )
+        for i in range(4)
+    ]
+    drift = RepositoryDriftAnalysis(
+        drift_id="drift-agg",
+        repository_identity=_identity(),
+        observed_at=OBSERVED_AT,
+        baseline_reference="HEAD",
+        baseline_commit_hash=COMMIT,
+        drift_status=RepositoryDriftStatus.DRIFTED,
+        summary=summary,
+        files=files,
+        evidence=[_observer_evidence()],
+        completeness=SnapshotCompleteness.COMPLETE,
+    )
+    result = _project(drift=drift)
+    claims = _claims(result)
+    assert claims["drift_baseline_commit"].claim.value == COMMIT
+    assert claims["drift_baseline_commit"].claim.value_kind is ClaimValueKind.IDENTIFIER
+    assert claims["added_count"].claim.value == "1"
+    assert claims["modified_count"].claim.value == "1"
+    assert claims["deleted_count"].claim.value == "1"
+    assert claims["renamed_count"].claim.value == "0"
+    assert claims["copied_count"].claim.value == "0"
+    assert claims["type_changed_count"].claim.value == "1"
+    assert claims["unknown_count"].claim.value == "0"
+    # Aggregate claims cite the drift evidence anchor and reference retained
+    # evidence only (no dangling ids, no per-file records).
+    evidence_ids = {record.evidence_id for record in result.evidence_records}
+    for key in ("added_count", "modified_count", "type_changed_count"):
+        assert claims[key].claim.value_kind is ClaimValueKind.INTEGER
+        assert claims[key].evidence_ids
+        assert set(claims[key].evidence_ids) <= evidence_ids
+
+
+def test_missing_baseline_commit_is_omitted_not_serialized_none() -> None:
+    drift = _clean_drift(baseline_commit_hash=None)
+    result = _project(drift=drift)
+    claims = _claims(result)
+    assert "drift_baseline_commit" not in claims
+    assert all(record.claim.value != "None" for record in result.candidate_records)
+    assert any(
+        "drift_baseline_commit" in item for item in result.skipped_observations
+    )
+
+
+def test_default_candidate_limit_holds_full_drift_claim_set() -> None:
+    result = _project(drift=_drifted_drift())
+    predicates = {record.claim.predicate for record in result.candidate_records}
+    for expected in (
+        "drift_status",
+        "drift_baseline_commit",
+        "drifted_file_count",
+        "added_count",
+        "modified_count",
+        "deleted_count",
+        "renamed_count",
+        "copied_count",
+        "type_changed_count",
+        "unknown_count",
+    ):
+        assert expected in predicates
+    assert not [
+        item
+        for item in result.overflow
+        if item.kind is ProjectionOverflowKind.CANDIDATE_RECORD_COUNT
+    ]
+
+
+# --------------------------------------------------------------------------- #
+# Limit contracts (Phase 39A §9)
+# --------------------------------------------------------------------------- #
+def test_oversized_limit_is_rejected_at_the_contract_edge() -> None:
+    with pytest.raises(ValidationError):
+        RepositoryEvidenceProjectionLimits(max_evidence_records=100_000)

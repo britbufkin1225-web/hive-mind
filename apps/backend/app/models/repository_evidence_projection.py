@@ -13,11 +13,12 @@ Design rationale:
   ``active-memory.v1`` records; there is no endpoint and no new wire surface,
   so the result records only a *service* version string (the Phase 37O
   ``observer_version`` convention), not a new contract family.
-* **Caller-independent time.** The request carries no clock and no projection
-  timestamp: the snapshot's own ``observed_at`` is the projection's time base
-  (Phase 37A §13 — timestamps are never substituted, and the service never
-  reads a clock). No caller-supplied timestamp field exists because the
-  existing snapshot contract already provides a suitable observation time.
+* **Caller-owned time, distinct axes.** The request carries no clock. The
+  *observation* time is the input's own ``snapshot.observed_at`` (and
+  ``drift.observed_at`` for drift evidence); the *recording* time is a
+  caller-supplied ``recorded_at`` used only as the candidate ``created_at``.
+  Observation time and recording time are separate axes (Phase 37A §13 —
+  timestamps are never substituted), and the service never reads a clock.
 * **Projection-specific bounds are named constants** on a dedicated limits
   model so tests and callers can tighten them without magic literals. The
   closed candidate vocabulary keeps normal file-count growth from ever
@@ -31,6 +32,7 @@ Design rationale:
 
 from __future__ import annotations
 
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator
@@ -97,20 +99,37 @@ class ProjectionOverflow(BaseModel):
 
 
 class RepositoryEvidenceProjectionLimits(BaseModel):
-    """Named projection bounds (no magic literals in the service)."""
+    """Named projection bounds (no magic literals in the service).
+
+    Every bound is capped at ``MAX_MEMORY_COLLECTION_ITEMS`` — the same length
+    ceiling the result collections enforce — so an over-large caller limit is
+    rejected here, at the contract edge, with a clear validation error instead
+    of surfacing as a late, generic Pydantic output-length failure once the
+    projected collections are assembled (Phase 39A §9).
+    """
 
     max_evidence_records: int = Field(
-        default=DEFAULT_MAX_PROJECTED_EVIDENCE_RECORDS, ge=1
+        default=DEFAULT_MAX_PROJECTED_EVIDENCE_RECORDS,
+        ge=1,
+        le=MAX_MEMORY_COLLECTION_ITEMS,
     )
     max_candidate_records: int = Field(
-        default=DEFAULT_MAX_PROJECTED_CANDIDATE_RECORDS, ge=1
+        default=DEFAULT_MAX_PROJECTED_CANDIDATE_RECORDS,
+        ge=1,
+        le=MAX_MEMORY_COLLECTION_ITEMS,
     )
-    max_warnings: int = Field(default=DEFAULT_MAX_PROJECTION_WARNINGS, ge=1)
+    max_warnings: int = Field(
+        default=DEFAULT_MAX_PROJECTION_WARNINGS, ge=1, le=MAX_MEMORY_COLLECTION_ITEMS
+    )
     max_skipped_observations: int = Field(
-        default=DEFAULT_MAX_PROJECTION_SKIPPED_OBSERVATIONS, ge=1
+        default=DEFAULT_MAX_PROJECTION_SKIPPED_OBSERVATIONS,
+        ge=1,
+        le=MAX_MEMORY_COLLECTION_ITEMS,
     )
     max_file_path_summary_items: int = Field(
-        default=DEFAULT_MAX_FILE_PATH_SUMMARY_ITEMS, ge=1
+        default=DEFAULT_MAX_FILE_PATH_SUMMARY_ITEMS,
+        ge=1,
+        le=MAX_MEMORY_COLLECTION_ITEMS,
     )
 
 
@@ -120,11 +139,19 @@ class RepositoryEvidenceProjectionRequest(BaseModel):
     Deliberately no Git adapter, no repository path to inspect, no command
     executor, and no clock — the projection is a pure transformation over the
     supplied models.
+
+    ``recorded_at`` is the caller-supplied *recording* time used only as the
+    deterministic ``created_at`` of projected candidates. It is the narrowest
+    appropriate name (it records nothing but the moment of recording) and is
+    kept strictly distinct from the observation time carried by the inputs'
+    own ``observed_at`` fields: the service never substitutes one for the
+    other and never reads a clock (Phase 37A §13, Phase 39A §3).
     """
 
     project_id: str = Field(max_length=MAX_MEMORY_ID_LENGTH)
     snapshot: RepositorySnapshot
     drift_analysis: RepositoryDriftAnalysis | None = None
+    recorded_at: datetime
     limits: RepositoryEvidenceProjectionLimits = Field(
         default_factory=RepositoryEvidenceProjectionLimits
     )
