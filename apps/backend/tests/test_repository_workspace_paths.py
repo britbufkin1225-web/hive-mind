@@ -100,14 +100,17 @@ def test_windows_local_appdata_resolution() -> None:
     env = {"LOCALAPPDATA": r"C:\Users\brit\AppData\Local"}
     resolved = resolve_workspace_config_path(env, system="nt")
     assert resolved.name == "repository-workspaces.json"
-    assert "HiveMind" in resolved.parts
-    assert "AppData" in resolved.parts
+    from pathlib import PureWindowsPath
+    parts = PureWindowsPath(resolved).parts
+    assert "HiveMind" in parts
+    assert "AppData" in parts
 
 
 def test_windows_home_fallback_when_no_local_appdata() -> None:
     env = {"USERPROFILE": r"C:\Users\brit"}
     resolved = resolve_workspace_config_path(env, system="nt")
-    parts = resolved.parts
+    from pathlib import PureWindowsPath
+    parts = PureWindowsPath(resolved).parts
     assert "AppData" in parts and "Local" in parts and "HiveMind" in parts
 
 
