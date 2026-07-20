@@ -50,20 +50,19 @@ explicit request and keeps repository paths only in React state.
 
 ## Active Phase
 
-### Phase 38A — Multi-Agent Contribution Contracts + Composition Governance
+### Phase 38B — PowerShell Governance Enforcement
 
-Phase 38A is implemented locally and pending independent audit. It adds the
-documentation-only [Agent Lab governance layer](agent-lab/README.md): contribution
-contract, locked session-header template, role/capability matrix, preflight and
-postflight checklists, and composition manifest. These documents govern agent
-authority, path ownership, branch/worktree isolation, provenance, evidence,
-completion terminology, stop conditions, and human merge gates.
+Phase 38B is implemented locally and pending independent audit. It adds a
+dependency-free [PowerShell governance preflight](../scripts/governance/README.md)
+that deterministically validates canonical repository identity, Git branch and
+baseline state, Phase 38A session enums, the Phase 36K lock, optional clean-tree
+state, and JSON serializations of the existing composition-manifest schema.
 
-Phase 38A changes no application source, dependency, script, hook, CI workflow,
-or runtime behavior. Phase 38B deterministic PowerShell enforcement is planned,
-not active. Active Memory remains the authority for project data, memory,
-contradiction, and verification architecture; Agent Lab governs repository
-contribution workflow. Neither replaces the other.
+The validator is diagnostic and read-only. It does not fetch or repair Git state,
+install hooks, add CI, orchestrate agents, or make human-only composition and
+merge decisions. Phase 38A remains the policy source. Active Memory remains the
+authority for project data, memory, contradiction, and verification architecture;
+Agent Lab governs repository contribution workflow. Neither replaces the other.
 
 Phase 37P — Repository Drift API + Frontend Inspector Integration is complete
 and merged at `0b901ef0a02857745afe9e5cf4cab0486ba7a6bb`. Its bounded,
@@ -92,10 +91,10 @@ them.
 | Phase 37O — Deterministic Repository Drift Analysis MVP | Implemented | Backend-only `POST /api/repository-observer/drift` over current `HEAD`, with deterministic file-level drift classification, evidence, bounds, overflow, and safe errors. No persistence, frontend, ingestion, AI/LLM behavior, or mutation. |
 | Phase 37P — Repository Drift API + Frontend Inspector Integration | Implemented / merged | Reuses Phase 37O through the existing drift API and adds an explicit, bounded, newest-request-only drift inspector to the Repository Observer panel. No persistence, watcher, monitoring, or mutation. |
 | Phase 38A — Multi-Agent Contribution Contracts + Composition Governance | Implemented locally / pending independent audit | Documentation-only Agent Lab governance for contribution authority, isolation, evidence, composition, and human merge gates. |
-| Phase 38B — Agent Contract PowerShell Enforcement | Planned only | Future deterministic validation of Phase 38A contracts; no script, hook, CI, or runtime enforcement exists yet. |
+| Phase 38B — PowerShell Governance Enforcement | Implemented locally / pending independent audit | Dependency-free local validation of repository identity, Git state, session declarations, and JSON composition manifests; no hook, CI, runtime service, or Git repair. |
 
-After Phase 38A independent audit, Phase 38B remains the planned enforcement
-continuation. Each phase remains independently scoped and reviewable.
+Phase 38B remains locally implemented pending independent Claude audit and
+hardening. Each phase remains independently scoped and reviewable.
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
 implementation track.

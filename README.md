@@ -16,7 +16,7 @@ The problem Hive|Mind is solving is not "generate more content." It is the quiet
 
 The product direction is deliberately evidence-oriented. The app favors deterministic backend derivation, provenance, and read-only inspection before mutation or automation. The current Intelligence Report surfaces temporal decay, dreaming suggestions, provenance chains, and query trails as explainable outputs over existing store and graph structure.
 
-Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Its implemented foundation includes deterministic context packets and a read-only inspector, plus a Repository Observer with bounded snapshot and drift APIs. Phase 37P completed and merged the explicit, on-demand drift workflow. The documentation-only Phase 38A Agent Lab layer now governs safe multi-agent repository contributions and is implemented locally pending independent audit.
+Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for future tools and agents to read verified, evidence-linked project context before acting. Its implemented foundation includes deterministic context packets and a read-only inspector, plus a Repository Observer with bounded snapshot and drift APIs. Phase 37P completed and merged the explicit, on-demand drift workflow. Phase 38A defines safe multi-agent contribution contracts, and Phase 38B now implements their local PowerShell preflight pending independent audit.
 
 ## What Hive|Mind Does
 
@@ -143,7 +143,7 @@ More screenshot history and QA notes live in the [Phase 28C graph-primary eviden
 | Repository observation API | Implemented | `POST /api/repository-observer/snapshot`: thin read-only endpoint over Phase 37K using the existing snapshot contract. |
 | Repository observer frontend inspector | Implemented | Contextual graph-first dock panel over the snapshot API, verified and hardened in Phase 37N; no Git dashboard, watcher, persistence, ingestion, AI review, or mutation. |
 | Repository drift analysis | Implemented / merged | `POST /api/repository-observer/drift` plus an explicit frontend inspector action over the Phase 37O service; no persistence, watcher, background monitoring, Active Memory ingestion, AI/LLM behavior, or mutation. |
-| Agent Lab contribution governance | Implemented locally / pending independent audit | Documentation contracts for session authority, preflight, roles/capabilities, composition, evidence, and human merge gates; Phase 38B enforcement remains planned. |
+| Agent Lab contribution governance | Implemented locally / pending independent audit | Phase 38A documentation contracts plus Phase 38B dependency-free, read-only PowerShell enforcement for repository, Git, session, and JSON composition-manifest state. |
 | Active Memory runtime | Planned | Active-state calculation, write endpoints, durable memory, ingestion, and evidence resolver are not implemented. |
 
 ## Architecture And Stack
@@ -227,7 +227,7 @@ The active local contribution is:
       (implemented locally / pending independent audit)
 ```
 
-Phase 37P is complete and merged. Phase 38A adds the documentation-only [Agent Lab contribution contracts](docs/agent-lab/README.md) and remains pending independent audit; Phase 38B PowerShell enforcement is planned, not active. Phase 36K remains paused, not canceled or completed. Active Memory continues to govern project data and verification architecture while Agent Lab governs contribution workflow. The complete chronology belongs in the [roadmap](docs/roadmap.md).
+Phase 37P is complete and merged. Phase 38A adds the documentation-only [Agent Lab contribution contracts](docs/agent-lab/README.md). Phase 38B adds a [local PowerShell governance preflight](scripts/governance/README.md); it is implemented locally and pending independent audit, with no hook, CI, or autonomous Git behavior. Phase 36K remains paused, not canceled or completed. Active Memory continues to govern project data and verification architecture while Agent Lab governs contribution workflow. The complete chronology belongs in the [roadmap](docs/roadmap.md).
 
 ## Documentation
 

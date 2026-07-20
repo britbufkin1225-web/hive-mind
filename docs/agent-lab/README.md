@@ -56,10 +56,11 @@ not canonical state.
 
 ## Phase boundary
 
-Phase 38A adds documentation contracts only. It adds no scripts, hooks, CI,
-runtime enforcement, dependencies, application code, repository mutation
-features, or agent services. Phase 38B may implement deterministic PowerShell
-validation of these contracts after independent audit and human authorization.
+Phase 38A adds the policy contracts and remains the source of truth. Phase 38B
+adds [dependency-free local PowerShell validation](../../scripts/governance/README.md)
+of repository identity, Git state, explicit session declarations, and JSON
+serializations of the existing composition manifest. It adds no hooks, CI,
+dependencies, application code, repository mutation features, or agent services.
 
 Active Memory continues to govern project data, memory, contradiction, and
 verification architecture. Agent Lab complements it by governing how humans and
