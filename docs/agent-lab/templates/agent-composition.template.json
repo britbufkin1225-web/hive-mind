@@ -1,0 +1,79 @@
+{
+  "manifest_version": "agent-composition.v1",
+  "contract_version": "agent-contribution.v1",
+  "project": {
+    "name": "Hive|Mind",
+    "parent_label": "devdevbuilds",
+    "repository_root": "C:\\Users\\britb\\Documents\\hive-mind",
+    "remote_url": "https://github.com/britbufkin1225-web/hive-mind.git"
+  },
+  "phase": {
+    "id": "Phase 00 — Example Bounded Contribution",
+    "name": "Example bounded contribution",
+    "status_at_start": "Planned",
+    "status_at_end": "Implemented locally / pending independent audit",
+    "paused_tracks": ["Phase 36K"]
+  },
+  "agent": {
+    "name": "example-agent",
+    "assigned_role": "primary-implementer",
+    "capability_level": "L2",
+    "composition_mode": "sequential-isolated"
+  },
+  "authority": {
+    "write_authority": "documentation-only",
+    "owned_paths": [],
+    "read_only_paths": [],
+    "forbidden_paths": []
+  },
+  "git": {
+    "expected_baseline": "0000000000000000000000000000000000000000",
+    "actual_baseline": "0000000000000000000000000000000000000000",
+    "merge_base": "0000000000000000000000000000000000000000",
+    "working_branch": "phase-00-example",
+    "input_commit": "0000000000000000000000000000000000000000",
+    "output_commit": "0000000000000000000000000000000000000000",
+    "earlier_commits_preserved": true,
+    "destructive_operations_used": false
+  },
+  "contribution": {
+    "objective": "Example objective",
+    "summary": "Example summary",
+    "changed_files": [],
+    "added_files": [],
+    "deleted_files": [],
+    "renamed_files": [],
+    "diff_statistics": {
+      "files_changed": 0,
+      "insertions": 0,
+      "deletions": 0
+    },
+    "scope_deviations": []
+  },
+  "validation": {
+    "commands": [],
+    "outcomes": [],
+    "tests_not_run": [],
+    "evidence_limitations": []
+  },
+  "reporting": {
+    "assumptions": [],
+    "known_limitations": [],
+    "blockers": []
+  },
+  "handoff": {
+    "recommended_next_actor": "human-project-owner",
+    "recommended_next_role": "independent-auditor-hardener",
+    "required_follow_up": [],
+    "safe_to_compose": false,
+    "safe_to_push": false,
+    "safe_to_open_pr": false,
+    "independently_audited": false,
+    "hardened": false,
+    "pushed": false,
+    "pr_opened": false,
+    "merged": false,
+    "local_main_normalized": false,
+    "working_tree_clean": true
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "template_kind": "agent-session-header",
+  "template_note": "Session metadata for one locked contribution. Copy this file, replace every placeholder, and keep only canonical Phase 38A enum values. This header is documentation/session metadata: Phase 38B validates the individual session values passed to Invoke-HiveMindGovernancePreflight.ps1 (see parameter mapping in agent-session-launch-guide.md), it does not parse or enforce this JSON document, the active_agent_pool, or the temporary_excluded_agents field.",
+  "contract_version": "agent-contribution.v1",
+  "session_id": "phase-00-example-agent-001",
+  "project": {
+    "canonical_repository": "britbufkin1225-web/hive-mind",
+    "canonical_remote": "https://github.com/britbufkin1225-web/hive-mind.git",
+    "canonical_local_path": "C:\\Users\\britb\\Documents\\hive-mind"
+  },
+  "phase": {
+    "id": "Phase 00 — Example Bounded Contribution",
+    "name": "Example bounded contribution",
+    "expected_branch": "phase-00-example",
+    "baseline_commit": "0000000000000000000000000000000000000000",
+    "status_at_start": "Planned",
+    "status_at_end": "Implemented locally / pending independent audit"
+  },
+  "agent": {
+    "identity": "example-agent",
+    "assigned_role": "primary-implementer",
+    "capability_level": "L2",
+    "composition_mode": "sequential-isolated",
+    "write_authority": "documentation-only"
+  },
+  "authority": {
+    "permitted_paths": [
+      { "type": "prefix", "value": "docs/example/" }
+    ],
+    "forbidden_paths": [
+      { "type": "prefix", "value": "apps/" },
+      { "type": "prefix", "value": "scripts/governance/" }
+    ]
+  },
+  "phase_status_declarations": {
+    "phase_36k": "paused-and-untouched"
+  },
+  "active_agent_pool": [
+    "claude",
+    "jules",
+    "antigravity",
+    "chatgpt"
+  ],
+  "merge_gate": "devdevbuilds",
+  "temporarily_excluded_agents": [
+    {
+      "agent": "codex",
+      "through": "2026-07-24",
+      "reason": "token allowance unavailable"
+    }
+  ],
+  "authorizations": {
+    "commit_allowed": true,
+    "push_allowed": false,
+    "pr_allowed": false,
+    "merge_allowed": false,
+    "authorized_by": {
+      "commit": "locked session assignment",
+      "push": "devdevbuilds",
+      "pr": "devdevbuilds",
+      "merge": "devdevbuilds"
+    }
+  },
+  "stop_conditions": [
+    "Repository path is wrong, contains OneDrive, or the folder is not named hive-mind.",
+    "Remote is not the canonical Hive|Mind remote.",
+    "HEAD is detached or the branch is not the locked expected branch.",
+    "Working tree is dirty at session start.",
+    "Merge-base does not equal the locked baseline, or the branch is behind it.",
+    "Work would require executable, backend, or frontend changes outside write authority.",
+    "An unauthorized provider branch or PR contains unknown changes.",
+    "Phase 36K would be touched, or an excluded agent receives work."
+  ],
+  "handoff_target": {
+    "recommended_next_actor": "human-project-owner",
+    "recommended_next_role": "independent-auditor-hardener",
+    "merge_gate": "devdevbuilds"
+  }
+}
