@@ -64,6 +64,15 @@ merge decisions. Phase 38A remains the policy source. Active Memory remains the
 authority for project data, memory, contradiction, and verification architecture;
 Agent Lab governs repository contribution workflow. Neither replaces the other.
 
+Phase 38C adds a documentation-only
+[Agent Session Pack](agent-lab/agent-session-launch-guide.md) that lets a
+fresh agent connect Phase 38A policy to the Phase 38B preflight from repository
+documents alone: an ordered launch sequence, the session-to-parameter mapping,
+the exact enum reference, the automated-versus-manual split, fail-closed
+recovery, agent-unavailability handling, and copy-paste JSON session-header and
+composition-manifest templates. It changes no executable governance behavior and
+is pending independent Jules audit.
+
 Phase 37P — Repository Drift API + Frontend Inspector Integration is complete
 and merged at `0b901ef0a02857745afe9e5cf4cab0486ba7a6bb`. Its bounded,
 read-only behavior remains unchanged.
@@ -92,9 +101,12 @@ them.
 | Phase 37P — Repository Drift API + Frontend Inspector Integration | Implemented / merged | Reuses Phase 37O through the existing drift API and adds an explicit, bounded, newest-request-only drift inspector to the Repository Observer panel. No persistence, watcher, monitoring, or mutation. |
 | Phase 38A — Multi-Agent Contribution Contracts + Composition Governance | Implemented locally / pending independent audit | Documentation-only Agent Lab governance for contribution authority, isolation, evidence, composition, and human merge gates. |
 | Phase 38B — PowerShell Governance Enforcement | Implemented locally / pending independent audit | Dependency-free local validation of repository identity, Git state, session declarations, and JSON composition manifests; no hook, CI, runtime service, or Git repair. |
+| Phase 38C — Governance Adoption + Agent Session Pack Integration | Implemented locally / pending independent audit | Documentation-only Agent Session Pack — launch guide, unavailability/fallback guide, and JSON session-header and composition-manifest templates — connecting Phase 38A policy to the Phase 38B preflight. No executable governance behavior changes. |
 
-Phase 38B remains locally implemented pending independent Claude audit and
-hardening. Each phase remains independently scoped and reviewable.
+Phase 38B remains locally implemented pending independent audit and hardening.
+Phase 38C is documentation-only, implemented locally and pending independent
+Jules audit; it adds no executable governance behavior. Each phase remains
+independently scoped and reviewable.
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
 implementation track.

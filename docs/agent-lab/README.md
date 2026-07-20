@@ -13,10 +13,36 @@ authority to Hive|Mind or replace the product's Active Memory architecture.
 4. [Session header lockup](agent-session-header-lockup.md) for active authority.
 5. [Preflight checklist](agent-preflight-checklist.md) for repository checks.
 6. [Composition manifest](agent-composition-manifest.md) for evidence and handoff.
+7. [Session launch guide](agent-session-launch-guide.md) for the end-to-end
+   sequence that connects this policy to the Phase 38B executable preflight.
 
 The contribution contract governs stable policy. A locked session header narrows
 that policy for one contribution and cannot silently expand it. The checklist
 governs execution gates, and the manifest records what actually happened.
+
+## Agent Session Pack
+
+The Agent Session Pack lets a fresh agent — one with no prior ChatGPT
+conversation history — start a governed contribution from repository documents
+alone:
+
+- [Session launch guide](agent-session-launch-guide.md) — the ordered launch
+  sequence, the session-concept-to-Phase-38B parameter mapping, the exact enum
+  quick reference, exit-code interpretation, the automated-versus-manual split,
+  fail-closed recovery, and per-agent session examples.
+- [Agent unavailability and fallback](agent-unavailability-and-fallback.md) —
+  how to represent a temporarily excluded agent without inventing invalid enum
+  values, the current fallback distribution, and provider-created empty-PR
+  handling.
+- Copy-paste JSON templates under [`templates/`](templates/):
+  [`agent-session-header.template.json`](templates/agent-session-header.template.json)
+  (session metadata) and
+  [`agent-composition.template.json`](templates/agent-composition.template.json)
+  (a JSON serialization of the `agent-composition.v1` manifest that validates
+  through the Phase 38B `-ManifestPath` workflow).
+
+The session pack is documentation only. It routes to the existing Phase 38A
+policy and the Phase 38B validator; it adds no executable governance behavior.
 
 ## Existing Agent Lab knowledge and source data
 

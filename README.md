@@ -143,7 +143,7 @@ More screenshot history and QA notes live in the [Phase 28C graph-primary eviden
 | Repository observation API | Implemented | `POST /api/repository-observer/snapshot`: thin read-only endpoint over Phase 37K using the existing snapshot contract. |
 | Repository observer frontend inspector | Implemented | Contextual graph-first dock panel over the snapshot API, verified and hardened in Phase 37N; no Git dashboard, watcher, persistence, ingestion, AI review, or mutation. |
 | Repository drift analysis | Implemented / merged | `POST /api/repository-observer/drift` plus an explicit frontend inspector action over the Phase 37O service; no persistence, watcher, background monitoring, Active Memory ingestion, AI/LLM behavior, or mutation. |
-| Agent Lab contribution governance | Implemented locally / pending independent audit | Phase 38A documentation contracts plus Phase 38B dependency-free, read-only PowerShell enforcement for repository, Git, session, and JSON composition-manifest state. |
+| Agent Lab contribution governance | Implemented locally / pending independent audit | Phase 38A documentation contracts plus Phase 38B dependency-free, read-only PowerShell enforcement for repository, Git, session, and JSON composition-manifest state, and a Phase 38C documentation-only Agent Session Pack connecting the policy to the executable preflight. |
 | Active Memory runtime | Planned | Active-state calculation, write endpoints, durable memory, ingestion, and evidence resolver are not implemented. |
 
 ## Architecture And Stack
@@ -235,6 +235,7 @@ Phase 37P is complete and merged. Phase 38A adds the documentation-only [Agent L
 - [API contract](docs/api-contract.md)
 - [Active Memory and Verification reference](docs/active-agent-memory-verification-layer.md)
 - [Agent Lab contribution governance](docs/agent-lab/README.md)
+- [Agent session launch guide](docs/agent-lab/agent-session-launch-guide.md)
 - [Phase 37A Active Memory planning](docs/planning/phase-37a-active-agent-memory-verification-layer-planning.md)
 - [Phase 37H Repository Observer planning](docs/planning/phase-37h-repository-observer-planning.md)
 - [Intelligence Surface Plan](docs/intelligence-surface-plan.md)

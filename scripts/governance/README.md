@@ -72,3 +72,12 @@ independent live sessions, enforce changed-path ownership after edits, install
 hooks, run in hosted CI, support YAML parsing, orchestrate agents, or authorize
 human-only composition and merge decisions. Those concerns remain manual or
 deferred. Windows PowerShell and PowerShell 7 workflows are the supported target.
+
+## Session pack routing
+
+The [Agent Session Launch Guide](../../docs/agent-lab/agent-session-launch-guide.md)
+documents the full mapping from session-header concepts to the parameters above,
+the exact Phase 38A enum values, the automated-versus-manual split, and
+fail-closed recovery. Copy-paste JSON templates live under
+[`docs/agent-lab/templates/`](../../docs/agent-lab/templates/); the composition
+template validates through the `-ManifestPath` workflow described above.
