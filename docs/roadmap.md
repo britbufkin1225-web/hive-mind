@@ -103,6 +103,7 @@ them.
 | Phase 38B — PowerShell Governance Enforcement | Implemented locally / pending independent audit | Dependency-free local validation of repository identity, Git state, session declarations, and JSON composition manifests; no hook, CI, runtime service, or Git repair. |
 | Phase 38C — Governance Adoption + Agent Session Pack Integration | Implemented locally / pending independent audit | Documentation-only Agent Session Pack — launch guide, unavailability/fallback guide, and JSON session-header and composition-manifest templates — connecting Phase 38A policy to the Phase 38B preflight. No executable governance behavior changes. |
 | Phase 39A — Deterministic Repository Evidence Projection MVP | Implemented locally / pending completed hardening and final review | Backend-only, deterministic, request/input-driven, read-only projection of existing Repository Observer results into bounded, always-inactive candidate Active Memory records and evidence records with claim-dependent verification (limitations degrade verification where relevant), distinct observation and caller-supplied recording timestamps, snapshot/drift identity consistency, credential-safe remote handling, referentially sound evidence bounding (no dangling references), aggregate drift claims (baseline commit plus change-kind totals), and explicit warnings, skipped observations, and overflow. No endpoint, persistence, ingestion, Active Memory store insertion, watcher, active-state calculation, contradiction resolution, AI/LLM behavior, or repository mutation. |
+| Phase 39B — Persistent Local Repository Workspace Configuration | Implemented locally / pending independent audit | Local-only, versioned `repository-workspaces.v1` workspace registry: a bounded contract, a deterministic configuration service (OS-appropriate path resolution with a `HIVEMIND_WORKSPACE_CONFIG_PATH` override, atomic corruption-resistant writes, credential-safe remotes, typed failure states, and read-only availability diagnostics that reuse the Phase 37J Git adapter), a narrow `resolve_active_repository_workspace` seam for a future Repository Observer phase, and a [PowerShell operator tool](../scripts/workspaces/README.md) over the authoritative Python CLI. No background observation, polling, watcher, automatic Repository Observer execution, Active Memory insertion, frontend, database, or repository mutation. |
 
 Phase 38B remains locally implemented pending independent audit and hardening.
 Phase 38C is documentation-only, implemented locally and pending independent
@@ -113,6 +114,18 @@ never activates records, Repository Observer evidence is never automatically
 trusted, no dangling evidence references are permitted, and no record enters an
 Active Memory store. The frontend-design track remains deferred. Each phase
 remains independently scoped and reviewable.
+
+Phase 39B is implemented locally and pending independent audit. It adds a
+persistent, local-only repository workspace registry so an operator can register
+a Git repository once and have Hive|Mind remember it between sessions. The
+configuration is stored outside the repository (on Windows, under the user's
+local application-data directory) and is never committed. Configuration is not
+encrypted, workspaces are not synchronized across machines, no frontend workspace
+editor exists, Repository Observer is not run automatically, Active Memory does
+not ingest configured repositories, and repository contents and Git history are
+never mutated. The `resolve_active_repository_workspace` seam is inert until a
+future phase chooses to consume it. See the
+[Phase 39B design note](phase-39b-persistent-local-repository-workspace-configuration.md).
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
 implementation track.
@@ -374,6 +387,8 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 - [Active Agent Memory + Verification Layer reference](active-agent-memory-verification-layer.md)
 - [Phase 37A Active Agent Memory + Verification Layer Planning](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
 - [Phase 37H Repository Observer Planning](planning/phase-37h-repository-observer-planning.md)
+- [Phase 39B Persistent Local Repository Workspace Configuration](phase-39b-persistent-local-repository-workspace-configuration.md)
+- [Repository Workspace Operator Tool](../scripts/workspaces/README.md)
 - [Intelligence Surface Plan](intelligence-surface-plan.md)
 - [Security Threat Model + Vulnerability Test Plan](security/threat-model-and-vulnerability-test-plan.md)
 - [Demo Guide](demo-guide.md)
