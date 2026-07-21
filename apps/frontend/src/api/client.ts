@@ -12,8 +12,18 @@ import type {
   SourceRegistryListResponse,
 } from "../types/api";
 
+// `import.meta.env` is populated by Vite at build time. Guard the access with
+// `?.` so this module can also be imported by the plain-Node request self-tests
+// (where `import.meta.env` is undefined) without throwing at module load.
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787/api";
+  import.meta.env?.VITE_API_BASE_URL ?? "http://localhost:8787/api";
+
+// Bounded default timeout for Repository Observer transport. A hung or
+// unreachable backend must fail as a distinct, recoverable timeout rather than
+// leaving the request pending forever; the observer service is itself bounded
+// (Phase 37J subprocess timeout is 5s), so a generous client ceiling above that
+// still surfaces a stuck transport deterministically.
+export const REPOSITORY_OBSERVER_REQUEST_TIMEOUT_MS = 15_000;
 
 export interface HealthResponse {
   ok: boolean;
@@ -46,12 +56,22 @@ export interface ConsoleExecuteResponse {
 }
 
 export class ApiClientError extends Error {
-  constructor(
-    message: string,
-    readonly status: number | null,
-  ) {
+  readonly status: number | null;
+  /**
+   * True when the request was aborted by the client-side bounded timeout
+   * rather than answered by the backend. Lets the UI present a distinct,
+   * recoverable "request timed out" state instead of a generic failure.
+   */
+  readonly timedOut: boolean;
+
+  // Explicit field declarations (rather than TypeScript parameter properties)
+  // keep this module importable by the plain-Node request self-tests, whose
+  // strip-only TypeScript loader does not support parameter properties.
+  constructor(message: string, status: number | null, timedOut = false) {
     super(message);
     this.name = "ApiClientError";
+    this.status = status;
+    this.timedOut = timedOut;
   }
 }
 
@@ -106,6 +126,48 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+/**
+ * POST with a bounded client-side timeout. On timeout the in-flight request is
+ * aborted and a `timedOut` {@link ApiClientError} is thrown so the caller can
+ * present a distinct, recoverable state. A genuine network failure (backend
+ * down) still surfaces as a non-timeout error, keeping the two transport
+ * failure modes distinguishable.
+ */
+async function postWithTimeout<T>(
+  path: string,
+  body: unknown,
+  timeoutMs: number,
+): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (error: unknown) {
+    if (controller.signal.aborted) {
+      throw new ApiClientError(
+        "Request timed out before the backend responded.",
+        null,
+        true,
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!response.ok) {
+    throw new ApiClientError(await errorMessage(response), response.status);
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export const apiClient = {
   getHealth: () => get<HealthResponse>("/health"),
   getStatus: () => get<StatusResponse>("/status"),
@@ -121,9 +183,17 @@ export const apiClient = {
   buildContextPacket: (request: ContextPacketRequest) =>
     post<ContextPacket>("/active-memory/context-packet", request),
   observeRepositorySnapshot: (request: RepositoryObservationSnapshotRequest) =>
-    post<RepositorySnapshot>("/repository-observer/snapshot", request),
+    postWithTimeout<RepositorySnapshot>(
+      "/repository-observer/snapshot",
+      request,
+      REPOSITORY_OBSERVER_REQUEST_TIMEOUT_MS,
+    ),
   analyzeRepositoryDrift: (request: RepositoryDriftAnalysisRequest) =>
-    post<RepositoryDriftAnalysis>("/repository-observer/drift", request),
+    postWithTimeout<RepositoryDriftAnalysis>(
+      "/repository-observer/drift",
+      request,
+      REPOSITORY_OBSERVER_REQUEST_TIMEOUT_MS,
+    ),
   importObsidianVault: (request: ObsidianImportRequest) =>
     post<ObsidianImportSummary>("/obsidian/import", request),
 };
