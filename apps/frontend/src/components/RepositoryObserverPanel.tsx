@@ -1,11 +1,17 @@
 import { useMemo, useRef, useState } from "react";
-import { ApiClientError, apiClient } from "../api/client";
+import { apiClient } from "../api/client";
 import {
   buildRepositoryObserverSnapshotRequest,
   buildRepositoryDriftAnalysisRequest,
   REPOSITORY_OBSERVER_MAX_FILE_COUNT,
   REPOSITORY_OBSERVER_MAX_SNAPSHOT_BYTES,
 } from "../lib/repositoryObserverRequest";
+import {
+  clientSafeErrorMessage,
+  errorKindFrom,
+  errorTitle,
+  type ErrorKind,
+} from "../lib/repositoryObserverErrors";
 import type {
   FileObservationSummary,
   ObserverLimitation,
@@ -19,13 +25,6 @@ import type {
 
 type SnapshotState = "idle" | "loading" | "success" | "error";
 type DriftState = "idle" | "analyzing" | "success" | "error";
-type ErrorKind =
-  | "validation"
-  | "invalid_root"
-  | "not_found"
-  | "backend_unavailable"
-  | "server"
-  | "unexpected";
 
 function isoNow(): string {
   return new Date().toISOString();
@@ -91,55 +90,6 @@ function hasPartialOrTruncatedDrift(drift: RepositoryDriftAnalysis): boolean {
     drift.overflow.some((item) => item.truncated || item.snapshot_partial) ||
     drift.evidence.some((item) => item.truncation_state !== "not_truncated")
   );
-}
-
-function errorKindFrom(error: unknown): ErrorKind {
-  if (!(error instanceof ApiClientError)) {
-    return "backend_unavailable";
-  }
-  if (error.status === 400) {
-    return "invalid_root";
-  }
-  if (error.status === 404) {
-    return "not_found";
-  }
-  if (error.status === 422) {
-    return "validation";
-  }
-  if (error.status === 502 || error.status === 503) {
-    return "backend_unavailable";
-  }
-  if (error.status === 500) {
-    return "server";
-  }
-  return "unexpected";
-}
-
-function errorTitle(kind: ErrorKind): string {
-  switch (kind) {
-    case "validation":
-      return "Request did not match the contract.";
-    case "invalid_root":
-      return "Repository root could not be observed.";
-    case "not_found":
-      return "Repository root was not found.";
-    case "backend_unavailable":
-      return "Repository Observer is unavailable.";
-    case "server":
-      return "Repository Observer returned an unexpected server error.";
-    case "unexpected":
-      return "Repository snapshot failed.";
-  }
-}
-
-function clientSafeErrorMessage(error: unknown, kind: ErrorKind): string {
-  if (!(error instanceof ApiClientError)) {
-    return "Network request failed. Is the backend running?";
-  }
-  if (kind === "server") {
-    return "Internal server error";
-  }
-  return error.message;
 }
 
 function KeyValueGrid({
