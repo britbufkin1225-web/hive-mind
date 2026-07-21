@@ -104,6 +104,7 @@ them.
 | Phase 38C — Governance Adoption + Agent Session Pack Integration | Implemented locally / pending independent audit | Documentation-only Agent Session Pack — launch guide, unavailability/fallback guide, and JSON session-header and composition-manifest templates — connecting Phase 38A policy to the Phase 38B preflight. No executable governance behavior changes. |
 | Phase 39A — Deterministic Repository Evidence Projection MVP | Implemented locally / pending completed hardening and final review | Backend-only, deterministic, request/input-driven, read-only projection of existing Repository Observer results into bounded, always-inactive candidate Active Memory records and evidence records with claim-dependent verification (limitations degrade verification where relevant), distinct observation and caller-supplied recording timestamps, snapshot/drift identity consistency, credential-safe remote handling, referentially sound evidence bounding (no dangling references), aggregate drift claims (baseline commit plus change-kind totals), and explicit warnings, skipped observations, and overflow. No endpoint, persistence, ingestion, Active Memory store insertion, watcher, active-state calculation, contradiction resolution, AI/LLM behavior, or repository mutation. |
 | Phase 39B — Persistent Local Repository Workspace Configuration | Implemented locally / pending independent audit | Local-only, versioned `repository-workspaces.v1` workspace registry: a bounded contract, a deterministic configuration service (OS-appropriate path resolution with a `HIVEMIND_WORKSPACE_CONFIG_PATH` override, atomic corruption-resistant writes, credential-safe remotes, typed failure states, and read-only availability diagnostics that reuse the Phase 37J Git adapter), a narrow `resolve_active_repository_workspace` seam for a future Repository Observer phase, and a [PowerShell operator tool](../scripts/workspaces/README.md) over the authoritative Python CLI. No background observation, polling, watcher, automatic Repository Observer execution, Active Memory insertion, frontend, database, or repository mutation. |
+| Phase 39C — One-Command Local Runtime Startup and Shutdown | Implemented locally / pending independent audit | Managed local [runtime launcher](../scripts/runtime/README.md) (`start`/`status`/`stop`/`restart`/`verify`) that resolves the repository through the Phase 39B workspace config, starts the backend (uvicorn, `8787`) and frontend (vite, `5173`) together, verifies real backend health and frontend reachability with bounded waits, rolls back a partial start, and stops only its managed processes (identity-gated by PID + process creation time + command-line signature). Bounded, secret-free runtime metadata (`hivemind-runtime.v1`) and logs live outside the repository. No service installer, scheduled task, container system, background daemon, dependency installation, backend/frontend feature change, or process termination by generic executable name. |
 
 Phase 38B remains locally implemented pending independent audit and hardening.
 Phase 38C is documentation-only, implemented locally and pending independent
@@ -126,6 +127,20 @@ not ingest configured repositories, and repository contents and Git history are
 never mutated. The `resolve_active_repository_workspace` seam is inert until a
 future phase chooses to consume it. See the
 [Phase 39B design note](phase-39b-persistent-local-repository-workspace-configuration.md).
+
+Phase 39C is implemented locally and pending independent audit. Building directly
+on the Phase 39B workspace resolution, it adds a single operator command that
+starts the backend and frontend together, waits (bounded) for the backend
+`/health` endpoint and the frontend to actually respond, and later stops only the
+processes it started — each shutdown gated by a per-process identity check (PID,
+process creation time, and command-line signature) so an unrelated or PID-reused
+process is never terminated, and nothing is ever killed by generic executable
+name. A partial start rolls back automatically. Runtime metadata and logs are
+bounded, human-inspectable, secret-free, and stored outside the repository under
+the user's local application-data directory. It is not a service installer,
+scheduled task, container system, or background daemon; it never installs
+dependencies and makes no backend or frontend feature change. See the
+[managed local runtime guide](operator-runtime.md).
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
 implementation track.
@@ -389,6 +404,8 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 - [Phase 37H Repository Observer Planning](planning/phase-37h-repository-observer-planning.md)
 - [Phase 39B Persistent Local Repository Workspace Configuration](phase-39b-persistent-local-repository-workspace-configuration.md)
 - [Repository Workspace Operator Tool](../scripts/workspaces/README.md)
+- [Managed Local Runtime Guide](operator-runtime.md)
+- [Managed Local Runtime Tool](../scripts/runtime/README.md)
 - [Intelligence Surface Plan](intelligence-surface-plan.md)
 - [Security Threat Model + Vulnerability Test Plan](security/threat-model-and-vulnerability-test-plan.md)
 - [Demo Guide](demo-guide.md)

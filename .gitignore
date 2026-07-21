@@ -21,3 +21,11 @@ apps/frontend/vite.config.d.ts
 
 # Backend runtime/persisted data (not committed — seeded at startup)
 apps/backend/data/
+
+# Phase 39C managed local runtime state. By default this lives OUTSIDE the repo
+# (under the user's local application-data directory) and is never committed.
+# These defensive entries only matter if an operator points HIVEMIND_RUNTIME_HOME
+# at a path inside the working tree — runtime metadata and logs stay untracked.
+.hivemind-runtime/
+runtime-home/
+repository-workspaces.json

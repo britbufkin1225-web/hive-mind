@@ -147,6 +147,7 @@ More screenshot history and QA notes live in the [Phase 28C graph-primary eviden
 | Agent Lab contribution governance | Implemented locally / pending independent audit | Phase 38A documentation contracts plus Phase 38B dependency-free, read-only PowerShell enforcement for repository, Git, session, and JSON composition-manifest state, and a Phase 38C documentation-only Agent Session Pack connecting the policy to the executable preflight. |
 | Repository evidence projection | Implemented locally / pending completed hardening and final review | Phase 39A backend-only deterministic projection of Repository Observer results into bounded, always-inactive candidate Active Memory records with claim-dependent verification, distinct observation/recording timestamps, and referentially sound evidence bounding; no endpoint, persistence, ingestion, store insertion, watcher, active-state calculation, contradiction resolution, AI/LLM behavior, or repository mutation. |
 | Repository workspace configuration | Implemented locally / pending independent audit | Phase 39B local-only, versioned `repository-workspaces.v1` registry with a deterministic configuration service (OS-appropriate path resolution, atomic corruption-resistant writes, credential-safe remotes, typed failure states, read-only availability diagnostics reusing the Git adapter), a narrow `resolve_active_repository_workspace` seam for a future Repository Observer phase, and a [PowerShell operator tool](scripts/workspaces/README.md); no watcher, polling, automatic observation, Active Memory ingestion, frontend editor, database, or repository mutation. |
+| Managed local runtime | Implemented locally / pending independent audit | Phase 39C one-command [runtime launcher](scripts/runtime/README.md) that starts the backend and frontend together, verifies real readiness, and stops only its managed processes (identity-gated by PID + creation time + command-line signature). It resolves the repository through the Phase 39B workspace config and keeps bounded, secret-free runtime metadata/logs outside the repository; no service installer, container system, background daemon, dependency installation, or process termination by generic name. |
 | Active Memory runtime | Planned | Active-state calculation, write endpoints, durable memory, ingestion, and evidence resolver are not implemented. |
 
 ## Architecture And Stack
@@ -208,6 +209,21 @@ npm run dev:frontend
 
 The frontend uses `VITE_API_BASE_URL=http://localhost:8787/api` when configured from `.env.example`, and falls back to the same local backend URL when unset.
 
+### One-command local runtime (optional)
+
+Once you have [registered the Hive|Mind workspace](scripts/workspaces/README.md),
+you can start both services with a single command instead of two terminals:
+
+```powershell
+.\scripts\runtime\Invoke-HiveMindRuntime.ps1 start     # start backend + frontend, wait for readiness
+.\scripts\runtime\Invoke-HiveMindRuntime.ps1 status    # read-only health report
+.\scripts\runtime\Invoke-HiveMindRuntime.ps1 stop      # stop only the managed processes
+```
+
+It launches the same backend (`8787`) and frontend (`5173`), waits for both to
+become reachable, and stops only the processes it started. See the
+[managed local runtime guide](docs/operator-runtime.md) for details.
+
 ## Validation
 
 ```powershell
@@ -239,6 +255,7 @@ Phase 37P is complete and merged. Phase 38A adds the documentation-only [Agent L
 - [Active Memory and Verification reference](docs/active-agent-memory-verification-layer.md)
 - [Agent Lab contribution governance](docs/agent-lab/README.md)
 - [Agent session launch guide](docs/agent-lab/agent-session-launch-guide.md)
+- [Managed local runtime guide](docs/operator-runtime.md)
 - [Phase 37A Active Memory planning](docs/planning/phase-37a-active-agent-memory-verification-layer-planning.md)
 - [Phase 37H Repository Observer planning](docs/planning/phase-37h-repository-observer-planning.md)
 - [Intelligence Surface Plan](docs/intelligence-surface-plan.md)
