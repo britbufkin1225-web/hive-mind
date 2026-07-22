@@ -148,8 +148,8 @@ reconciliation:
   (21c–25c) captures should always be presented as phase-dated history — already
   largely handled by their QA/evidence docs.
 - **Replace / add (deferred):** no screenshots yet exist for the Active Memory and
-  Repository Observer read-only inspectors, and no visual yet depicts the Create
-  Layer / agent-coordination direction. These are the highest-value future visual
+  Repository Observer read-only inspectors, and no visual yet depicts the Grounded
+  Synthesis / agent-coordination direction. These are the highest-value future visual
   additions but are **out of scope now** (screenshot, branding, and animation work
   are deferred under the current priority).
 - **Obsolete-if-misused:** early UI captures are only a risk if a future doc

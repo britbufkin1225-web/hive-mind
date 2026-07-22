@@ -56,8 +56,8 @@ Phase 40A is a documentation, architecture, and project-cohesion phase. Its
 historical planning label (and branch/commit name) is *Create Layer Foundation
 Planning + Project Cohesion*; the architecture it establishes is now formally
 named the **Grounded Synthesis Layer** (*Create Layer* is deprecated
-terminology). It is documentation-complete locally and pending independent audit
-(Jules), design and presentation review (Antigravity), coordinator reconciliation
+terminology). It is documentation- and Codex-review-complete locally and pending
+final independent audit (Jules), coordinator reconciliation
 (ChatGPT), and the devdevbuilds human merge gate. It defines the foundation for a
 new **Grounded Synthesis Layer** — the planned capability that lets Hive|Mind's
 grounded read-only intelligence *synthesize* development outputs (proposals,

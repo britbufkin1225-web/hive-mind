@@ -1,9 +1,10 @@
 # Phase 40A — Grounded Synthesis Foundation Planning + Project Cohesion
 
 **Type:** Planning, architecture, documentation, and project-cohesion phase.
-**Runtime code changed:** none. **Status:** documentation complete locally,
-pending independent audit (Jules), design/presentation review (Antigravity),
-coordinator reconciliation (ChatGPT), and the devdevbuilds human merge gate.
+**Runtime code changed:** none. **Status:** documentation and Codex formal review
+complete locally, pending final independent audit (Jules), coordinator
+reconciliation (ChatGPT), and the devdevbuilds human merge gate. Antigravity is
+offline through July 26, 2026 and is not part of this phase.
 
 **Terminology note:** the historical planning label for this phase — and the name
 retained by its Git branch (`phase-40a-create-layer-foundation-project-cohesion`),
@@ -105,7 +106,7 @@ architecture doc):
 
 ## 5. What remains conceptual (defined, not implemented)
 
-- The `grounded-synthesis.v1` contract family (synthesis request, grounding packet, create
+- The `grounded-synthesis.v1` contract family (synthesis request, grounding packet, synthesis
   result) — described as documentation examples only; no runtime schema exists.
 - The synthesis workflow, request/result lifecycle, failure states, and authority
   model — specified as design targets, not code.
@@ -192,8 +193,9 @@ repository writes simultaneously.
 | Order | Agent | Role |
 | --- | --- | --- |
 | 1 | Claude Code | Primary planner and documentation implementer (this commit). |
-| 2 | Jules | Independent architecture auditor and bounded documentation hardener. |
-| 3 | Antigravity | Design and presentation cohesion reviewer. |
+| 2 | Codex | Formal architecture, contract, and implementation-readiness reviewer. |
+| 3 | Jules | Final independent auditor and bounded documentation hardener. |
+| — | Antigravity | Offline through July 26, 2026; not participating in this phase. |
 | 4 | ChatGPT | Coordinator and final report reconciler. |
 | 5 | devdevbuilds | Human merge gate. |
 
@@ -243,6 +245,39 @@ service, output persistence, or new dependency was introduced.
   should confirm this matches intent.
 - Design-asset assessment is bounded and changes no binary assets (see the
   assessment doc).
+
+## 14.1 Codex hardening rationale
+
+The formal review verified five implementation-readiness defects and corrected
+them within the existing architecture document:
+
+1. **Contract lifecycle incompleteness** — `docs/create-layer-architecture.md`
+   §12 did not require version discriminators, canonical serialization,
+   compatibility/extension behavior, typed failures, evidence hashes, or
+   post-synthesis drift handling. Leaving these decisions implicit would let 40B
+   create incompatible backend/frontend contracts. The bounded correction records
+   requirements without implementing schemas; this belongs in 40A because 40B is
+   explicitly contract-first.
+2. **Collapsed authority declaration** — §8 represented authority as one level,
+   which could imply that proposal or artifact authority carries write-adjacent
+   authority. The correction separates each capability and makes grants
+   non-inheriting and fail-closed. This is a Phase 40A safety boundary.
+3. **Incomplete failure and security coverage** — §§9–10 omitted workspace/path
+   isolation, corrupt or poisoned evidence, unsupported requests, producer and
+   validation failures, retry/partial export behavior, persistence corruption,
+   unavailable handoff, and stale results. The correction adds architectural
+   failure behavior only, preventing 40B–40F from treating these as successful or
+   silently recoverable states.
+4. **Ambiguous Loom boundary and thin secondary contracts** — §12 treated
+   `LoomContext` and `GroundingPacket` as near synonyms and named `Musing`,
+   `WorkPacket`, `ArtifactExport`, and `ReviewRecord` without minimum safety
+   semantics. The correction makes Loom context internal/ephemeral and the packet
+   the validated producer handoff, then records minimum traceability and review
+   requirements. This preserves layer boundaries before implementation.
+5. **Factual and terminology drift** — this plan listed the wrong sequential
+   reviewers and retained two implementation-facing `create` terms; the design
+   assessment retained one non-historical Create Layer claim. Correcting those
+   statements keeps the Phase 40A record and canonical terminology truthful.
 
 ## 15. Recommended next phase (restated)
 

@@ -309,9 +309,15 @@ deployment, or destructive authority implicitly.
 
 Proposed authority model:
 
-- A synthesis request declares an explicit **authority level** (e.g.
-  `read_only_proposal`). The Grounded Synthesis Layer honors the *lowest* applicable authority
-  and never elevates it from request content, evidence content, or model output.
+- A synthesis request declares an explicit **authority declaration**. Phase 40B
+  must represent read, analysis, synthesis, proposal, artifact-generation, and
+  patch-proposal authority separately from filesystem-write, repository-write,
+  commit, push, pull-request, merge, deployment, and destructive-mutation
+  authority. Possession of one capability never implies another.
+- The Grounded Synthesis Layer honors the intersection of the requesting actor,
+  workspace policy, output-type policy, and service authority. Missing or
+  conflicting declarations fail closed; request content, evidence content, and
+  producer output cannot elevate authority.
 - The Grounded Synthesis Layer has **no write path** to: repositories, Git, the Active Memory
   store, the Knowledge Graph, source records, or deployment.
 - "Repository patch proposal" outputs are **artifacts describing a change**, not
@@ -337,6 +343,17 @@ papering over it. Proposed failure states:
 | `scope_exceeded` | Request scope exceeds available or authorized evidence scope. | Refuse to fabricate out-of-scope claims; report the exclusion. |
 | `bounds_exceeded` | A collection or artifact exceeds deterministic bounds. | Fail closed with explicit overflow metadata; never silently truncate a safety-relevant collection. |
 | `stale_baseline` | Repository/Active Memory baseline is too old to responsibly ground the request. | Flag freshness; require re-observation or explicit human override. |
+| `workspace_unavailable` | The workspace or target repository is missing, stale, unresolved, or outside its configured root. | Reject before evidence lookup; disclose no cross-workspace details. |
+| `evidence_unavailable` | Evidence lookup, filtering, selection, attachment, or integrity validation fails. | Return the failing stage and bounded diagnostics; do not synthesize from a partial packet unless the contract explicitly permits a visibly incomplete result. |
+| `unsupported_request` | The synthesis type or output format is unsupported. | Reject with a bounded supported-value list. |
+| `producer_failed` | The deterministic producer or any future isolated generator fails. | Preserve the request and failure status only where persistence is later authorized; emit no apparently successful result. |
+| `validation_failed` | Result validation fails or generated command/patch content violates safety policy. | Quarantine or reject the output; never execute or export it as approved. |
+| `review_rejected` | A reviewer rejects or requests revision. | Record a per-result disposition; prohibit export/handoff until a new result is reviewed. |
+| `export_failed` | Export is unsupported, partial, corrupt, or fails integrity checks. | Report partial-output metadata, prevent approval from being inferred, and make retry behavior explicit. |
+| `result_stale` | Evidence, workspace configuration, or repository state drifted after synthesis. | Invalidate approval/export eligibility pending deterministic revalidation or a new request. |
+| `duplicate_request` | A request id is replayed with the same or different content. | Apply a defined idempotency rule; identical retries must not duplicate effects and conflicting reuse must fail. |
+| `record_corrupt` | A future persisted request, result, review, or export record fails integrity/version checks. | Isolate the record and fail closed; never reconstruct authoritative state by guesswork. |
+| `external_handoff_unavailable` | An approved external agent or handoff target is unavailable. | Preserve a bounded failed-handoff status; do not broaden authority or choose another target silently. |
 
 On any failure, the Grounded Synthesis Layer performs **no repository mutation and no store
 write** — a failure can only ever reduce output, never cause a side effect.
@@ -363,6 +380,18 @@ The Grounded Synthesis Layer inherits and extends the existing defensive posture
 - **Prompt-injection resistance.** Because a synthesis request may later be produced
   or influenced by agents, embedded instructions in evidence or request content
   are treated as data and surfaced, never executed.
+- **Workspace and path isolation.** Workspace resolution, repository-relative
+  path validation, canonicalization, and symlink/junction containment checks are
+  deterministic. Path traversal and cross-workspace evidence access fail closed.
+- **Evidence integrity.** Source hashes and type/size checks detect corrupt,
+  replaced, poisoned, unsupported binary, or unexpectedly changed evidence.
+  Evidence ranking never makes untrusted content safe by itself.
+- **Safe outputs and exports.** Generated commands and patch proposals remain
+  inert data subject to validation and human review. Export metadata is minimized,
+  secret-free, provenance-linked, integrity-checkable, and cannot bypass review.
+- **Persistence minimization.** Future persistence must be explicit and scoped;
+  transient context, sensitive source content, and failed producer payloads are
+  not persisted by accident.
 
 These extend the
 [security threat model](security/threat-model-and-vulnerability-test-plan.md);
@@ -379,9 +408,11 @@ model-backed behavior.
 Proposed structure:
 
 - The **deterministic core** owns request validation, grounding assembly, evidence
-  selection, policy enforcement, bounds, and result packaging. It is reproducible
-  and testable with hermetic fixtures, mirroring the Active Memory and observer
-  test discipline.
+  lookup/filtering/ordering/deduplication, contradiction attachment, provenance
+  assembly, workspace and scope enforcement, authority and policy evaluation,
+  bounds, identifier derivation, validation-state calculation, export metadata,
+  stale-result detection, and result packaging. It is reproducible and testable
+  with hermetic fixtures, mirroring the Active Memory and observer test discipline.
 - Any **generative/model-backed step** (if ever added) is an *optional, clearly
   isolated, separately-gated* component that consumes the deterministic grounding
   packet and whose output re-enters the deterministic validation/packaging path.
@@ -399,6 +430,14 @@ family, mirroring the `active-memory.v1` / `repo-observer.v1` discipline (closed
 enums, bounded scalars, caller-supplied timestamps, mirrored frontend types). They
 are **documentation examples only** — Phase 40A introduces no runtime schema.
 
+All top-level records need an explicit contract/version discriminator, stable
+identifier semantics, bounded canonical serialization, deterministic collection
+ordering, and an extension strategy. Phase 40B must define unknown-field and
+unknown-enum behavior, backward-compatibility rules, caller-clock boundaries,
+and content/source hashing. Failures are typed outcomes rather than overloaded
+successful results. A result and its review/export records retain the evidence
+baseline used to detect later workspace or repository drift.
+
 ### 12.1 Synthesis request — `SynthesisRequest` (conceptual)
 
 - `request_id` — stable identifier
@@ -413,7 +452,7 @@ are **documentation examples only** — Phase 40A introduces no runtime schema.
 - `requested_output_format` — closed enum
 - `evidence_requirements` — required evidence kinds/strength for a valid output
 - `constraints` — bounded constraint references
-- `authority_level` — closed enum (e.g. `read_only_proposal`)
+- `authority_declaration` — explicit, non-inheriting capabilities and denials
 - `validation_requirements` — what must be validated before the result is trusted
 - `requesting_actor` — source identity (reusing `MemorySource` typing)
 - `ordering_metadata` — externally-supplied timestamp / sequence
@@ -428,6 +467,14 @@ inputs before a `GroundingPacket` is finalized.
 - `confidence_indicators`, `freshness_indicators`
 - `policy_warnings`, `scope_exclusions`
 
+`LoomContext` is internal, ephemeral assembly state and is never a public result
+or authority-bearing record. `GroundingPacket` is the validated, bounded,
+serializable handoff to a producer. Finalization records selected, contradicted,
+and excluded evidence (including selection/exclusion reasons), source hashes,
+freshness/sufficiency, applied policies, packet completeness, and the repository
+or workspace baseline. The Loom cannot silently widen scope, mutate inputs, hide
+exclusions, or replace deterministic assembly.
+
 ### 12.3 Synthesis result — `SynthesisResult` (conceptual)
 
 - `result_id`, `request_id`
@@ -437,6 +484,8 @@ inputs before a `GroundingPacket` is finalized.
 - `proposed_next_action`, `required_human_decisions`
 - `producer_identity`, `generation_method` (e.g. `deterministic`)
 - `authority_statement` (explicitly reasserts read-only/no-mutation posture)
+- `grounding_packet_id` / evidence-baseline digest and freshness status
+- explicit success/failure status, limitations, and stale/invalidated status
 
 ### 12.4 Conceptual type vocabulary
 
@@ -447,11 +496,19 @@ fields, and compatibility rules.**
 - `SynthesisRequest` — the typed, versioned request (§12.1).
 - `GroundingPacket` / `LoomContext` — The Loom's assembled grounding (§12.2).
 - `SynthesisResult` — the typed, versioned result (§12.3).
-- `Musing` — a low-authority exploratory output (never an approved plan or a
-  verified fact).
-- `WorkPacket` — a bounded, agent-ready implementation or review instruction.
-- `ArtifactExport` — an exportable output derived from a synthesis result.
-- `ReviewRecord` — a validation/critique/approval/rejection/revision decision.
+- `Musing` — a low-authority, non-mutating exploratory output with evidence
+  references, uncertainty/freshness markers, and review-required status. Promotion
+  to a Proposal or Work Packet creates a new traceable result; rejection/expiry
+  remains recorded and never silently converts it into verified fact.
+- `WorkPacket` — a bounded, agent-ready implementation or review instruction with
+  scope, prerequisites, validation requirements, prohibited actions, authority,
+  evidence baseline, and required human decisions.
+- `ArtifactExport` — an integrity-checkable, provenance-linked representation of
+  an approved result, with format, destination class, export status, and partial
+  failure metadata; it grants no application authority.
+- `ReviewRecord` — an append-only per-result validation/critique/approval/
+  rejection/revision disposition identifying reviewer, reviewed result version,
+  required decisions, and the baseline/freshness state at review time.
 
 ## 13. Data-flow diagram
 
@@ -617,7 +674,7 @@ generative behavior, the following gates are recommended:
 
 1. A dedicated Grounded Synthesis Layer threat model extending the existing
    [threat model](security/threat-model-and-vulnerability-test-plan.md).
-2. Hermetic determinism tests for the create producer (fixtures in, byte-stable
+2. Hermetic determinism tests for the synthesis producer (fixtures in, byte-stable
    results out).
 3. Explicit confirmation that no runtime write path to repository, Git, store,
    graph, or deployment exists.
