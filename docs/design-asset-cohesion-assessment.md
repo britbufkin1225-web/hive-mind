@@ -4,12 +4,14 @@
 phase.** This document inventories project-facing design assets, screenshots,
 diagrams, README imagery, terminology, and visual-identity references, and
 classifies each against Hive|Mind's current state (post-Phase 39D) and its next
-direction (the planned Create Layer). It records findings and recommendations
+direction (the planned Grounded Synthesis Layer). It records findings and recommendations
 only; replacing images, capturing new screenshots, and any branding work are
 explicitly out of scope here and deferred.
 
-**Authored under:** Phase 40A — Create Layer Foundation Planning + Project
-Cohesion.
+**Authored under:** Phase 40A — Grounded Synthesis Foundation Planning + Project
+Cohesion (historical planning label: *Create Layer Foundation Planning + Project
+Cohesion*). The planned architecture is now formally named the **Grounded
+Synthesis Layer**; *Create Layer* is deprecated terminology.
 
 ---
 
@@ -95,26 +97,30 @@ it were the current UI. No current doc does this.
 | "Current product pipeline" (text) | `README.md` | Match | Source → import → normalization → store → graph → intelligence → inspection is accurate. |
 | "Active Memory and Verification pipeline under development" (text) | `README.md` | Match | Accurately marked as under development; steps reflect implemented + planned split. |
 | Repository Observer dependency flow (text) | Active Memory reference §21 | Match | Router → snapshot service → Git adapter → read-only subprocess is current. |
-| Create Layer data-flow (Mermaid) | `docs/create-layer-architecture.md` §13 | Match (new, planned) | New in Phase 40A; explicitly shows human-gated, no-autonomous-mutation flow. |
+| Grounded Synthesis data-flow (Mermaid) | `docs/create-layer-architecture.md` §13 | Match (new, planned) | New in Phase 40A; explicitly shows human-gated, no-autonomous-mutation flow. |
 
 The text-based pipelines are honest about implemented-versus-planned. The new
-Create Layer Mermaid diagram is the first diagram to depict the creation
+Grounded Synthesis Mermaid diagram is the first diagram to depict the synthesis
 direction and is labeled planned.
 
 ## 6. Terminology and visual language
 
 - **Wordmark:** `Hive|Mind` is used consistently. **Match.**
 - **Parent label:** `devdevbuilds` is consistently the human decision-maker /
-  merge gate across README, roadmap, and now the Create Layer docs. **Match.**
+  merge gate across README, roadmap, and now the Grounded Synthesis Layer docs.
+  **Match.**
 - **Core metaphors:** graph / hive / evidence / provenance / verification are
-  consistent and now extended cleanly by *grounded creation* and *agent
+  consistent and now extended cleanly by *grounded synthesis* and *agent
   coordination* language. **Match.**
-- **Does the visual language reflect intelligence, provenance, creation, and agent
-  coordination?** Intelligence, provenance, and verification are well represented
-  in text and diagrams. **Creation** and **agent coordination** were previously
-  under-represented visually; Phase 40A adds the first creation-direction diagram
-  and the Create Layer track, closing part of that gap in text. A dedicated
-  creation/coordination *visual* remains **deferred**.
+- **Does the visual language reflect repository intelligence, evidence grounding,
+  provenance, synthesis, and agent coordination?** Intelligence, provenance, and
+  verification are well represented in text and diagrams. **Synthesis** and
+  **agent coordination** were previously under-represented visually; Phase 40A
+  adds the first synthesis-direction diagram and the Grounded Synthesis track,
+  closing part of that gap in text. Future visual work should reflect the layer's
+  vocabulary — repository intelligence, evidence grounding, provenance, synthesis,
+  *Musings*, *The Loom*, proposals and work packets, and human review — but a
+  dedicated synthesis/coordination *visual* remains **deferred**.
 - **Stale framing repaired in Phase 40A:** the README previously framed the
   project partly as a passive demo / portfolio experiment and carried a stale
   roadmap section pinned at Phase 38A. Phase 40A reconciles this to lead with
@@ -128,7 +134,7 @@ reconciliation:
 
 - Implemented surfaces (graph, intelligence report, Active Memory inspector,
   Repository Observer inspector, drift) are described as implemented.
-- The Create Layer is described as **planned**, in a clearly labeled section, and
+- The Grounded Synthesis Layer is described as **planned**, in a clearly labeled section, and
   never claimed as existing functionality.
 - The current-implementation-status table remains the authoritative
   implemented-versus-planned ledger and is not contradicted by the new framing.
@@ -137,7 +143,7 @@ reconciliation:
 
 - **Match / healthy:** single consistent branding banner; honest, careful inline
   README imagery; consistent wordmark, parent label, and core metaphors; accurate
-  text pipelines; new labeled Create Layer diagram.
+  text pipelines; new labeled Grounded Synthesis diagram.
 - **Relabel (low effort, future):** early backend (20d) and pre-graph-primary UI
   (21c–25c) captures should always be presented as phase-dated history — already
   largely handled by their QA/evidence docs.
@@ -158,7 +164,7 @@ change and remain paused and untouched.
 
 ## 10. Reference documents
 
-- [Create Layer architecture](create-layer-architecture.md)
+- [Grounded Synthesis Layer architecture](create-layer-architecture.md)
 - [Phase 40A planning](planning/phase-40a-create-layer-foundation-project-cohesion.md)
 - [Roadmap](roadmap.md)
 - [README](../README.md)

@@ -1,9 +1,16 @@
-# Phase 40A — Create Layer Foundation Planning + Project Cohesion
+# Phase 40A — Grounded Synthesis Foundation Planning + Project Cohesion
 
 **Type:** Planning, architecture, documentation, and project-cohesion phase.
 **Runtime code changed:** none. **Status:** documentation complete locally,
 pending independent audit (Jules), design/presentation review (Antigravity),
 coordinator reconciliation (ChatGPT), and the devdevbuilds human merge gate.
+
+**Terminology note:** the historical planning label for this phase — and the name
+retained by its Git branch (`phase-40a-create-layer-foundation-project-cohesion`),
+its original commit, and its on-disk paths — is *Create Layer Foundation Planning
++ Project Cohesion*. The architecture this phase establishes is now formally named
+the **Grounded Synthesis Layer**; *Create Layer* is deprecated terminology.
+*Musings* and *The Loom* are internal capabilities within that layer.
 
 **Parent label:** devdevbuilds (human decision-maker and merge gate).
 **Composition mode:** `sequential-isolated`.
@@ -13,7 +20,7 @@ coordinator reconciliation (ChatGPT), and the devdevbuilds human merge gate.
 ## 1. Purpose
 
 Define the architectural, product, governance, roadmap, documentation, and
-design-cohesion foundation for a new Hive|Mind **Create Layer** — the capability
+design-cohesion foundation for a new Hive|Mind **Grounded Synthesis Layer** — the capability
 that lets Hive|Mind's grounded read-only intelligence *produce* useful development
 outputs (proposals, drafts, plans, packets, bounded artifacts) while remaining
 evidence-grounded and never becoming an autonomous code generator or silent
@@ -29,7 +36,7 @@ mutation.
   is completed, merged, and normalized on `main`.
 - Phase 36K (Full-Hand Gesture Live Camera QA + Control Tuning) remains **paused
   and untouched**.
-- Current priority: dependable daily use and grounded creation capability.
+- Current priority: dependable daily use and grounded synthesis capability.
   Premium frontend polish, webcam work, screenshots, branding expansion, and
   unrelated visual experimentation remain deferred unless explicitly reopened.
 
@@ -53,20 +60,21 @@ mutation.
 
 Phase 40A produces or updates the following documentation:
 
-1. **Create Layer architecture document** —
+1. **Grounded Synthesis Layer architecture document** —
    [`docs/create-layer-architecture.md`](../create-layer-architecture.md).
    Canonical description of purpose, product boundary, relationships to the
    Intelligence Layer / Active Memory / Repository Observer / context packets, the
-   proposed creation workflow, request/result lifecycle, evidence and provenance
+   proposed synthesis workflow, request/result lifecycle, evidence and provenance
    requirements, review/approval boundaries, authority/mutation restrictions,
    failure states, security considerations, future extensibility, rejected
    alternatives, decision rationale, and a data-flow diagram.
 2. **This phase planning document** —
    `docs/planning/phase-40a-create-layer-foundation-project-cohesion.md`.
-3. **Roadmap integration** — a Create Layer track (40A–40G) added to
+3. **Roadmap integration** — a Grounded Synthesis track (40A–40G) added to
    [`docs/roadmap.md`](../roadmap.md).
 4. **README reconciliation** — [`README.md`](../../README.md) updated to describe
-   the true post-39D state and the next direction, with Create Layer clearly
+   the true post-39D state and the next direction, with the Grounded Synthesis
+   Layer clearly
    labeled as planned.
 5. **Design-asset cohesion assessment** —
    [`docs/design-asset-cohesion-assessment.md`](../design-asset-cohesion-assessment.md).
@@ -76,10 +84,10 @@ Phase 40A produces or updates the following documentation:
 
 ## 4. Mandatory architectural principles (carried into the foundation)
 
-The Create Layer foundation commits to these principles (full treatment in the
+The Grounded Synthesis Layer foundation commits to these principles (full treatment in the
 architecture doc):
 
-1. **Evidence before creation** — every meaningful output identifies its evidence.
+1. **Evidence before synthesis** — every meaningful output identifies its evidence.
 2. **Proposal before mutation** — early phases produce drafts/proposals/plans/
    packets/patches only; no direct repository mutation.
 3. **Human-reviewed execution** — devdevbuilds remains the decision-maker and
@@ -90,16 +98,16 @@ architecture doc):
    conflicting evidence, assumptions, unsupported claims, and validation needs.
 6. **No silent authority escalation** — read/propose authority never becomes
    write/commit/merge/deploy authority implicitly.
-7. **Reusable creation contracts** — typed, versioned contracts (planned, not
+7. **Reusable synthesis contracts** — typed, versioned contracts (planned, not
    built here).
 8. **Auditability** — enough metadata to explain request, evidence, rules, output,
    producer, human decision, and any external application.
 
 ## 5. What remains conceptual (defined, not implemented)
 
-- The `create-layer.v1` contract family (create request, grounding packet, create
+- The `grounded-synthesis.v1` contract family (synthesis request, grounding packet, create
   result) — described as documentation examples only; no runtime schema exists.
-- The creation workflow, request/result lifecycle, failure states, and authority
+- The synthesis workflow, request/result lifecycle, failure states, and authority
   model — specified as design targets, not code.
 - The grounding packet as a superset of the existing context packet — a design
   relationship, not an implemented service.
@@ -110,13 +118,13 @@ architecture doc):
 Phase 40A leaves the following ready to be scoped as concrete implementation
 phases, in order:
 
-- **40B — Create Request and Result Contract Types.** Introduce `create-layer.v1`
+- **40B — Synthesis Request, Grounding Packet, and Result Contract Types.** Introduce `grounded-synthesis.v1`
   backend Pydantic models + mirrored frontend TypeScript + parity test. Pure
   contracts, no service/endpoint/runtime — mirrors the Phase 37B contract phase.
-- **40C — Deterministic Grounded Creation Packet Service MVP.** A backend-only,
+- **40C — Deterministic Grounded Synthesis Packet Service MVP.** A backend-only,
   deterministic, read-only producer that assembles a grounding packet and emits a
-  create result from supplied evidence. No persistence, no mutation, no AI/LLM.
-- **40D — Creation Evidence, Provenance, and Validation Guardrails.** Deterministic
+  synthesis result from supplied evidence. No persistence, no mutation, no AI/LLM.
+- **40D — Synthesis Evidence, Provenance, and Validation Guardrails.** Deterministic
   policy/validation, confidence/freshness indicators, scope exclusions, and
   fail-closed bounds.
 
@@ -126,7 +134,7 @@ fixed; each maps directly onto an existing, proven Hive|Mind pattern
 
 ## 7. What is explicitly deferred
 
-- **40E — Create Layer API + Read-Only Frontend Workspace** (surface work; after
+- **40E — Grounded Synthesis API + Read-Only Frontend Workspace** (surface work; after
   the deterministic producer and guardrails exist).
 - **40F — Review, Approval, Export, and Agent Handoff Workflow** (human gate +
   Agent Lab handoff).
@@ -138,7 +146,7 @@ fixed; each maps directly onto an existing, proven Hive|Mind pattern
 
 ## 8. Recommended next phase
 
-**Phase 40B — Create Request and Result Contract Types.**
+**Phase 40B — Synthesis Request, Grounding Packet, and Result Contract Types.**
 
 Rationale: the foundation is now defined, and the lowest-risk, highest-leverage
 next step is the same one that anchored the Active Memory track — settle the typed,
@@ -151,7 +159,7 @@ anything, so it is safely reviewable and unblocks 40C.
 Full rationale and rejected alternatives live in the architecture document
 (§14–§15). Key decisions:
 
-- **Grounded creation on read-only intelligence, not an autonomous generator** —
+- **Grounded synthesis on read-only intelligence, not an autonomous generator** —
   preserves Hive|Mind's evidence-first credibility while adding real productivity.
 - **Deterministic core; generative behavior isolated and deferred** —
   reproducibility and auditability are the project's value; a non-deterministic
@@ -165,14 +173,14 @@ Full rationale and rejected alternatives live in the architecture document
 
 ## 10. Roadmap sequence added
 
-The following provisional Create Layer track was added to the roadmap
+The following provisional Grounded Synthesis track was added to the roadmap
 (names may be refined by later phases with justification):
 
-- **40A** — Create Layer Foundation Planning + Project Cohesion (this phase)
-- **40B** — Create Request and Result Contract Types
-- **40C** — Deterministic Grounded Creation Packet Service MVP
-- **40D** — Creation Evidence, Provenance, and Validation Guardrails
-- **40E** — Create Layer API and Read-Only Frontend Workspace
+- **40A** — Grounded Synthesis Foundation Planning + Project Cohesion (this phase)
+- **40B** — Synthesis Request, Grounding Packet, and Result Contract Types
+- **40C** — Deterministic Grounded Synthesis Packet Service MVP
+- **40D** — Synthesis Evidence, Provenance, and Validation Guardrails
+- **40E** — Grounded Synthesis API and Read-Only Workspace
 - **40F** — Review, Approval, Export, and Agent Handoff Workflow
 - **40G** — End-to-End QA, Operator Documentation, and Release Readiness
 
@@ -219,7 +227,7 @@ service, output persistence, or new dependency was introduced.
 - Conflict-marker search across changed files — none.
 - Local Markdown link review for new/changed docs — resolved.
 - Mermaid syntax review of the architecture data-flow diagram.
-- Roadmap/README status-language reconciliation (Create Layer described as
+- Roadmap/README status-language reconciliation (the Grounded Synthesis Layer described as
   planned, not implemented).
 - Confirmation that no runtime files changed (diff limited to Markdown docs).
 - Confirmation that Phase 36K materials were not touched.
@@ -228,7 +236,7 @@ service, output persistence, or new dependency was introduced.
 
 ## 14. Known limitations
 
-- This is a planning phase: the Create Layer does not exist as runtime.
+- This is a planning phase: the Grounded Synthesis Layer does not exist as runtime.
 - Conceptual contracts are illustrative; real field-level contracts are a 40B
   decision.
 - The remote account name differs from `devdevbuilds` (see §2.1); the human gate
@@ -238,13 +246,13 @@ service, output persistence, or new dependency was introduced.
 
 ## 15. Recommended next phase (restated)
 
-**Phase 40B — Create Request and Result Contract Types** — settle the typed,
-versioned `create-layer.v1` contracts with backend/frontend parity before any
+**Phase 40B — Synthesis Request, Grounding Packet, and Result Contract Types** — settle the typed,
+versioned `grounded-synthesis.v1` contracts with backend/frontend parity before any
 consuming service. No runtime behavior; safely reviewable; unblocks 40C.
 
 ## 16. Reference documents
 
-- [Create Layer architecture](../create-layer-architecture.md)
+- [Grounded Synthesis Layer architecture](../create-layer-architecture.md)
 - [Roadmap](../roadmap.md)
 - [Design-asset cohesion assessment](../design-asset-cohesion-assessment.md)
 - [Active Agent Memory + Verification Layer reference](../active-agent-memory-verification-layer.md)

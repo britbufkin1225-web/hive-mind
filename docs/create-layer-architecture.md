@@ -1,16 +1,40 @@
-# Hive|Mind Create Layer — Architecture (Planned)
+# Hive|Mind Grounded Synthesis Layer — Architecture (Planned)
 
 **Status:** Planning / architecture direction. **Nothing in this document is
-implemented.** It defines the intended Create Layer for Hive|Mind so that later
-phases (40B onward) can build against a stable, reviewed vocabulary instead of
-re-deriving concepts. Where this document names contracts, services, endpoints,
-or record shapes, those are *proposed* design targets — not existing code.
+implemented.** It defines the intended Grounded Synthesis Layer for Hive|Mind so
+that later phases (40B onward) can build against a stable, reviewed vocabulary
+instead of re-deriving concepts. Where this document names contracts, services,
+endpoints, or record shapes, those are *proposed* design targets — not existing
+code.
 
 **Parent label:** devdevbuilds (human decision-maker and merge gate).
 
-**Authored under:** Phase 40A — Create Layer Foundation Planning + Project
-Cohesion. See the
+**Authored under:** Phase 40A. The historical planning label for this phase and
+its branch/commit is **Create Layer Foundation Planning + Project Cohesion**; the
+planned architecture it established is now formally named the **Grounded Synthesis
+Layer** (display title: *Grounded Synthesis Foundation Planning + Project
+Cohesion*). See the
 [Phase 40A planning doc](planning/phase-40a-create-layer-foundation-project-cohesion.md).
+
+---
+
+## 0. Terminology note
+
+- **Formal name:** *Grounded Synthesis Layer* — the architecture this document
+  defines.
+- **Historical planning label:** *Create Layer*. This was the working name during
+  Phase 40A planning; it is now **deprecated terminology**, retained only where a
+  reference points at the original branch (`phase-40a-create-layer-foundation-project-cohesion`),
+  the original commit, or the on-disk document path (`docs/create-layer-architecture.md`,
+  kept to avoid link churn).
+- **Musings** and **The Loom** are internal capabilities *within* the Grounded
+  Synthesis Layer, not names for the whole layer (see §1.2).
+
+**Canonical definition.** The Grounded Synthesis Layer transforms verified
+repository evidence, Active Memory, provenance, contradictions, context packets,
+and user intent into traceable proposals, plans, drafts, work packets, and
+artifacts for human review. It remains **planned architecture**; no Grounded
+Synthesis runtime capability currently exists.
 
 ---
 
@@ -21,25 +45,26 @@ development knowledge. It imports developer-owned sources, normalizes them into 
 graph, derives deterministic intelligence signals, holds evidence-backed Active
 Memory records, and observes local repository state — all **read-only**.
 
-The Create Layer is the next capability class: it lets that grounded intelligence
-**produce useful development outputs** — proposals, drafts, plans, packets, and
-bounded change artifacts — *without* becoming an autonomous code generator and
-*without* silently mutating any repository.
+The Grounded Synthesis Layer is the next capability class: it lets that grounded
+intelligence **produce useful development outputs** — proposals, drafts, plans,
+packets, and bounded change artifacts — *without* becoming an autonomous code
+generator and *without* silently mutating any repository.
 
 The one-line direction:
 
 > Evolve Hive|Mind from a **read-only intelligence workspace** into a **grounded
-> creation workspace built on verified read-only intelligence.**
+> synthesis workspace built on verified read-only intelligence.**
 
 The Intelligence Layer stays authoritative for observation, provenance,
 contradiction detection, repository evidence, source inspection, and context
-assembly. The Create Layer *consumes* that grounded context and *produces*
-proposals, drafts, plans, or bounded change artifacts. Creation outputs are **not**
-automatically accepted as truth and are **not** automatically applied.
+assembly. The Grounded Synthesis Layer *consumes* that grounded context and
+*synthesizes* proposals, drafts, plans, or bounded change artifacts. Synthesis
+outputs are **not** automatically accepted as truth and are **not** automatically
+applied.
 
-### 1.1 Creation output types (target catalog)
+### 1.1 Synthesis output types (target catalog)
 
-The Create Layer is intended to eventually produce:
+The Grounded Synthesis Layer is intended to eventually produce:
 
 - implementation proposals
 - scoped work packets
@@ -52,25 +77,50 @@ The Create Layer is intended to eventually produce:
 - repository patch proposals (as *proposed* artifacts, never auto-applied)
 - agent contribution packets (aligned to the existing
   [Agent Lab contribution contract](agent-lab/agent-contribution-contract.md))
-- exportable creation artifacts
+- exportable synthesis artifacts
 
 Every one of these is a **proposal or draft**. None is a merge, a commit, a push,
 or a repository write.
 
+### 1.2 Capabilities, modes, and surfaces (within the layer)
+
+The following are **capabilities, modes, or product-facing surfaces within** the
+Grounded Synthesis Layer — not alternate names for the whole layer:
+
+- **Musings** — exploratory ideas, tentative connections, speculative-but-grounded
+  directions, unresolved possibilities, low-authority suggestions, and thought
+  prompts that still require further evidence or review. A Musing **must not** be
+  represented as an approved plan, a verified fact, or a repository change. It is
+  the lowest-authority synthesis output.
+- **The Loom** — the internal capability (and possible future workspace) that
+  assembles evidence, repository context, Active Memory, constraints,
+  contradictions, provenance, and user intent into coherent synthesis outputs. The
+  Loom is a capability *within* the Grounded Synthesis Layer; it is **not** a name
+  for the architecture as a whole.
+- **Proposals** — structured recommended actions or changes awaiting review.
+- **Drafts** — written outputs (documentation, summaries, technical explanations,
+  issue drafts, pull-request drafts, architecture drafts).
+- **Work Packets** — bounded, agent-ready implementation or review instructions.
+- **Artifacts** — exportable outputs derived from synthesis results.
+- **Reviews** — validation, critique, approval, rejection, revision requests, and
+  authority confirmation.
+
 ## 2. Product boundary
 
-The Create Layer is defined as much by what it **must not** do as by what it does.
+The Grounded Synthesis Layer is defined as much by what it **must not** do as by
+what it does.
 
 **In scope (planned):**
 
-- Accept a typed, versioned **create request** describing an objective and scope.
-- Assemble a **grounding packet** from existing Intelligence Layer evidence
-  (Active Memory records, context packets, Repository Observer snapshots/drift,
-  source records).
+- Accept a typed, versioned **synthesis request** describing an objective and
+  scope.
+- Assemble a **grounding packet** (via The Loom) from existing Intelligence Layer
+  evidence (Active Memory records, context packets, Repository Observer
+  snapshots/drift, source records).
 - Apply deterministic policy, evidence selection, and validation.
-- Produce a typed, versioned **create result**: a proposal, draft, plan, packet,
-  or bounded artifact with explicit evidence references, assumptions, limitations,
-  and required human decisions.
+- Produce a typed, versioned **synthesis result**: a proposal, draft, plan,
+  packet, or bounded artifact with explicit evidence references, assumptions,
+  limitations, and required human decisions.
 - Present results **read-only** for human review, and support **export** and
   **handoff** to an external agent or implementation workflow.
 
@@ -78,7 +128,7 @@ The Create Layer is defined as much by what it **must not** do as by what it doe
 
 - Autonomous repository mutation of any kind (edit, commit, amend, branch, stash,
   reset, clean, push, pull, merge, rebase, cherry-pick).
-- Automatic acceptance of a creation output as verified truth.
+- Automatic acceptance of a synthesis output as verified truth.
 - Automatic application of a patch or plan to a repository.
 - Silent escalation from read/propose authority to write/commit/merge authority.
 - LLM/model-backed generation *inside the deterministic boundary* (any future
@@ -88,9 +138,9 @@ The Create Layer is defined as much by what it **must not** do as by what it doe
 
 ## 3. Relationship to existing layers
 
-The Create Layer sits **above** the Intelligence Layer and **consumes** it. It
-never reaches around the Intelligence Layer to touch raw repositories or the store
-directly.
+The Grounded Synthesis Layer sits **above** the Intelligence Layer and
+**consumes** it. It never reaches around the Intelligence Layer to touch raw
+repositories or the store directly.
 
 ### 3.1 Intelligence Layer (authoritative source)
 
@@ -101,7 +151,7 @@ The Intelligence Layer remains the authority for *what is true and why*:
 - **Intelligence Report** — deterministic temporal decay, dreaming suggestions,
   provenance chains, query trails.
 
-The Create Layer treats these as **evidence inputs only**. It does not mutate the
+The Grounded Synthesis Layer treats these as **evidence inputs only**. It does not mutate the
 graph, source records, or intelligence derivations.
 
 ### 3.2 Active Memory (verified context)
@@ -111,12 +161,12 @@ evidence-linked project-context layer: `active-memory.v1` contracts,
 the deterministic in-memory store, read-only contradiction detection, and
 deterministic context-packet generation.
 
-The Create Layer **reads** Active Memory context (via context packets and, where
+The Grounded Synthesis Layer **reads** Active Memory context (via context packets and, where
 authorized, `MemoryRecord` / `EvidenceRecord` references) as the primary grounding
 substrate. It respects the two Active Memory state axes — **verification state**
 (how strongly a claim is believed) and **lifecycle state** (whether it is in
-force) — and never collapses them. The Create Layer **must not** insert, activate,
-supersede, retract, verify, or resolve Active Memory records. Creation results may
+force) — and never collapses them. The Grounded Synthesis Layer **must not** insert, activate,
+supersede, retract, verify, or resolve Active Memory records. Synthesis results may
 *reference* memory and evidence records; they never author or mutate them.
 
 ### 3.3 Repository Observer (repository evidence)
@@ -126,9 +176,9 @@ read-only, deterministic repository evidence: `repo-observer.v1` snapshots and
 drift analysis over a single local Git repository via an allowlisted, shell-free
 Git adapter.
 
-The Create Layer consumes `RepositorySnapshot` and `RepositoryDriftAnalysis`
+The Grounded Synthesis Layer consumes `RepositorySnapshot` and `RepositoryDriftAnalysis`
 results (directly, or as already-projected candidate records from the Phase 39A
-repository-evidence projection) as repository-state evidence for creation. It
+repository-evidence projection) as repository-state evidence for synthesis. It
 **never** runs its own Git commands, never mutates a repository, and honors the
 observer's scope discipline: local Git history alone does not prove remote
 pull-request or CI state.
@@ -140,13 +190,13 @@ The existing deterministic **context packet**
 context packet already assembles active records, unresolved contradictions,
 lifecycle warnings, verification counts, and rigid prohibited-assumption strings.
 
-The Create Layer's **grounding packet** (§6) is a *superset concept* layered on
-top: it starts from context-packet-style assembly and adds creation-specific
+The Grounded Synthesis Layer's **grounding packet** (§6) is a *superset concept* layered on
+top: it starts from context-packet-style assembly and adds synthesis-specific
 evidence selection, freshness/confidence indicators, scope exclusions, and policy
 warnings. The grounding packet does not replace the context packet; it consumes
 the same evidence discipline and stays read-only.
 
-## 4. Proposed creation workflow
+## 4. Proposed synthesis workflow
 
 The intended end-to-end flow, from evidence to external implementation:
 
@@ -154,13 +204,15 @@ The intended end-to-end flow, from evidence to external implementation:
    normalized by the Intelligence Layer (read-only).
 2. **Context assembled** — Active Memory records and deterministic context
    packets summarize verified, in-force project context.
-3. **Create request** — A human (or, later, an authorized agent) submits a typed
-   create request: objective, scope, target repository/workspace, requested output
-   format, evidence requirements, constraints, and authority level.
-4. **Grounding + policy** — The Create Layer assembles a grounding packet from
-   available evidence, applies deterministic evidence selection and policy
-   validation, and records missing context, contradictions, and scope exclusions.
-5. **Create result** — The layer produces a typed create result: a proposal,
+3. **Synthesis request** — A human (or, later, an authorized agent) submits a
+   typed synthesis request: objective, scope, target repository/workspace,
+   requested output format, evidence requirements, constraints, and authority
+   level.
+4. **Grounding + policy** — The Grounded Synthesis Layer (via The Loom) assembles
+   a grounding packet from available evidence, applies deterministic evidence
+   selection and policy validation, and records missing context, contradictions,
+   and scope exclusions.
+5. **Synthesis result** — The layer produces a typed synthesis result: a proposal,
    draft, plan, packet, or bounded artifact with evidence references, assumptions,
    validation status, warnings, and required human decisions.
 6. **Human review** — devdevbuilds (or a designated human reviewer) inspects the
@@ -177,13 +229,13 @@ external to Hive|Mind's write surface.
 
 ## 5. Request / result lifecycle
 
-A create request moves through explicit, inspectable states. Proposed lifecycle:
+A synthesis request moves through explicit, inspectable states. Proposed lifecycle:
 
 ```text
-received        -> request validated against the create-request contract
+received        -> request validated against the synthesis-request contract
 grounded        -> grounding packet assembled from available evidence
 policy_checked  -> evidence selection + policy validation applied
-produced        -> create result generated (deterministic, read-only)
+produced        -> synthesis result generated (deterministic, read-only)
 under_review    -> presented read-only to a human reviewer
 approved        -> human accepted the result (export/handoff permitted)
 rejected        -> human rejected the result (no external effect)
@@ -196,13 +248,13 @@ Failure and short-circuit states (see §9): `rejected_invalid_request`,
 `scope_exceeded`, `bounds_exceeded`. Every transition is auditable (§8), and no
 transition performs a repository mutation.
 
-Like Active Memory, the Create Layer is **caller-clock-owned** where it can be:
+Like Active Memory, the Grounded Synthesis Layer is **caller-clock-owned** where it can be:
 requests carry externally-supplied ordering/timestamp metadata rather than the
 service reading the wall clock, so results stay reproducible.
 
 ## 6. Evidence and provenance requirements
 
-**Mandatory principle: evidence before creation.** Every meaningful creation
+**Mandatory principle: evidence before synthesis.** Every meaningful synthesis
 output must identify the evidence, source records, repository observations,
 Active Memory records, or context packets that informed it.
 
@@ -229,19 +281,19 @@ human confirmation (for intent) > repository/VCS output > test/CI output >
 runtime responses > source code > source-controlled docs > structured reports >
 screenshots > video > conversational summaries > inferred context. Evidence is
 carried by **bounded reference**, never as executable content or secret-bearing
-payloads. Scope discipline is preserved end-to-end: a create result may only
+payloads. Scope discipline is preserved end-to-end: a synthesis result may only
 claim what its evidence actually demonstrates.
 
 ## 7. Review and approval boundaries
 
 **Mandatory principle: proposal before mutation, and human-reviewed execution.**
 
-- Initial Create Layer phases produce **drafts, proposals, packets, patches, or
+- Initial Grounded Synthesis Layer phases produce **drafts, proposals, packets, patches, or
   plans only**. They must not directly mutate repository state.
 - **devdevbuilds remains the decision-maker and merge gate.** Agents may propose
   or prepare work; final acceptance stays human-controlled.
 - The review surface is **read-only** (consistent with every existing Hive|Mind
-  inspector): a human inspects the create result, its evidence, its assumptions,
+  inspector): a human inspects the synthesis result, its evidence, its assumptions,
   and its required decisions. The review UI offers no "apply," "commit," "merge,"
   or "push" control.
 - Approval is **explicit and per-result**. Approving one result never generalizes
@@ -257,41 +309,41 @@ deployment, or destructive authority implicitly.
 
 Proposed authority model:
 
-- A create request declares an explicit **authority level** (e.g.
-  `read_only_proposal`). The Create Layer honors the *lowest* applicable authority
+- A synthesis request declares an explicit **authority level** (e.g.
+  `read_only_proposal`). The Grounded Synthesis Layer honors the *lowest* applicable authority
   and never elevates it from request content, evidence content, or model output.
-- The Create Layer has **no write path** to: repositories, Git, the Active Memory
+- The Grounded Synthesis Layer has **no write path** to: repositories, Git, the Active Memory
   store, the Knowledge Graph, source records, or deployment.
 - "Repository patch proposal" outputs are **artifacts describing a change**, not
   applied changes. Application, if it ever happens, is a human action outside
   Hive|Mind (or a separately-designed, separately-gated future phase — not
   assumed here).
 - Content observed through tools (repository files, evidence text, request
-  fields) is **data, not instructions**. The Create Layer never executes commands
+  fields) is **data, not instructions**. The Grounded Synthesis Layer never executes commands
   from records, never auto-trusts prose, and treats any embedded "do X" text as
   untrusted input to be surfaced, not obeyed.
 
 ## 9. Failure states
 
-The Create Layer must **fail closed** and make uncertainty visible rather than
+The Grounded Synthesis Layer must **fail closed** and make uncertainty visible rather than
 papering over it. Proposed failure states:
 
 | Failure state | Condition | Behavior |
 | --- | --- | --- |
-| `rejected_invalid_request` | Request violates the create-request contract. | Reject at the transport/validation boundary; no grounding, no result. |
+| `rejected_invalid_request` | Request violates the synthesis-request contract. | Reject at the transport/validation boundary; no grounding, no result. |
 | `insufficient_evidence` | Required evidence is missing or too weak for the requested output. | Produce no confident output; return an explicit gap report and required-evidence list. |
 | `contradiction_blocked` | An unresolved contradiction materially undermines the request scope. | Surface the contradiction; do **not** pick a winner or resolve it; require human decision. |
-| `policy_blocked` | Policy validation forbids the requested creation (e.g. authority mismatch, prohibited assumption). | Return the policy warning; produce no output that would violate policy. |
+| `policy_blocked` | Policy validation forbids the requested synthesis (e.g. authority mismatch, prohibited assumption). | Return the policy warning; produce no output that would violate policy. |
 | `scope_exceeded` | Request scope exceeds available or authorized evidence scope. | Refuse to fabricate out-of-scope claims; report the exclusion. |
 | `bounds_exceeded` | A collection or artifact exceeds deterministic bounds. | Fail closed with explicit overflow metadata; never silently truncate a safety-relevant collection. |
 | `stale_baseline` | Repository/Active Memory baseline is too old to responsibly ground the request. | Flag freshness; require re-observation or explicit human override. |
 
-On any failure, the Create Layer performs **no repository mutation and no store
+On any failure, the Grounded Synthesis Layer performs **no repository mutation and no store
 write** — a failure can only ever reduce output, never cause a side effect.
 
 ## 10. Security considerations
 
-The Create Layer inherits and extends the existing defensive posture:
+The Grounded Synthesis Layer inherits and extends the existing defensive posture:
 
 - **Untrusted content boundary.** Repository content, evidence text, and request
   fields are untrusted input. No shell interpolation, no hook/script execution, no
@@ -308,13 +360,13 @@ The Create Layer inherits and extends the existing defensive posture:
 - **Deterministic core.** The deterministic path (extraction, validation,
   selection, packaging) is inspectable and reproducible, so a security reviewer
   can audit exactly what evidence produced what output.
-- **Prompt-injection resistance.** Because a create request may later be produced
+- **Prompt-injection resistance.** Because a synthesis request may later be produced
   or influenced by agents, embedded instructions in evidence or request content
   are treated as data and surfaced, never executed.
 
 These extend the
 [security threat model](security/threat-model-and-vulnerability-test-plan.md);
-a dedicated Create Layer threat pass is recommended before any generative
+a dedicated Grounded Synthesis Layer threat pass is recommended before any generative
 behavior (§18).
 
 ## 11. Deterministic boundaries and future generative behavior
@@ -334,23 +386,23 @@ Proposed structure:
   isolated, separately-gated* component that consumes the deterministic grounding
   packet and whose output re-enters the deterministic validation/packaging path.
   It is never the authority, never auto-trusted, and never the mutation path.
-- Phase 40A and the near-term Create Layer phases (40B–40G as sequenced) are
+- Phase 40A and the near-term Grounded Synthesis Layer phases (40B–40G as sequenced) are
   **deterministic-only**. No AI/LLM runtime integration is introduced or assumed.
 
-## 12. Reusable creation contracts (conceptual, not implemented)
+## 12. Reusable synthesis contracts (conceptual, not implemented)
 
-**Mandatory principle: reusable creation contracts.** Creation requests and
+**Mandatory principle: reusable synthesis contracts.** Synthesis requests and
 results should use typed, versioned contracts rather than ad hoc strings.
 
-The following are **conceptual shapes** for a future `create-layer.v1` contract
+The following are **conceptual shapes** for a future `grounded-synthesis.v1` contract
 family, mirroring the `active-memory.v1` / `repo-observer.v1` discipline (closed
 enums, bounded scalars, caller-supplied timestamps, mirrored frontend types). They
 are **documentation examples only** — Phase 40A introduces no runtime schema.
 
-### 12.1 Create request (conceptual)
+### 12.1 Synthesis request — `SynthesisRequest` (conceptual)
 
 - `request_id` — stable identifier
-- `creation_type` — closed enum (e.g. `implementation_proposal`, `work_packet`,
+- `synthesis_type` — closed enum (e.g. `implementation_proposal`, `work_packet`,
   `architecture_draft`, `code_change_plan`, `documentation_draft`, `test_plan`,
   `issue_draft`, `pull_request_draft`, `design_brief`, `patch_proposal`,
   `agent_contribution_packet`)
@@ -366,14 +418,17 @@ are **documentation examples only** — Phase 40A introduces no runtime schema.
 - `requesting_actor` — source identity (reusing `MemorySource` typing)
 - `ordering_metadata` — externally-supplied timestamp / sequence
 
-### 12.2 Grounding packet (conceptual)
+### 12.2 Grounding packet — `GroundingPacket` (conceptual)
+
+The Loom's assembled context (see §1.2); a `LoomContext` may wrap the working
+inputs before a `GroundingPacket` is finalized.
 
 - `source_references`, `repository_evidence`, `active_memory_references`
 - `contradictions`, `unresolved_questions`
 - `confidence_indicators`, `freshness_indicators`
 - `policy_warnings`, `scope_exclusions`
 
-### 12.3 Create result (conceptual)
+### 12.3 Synthesis result — `SynthesisResult` (conceptual)
 
 - `result_id`, `request_id`
 - `output_type`, `output_content_or_artifact_reference`
@@ -382,6 +437,21 @@ are **documentation examples only** — Phase 40A introduces no runtime schema.
 - `proposed_next_action`, `required_human_decisions`
 - `producer_identity`, `generation_method` (e.g. `deterministic`)
 - `authority_statement` (explicitly reasserts read-only/no-mutation posture)
+
+### 12.4 Conceptual type vocabulary
+
+The following are **conceptual Phase 40A names**, one per capability in §1.2. They
+are naming direction only; **Phase 40B decides exact schema names, versions,
+fields, and compatibility rules.**
+
+- `SynthesisRequest` — the typed, versioned request (§12.1).
+- `GroundingPacket` / `LoomContext` — The Loom's assembled grounding (§12.2).
+- `SynthesisResult` — the typed, versioned result (§12.3).
+- `Musing` — a low-authority exploratory output (never an approved plan or a
+  verified fact).
+- `WorkPacket` — a bounded, agent-ready implementation or review instruction.
+- `ArtifactExport` — an exportable output derived from a synthesis result.
+- `ReviewRecord` — a validation/critique/approval/rejection/revision decision.
 
 ## 13. Data-flow diagram
 
@@ -393,10 +463,10 @@ every repository effect is outside Hive|Mind and downstream of human review.
 flowchart TD
     A[Repository and source evidence] --> B[Deterministic observation<br/>and normalization]
     B --> C[Active Memory and context packets]
-    C --> D[Create request<br/>typed, versioned]
-    D --> E[Evidence selection<br/>and policy validation]
+    C --> D[Synthesis request<br/>typed, versioned]
+    D --> E[Evidence selection<br/>and policy validation<br/>via The Loom]
     E --> F[Grounding packet]
-    F --> G[Creation proposal<br/>or artifact]
+    F --> G[Synthesis proposal<br/>or artifact]
     G --> H{Human review<br/>devdevbuilds}
     H -->|rejected| X[No external effect]
     H -->|approved| I[External agent or<br/>implementation workflow]
@@ -414,7 +484,7 @@ flowchart TD
 
 Read-only, deterministic stages are blue; the human gate is orange; anything that
 actually writes a repository is purple and lives **outside** Hive|Mind. There is
-no edge from a creation proposal directly to a repository write.
+no edge from a synthesis proposal directly to a repository write.
 
 ## 14. Rejected alternatives
 
@@ -424,9 +494,9 @@ Major directions considered and **rejected**, with rationale:
   mutation*, *human-reviewed execution*, and *no silent authority escalation*, and
   would turn Hive|Mind into an unbounded generator that mutates repositories — the
   explicit anti-goal. Chosen instead: proposal/draft outputs behind a human gate.
-- **Create Layer writes directly to the Active Memory store.** Rejected. It would
-  blur the read-only intelligence boundary and let creation manufacture
-  "verified" context. Chosen instead: the Create Layer *references* memory/evidence
+- **Grounded Synthesis Layer writes directly to the Active Memory store.** Rejected. It would
+  blur the read-only intelligence boundary and let synthesis manufacture
+  "verified" context. Chosen instead: the Grounded Synthesis Layer *references* memory/evidence
   records and never authors or mutates them.
 - **Model-backed generation inside the deterministic core.** Rejected for the
   foundation. It would make outputs non-reproducible and put an unauditable
@@ -434,14 +504,14 @@ Major directions considered and **rejected**, with rationale:
   future generative step isolated, optional, separately gated, and re-validated.
 - **Ad hoc string payloads between services.** Rejected. Untyped strings defeat
   provenance, validation, and cross-boundary parity. Chosen instead: a planned
-  typed, versioned `create-layer.v1` contract family (introduced in a later phase,
+  typed, versioned `grounded-synthesis.v1` contract family (introduced in a later phase,
   not 40A).
 - **Auto-apply approved patches from within Hive|Mind.** Rejected for the
   foundation. Even post-approval, an in-app apply path reintroduces mutation
   authority and destructive risk. Chosen instead: export/handoff to an external,
   human-driven workflow; re-observation closes the loop.
 - **A single overloaded "AI assistant" surface.** Rejected. It would collapse the
-  intelligence/creation separation and the deterministic/generative separation.
+  intelligence/synthesis separation and the deterministic/generative separation.
   Chosen instead: distinct layers with explicit contracts and boundaries.
 
 ## 15. Decision rationale
@@ -449,11 +519,11 @@ Major directions considered and **rejected**, with rationale:
 For each major architectural decision: the direction, alternatives, why it fits
 Hive|Mind, risks/tradeoffs, and what evidence would justify revisiting it.
 
-### 15.1 Grounded creation on top of read-only intelligence (not a generator)
+### 15.1 Grounded synthesis on top of read-only intelligence (not a generator)
 
-- **Selected:** creation consumes verified read-only intelligence and emits
+- **Selected:** synthesis consumes verified read-only intelligence and emits
   proposals/drafts behind a human gate.
-- **Alternatives:** autonomous generator; no creation at all.
+- **Alternatives:** autonomous generator; no synthesis at all.
 - **Why it fits:** preserves Hive|Mind's core value (honest, evidence-backed,
   inspectable) while adding real productivity; matches every existing
   read-only/contract-first phase.
@@ -476,7 +546,7 @@ Hive|Mind, risks/tradeoffs, and what evidence would justify revisiting it.
 
 ### 15.3 Typed versioned contracts over ad hoc strings
 
-- **Selected:** planned `create-layer.v1` typed/versioned contracts (built later).
+- **Selected:** planned `grounded-synthesis.v1` typed/versioned contracts (built later).
 - **Alternatives:** free-form JSON/strings.
 - **Why it fits:** mirrors `active-memory.v1` / `repo-observer.v1`; enables
   provenance, validation, and backend/frontend parity tests.
@@ -496,34 +566,35 @@ Hive|Mind, risks/tradeoffs, and what evidence would justify revisiting it.
 ### 15.5 Grounding packet as a superset of the context packet
 
 - **Selected:** reuse context-packet assembly discipline; extend with
-  creation-specific selection/policy.
+  synthesis-specific selection/policy.
 - **Alternatives:** a parallel, independent evidence assembler.
 - **Why it fits:** avoids duplicating evidence logic and keeps a single provenance
   discipline.
-- **Risks/tradeoffs:** couples Create Layer evolution to context-packet evolution.
-- **Revisit when:** creation grounding needs diverge materially from context-packet
+- **Risks/tradeoffs:** couples Grounded Synthesis Layer evolution to context-packet evolution.
+- **Revisit when:** synthesis grounding needs diverge materially from context-packet
   semantics.
 
 ## 16. Future extensibility
 
 Designed-for, not-yet-built extension points:
 
-- **`create-layer.v1` contract family** — typed request/grounding/result shapes
+- **`grounded-synthesis.v1` contract family** — typed request/grounding/result shapes
   with backend Pydantic + mirrored frontend TypeScript and a parity test.
-- **Deterministic creation packet service** — the MVP producer (40C target).
+- **Deterministic synthesis packet service** — the MVP producer (40C target).
 - **Evidence/provenance/validation guardrails** — richer policy and validation
   (40D target).
-- **Read-only Create Layer API + workspace UI** — inspection surface (40E target).
+- **Read-only Grounded Synthesis API + workspace UI** — inspection surface
+  (40E target).
 - **Review/approval/export/handoff workflow** — human gate and Agent Lab handoff
   (40F target).
 - **Optional, isolated generative step** — only after deterministic stability and
   a dedicated security pass; never on the mutation path.
-- **Durable creation-artifact persistence** — deferred until contracts and
+- **Durable synthesis-artifact persistence** — deferred until contracts and
   producer semantics are stable, mirroring the Active Memory persistence stance.
 
 ## 17. Auditability
 
-The system should preserve enough metadata to explain, for every create request:
+The system should preserve enough metadata to explain, for every synthesis request:
 
 - **what was requested** (request contract + objective + scope)
 - **which evidence was used** (grounding packet references)
@@ -541,10 +612,10 @@ observer.
 
 ## 18. Security note and recommended gates
 
-Before any Create Layer implementation phase that adds a write-adjacent surface or
+Before any Grounded Synthesis Layer implementation phase that adds a write-adjacent surface or
 generative behavior, the following gates are recommended:
 
-1. A dedicated Create Layer threat model extending the existing
+1. A dedicated Grounded Synthesis Layer threat model extending the existing
    [threat model](security/threat-model-and-vulnerability-test-plan.md).
 2. Hermetic determinism tests for the create producer (fixtures in, byte-stable
    results out).
@@ -554,10 +625,10 @@ generative behavior, the following gates are recommended:
 
 ## 19. Boundary restatement
 
-To be unambiguous: as of Phase 40A, the Create Layer is **planned architecture
-only**. There is no create-layer service, endpoint, contract, UI, producer,
-patch-application engine, code-generation service, output persistence, or AI/LLM
-integration. Hive|Mind remains a local, single-user, read-only intelligence
+To be unambiguous: as of Phase 40A, the Grounded Synthesis Layer is **planned
+architecture only**. There is no grounded-synthesis service, endpoint, contract,
+UI, producer, patch-application engine, code-generation service, output
+persistence, or AI/LLM integration. Hive|Mind remains a local, single-user, read-only intelligence
 workspace. This document describes the intended next direction and the guardrails
 that direction must satisfy.
 

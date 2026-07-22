@@ -18,7 +18,7 @@ The product direction is deliberately evidence-oriented. The app favors determin
 
 Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for tools and agents to read verified, evidence-linked project context before acting. Its implemented foundation includes deterministic context packets and a read-only inspector, plus a Repository Observer with bounded snapshot and drift APIs, deterministic repository-evidence projection into candidate memory records, a persistent local repository-workspace registry, and a one-command managed local runtime. The most recent merged phase, Phase 39D, hardened the end-to-end Repository Observer workflow with a bounded transport timeout, an extracted error-classification module, a real end-to-end regression suite, and an [operator guide](docs/operator-repository-observer.md). Multi-agent contribution governance (Agent Lab) is defined and enforced locally through a dependency-free PowerShell preflight.
 
-The next direction is a **Create Layer**: Hive|Mind evolving from a read-only intelligence workspace into a *grounded creation workspace built on verified read-only intelligence*, where the grounded intelligence produces proposals, drafts, plans, and bounded change artifacts that a human reviews before anything is applied. This is **planned architecture**, not implemented functionality — see [Direction: the Create Layer](#direction-the-create-layer-planned) and the [Create Layer architecture](docs/create-layer-architecture.md).
+The next direction is the **Grounded Synthesis Layer** (historical planning label: *Create Layer*, now deprecated): Hive|Mind evolving from a read-only intelligence workspace into a *grounded synthesis workspace built on verified read-only intelligence*, where the grounded intelligence synthesizes proposals, drafts, plans, and bounded change artifacts that a human reviews before anything is applied. This is **planned architecture**, not implemented functionality — see [Direction: the Grounded Synthesis Layer](#direction-the-grounded-synthesis-layer-planned) and the [Grounded Synthesis Layer architecture](docs/create-layer-architecture.md).
 
 ## What Hive|Mind Does
 
@@ -99,30 +99,34 @@ Evidence
 
 The first pipeline is implemented across the current app surfaces. The second pipeline currently exists as merged contracts, a deterministic backend-only in-memory store, deterministic backend-only read-only contradiction detection, backend-only context packet generation, a read-only stateless context-packet endpoint, a read-only frontend inspector for user-supplied records, backend-only Repository Observer schema contracts, a backend-only deterministic Git adapter foundation, a backend-only repository observation snapshot service, a thin read-only snapshot API, a contextual read-only frontend inspector for explicit repository snapshots, and backend-only deterministic drift analysis from the current `HEAD` baseline; later phases will add active-state selection and ingestion.
 
-## Direction: the Create Layer (Planned)
+## Direction: the Grounded Synthesis Layer (Planned)
 
 Hive|Mind is evolving from a **read-only intelligence workspace** into a
-**grounded creation workspace built on verified read-only intelligence**. The
+**grounded synthesis workspace built on verified read-only intelligence**. The
 Intelligence Layer stays authoritative for observation, provenance, contradiction
 detection, repository evidence, source inspection, and context assembly. A planned
-**Create Layer** would consume that grounded context and produce useful
-development outputs — implementation proposals, scoped work packets, architecture
-and documentation drafts, code-change and test plans, issue and pull-request
-drafts, design briefs, repository patch proposals, and agent contribution packets.
+**Grounded Synthesis Layer** (historical planning label: *Create Layer*, now
+deprecated) would consume that grounded context and synthesize useful development
+outputs — implementation proposals, scoped work packets, architecture and
+documentation drafts, code-change and test plans, issue and pull-request drafts,
+design briefs, repository patch proposals, agent contribution packets, and
+low-authority *Musings*. Within the layer, *The Loom* is the internal capability
+that assembles evidence, context, and intent into coherent synthesis outputs;
+neither *Musings* nor *The Loom* is a name for the layer itself.
 
 This capability is **planned architecture, not implemented functionality.** No
-create-layer service, contract, endpoint, UI, producer, patch-application engine,
-code-generation service, output persistence, or AI/LLM integration exists today.
-The design is deliberately bounded by mandatory principles: evidence before
-creation, proposal before mutation, human-reviewed execution (devdevbuilds remains
+grounded-synthesis service, contract, endpoint, UI, producer, patch-application
+engine, code-generation service, output persistence, or AI/LLM integration exists
+today. The design is deliberately bounded by mandatory principles: evidence before
+synthesis, proposal before mutation, human-reviewed execution (devdevbuilds remains
 the merge gate), deterministic boundaries separated from any future generative
 behavior, explicit confidence and limitations, no silent authority escalation,
-reusable typed contracts, and auditability. Creation outputs are never
+reusable typed contracts, and auditability. Synthesis outputs are never
 automatically accepted as truth and never automatically applied to a repository.
 
-See the [Create Layer architecture](docs/create-layer-architecture.md), the
+See the [Grounded Synthesis Layer architecture](docs/create-layer-architecture.md), the
 [Phase 40A plan](docs/planning/phase-40a-create-layer-foundation-project-cohesion.md),
-and the [roadmap Create Layer track](docs/roadmap.md#create-layer-track-planned).
+and the [roadmap Grounded Synthesis track](docs/roadmap.md#grounded-synthesis-track-planned).
 
 ## Visual Evidence
 
@@ -270,17 +274,18 @@ The repository-intelligence sequence through Phase 39D is complete and merged on
 `main`. The active contribution is a planning phase opening the next track:
 
 ```text
-40A - Create Layer Foundation Planning + Project Cohesion
+40A - Grounded Synthesis Foundation Planning + Project Cohesion
+      (historical planning label: Create Layer Foundation Planning + Project Cohesion)
       (documentation complete locally / pending independent audit)
 ```
 
-Phases 38A–39D are merged: Agent Lab multi-agent [contribution contracts](docs/agent-lab/README.md) and a [local PowerShell governance preflight](scripts/governance/README.md); deterministic repository-evidence projection into candidate memory records; a persistent local [repository-workspace registry](scripts/workspaces/README.md); a one-command [managed local runtime](docs/operator-runtime.md); and Repository Observer [end-to-end workflow hardening and failure-state QA](docs/operator-repository-observer.md). Phase 40A now defines the planned **Create Layer** foundation (see [Direction: the Create Layer](#direction-the-create-layer-planned)); the Create Layer is planned architecture, not implemented functionality. Phase 36K remains paused, not canceled or completed. Active Memory continues to govern project data and verification architecture while Agent Lab governs contribution workflow. The complete chronology and the Create Layer track belong in the [roadmap](docs/roadmap.md).
+Phases 38A–39D are merged: Agent Lab multi-agent [contribution contracts](docs/agent-lab/README.md) and a [local PowerShell governance preflight](scripts/governance/README.md); deterministic repository-evidence projection into candidate memory records; a persistent local [repository-workspace registry](scripts/workspaces/README.md); a one-command [managed local runtime](docs/operator-runtime.md); and Repository Observer [end-to-end workflow hardening and failure-state QA](docs/operator-repository-observer.md). Phase 40A now defines the planned **Grounded Synthesis Layer** foundation (see [Direction: the Grounded Synthesis Layer](#direction-the-grounded-synthesis-layer-planned)); the Grounded Synthesis Layer is planned architecture, not implemented functionality. Phase 36K remains paused, not canceled or completed. Active Memory continues to govern project data and verification architecture while Agent Lab governs contribution workflow. The complete chronology and the Grounded Synthesis track belong in the [roadmap](docs/roadmap.md).
 
 ## Documentation
 
 - [Full roadmap](docs/roadmap.md)
-- [Create Layer architecture (planned)](docs/create-layer-architecture.md)
-- [Phase 40A Create Layer foundation planning](docs/planning/phase-40a-create-layer-foundation-project-cohesion.md)
+- [Grounded Synthesis Layer architecture (planned)](docs/create-layer-architecture.md)
+- [Phase 40A Grounded Synthesis foundation planning](docs/planning/phase-40a-create-layer-foundation-project-cohesion.md)
 - [Design-asset cohesion assessment](docs/design-asset-cohesion-assessment.md)
 - [API contract](docs/api-contract.md)
 - [Active Memory and Verification reference](docs/active-agent-memory-verification-layer.md)
@@ -302,10 +307,10 @@ Phases 38A–39D are merged: Agent Lab multi-agent [contribution contracts](docs
 Hive|Mind is a real development tool. It is built to improve how a developer works
 with their own project: organization, repository awareness, evidence quality,
 provenance, workflow speed, knowledge consistency, agent coordination,
-implementation planning, safe creation, and overall developer productivity. It is
+implementation planning, safe synthesis, and overall developer productivity. It is
 a repository-aware development intelligence workspace, an active-memory and
 verification layer, a human-reviewed multi-agent development environment, and — as
-the Create Layer lands — a grounded creation and coordination system.
+the Grounded Synthesis Layer lands — a grounded synthesis and coordination system.
 
 It also stands as engineering evidence: full-stack ownership across a
 React/FastAPI application, contract-driven backend design, local data handling,
@@ -313,4 +318,4 @@ deterministic intelligence derivation, provenance modeling, graph visualization,
 security reasoning, and disciplined documentation. Its credibility comes from
 keeping the product boundary honest — implemented-versus-planned is stated
 plainly — while steadily turning developer knowledge into inspectable structure
-and, next, into grounded, human-reviewed creation.
+and, next, into grounded, human-reviewed synthesis.
