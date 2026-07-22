@@ -50,9 +50,32 @@ explicit request and keeps repository paths only in React state.
 
 ## Active Phase
 
-### Phase 38B — PowerShell Governance Enforcement
+### Phase 40A — Create Layer Foundation Planning + Project Cohesion
 
-Phase 38B is implemented locally and pending independent audit. It adds a
+Phase 40A is a documentation, architecture, and project-cohesion phase. It is
+documentation-complete locally and pending independent audit (Jules), design and
+presentation review (Antigravity), coordinator reconciliation (ChatGPT), and the
+devdevbuilds human merge gate. It defines the foundation for a new **Create
+Layer** — the planned capability that lets Hive|Mind's grounded read-only
+intelligence *produce* development outputs (proposals, drafts, plans, packets,
+bounded artifacts) while staying evidence-grounded and never becoming an
+autonomous code generator or silent repository mutator. It adds the
+[Create Layer architecture](create-layer-architecture.md), the
+[Phase 40A plan](planning/phase-40a-create-layer-foundation-project-cohesion.md),
+the [design-asset cohesion assessment](design-asset-cohesion-assessment.md), and
+the Create Layer track below. It changes no runtime, contract, endpoint, UI,
+dependency, or repository behavior; the Create Layer is **planned, not
+implemented**. See the [Create Layer Track](#create-layer-track-planned) below.
+
+The prior repository-intelligence sequence (Phases 38A–39D) is complete and merged
+on `main`; Phase 39D — Repository Observer End-to-End Workflow Hardening +
+Failure-State QA is the most recent merged phase and is captured in the
+Immediate Sequence table below and in the
+[Repository Observer operator guide](operator-repository-observer.md).
+
+### Phase 38B — PowerShell Governance Enforcement (merged)
+
+Phase 38B is a
 dependency-free [PowerShell governance preflight](../scripts/governance/README.md)
 that deterministically validates canonical repository identity, Git branch and
 baseline state, Phase 38A session enums, the Phase 36K lock, optional clean-tree
@@ -158,6 +181,39 @@ repository mutation is introduced. See the
 
 Track 1 — Spatial Interaction remains paused at Phase 36K and is not the active
 implementation track.
+
+## Create Layer Track (Planned)
+
+The next major direction is a **Create Layer**: Hive|Mind evolving from a
+read-only intelligence workspace into a *grounded creation workspace built on
+verified read-only intelligence*. The Intelligence Layer stays authoritative for
+observation, provenance, contradiction detection, repository evidence, and context
+assembly; the Create Layer consumes that grounded context and produces proposals,
+drafts, plans, or bounded change artifacts that are **not** automatically accepted
+as truth and **not** automatically applied. devdevbuilds remains the human merge
+gate. Full design is in the
+[Create Layer architecture](create-layer-architecture.md).
+
+This track is **planned, not implemented**. No create-layer service, contract,
+endpoint, UI, producer, patch-application engine, code-generation service, output
+persistence, or AI/LLM integration exists yet.
+
+| Phase | Status | Purpose |
+| --- | --- | --- |
+| Phase 40A — Create Layer Foundation Planning + Project Cohesion | Documentation complete locally / pending audit | Defines the Create Layer architecture, product boundary, workflow, request/result lifecycle, evidence/provenance and authority restrictions, failure states, security posture, rejected alternatives, and this track. No runtime. |
+| Phase 40B — Create Request and Result Contract Types | Planned | Introduce `create-layer.v1` backend Pydantic models and mirrored frontend TypeScript with a parity test. Contracts only — no service, endpoint, persistence, or runtime behavior. |
+| Phase 40C — Deterministic Grounded Creation Packet Service MVP | Planned | Backend-only, deterministic, read-only producer that assembles a grounding packet from existing evidence and emits a create result. No persistence, mutation, AI/LLM, or endpoint expansion beyond a thin boundary. |
+| Phase 40D — Creation Evidence, Provenance, and Validation Guardrails | Planned | Deterministic policy/validation, confidence and freshness indicators, scope exclusions, prohibited-assumption enforcement, and fail-closed bounds over the producer. |
+| Phase 40E — Create Layer API and Read-Only Frontend Workspace | Planned | Thin read-only API and contextual read-only frontend workspace for inspecting create results. No apply/commit/merge/push controls. |
+| Phase 40F — Review, Approval, Export, and Agent Handoff Workflow | Planned | Human review/approval, export, and handoff to an external agent or implementation workflow aligned with Agent Lab contribution contracts. Repository effects remain external and human-gated. |
+| Phase 40G — End-to-End QA, Operator Documentation, and Release Readiness | Planned | End-to-end QA over the deterministic creation path, operator documentation, and release readiness. |
+
+Phase names past 40A may be refined by later phases with justification. Every
+Create Layer phase preserves the mandatory principles: evidence before creation,
+proposal before mutation, human-reviewed execution, deterministic boundaries,
+explicit confidence and limitations, no silent authority escalation, reusable
+typed contracts, and auditability. Phase 36K remains paused and untouched
+throughout this track.
 
 ## Completed Capability Groups
 
@@ -413,6 +469,9 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 ## Reference Documents
 
 - [README](../README.md)
+- [Create Layer Architecture (Planned)](create-layer-architecture.md)
+- [Phase 40A Create Layer Foundation Planning + Project Cohesion](planning/phase-40a-create-layer-foundation-project-cohesion.md)
+- [Design-Asset Cohesion Assessment](design-asset-cohesion-assessment.md)
 - [Active Agent Memory + Verification Layer reference](active-agent-memory-verification-layer.md)
 - [Phase 37A Active Agent Memory + Verification Layer Planning](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
 - [Phase 37H Repository Observer Planning](planning/phase-37h-repository-observer-planning.md)
