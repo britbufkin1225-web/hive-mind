@@ -712,10 +712,24 @@ grounding assembly, policy engine, patch-application engine, code-generation
 service, output persistence, or AI/LLM integration. Declaring a shape is not
 producing an output, and the contracts perform no I/O of any kind.
 
+**As of Phase 40C**, one further item leaves that list: a deterministic,
+read-only **grounding assembly** service
+(`apps/backend/app/services/grounding_context.py`) now assembles existing
+Hive|Mind evidence into valid `SynthesisContextPacket` records (see the
+[Phase 40C plan](planning/phase-40c-grounding-context-assembly-service-mvp.md)).
+Everything else still holds — no producer, endpoint, UI, policy engine,
+patch-application engine, code-generation service, output persistence, or AI/LLM
+integration. Assembling grounded *input* is not producing an *output*: the
+service collects, filters, deduplicates, ranks, bounds and packages evidence, and
+generates no content of any kind. It reads a clock, a store, the filesystem, Git,
+the network, and randomness exactly zero times; every record it interprets is
+caller-supplied.
+
 ## 20. Reference documents
 
 - [Phase 40A planning](planning/phase-40a-create-layer-foundation-project-cohesion.md)
 - [Phase 40B contract types and schema foundation](planning/phase-40b-grounded-synthesis-contract-types-schema-foundation.md)
+- [Phase 40C grounding context assembly service MVP](planning/phase-40c-grounding-context-assembly-service-mvp.md)
 - [Roadmap](roadmap.md)
 - [Active Agent Memory + Verification Layer reference](active-agent-memory-verification-layer.md)
 - [Repository Observer operator workflow](operator-repository-observer.md)

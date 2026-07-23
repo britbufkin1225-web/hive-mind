@@ -50,6 +50,52 @@ explicit request and keeps repository paths only in React state.
 
 ## Active Phase
 
+### Phase 40C — Grounding Context Assembly Service MVP
+
+Phase 40C is a **backend service phase only**. It adds the first deterministic
+service of the Grounded Synthesis Layer in
+`apps/backend/app/services/grounding_context.py`: a read-only assembly of
+evidence Hive|Mind already holds into valid Phase 40B `SynthesisContextPacket`
+records. It answers one question — *given an eligible grounding request and
+existing evidence, what bounded, traceable context packet should a future
+synthesis process receive?* — and establishes the grounded **input boundary** for
+the rest of the track. It is implemented and locally test-covered, pending
+independent audit and the devdevbuilds human merge gate.
+
+The MVP normalizes five existing evidence families that already carry the
+Phase 37A/40B grounding vocabulary: Active Memory evidence records, Repository
+Observer observations, repository drift findings, contradiction records, and
+Active Memory records. Knowledge-graph nodes, source-registry entries, query
+trails, Active Memory context packets, and the derived Dreaming/decay/provenance
+views are **deliberately deferred** — they carry no evidence type, bounded
+reference, scope, or confidence band, so normalizing them would mean inventing
+grounding rather than assembling it.
+
+The pipeline is collection → normalization → eligibility filtering →
+deduplication → stable ranking → bounded selection → conflict/gap/coverage
+construction → readiness evaluation. Deduplication keys on the provider's own
+canonical identity (never object identity, `hash()`, or set iteration order);
+ranking puts critical conflicts first and ends on a content-derived identifier;
+every bound is at or below its Phase 40B ceiling, every truncation is represented
+as a warning and a count, and raw candidate overflow fails closed rather than
+dropping evidence before its criticality is known. Packet identifiers are derived
+from the ordered packet content, so identical input always yields the same id and
+material change always yields a different one.
+
+**Nothing is generated.** Phase 40C adds no AI/LLM integration, prompt, synthesis
+output, cross-record summary, recommendation, or drafted content; `context_summaries`
+is always empty because a summary spanning several evidence records *is*
+synthesis. It also adds no endpoint, frontend surface, TypeScript mirror,
+persistence, migration, packet cache or history, dependency, or repository, graph,
+source, Active Memory, or contradiction mutation. Raw provider payloads — bounded
+excerpts, absolute repository roots, remote URLs, caller metadata bags — are never
+copied into a packet; packet metadata carries only counts, closed-enum literals,
+and fixed slugs.
+
+The Phase 40B contracts were reused unchanged; **no contract correction was
+required**. See the
+[Phase 40C plan](planning/phase-40c-grounding-context-assembly-service-mvp.md).
+
 ### Phase 40B — Grounded Synthesis Contract Types + Schema Foundation
 
 Phase 40B is a **backend contract and schema phase only**. It translates the
@@ -61,7 +107,8 @@ references, bounded synthesis constraints, the synthesis context packet,
 mandatory synthesis provenance, the proposed synthesis artifact, an explicit
 validation result, and a bounded readiness vocabulary. It is implemented and
 locally test-covered, pending Codex architecture/schema review, final independent
-audit (Jules), and the devdevbuilds human merge gate.
+audit (Jules), and the devdevbuilds human merge gate. Phase 40C consumes these
+contracts unchanged.
 
 **No synthesis behavior exists.** Phase 40B adds no producer, grounding assembly,
 evidence lookup, policy engine, API endpoint, frontend surface, persistence,
@@ -239,17 +286,18 @@ capabilities within the layer, not names for it. devdevbuilds remains the human
 merge gate. Full design is in the
 [Grounded Synthesis Layer architecture](create-layer-architecture.md).
 
-The synthesis capability is **still planned, not implemented**. As of Phase 40B
-the track has backend contract types only: no grounded-synthesis service,
-endpoint, UI, producer, grounding assembly, policy engine, patch-application
-engine, code-generation service, output persistence, or AI/LLM integration exists
-yet.
+The synthesis capability is **still planned, not implemented**. As of Phase 40C
+the track has backend contract types and one deterministic, read-only grounding
+**assembly** service: no grounded-synthesis producer, endpoint, UI, policy engine,
+patch-application engine, code-generation service, output persistence, or AI/LLM
+integration exists yet. Assembling grounded input is not producing an output —
+Phase 40C packages evidence and generates nothing.
 
 | Phase | Status | Purpose |
 | --- | --- | --- |
 | Phase 40A — Grounded Synthesis Foundation Planning + Project Cohesion | Merged | Defines the Grounded Synthesis Layer architecture, product boundary, workflow, request/result lifecycle, evidence/provenance and authority restrictions, failure states, security posture, rejected alternatives, and this track. No runtime. |
 | Phase 40B — Grounded Synthesis Contract Types + Schema Foundation | Implemented locally / pending independent audit | Introduces the `grounded-synthesis.v1` backend Pydantic contract family: schema version, synthesis modes, request, grounding evidence references, constraints, context packet, provenance, proposed artifact, validation result, and readiness vocabulary. Contracts only — no service, endpoint, persistence, frontend, or runtime behavior. The frontend TypeScript mirror and parity test proposed in 40A were out of scope for this phase and remain available to a later one. |
-| Phase 40C — Grounding Context Assembly Service MVP | Proposed next / not started | Backend-only, deterministic, read-only assembly of a `SynthesisContextPacket` from already-observed evidence, over the Phase 40B contracts. No persistence, mutation, AI/LLM, or endpoint expansion beyond a thin boundary. |
+| Phase 40C — Grounding Context Assembly Service MVP | Implemented locally / pending independent audit | Backend-only, deterministic, read-only `GroundingContextAssemblyService` assembling five existing evidence families (Active Memory evidence records, Repository Observer observations, repository drift findings, contradiction records, Active Memory records) into valid Phase 40B `SynthesisContextPacket` records: explicit eligibility filtering, canonical-identity deduplication with documented winner precedence, a criticality-first stable ranking ending on a content-derived identifier, per-family and packet bounds with represented truncation and fail-closed raw-candidate overflow, surfaced-never-resolved conflicts, deterministic readiness, and bounded secret-free diagnostics. Contracts reused unchanged. No endpoint, persistence, cache, packet history, frontend, dependency, mutation, or AI/LLM/synthesis generation. |
 | Phase 40D — Synthesis Evidence, Provenance, and Validation Guardrails | Planned | Deterministic policy/validation, confidence and freshness indicators, scope exclusions, prohibited-assumption enforcement, and fail-closed bounds over the producer. |
 | Phase 40E — Grounded Synthesis API and Read-Only Workspace | Planned | Thin read-only API and contextual read-only frontend workspace for inspecting synthesis results. No apply/commit/merge/push controls. |
 | Phase 40F — Review, Approval, Export, and Agent Handoff Workflow | Planned | Human review/approval, export, and handoff to an external agent or implementation workflow aligned with Agent Lab contribution contracts. Repository effects remain external and human-gated. |
