@@ -21,8 +21,8 @@ packet always yields the same report, in the same order, with the same codes.
 **A packet is never trusted on its own word.** The Phase 40C assembler computes
 every count, coverage total, truncation figure, readiness reason and packet
 identifier that a packet carries. Phase 40D recomputes them from the packet's
-actual contents and compares. A hand-built or tampered packet whose summary
-fields merely *look* plausible therefore fails, and — because the packet
+actual contents and compares. An assembler-declared or tampered packet whose
+summary fields merely *look* plausible therefore fails, and — because the packet
 identifier is a content-derived hash over the packet's own material — so does one
 whose evidence, conflicts, gaps, coverage or warnings were edited after assembly.
 

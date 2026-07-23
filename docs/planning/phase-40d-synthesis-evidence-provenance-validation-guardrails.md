@@ -84,8 +84,8 @@ failing validation.
 
 The Phase 40C assembler computes every count, coverage total, truncation figure,
 readiness reason, and packet identifier a packet carries. Phase 40D **recomputes
-them from the packet's actual contents** and compares. A hand-built or tampered
-packet whose summary fields merely look plausible therefore fails.
+them from the packet's actual contents** and compares. An assembler-declared or
+tampered packet whose summary fields merely look plausible therefore fails.
 
 The strongest of these is **packet identity re-derivation**. The Phase 40C
 identifier is a content-derived hash over the packet's mode, readiness, assembly

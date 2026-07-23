@@ -82,8 +82,8 @@ Phase 40D introduces:
 - **Packet consistency validation** — declared evidence totals, family coverage
   totals, critical-conflict totals, readiness reasons, canonical ordering, and
   the content-derived packet identifier are all **recomputed from the packet's
-  actual contents** rather than trusted. A tampered or hand-built packet whose
-  summary fields merely look plausible does not pass.
+  actual contents** rather than trusted. A tampered or assembler-declared packet
+  whose summary fields merely look plausible does not pass.
 - **Explicit synthesis-readiness determination** — readiness is computed, never
   read off the packet. Any blocking condition blocks, whatever the packet claims;
   an honestly `context_required` packet is not upgraded, and a clean `ready`
