@@ -16,6 +16,18 @@ Layer** (display title: *Grounded Synthesis Foundation Planning + Project
 Cohesion*). See the
 [Phase 40A planning doc](planning/phase-40a-create-layer-foundation-project-cohesion.md).
 
+> **Phase 40D.5 reconciliation.** This document was authored under Phase 40A with a
+> provisional future-phase numbering (40E–40G) for the read-only API/workspace,
+> the review/export/handoff workflow, and end-to-end QA. The
+> [Phase 40D.5 decision record](planning/phase-40d-5-roadmap-reconciliation-memory-migration-pivot.md)
+> inserts a **memory-migration track ahead of Grounded Synthesis production** and
+> **supersedes that provisional numbering**: the same work is now Phase 40I, 40J,
+> and 40K, after the migration track (40E–40G) and the synthesis producer MVP
+> (40H). This architecture is unchanged; only the phase *ordering* it once implied
+> is superseded. See the
+> [roadmap](roadmap.md#grounded-synthesis--memory-migration-track-planned) for the
+> authoritative Phase 40D.5–40K sequence.
+
 ---
 
 ## 0. Terminology note
@@ -441,7 +453,11 @@ are **documentation examples only** — Phase 40A introduces no runtime schema.
 > output is `GroundedSynthesisArtifact` (the Phase 40A `SynthesisResult`).
 > `LoomContext`, `Musing`, `WorkPacket`, `ArtifactExport`, and `ReviewRecord`
 > remain unimplemented: `musings` is a mode and `musing`/`work_packet` are artifact
-> categories in 40B, while export and review records belong to Phase 40F. Phase 40B
+> categories in 40B, while export and review records belong to Phase 40J (the
+> review/approval/export/handoff workflow, renumbered from the provisional
+> Phase 40F by the
+> [Phase 40D.5 pivot](planning/phase-40d-5-roadmap-reconciliation-memory-migration-pivot.md)).
+> Phase 40B
 > adds **no synthesis behavior, service, endpoint, frontend surface, persistence,
 > or AI/LLM integration**; the frontend TypeScript mirror and parity test are not
 > part of it.
