@@ -50,15 +50,51 @@ explicit request and keeps repository paths only in React state.
 
 ## Active Phase
 
-### Phase 40A — Grounded Synthesis Foundation Planning + Project Cohesion
+### Phase 40B — Grounded Synthesis Contract Types + Schema Foundation
+
+Phase 40B is a **backend contract and schema phase only**. It translates the
+Phase 40A architecture into the versioned `grounded-synthesis.v1` contract family
+in `apps/backend/app/models/grounded_synthesis.py`: the two synthesis modes
+(`musings` and `loom` — capabilities *within* the Grounded Synthesis Layer, never
+separate layers), the synthesis request, normalized grounding-evidence
+references, bounded synthesis constraints, the synthesis context packet,
+mandatory synthesis provenance, the proposed synthesis artifact, an explicit
+validation result, and a bounded readiness vocabulary. It is implemented and
+locally test-covered, pending Codex architecture/schema review, final independent
+audit (Jules), and the devdevbuilds human merge gate.
+
+**No synthesis behavior exists.** Phase 40B adds no producer, grounding assembly,
+evidence lookup, policy engine, API endpoint, frontend surface, persistence,
+database schema or migration, repository write, graph mutation, Active Memory
+insertion, dependency, or AI/LLM provider integration. Constructing a contract
+performs no filesystem, Git, network, store, clock, or randomness access; every
+identifier and timestamp is caller-supplied.
+
+The boundary is structural, not conventional: the readiness vocabulary contains
+no accepted/approved/canonical/committed/applied state, `human_review_required`
+and `read_only` are pinned `True` and reject being disabled, provenance is a
+required field on every artifact, a `proposed` artifact must cite evidence its
+provenance records as used, an ungrounded packet cannot call itself `ready`, and
+`extra="forbid"` on every model keeps provider configuration (model name,
+temperature, token budget, prompt template, credentials) out of the contracts.
+Future outputs are **proposals requiring human review**; devdevbuilds remains the
+decision-maker and merge gate.
+
+*Scope note:* Phase 40A proposed 40B as backend contracts *plus* a mirrored
+frontend TypeScript parity test. The Phase 40B brief scopes this phase to the
+backend only and prohibits frontend changes, so no frontend mirror or parity test
+was added. The frontend mirror remains available to a later phase.
+
+See the [Phase 40B plan](planning/phase-40b-grounded-synthesis-contract-types-schema-foundation.md)
+and the [Grounded Synthesis Track](#grounded-synthesis-track-planned) below.
+
+### Phase 40A — Grounded Synthesis Foundation Planning + Project Cohesion (merged)
 
 Phase 40A is a documentation, architecture, and project-cohesion phase. Its
 historical planning label (and branch/commit name) is *Create Layer Foundation
 Planning + Project Cohesion*; the architecture it establishes is now formally
 named the **Grounded Synthesis Layer** (*Create Layer* is deprecated
-terminology). It is documentation- and Codex-review-complete locally and pending
-final independent audit (Jules), coordinator reconciliation
-(ChatGPT), and the devdevbuilds human merge gate. It defines the foundation for a
+terminology). It is merged on `main`. It defines the foundation for a
 new **Grounded Synthesis Layer** — the planned capability that lets Hive|Mind's
 grounded read-only intelligence *synthesize* development outputs (proposals,
 drafts, plans, work packets, bounded artifacts, and low-authority Musings) while
@@ -203,15 +239,17 @@ capabilities within the layer, not names for it. devdevbuilds remains the human
 merge gate. Full design is in the
 [Grounded Synthesis Layer architecture](create-layer-architecture.md).
 
-This track is **planned, not implemented**. No grounded-synthesis service,
-contract, endpoint, UI, producer, patch-application engine, code-generation
-service, output persistence, or AI/LLM integration exists yet.
+The synthesis capability is **still planned, not implemented**. As of Phase 40B
+the track has backend contract types only: no grounded-synthesis service,
+endpoint, UI, producer, grounding assembly, policy engine, patch-application
+engine, code-generation service, output persistence, or AI/LLM integration exists
+yet.
 
 | Phase | Status | Purpose |
 | --- | --- | --- |
-| Phase 40A — Grounded Synthesis Foundation Planning + Project Cohesion | Documentation complete locally / pending audit | Defines the Grounded Synthesis Layer architecture, product boundary, workflow, request/result lifecycle, evidence/provenance and authority restrictions, failure states, security posture, rejected alternatives, and this track. No runtime. |
-| Phase 40B — Synthesis Request, Grounding Packet, and Result Contract Types | Planned | Introduce `grounded-synthesis.v1` backend Pydantic models and mirrored frontend TypeScript with a parity test. Contracts only — no service, endpoint, persistence, or runtime behavior. |
-| Phase 40C — Deterministic Grounded Synthesis Packet Service MVP | Planned | Backend-only, deterministic, read-only producer that assembles a grounding packet from existing evidence and emits a synthesis result. No persistence, mutation, AI/LLM, or endpoint expansion beyond a thin boundary. |
+| Phase 40A — Grounded Synthesis Foundation Planning + Project Cohesion | Merged | Defines the Grounded Synthesis Layer architecture, product boundary, workflow, request/result lifecycle, evidence/provenance and authority restrictions, failure states, security posture, rejected alternatives, and this track. No runtime. |
+| Phase 40B — Grounded Synthesis Contract Types + Schema Foundation | Implemented locally / pending independent audit | Introduces the `grounded-synthesis.v1` backend Pydantic contract family: schema version, synthesis modes, request, grounding evidence references, constraints, context packet, provenance, proposed artifact, validation result, and readiness vocabulary. Contracts only — no service, endpoint, persistence, frontend, or runtime behavior. The frontend TypeScript mirror and parity test proposed in 40A were out of scope for this phase and remain available to a later one. |
+| Phase 40C — Grounding Context Assembly Service MVP | Proposed next / not started | Backend-only, deterministic, read-only assembly of a `SynthesisContextPacket` from already-observed evidence, over the Phase 40B contracts. No persistence, mutation, AI/LLM, or endpoint expansion beyond a thin boundary. |
 | Phase 40D — Synthesis Evidence, Provenance, and Validation Guardrails | Planned | Deterministic policy/validation, confidence and freshness indicators, scope exclusions, prohibited-assumption enforcement, and fail-closed bounds over the producer. |
 | Phase 40E — Grounded Synthesis API and Read-Only Workspace | Planned | Thin read-only API and contextual read-only frontend workspace for inspecting synthesis results. No apply/commit/merge/push controls. |
 | Phase 40F — Review, Approval, Export, and Agent Handoff Workflow | Planned | Human review/approval, export, and handoff to an external agent or implementation workflow aligned with Agent Lab contribution contracts. Repository effects remain external and human-gated. |
@@ -480,6 +518,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 - [README](../README.md)
 - [Grounded Synthesis Layer Architecture (Planned)](create-layer-architecture.md)
 - [Phase 40A Grounded Synthesis Foundation Planning + Project Cohesion](planning/phase-40a-create-layer-foundation-project-cohesion.md)
+- [Phase 40B Grounded Synthesis Contract Types + Schema Foundation](planning/phase-40b-grounded-synthesis-contract-types-schema-foundation.md)
 - [Design-Asset Cohesion Assessment](design-asset-cohesion-assessment.md)
 - [Active Agent Memory + Verification Layer reference](active-agent-memory-verification-layer.md)
 - [Phase 37A Active Agent Memory + Verification Layer Planning](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
