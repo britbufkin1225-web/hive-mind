@@ -90,6 +90,7 @@ from app.models.grounded_synthesis import (
     MAX_SYNTHESIS_MISSING_CONTEXT_ITEMS,
     MAX_SYNTHESIS_SUMMARY_LENGTH,
     MAX_SYNTHESIS_WARNINGS,
+    GroundedSynthesisMode,
     GroundedSynthesisRequest,
     GroundingEvidenceKind,
     GroundingEvidenceReference,
@@ -1842,48 +1843,82 @@ class GroundingContextAssemblyService:
         warnings: Sequence[SynthesisWarning],
         assembled_at: datetime | None,
     ) -> str:
-        """Derive the packet id from everything that materially defines it.
-
-        Folding the ordered evidence ids (not a set) in means a reordered packet
-        is a different packet; folding the assembly version in means a packet
-        built under different assembly rules can never collide with one built
-        under these. Nothing random, clock-read, or environment-derived
-        participates, so identical material always yields the same id.
-        """
-
-        material = json.dumps(
-            {
-                "assembly_version": GROUNDING_CONTEXT_ASSEMBLY_VERSION,
-                "schema_version": request.schema_version,
-                "request_id": request.request_id,
-                "correlation_id": request.correlation_id,
-                "mode": request.mode.value,
-                "readiness": readiness.value,
-                "assembled_at": _canonical_datetime(assembled_at),
-                "evidence_ids": [item.evidence_id for item in included],
-                "conflicts": [
-                    [
-                        item.conflict_id,
-                        None if item.severity is None else item.severity.value,
-                        list(item.evidence_ids),
-                    ]
-                    for item in conflicts
-                ],
-                "missing_context": [item.gap_id for item in missing_context],
-                "coverage": [
-                    [item.grounding_kind.value, item.referenced_count]
-                    for item in coverage
-                ],
-                "warnings": [
-                    [item.code.value, item.message, item.subject_id]
-                    for item in warnings
-                ],
-            },
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=False,
+        return derive_context_packet_identity(
+            schema_version=request.schema_version,
+            request_id=request.request_id,
+            correlation_id=request.correlation_id,
+            mode=request.mode,
+            readiness=readiness,
+            assembled_at=assembled_at,
+            evidence_references=included,
+            conflicts=conflicts,
+            missing_context=missing_context,
+            source_coverage=coverage,
+            warnings=warnings,
         )
-        return derive_grounded_synthesis_id("gs-packet", material)
+
+
+def derive_context_packet_identity(
+    *,
+    schema_version: str,
+    request_id: str,
+    correlation_id: str | None,
+    mode: GroundedSynthesisMode,
+    readiness: SynthesisReadinessStatus,
+    assembled_at: datetime | None,
+    evidence_references: Sequence[GroundingEvidenceReference],
+    conflicts: Sequence[SynthesisEvidenceConflict],
+    missing_context: Sequence[SynthesisMissingContext],
+    source_coverage: Sequence[SynthesisSourceCoverage],
+    warnings: Sequence[SynthesisWarning],
+) -> str:
+    """Derive a packet identifier from everything that materially defines it.
+
+    Folding the *ordered* evidence ids (not a set) in means a reordered packet is
+    a different packet; folding the assembly version in means a packet built
+    under different assembly rules can never collide with one built under these.
+    Nothing random, clock-read, or environment-derived participates, so identical
+    material always yields the same id.
+
+    Public and parameterized by the packet's own fields — rather than private to
+    the assembler — because Phase 40D re-derives this identity to detect a
+    tampered packet. Both callers must fold *exactly* the same material or the
+    check would be meaningless, so the material shape lives here once
+    (Phase 40D §"packet consistency validation").
+    """
+
+    material = json.dumps(
+        {
+            "assembly_version": GROUNDING_CONTEXT_ASSEMBLY_VERSION,
+            "schema_version": schema_version,
+            "request_id": request_id,
+            "correlation_id": correlation_id,
+            "mode": mode.value,
+            "readiness": readiness.value,
+            "assembled_at": _canonical_datetime(assembled_at),
+            "evidence_ids": [item.evidence_id for item in evidence_references],
+            "conflicts": [
+                [
+                    item.conflict_id,
+                    None if item.severity is None else item.severity.value,
+                    list(item.evidence_ids),
+                ]
+                for item in conflicts
+            ],
+            "missing_context": [item.gap_id for item in missing_context],
+            "coverage": [
+                [item.grounding_kind.value, item.referenced_count]
+                for item in source_coverage
+            ],
+            "warnings": [
+                [item.code.value, item.message, item.subject_id] for item in warnings
+            ],
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    return derive_grounded_synthesis_id("gs-packet", material)
 
 
 def _replace_requested(candidate: _Candidate) -> _Candidate:

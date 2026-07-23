@@ -50,6 +50,69 @@ explicit request and keeps repository paths only in React state.
 
 ## Active Phase
 
+### Phase 40D — Synthesis Evidence, Provenance, and Validation Guardrails
+
+Phase 40D is a **backend service phase only**. It adds the deterministic,
+read-only guardrail layer of the Grounded Synthesis Layer in
+`apps/backend/app/services/grounding_validation.py`, with its result contracts in
+`apps/backend/app/models/grounded_synthesis_validation.py`. It answers one
+question — *is this `SynthesisContextPacket` sufficiently grounded, internally
+consistent, and provenance-complete to be passed into a future synthesis
+capability?* — and establishes the **trust boundary** between grounding assembly
+and any future generation. It is implemented and locally test-covered, pending
+independent audit and the devdevbuilds human merge gate.
+
+Phase 40D introduces:
+
+- **Deterministic packet validation** — a pure function from packet to typed
+  report. It never mutates the packet, rewrites or removes an evidence record,
+  repairs a provenance reference, re-ranks evidence, re-assembles context, or
+  persists a verdict, and it reads no clock, filesystem, Git, store, or network.
+- **Evidence identity guardrails** — canonical `(family, NFC-normalized source
+  record id)` identity reusing the Phase 40C rule unchanged. Duplicate
+  identifiers, materially conflicting duplicates, and conflicting source
+  identities block; identical copies are advisory. Records sharing a provider id
+  across *different* families are never collapsed, and validation is independent
+  of input ordering.
+- **Provenance integrity checking** — unresolvable source-record identifiers,
+  malformed pointers, subsystem evidence with no declared producer, dangling
+  conflict/summary references, and unattributed context summaries block; a
+  pointer kind outside the set Hive|Mind's own producers emit for a family is
+  advisory, because the Phase 37A contract permits every pointer kind.
+- **Packet consistency validation** — declared evidence totals, family coverage
+  totals, critical-conflict totals, readiness reasons, canonical ordering, and
+  the content-derived packet identifier are all **recomputed from the packet's
+  actual contents** rather than trusted. A tampered or assembler-declared packet
+  whose summary fields merely look plausible does not pass.
+- **Explicit synthesis-readiness determination** — readiness is computed, never
+  read off the packet. Any blocking condition blocks, whatever the packet claims;
+  an honestly `context_required` packet is not upgraded, and a clean `ready`
+  packet is not downgraded by advisory findings.
+- **Blocking and non-blocking diagnostics** — a closed code taxonomy with
+  severity fixed by the code (a blocking condition cannot be filed as advisory),
+  canonically ordered, deduplicated, and projected onto the canonical Phase 40B
+  `SynthesisValidationResult`. Messages carry counts, closed-enum literals, and
+  packet-local identifiers only — never a path, remote, credential, command
+  output, or copied provider payload, even when the offending value is exactly
+  what the guardrail rejected.
+
+Fail-closed safety is preserved: unsafe repository identity recorded by the
+assembler produces an explicit blocking diagnostic and prevents readiness, is
+never normalized into a trusted identity, and never causes the safe evidence
+alongside it to be reported as unsafe. Bounds and truncation claims are validated
+without clipping or deleting records — an over-full packet is reported as
+over-full rather than made to look valid.
+
+**Nothing is generated.** Phase 40D adds no AI/LLM integration, prompt, synthesis
+output, musings, loom output, recommendation, or drafted content — Hive|Mind
+**still does not generate Grounded Synthesis output**. It also adds no endpoint,
+frontend surface, TypeScript mirror, persistence, migration, dependency, or
+repository, graph, source, or Active Memory mutation.
+
+The Phase 40B and Phase 40C contracts were reused unchanged; **no contract
+correction was required**. See the
+[Phase 40D plan](planning/phase-40d-synthesis-evidence-provenance-validation-guardrails.md).
+
 ### Phase 40C — Grounding Context Assembly Service MVP
 
 Phase 40C is a **backend service phase only**. It adds the first deterministic
@@ -286,19 +349,21 @@ capabilities within the layer, not names for it. devdevbuilds remains the human
 merge gate. Full design is in the
 [Grounded Synthesis Layer architecture](create-layer-architecture.md).
 
-The synthesis capability is **still planned, not implemented**. As of Phase 40C
-the track has backend contract types and one deterministic, read-only grounding
-**assembly** service: no grounded-synthesis producer, endpoint, UI, policy engine,
-patch-application engine, code-generation service, output persistence, or AI/LLM
-integration exists yet. Assembling grounded input is not producing an output —
-Phase 40C packages evidence and generates nothing.
+The synthesis capability is **still planned, not implemented**. As of Phase 40D
+the track has backend contract types, one deterministic, read-only grounding
+**assembly** service, and the deterministic **validation guardrails** over its
+output: no grounded-synthesis producer, endpoint, UI, patch-application engine,
+code-generation service, output persistence, or AI/LLM integration exists yet.
+Assembling grounded input is not producing an output, and deciding that grounding
+is trustworthy is not producing anything from it — Phase 40C packages evidence and
+Phase 40D validates it, and both generate nothing.
 
 | Phase | Status | Purpose |
 | --- | --- | --- |
 | Phase 40A — Grounded Synthesis Foundation Planning + Project Cohesion | Merged | Defines the Grounded Synthesis Layer architecture, product boundary, workflow, request/result lifecycle, evidence/provenance and authority restrictions, failure states, security posture, rejected alternatives, and this track. No runtime. |
 | Phase 40B — Grounded Synthesis Contract Types + Schema Foundation | Implemented locally / pending independent audit | Introduces the `grounded-synthesis.v1` backend Pydantic contract family: schema version, synthesis modes, request, grounding evidence references, constraints, context packet, provenance, proposed artifact, validation result, and readiness vocabulary. Contracts only — no service, endpoint, persistence, frontend, or runtime behavior. The frontend TypeScript mirror and parity test proposed in 40A were out of scope for this phase and remain available to a later one. |
 | Phase 40C — Grounding Context Assembly Service MVP | Implemented locally / pending independent audit | Backend-only, deterministic, read-only `GroundingContextAssemblyService` assembling five existing evidence families (Active Memory evidence records, Repository Observer observations, repository drift findings, contradiction records, Active Memory records) into valid Phase 40B `SynthesisContextPacket` records: explicit eligibility filtering, canonical-identity deduplication with documented winner precedence, a criticality-first stable ranking ending on a content-derived identifier, per-family and packet bounds with represented truncation and fail-closed raw-candidate overflow, surfaced-never-resolved conflicts, deterministic readiness, and bounded secret-free diagnostics. Contracts reused unchanged. No endpoint, persistence, cache, packet history, frontend, dependency, mutation, or AI/LLM/synthesis generation. |
-| Phase 40D — Synthesis Evidence, Provenance, and Validation Guardrails | Planned | Deterministic policy/validation, confidence and freshness indicators, scope exclusions, prohibited-assumption enforcement, and fail-closed bounds over the producer. |
+| Phase 40D — Synthesis Evidence, Provenance, and Validation Guardrails | Implemented locally / pending independent audit | Backend-only, deterministic, read-only `SynthesisContextPacketValidator` over assembled Phase 40C packets: canonical evidence identity guardrails reusing the assembler's own identity rule, provenance integrity and resolution checking, fail-closed repository/source safety, packet consistency recomputed from actual contents (evidence and coverage totals, conflict totals, readiness reasons, canonical ordering, and re-derived content-addressed packet identity), bounds and truncation validation that never clips, blocking and non-blocking diagnostics with severity fixed by the code, and an explicit synthesis-readiness determination projected onto the canonical Phase 40B `SynthesisValidationResult`. Phase 40B and 40C contracts reused unchanged. No endpoint, persistence, frontend, dependency, mutation, or AI/LLM/synthesis generation — Hive\|Mind still does not generate Grounded Synthesis output. Deterministic policy over a *producer*, confidence/freshness indicators, and prohibited-assumption enforcement remain future work, because no producer exists yet. |
 | Phase 40E — Grounded Synthesis API and Read-Only Workspace | Planned | Thin read-only API and contextual read-only frontend workspace for inspecting synthesis results. No apply/commit/merge/push controls. |
 | Phase 40F — Review, Approval, Export, and Agent Handoff Workflow | Planned | Human review/approval, export, and handoff to an external agent or implementation workflow aligned with Agent Lab contribution contracts. Repository effects remain external and human-gated. |
 | Phase 40G — End-to-End QA, Operator Documentation, and Release Readiness | Planned | End-to-end QA over the deterministic synthesis path, operator documentation, and release readiness. |
@@ -567,6 +632,8 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 - [Grounded Synthesis Layer Architecture (Planned)](create-layer-architecture.md)
 - [Phase 40A Grounded Synthesis Foundation Planning + Project Cohesion](planning/phase-40a-create-layer-foundation-project-cohesion.md)
 - [Phase 40B Grounded Synthesis Contract Types + Schema Foundation](planning/phase-40b-grounded-synthesis-contract-types-schema-foundation.md)
+- [Phase 40C Grounding Context Assembly Service MVP](planning/phase-40c-grounding-context-assembly-service-mvp.md)
+- [Phase 40D Synthesis Evidence, Provenance, and Validation Guardrails](planning/phase-40d-synthesis-evidence-provenance-validation-guardrails.md)
 - [Design-Asset Cohesion Assessment](design-asset-cohesion-assessment.md)
 - [Active Agent Memory + Verification Layer reference](active-agent-memory-verification-layer.md)
 - [Phase 37A Active Agent Memory + Verification Layer Planning](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
