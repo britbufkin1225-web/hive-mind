@@ -430,6 +430,22 @@ family, mirroring the `active-memory.v1` / `repo-observer.v1` discipline (closed
 enums, bounded scalars, caller-supplied timestamps, mirrored frontend types). They
 are **documentation examples only** — Phase 40A introduces no runtime schema.
 
+> **Phase 40B update.** The backend `grounded-synthesis.v1` contract family is now
+> implemented in `apps/backend/app/models/grounded_synthesis.py` (see the
+> [Phase 40B plan](planning/phase-40b-grounded-synthesis-contract-types-schema-foundation.md)).
+> The shapes below remain the Phase 40A conceptual vocabulary; 40B settled the
+> concrete names, fields, bounds, and cross-field rules, and its module is the
+> authority on the implemented schema. Where the two differ, 40B's naming holds:
+> the implemented request is `GroundedSynthesisRequest`, the grounding boundary is
+> `SynthesisContextPacket` (the Phase 40A `GroundingPacket`), and the proposed
+> output is `GroundedSynthesisArtifact` (the Phase 40A `SynthesisResult`).
+> `LoomContext`, `Musing`, `WorkPacket`, `ArtifactExport`, and `ReviewRecord`
+> remain unimplemented: `musings` is a mode and `musing`/`work_packet` are artifact
+> categories in 40B, while export and review records belong to Phase 40F. Phase 40B
+> adds **no synthesis behavior, service, endpoint, frontend surface, persistence,
+> or AI/LLM integration**; the frontend TypeScript mirror and parity test are not
+> part of it.
+
 All top-level records need an explicit contract/version discriminator, stable
 identifier semantics, bounded canonical serialization, deterministic collection
 ordering, and an extension strategy. Phase 40B must define unknown-field and
@@ -689,9 +705,17 @@ persistence, or AI/LLM integration. Hive|Mind remains a local, single-user, read
 workspace. This document describes the intended next direction and the guardrails
 that direction must satisfy.
 
+**As of Phase 40B**, exactly one item leaves that list: the backend
+`grounded-synthesis.v1` **contract and schema foundation** now exists. Everything
+else in the paragraph above still holds — no service, endpoint, UI, producer,
+grounding assembly, policy engine, patch-application engine, code-generation
+service, output persistence, or AI/LLM integration. Declaring a shape is not
+producing an output, and the contracts perform no I/O of any kind.
+
 ## 20. Reference documents
 
 - [Phase 40A planning](planning/phase-40a-create-layer-foundation-project-cohesion.md)
+- [Phase 40B contract types and schema foundation](planning/phase-40b-grounded-synthesis-contract-types-schema-foundation.md)
 - [Roadmap](roadmap.md)
 - [Active Agent Memory + Verification Layer reference](active-agent-memory-verification-layer.md)
 - [Repository Observer operator workflow](operator-repository-observer.md)

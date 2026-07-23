@@ -18,7 +18,7 @@ The product direction is deliberately evidence-oriented. The app favors determin
 
 Hive|Mind is also developing an **Active Memory and Verification** architecture: a contract-first layer for tools and agents to read verified, evidence-linked project context before acting. Its implemented foundation includes deterministic context packets and a read-only inspector, plus a Repository Observer with bounded snapshot and drift APIs, deterministic repository-evidence projection into candidate memory records, a persistent local repository-workspace registry, and a one-command managed local runtime. The most recent merged phase, Phase 39D, hardened the end-to-end Repository Observer workflow with a bounded transport timeout, an extracted error-classification module, a real end-to-end regression suite, and an [operator guide](docs/operator-repository-observer.md). Multi-agent contribution governance (Agent Lab) is defined and enforced locally through a dependency-free PowerShell preflight.
 
-The next direction is the **Grounded Synthesis Layer** (historical planning label: *Create Layer*, now deprecated): Hive|Mind evolving from a read-only intelligence workspace into a *grounded synthesis workspace built on verified read-only intelligence*, where the grounded intelligence synthesizes proposals, drafts, plans, and bounded change artifacts that a human reviews before anything is applied. This is **planned architecture**, not implemented functionality — see [Direction: the Grounded Synthesis Layer](#direction-the-grounded-synthesis-layer-planned) and the [Grounded Synthesis Layer architecture](docs/create-layer-architecture.md).
+The next direction is the **Grounded Synthesis Layer** (historical planning label: *Create Layer*, now deprecated): Hive|Mind evolving from a read-only intelligence workspace into a *grounded synthesis workspace built on verified read-only intelligence*, where the grounded intelligence synthesizes proposals, drafts, plans, and bounded change artifacts that a human reviews before anything is applied. Phase 40B lands the backend `grounded-synthesis.v1` **contract and schema foundation only**; the synthesis capability itself remains **planned architecture**, not implemented functionality — see [Direction: the Grounded Synthesis Layer](#direction-the-grounded-synthesis-layer-contracts-only) and the [Grounded Synthesis Layer architecture](docs/create-layer-architecture.md).
 
 ## What Hive|Mind Does
 
@@ -99,7 +99,7 @@ Evidence
 
 The first pipeline is implemented across the current app surfaces. The second pipeline currently exists as merged contracts, a deterministic backend-only in-memory store, deterministic backend-only read-only contradiction detection, backend-only context packet generation, a read-only stateless context-packet endpoint, a read-only frontend inspector for user-supplied records, backend-only Repository Observer schema contracts, a backend-only deterministic Git adapter foundation, a backend-only repository observation snapshot service, a thin read-only snapshot API, a contextual read-only frontend inspector for explicit repository snapshots, and backend-only deterministic drift analysis from the current `HEAD` baseline; later phases will add active-state selection and ingestion.
 
-## Direction: the Grounded Synthesis Layer (Planned)
+## Direction: the Grounded Synthesis Layer (Contracts Only)
 
 Hive|Mind is evolving from a **read-only intelligence workspace** into a
 **grounded synthesis workspace built on verified read-only intelligence**. The
@@ -114,18 +114,28 @@ low-authority *Musings*. Within the layer, *The Loom* is the internal capability
 that assembles evidence, context, and intent into coherent synthesis outputs;
 neither *Musings* nor *The Loom* is a name for the layer itself.
 
-This capability is **planned architecture, not implemented functionality.** No
-grounded-synthesis service, contract, endpoint, UI, producer, patch-application
-engine, code-generation service, output persistence, or AI/LLM integration exists
-today. The design is deliberately bounded by mandatory principles: evidence before
+The capability itself is **still planned, not implemented.** Phase 40B adds the
+backend `grounded-synthesis.v1` contract and schema foundation only — the typed
+shapes a future service will speak. No synthesis behavior, producer, grounding
+assembly, policy engine, API endpoint, frontend surface, persistence, database
+migration, repository write, graph mutation, Active Memory insertion, or AI/LLM
+provider integration exists today. Constructing a contract performs no
+filesystem, Git, network, store, clock, or randomness access; every identifier
+and timestamp is caller-supplied.
+
+The design is deliberately bounded by mandatory principles: evidence before
 synthesis, proposal before mutation, human-reviewed execution (devdevbuilds remains
 the merge gate), deterministic boundaries separated from any future generative
 behavior, explicit confidence and limitations, no silent authority escalation,
 reusable typed contracts, and auditability. Synthesis outputs are never
-automatically accepted as truth and never automatically applied to a repository.
+automatically accepted as truth and never automatically applied to a repository:
+the contracts carry no accepted/approved/committed/applied state at all, pin
+`human_review_required` and `read_only` to `True`, and require a proposed
+artifact to cite evidence its provenance actually records.
 
 See the [Grounded Synthesis Layer architecture](docs/create-layer-architecture.md), the
 [Phase 40A plan](docs/planning/phase-40a-create-layer-foundation-project-cohesion.md),
+the [Phase 40B plan](docs/planning/phase-40b-grounded-synthesis-contract-types-schema-foundation.md),
 and the [roadmap Grounded Synthesis track](docs/roadmap.md#grounded-synthesis-track-planned).
 
 ## Visual Evidence
@@ -179,6 +189,8 @@ More screenshot history and QA notes live in the [Phase 28C graph-primary eviden
 | Repository evidence projection | Implemented locally / pending completed hardening and final review | Phase 39A backend-only deterministic projection of Repository Observer results into bounded, always-inactive candidate Active Memory records with claim-dependent verification, distinct observation/recording timestamps, and referentially sound evidence bounding; no endpoint, persistence, ingestion, store insertion, watcher, active-state calculation, contradiction resolution, AI/LLM behavior, or repository mutation. |
 | Repository workspace configuration | Implemented locally / pending independent audit | Phase 39B local-only, versioned `repository-workspaces.v1` registry with a deterministic configuration service (OS-appropriate path resolution, atomic corruption-resistant writes, credential-safe remotes, typed failure states, read-only availability diagnostics reusing the Git adapter), a narrow `resolve_active_repository_workspace` seam for a future Repository Observer phase, and a [PowerShell operator tool](scripts/workspaces/README.md); no watcher, polling, automatic observation, Active Memory ingestion, frontend editor, database, or repository mutation. |
 | Managed local runtime | Implemented locally / pending independent audit | Phase 39C one-command [runtime launcher](scripts/runtime/README.md) that starts the backend and frontend together, verifies real readiness, and stops only its managed processes (identity-gated by PID + creation time + command-line signature). It resolves the repository through the Phase 39B workspace config and keeps bounded, secret-free runtime metadata/logs outside the repository; no service installer, container system, background daemon, dependency installation, or process termination by generic name. |
+| Grounded Synthesis contracts | Implemented locally / pending independent audit | Phase 40B backend-only `grounded-synthesis.v1` contract and schema foundation: synthesis modes (`musings`, `loom` — capabilities within the layer, not layers), request, grounding evidence references, constraints, context packet, proposed artifact, mandatory provenance, validation results, and a bounded readiness vocabulary with no accepted/approved/committed/applied state. Deterministic and caller-clock-owned; no synthesis behavior, producer, endpoint, frontend, persistence, migration, repository write, graph mutation, Active Memory insertion, or AI/LLM integration. |
+| Grounded Synthesis runtime | Planned | Grounding assembly, the deterministic producer, policy/validation guardrails, the read-only API and workspace, and the review/export/handoff workflow are not implemented. |
 | Active Memory runtime | Planned | Active-state calculation, write endpoints, durable memory, ingestion, and evidence resolver are not implemented. |
 
 ## Architecture And Stack
@@ -186,7 +198,7 @@ More screenshot history and QA notes live in the [Phase 28C graph-primary eviden
 - **Frontend:** React, TypeScript, Vite, plain CSS.
 - **Backend:** Python, FastAPI, Pydantic.
 - **Storage:** local JSON-backed `HiveStore` model and source records.
-- **Contracts:** Pydantic models mirrored by TypeScript types; Phase 37B adds Active Memory contract parity tests.
+- **Contracts:** Pydantic models mirrored by TypeScript types; Phase 37B adds Active Memory contract parity tests. Phase 40B adds the backend-only `grounded-synthesis.v1` contract family (no frontend mirror yet).
 - **Source integration:** Obsidian adapter and import service.
 - **Visualization:** custom SVG and canvas-oriented graph presentation, without a graph-library dependency.
 - **Motion experiment:** MediaPipe Hand Landmarker pinned through `@mediapipe/tasks-vision`.
@@ -271,21 +283,24 @@ Hive|Mind is currently a local, single-user developer tool. It has no authentica
 ## Roadmap
 
 The repository-intelligence sequence through Phase 39D is complete and merged on
-`main`. The active contribution is a planning phase opening the next track:
+`main`, and Phase 40A opened the Grounded Synthesis track. The active
+contribution is the first implementation phase of that track:
 
 ```text
-40A - Grounded Synthesis Foundation Planning + Project Cohesion
+40A - Grounded Synthesis Foundation Planning + Project Cohesion (merged)
       (historical planning label: Create Layer Foundation Planning + Project Cohesion)
-      (documentation complete locally / pending independent audit)
+40B - Grounded Synthesis Contract Types + Schema Foundation
+      (backend contracts only / pending independent audit)
 ```
 
-Phases 38A–39D are merged: Agent Lab multi-agent [contribution contracts](docs/agent-lab/README.md) and a [local PowerShell governance preflight](scripts/governance/README.md); deterministic repository-evidence projection into candidate memory records; a persistent local [repository-workspace registry](scripts/workspaces/README.md); a one-command [managed local runtime](docs/operator-runtime.md); and Repository Observer [end-to-end workflow hardening and failure-state QA](docs/operator-repository-observer.md). Phase 40A now defines the planned **Grounded Synthesis Layer** foundation (see [Direction: the Grounded Synthesis Layer](#direction-the-grounded-synthesis-layer-planned)); the Grounded Synthesis Layer is planned architecture, not implemented functionality. Phase 36K remains paused, not canceled or completed. Active Memory continues to govern project data and verification architecture while Agent Lab governs contribution workflow. The complete chronology and the Grounded Synthesis track belong in the [roadmap](docs/roadmap.md).
+Phases 38A–39D are merged: Agent Lab multi-agent [contribution contracts](docs/agent-lab/README.md) and a [local PowerShell governance preflight](scripts/governance/README.md); deterministic repository-evidence projection into candidate memory records; a persistent local [repository-workspace registry](scripts/workspaces/README.md); a one-command [managed local runtime](docs/operator-runtime.md); and Repository Observer [end-to-end workflow hardening and failure-state QA](docs/operator-repository-observer.md). Phase 40A defined the **Grounded Synthesis Layer** foundation and Phase 40B adds its backend `grounded-synthesis.v1` contract and schema foundation only (see [Direction: the Grounded Synthesis Layer](#direction-the-grounded-synthesis-layer-contracts-only)); no synthesis behavior, endpoint, frontend, persistence, or AI/LLM integration exists. Phase 36K remains paused, not canceled or completed. Active Memory continues to govern project data and verification architecture while Agent Lab governs contribution workflow. The complete chronology and the Grounded Synthesis track belong in the [roadmap](docs/roadmap.md).
 
 ## Documentation
 
 - [Full roadmap](docs/roadmap.md)
 - [Grounded Synthesis Layer architecture (planned)](docs/create-layer-architecture.md)
 - [Phase 40A Grounded Synthesis foundation planning](docs/planning/phase-40a-create-layer-foundation-project-cohesion.md)
+- [Phase 40B Grounded Synthesis contract types and schema foundation](docs/planning/phase-40b-grounded-synthesis-contract-types-schema-foundation.md)
 - [Design-asset cohesion assessment](docs/design-asset-cohesion-assessment.md)
 - [API contract](docs/api-contract.md)
 - [Active Memory and Verification reference](docs/active-agent-memory-verification-layer.md)
