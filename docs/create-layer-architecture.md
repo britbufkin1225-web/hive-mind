@@ -654,8 +654,9 @@ Designed-for, not-yet-built extension points:
 - **`grounded-synthesis.v1` contract family** — typed request/grounding/result shapes
   with backend Pydantic + mirrored frontend TypeScript and a parity test.
 - **Deterministic synthesis packet service** — the MVP producer (40C target).
-- **Evidence/provenance/validation guardrails** — richer policy and validation
-  (40D target).
+- **Evidence/provenance/validation guardrails** — implemented in Phase 40D as a
+  deterministic, read-only packet validator; richer policy over a *producer*
+  remains future work, because no producer exists yet.
 - **Read-only Grounded Synthesis API + workspace UI** — inspection surface
   (40E target).
 - **Review/approval/export/handoff workflow** — human gate and Agent Lab handoff
@@ -725,11 +726,28 @@ generates no content of any kind. It reads a clock, a store, the filesystem, Git
 the network, and randomness exactly zero times; every record it interprets is
 caller-supplied.
 
+**As of Phase 40D**, one further item leaves that list: a deterministic,
+read-only **validation guardrail layer**
+(`apps/backend/app/services/grounding_validation.py`) now decides whether an
+assembled `SynthesisContextPacket` is trustworthy enough to hand to a future
+synthesis capability (see the
+[Phase 40D plan](planning/phase-40d-synthesis-evidence-provenance-validation-guardrails.md)).
+It adds evidence identity guardrails, provenance integrity checking, packet
+consistency validation reconciled against the packet's actual contents, bounds
+and truncation validation, explicit blocking and non-blocking diagnostics, and an
+explicit synthesis-readiness determination. Everything else still holds — no
+producer, endpoint, UI, patch-application engine, code-generation service, output
+persistence, or AI/LLM integration. **Hive|Mind still does not generate Grounded
+Synthesis output.** Deciding that grounding is trustworthy is not producing
+anything from it: the validator reads a packet, mutates nothing, repairs nothing,
+and returns a typed report.
+
 ## 20. Reference documents
 
 - [Phase 40A planning](planning/phase-40a-create-layer-foundation-project-cohesion.md)
 - [Phase 40B contract types and schema foundation](planning/phase-40b-grounded-synthesis-contract-types-schema-foundation.md)
 - [Phase 40C grounding context assembly service MVP](planning/phase-40c-grounding-context-assembly-service-mvp.md)
+- [Phase 40D synthesis evidence, provenance, and validation guardrails](planning/phase-40d-synthesis-evidence-provenance-validation-guardrails.md)
 - [Roadmap](roadmap.md)
 - [Active Agent Memory + Verification Layer reference](active-agent-memory-verification-layer.md)
 - [Repository Observer operator workflow](operator-repository-observer.md)
