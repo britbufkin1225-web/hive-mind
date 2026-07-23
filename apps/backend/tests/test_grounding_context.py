@@ -725,6 +725,113 @@ def test_unsafe_repository_identity_never_yields_a_ready_packet(
     )
 
 
+def test_unsafe_repository_identity_as_only_provider_returns_blocked_empty_packet() -> None:
+    packet = _assemble(
+        sources=GroundingEvidenceSources(
+            repository_snapshots=(
+                _snapshot(identity_status=RepositoryIdentityStatus.MISMATCHED_REMOTE),
+            )
+        )
+    )
+
+    assert packet.readiness is SynthesisReadinessStatus.BLOCKED
+    assert packet.evidence_references == []
+    assert packet.metadata["readiness_reason"] == "unsafe_repository_identity"
+
+
+def test_multiple_unsafe_repository_providers_are_excluded_deterministically() -> None:
+    sources = GroundingEvidenceSources(
+        repository_snapshots=(
+            _snapshot(
+                snapshot_id="snap-unsafe",
+                identity_status=RepositoryIdentityStatus.MISMATCHED_ROOT,
+            ),
+        ),
+        repository_drift_analyses=(
+            _drift(
+                drift_id="drift-unsafe",
+                identity_status=RepositoryIdentityStatus.UNSAFE_LOCATION,
+            ),
+        ),
+    )
+    forward = _assemble(sources=sources)
+    reversed_sources = GroundingEvidenceSources(
+        repository_snapshots=tuple(reversed(sources.repository_snapshots)),
+        repository_drift_analyses=tuple(
+            reversed(sources.repository_drift_analyses)
+        ),
+    )
+    backward = _assemble(sources=reversed_sources)
+
+    assert forward == backward
+    assert forward.readiness is SynthesisReadinessStatus.BLOCKED
+    assert forward.metadata["exclusion_reasons"][
+        GroundingExclusionReason.UNSAFE_REPOSITORY_IDENTITY.value
+    ] == 2
+    assert len(forward.warnings) == 2
+
+
+def test_unsafe_repository_identity_outranks_otherwise_sufficient_evidence() -> None:
+    packet = _assemble(
+        sources=GroundingEvidenceSources(
+            memory_records=(_memory_record("mem-safe"),),
+            evidence_records=(_evidence_record("ev-safe"),),
+            repository_snapshots=(
+                _snapshot(identity_status=RepositoryIdentityStatus.MISMATCHED_REMOTE),
+            ),
+        )
+    )
+
+    assert len(packet.evidence_references) == 2
+    assert packet.readiness is SynthesisReadinessStatus.BLOCKED
+    assert packet.metadata["readiness_reason"] == "unsafe_repository_identity"
+
+
+def test_unsafe_repository_identity_stays_blocked_with_critical_conflict() -> None:
+    packet = _assemble(
+        sources=GroundingEvidenceSources(
+            memory_records=(_memory_record("mem-1"), _memory_record("mem-2")),
+            contradictions=(
+                _contradiction(severity=ContradictionSeverity.CRITICAL),
+            ),
+            repository_snapshots=(
+                _snapshot(identity_status=RepositoryIdentityStatus.MISMATCHED_ROOT),
+            ),
+        )
+    )
+
+    assert packet.readiness is SynthesisReadinessStatus.BLOCKED
+    assert packet.conflicts[0].severity is ContradictionSeverity.CRITICAL
+    assert packet.metadata["readiness_reason"] in {
+        "critical_conflict",
+        "unsafe_repository_identity",
+    }
+    assert packet.metadata["exclusion_reasons"][
+        GroundingExclusionReason.UNSAFE_REPOSITORY_IDENTITY.value
+    ] == 1
+
+
+def test_unsafe_repository_identity_stays_blocked_after_packet_bounds() -> None:
+    records = tuple(_memory_record(f"mem-{index}") for index in range(8))
+    packet = _assemble(
+        sources=GroundingEvidenceSources(
+            memory_records=records,
+            repository_snapshots=(
+                _snapshot(identity_status=RepositoryIdentityStatus.UNSAFE_LOCATION),
+            ),
+        ),
+        limits=GroundingAssemblyLimits(
+            max_evidence_items=2,
+            max_items_per_kind=2,
+        ),
+    )
+
+    assert len(packet.evidence_references) == 2
+    assert packet.metadata["items_truncated"] == 6
+    assert packet.readiness is SynthesisReadinessStatus.BLOCKED
+    assert packet.metadata["readiness_reason"] == "unsafe_repository_identity"
+
+
 def test_observer_evidence_without_any_safe_pointer_still_grounds_on_the_snapshot() -> None:
     snapshot = RepositorySnapshot(
         snapshot_id="snap-bare",
