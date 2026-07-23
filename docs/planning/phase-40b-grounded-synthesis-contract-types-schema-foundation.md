@@ -1,9 +1,8 @@
 # Phase 40B — Grounded Synthesis Contract Types + Schema Foundation
 
 **Type:** Backend contract and schema phase. **Runtime behavior added:** none.
-**Status:** implemented and locally test-covered, pending Codex architecture and
-schema review, final independent audit (Jules), and the devdevbuilds human merge
-gate.
+**Status:** implemented, Codex-hardened, and locally test-covered; pending final
+independent audit (Jules) and the devdevbuilds human merge gate.
 
 **Parent label:** devdevbuilds (human decision-maker and merge gate).
 **Composition mode:** `sequential-isolated`.
@@ -32,7 +31,7 @@ One backend contract module and one focused test module:
 
 - `apps/backend/app/models/grounded_synthesis.py` — the `grounded-synthesis.v1`
   contract family.
-- `apps/backend/tests/test_grounded_synthesis_contracts.py` — 52 focused
+- `apps/backend/tests/test_grounded_synthesis_contracts.py` — 58 focused
   contract, validation, determinism, and boundary-separation tests.
 
 Documentation updates are narrow: this plan, the roadmap, the README, and two
@@ -138,7 +137,9 @@ filesystem, runs Git, queries a store or database, or calls a network or model
 provider. Every timestamp (`submitted_at`, `assembled_at`, `observed_at`,
 `created_at`) and every identifier is caller-supplied and defaults to `None`.
 `derive_grounded_synthesis_id` is a pure function of explicitly normalized
-inputs.
+inputs. It hashes canonical JSON array material rather than a delimiter-joined
+string, so input boundaries remain unambiguous even when content contains a
+separator; NFC normalization makes Unicode-equivalent inputs stable.
 
 Collection ordering is caller-preserved, with an explicit
 `SynthesisContextPacket.normalized()` returning the canonical ordering — the same
@@ -150,7 +151,8 @@ and does not mutate the original.
 Every model sets `model_config = ConfigDict(extra="forbid")`. That is the
 load-bearing setting: no model name, provider, temperature, `top_p`, token
 budget, prompt template, credential, or agent execution directive exists as a
-field, and none can ride in on an unknown key. `SynthesisGenerationMethod` has a
+field, and none can ride in on an unknown key or a nested metadata key.
+`SynthesisGenerationMethod` has a
 single member (`deterministic`), so a model-backed producer cannot be recorded as
 legitimate provenance without a deliberate, reviewable contract change
 (Phase 40A §11).
@@ -161,8 +163,10 @@ Named limits cover identifier length, objective length, summary length, section
 heading/body length, total artifact content length, evidence-reference count,
 context-summary count, conflict count, missing-context count, warning count,
 citation count, artifact-section count, unresolved-claim count, validation-issue
-count, metadata entry count, metadata key/value length, and metadata nesting
-depth. Collection bounds are deliberately smaller than the Active Memory ceiling:
+count, metadata entry count, nested metadata container width and total nodes,
+metadata key/value length, and metadata nesting depth. Non-finite and non-JSON
+metadata values are rejected. Collection bounds are deliberately smaller than
+the Active Memory ceiling:
 a grounding packet is a curated, human-reviewable selection, not a dump.
 
 Defensive coercion is blocked in both directions — a `bool` supplied where an
@@ -172,13 +176,15 @@ is expected is rejected.
 ## 4. Validation performed
 
 - Focused suite: `python -m pytest tests -k "grounded_synthesis or synthesis_contract" -q`
-  — **52 passed**.
+  — **58 passed**.
 - Neighboring regressions (contracts, Active Memory, context packets, provenance,
   Repository Observer, repository evidence projection, workspaces):
   `python -m pytest tests -k "contract or active_memory or context_packet or provenance or repository_observer or repository_evidence or workspace" -q`
-  — **480 passed**.
-- Full backend suite: `python -m pytest -q` — **766 passed** (714 before this
-  phase), no failures, no skips, no warnings.
+  — **486 passed**.
+- Full backend suite: `python -m pytest -q` — **772 passed** (714 before this
+  phase), no failures or skips. The environment emits one Starlette/httpx
+  deprecation warning and one permission warning for the untracked
+  `.pytest_cache`; neither affects results.
 - `git diff --check` — clean. Conflict-marker scan — none.
 
 Test coverage spans valid construction for both modes and every top-level

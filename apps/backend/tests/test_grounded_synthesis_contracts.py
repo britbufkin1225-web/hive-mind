@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import ast
 import inspect
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -390,6 +391,32 @@ def test_packet_with_missing_context_cannot_be_ready() -> None:
         )
 
 
+def test_packet_with_critical_conflict_cannot_be_ready() -> None:
+    with pytest.raises(ValidationError, match="critical conflict"):
+        _packet(
+            evidence_references=[_evidence("ev-1"), _evidence("ev-2")],
+            conflicts=[
+                SynthesisEvidenceConflict(
+                    conflict_id="conflict-critical",
+                    summary="The repository baselines are irreconcilable.",
+                    evidence_ids=["ev-1", "ev-2"],
+                    severity=ContradictionSeverity.CRITICAL,
+                )
+            ],
+        )
+
+
+def test_ready_request_requires_ready_embedded_packet() -> None:
+    with pytest.raises(ValidationError, match="embedded context_packet to be 'ready'"):
+        GroundedSynthesisRequest(
+            request_id="gs-request-1",
+            mode=GroundedSynthesisMode.LOOM,
+            objective="Draft a plan.",
+            status=SynthesisReadinessStatus.READY,
+            context_packet=_packet(readiness=SynthesisReadinessStatus.CONTEXT_REQUIRED),
+        )
+
+
 def test_artifact_requires_provenance() -> None:
     with pytest.raises(ValidationError):
         GroundedSynthesisArtifact(
@@ -481,6 +508,25 @@ def test_deeply_nested_metadata_rejected() -> None:
         nested = {"level": nested}
     with pytest.raises(ValidationError, match="too deeply nested"):
         _packet(metadata=nested)
+
+
+def test_metadata_rejects_wide_non_finite_and_non_json_values() -> None:
+    with pytest.raises(ValidationError, match="metadata container exceeds"):
+        _packet(metadata={"nested": list(range(33))})
+    with pytest.raises(ValidationError, match="must be finite"):
+        _packet(metadata={"score": float("inf")})
+    with pytest.raises(ValidationError, match="JSON-compatible"):
+        _packet(metadata={"opaque": b"bytes"})
+
+
+def test_provider_configuration_cannot_hide_in_metadata() -> None:
+    for metadata in (
+        {"provider": "openai"},
+        {"runtime": {"temperature": 0.2}},
+        {"runtime": {"API-KEY": "secret"}},
+    ):
+        with pytest.raises(ValidationError, match="provider/runtime metadata key"):
+            _packet(metadata=metadata)
 
 
 def test_invalid_artifact_status_rejected() -> None:
@@ -900,6 +946,27 @@ def test_derived_identifiers_are_pure_functions_of_their_inputs() -> None:
         derive_grounded_synthesis_id("gs-packet", "   ")
 
 
+def test_derived_identifier_part_boundaries_are_unambiguous() -> None:
+    assert derive_grounded_synthesis_id("gs", "ab", "c") != (
+        derive_grounded_synthesis_id("gs", "a", "bc")
+    )
+    assert derive_grounded_synthesis_id("gs", "a\x1fb", "c") != (
+        derive_grounded_synthesis_id("gs", "a", "b\x1fc")
+    )
+    assert derive_grounded_synthesis_id("gs", "a", "b") != (
+        derive_grounded_synthesis_id("gs", "b", "a")
+    )
+
+
+def test_derived_identifier_unicode_normalization_is_explicit() -> None:
+    composed = "caf\u00e9"
+    decomposed = unicodedata.normalize("NFD", composed)
+    assert composed != decomposed
+    assert derive_grounded_synthesis_id("gs", composed) == (
+        derive_grounded_synthesis_id("gs", decomposed)
+    )
+
+
 def test_no_timestamp_or_identifier_is_auto_populated() -> None:
     """Caller-owned clock: nothing defaults to 'now', nothing invents an id."""
 
@@ -962,7 +1029,18 @@ def test_contract_module_imports_no_io_or_nondeterminism() -> None:
 
     # Allowed imports only: stdlib hashing/typing/enum, pydantic, and the
     # existing pure in-repo contract + validation helpers.
-    assert imported <= {"__future__", "hashlib", "datetime", "enum", "typing", "pydantic", "app"}
+    assert imported <= {
+        "__future__",
+        "app",
+        "datetime",
+        "enum",
+        "hashlib",
+        "json",
+        "math",
+        "pydantic",
+        "typing",
+        "unicodedata",
+    }
 
     called_names: set[str] = set()
     for node in ast.walk(tree):

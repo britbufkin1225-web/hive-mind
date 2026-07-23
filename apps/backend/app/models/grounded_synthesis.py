@@ -66,6 +66,9 @@ built on top of these contracts.
 from __future__ import annotations
 
 import hashlib
+import json
+import math
+import unicodedata
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
@@ -132,6 +135,28 @@ MAX_SYNTHESIS_METADATA_VALUE_LENGTH = 1024
 # Four levels covers every realistic annotation while rejecting the
 # recursion-shaped payloads Phase 18D named (see ``assert_within_nesting_depth``).
 MAX_SYNTHESIS_METADATA_DEPTH = 4
+MAX_SYNTHESIS_METADATA_CONTAINER_ITEMS = 32
+MAX_SYNTHESIS_METADATA_TOTAL_NODES = 256
+FORBIDDEN_SYNTHESIS_METADATA_KEYS = frozenset(
+    {
+        "agent",
+        "api_base",
+        "api_key",
+        "credentials",
+        "endpoint_url",
+        "max_tokens",
+        "model",
+        "model_name",
+        "prompt",
+        "prompt_template",
+        "provider",
+        "system_prompt",
+        "temperature",
+        "token_budget",
+        "tool_choice",
+        "top_p",
+    }
+)
 
 MAX_SYNTHESIS_DIGEST_LENGTH = 128
 
@@ -381,20 +406,57 @@ def _validate_bounded_metadata(value: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(
             f"metadata exceeds the {MAX_SYNTHESIS_METADATA_ENTRIES} entry limit"
         )
-    for key, item in value.items():
-        if not isinstance(key, str) or not key.strip():
-            raise ValueError("metadata keys must be non-empty strings")
-        if len(key) > MAX_SYNTHESIS_METADATA_KEY_LENGTH:
-            raise ValueError(
-                "metadata key exceeds the "
-                f"{MAX_SYNTHESIS_METADATA_KEY_LENGTH} character limit"
-            )
-        if isinstance(item, str) and len(item) > MAX_SYNTHESIS_METADATA_VALUE_LENGTH:
-            raise ValueError(
-                "metadata value exceeds the "
-                f"{MAX_SYNTHESIS_METADATA_VALUE_LENGTH} character limit"
-            )
     assert_within_nesting_depth(value, MAX_SYNTHESIS_METADATA_DEPTH)
+    nodes_seen = 0
+    stack: list[Any] = [value]
+    while stack:
+        item = stack.pop()
+        nodes_seen += 1
+        if nodes_seen > MAX_SYNTHESIS_METADATA_TOTAL_NODES:
+            raise ValueError(
+                "metadata exceeds the "
+                f"{MAX_SYNTHESIS_METADATA_TOTAL_NODES} total-node limit"
+            )
+        if isinstance(item, dict):
+            if len(item) > MAX_SYNTHESIS_METADATA_CONTAINER_ITEMS:
+                raise ValueError(
+                    "metadata container exceeds the "
+                    f"{MAX_SYNTHESIS_METADATA_CONTAINER_ITEMS} item limit"
+                )
+            for key, nested in item.items():
+                if not isinstance(key, str) or not key.strip():
+                    raise ValueError("metadata keys must be non-empty strings")
+                if len(key) > MAX_SYNTHESIS_METADATA_KEY_LENGTH:
+                    raise ValueError(
+                        "metadata key exceeds the "
+                        f"{MAX_SYNTHESIS_METADATA_KEY_LENGTH} character limit"
+                    )
+                normalized_key = key.strip().lower().replace("-", "_")
+                if normalized_key in FORBIDDEN_SYNTHESIS_METADATA_KEYS:
+                    raise ValueError(
+                        f"provider/runtime metadata key {key!r} is not permitted"
+                    )
+                stack.append(nested)
+        elif isinstance(item, list):
+            if len(item) > MAX_SYNTHESIS_METADATA_CONTAINER_ITEMS:
+                raise ValueError(
+                    "metadata container exceeds the "
+                    f"{MAX_SYNTHESIS_METADATA_CONTAINER_ITEMS} item limit"
+                )
+            stack.extend(item)
+        elif isinstance(item, str):
+            if len(item) > MAX_SYNTHESIS_METADATA_VALUE_LENGTH:
+                raise ValueError(
+                    "metadata value exceeds the "
+                    f"{MAX_SYNTHESIS_METADATA_VALUE_LENGTH} character limit"
+                )
+        elif isinstance(item, float):
+            if not math.isfinite(item):
+                raise ValueError("metadata numeric values must be finite")
+        elif item is not None and not isinstance(item, (bool, int)):
+            raise ValueError(
+                "metadata values must be JSON-compatible scalars or containers"
+            )
     return value
 
 
@@ -412,20 +474,44 @@ def _validate_contract_version(value: str) -> str:
 def derive_grounded_synthesis_id(prefix: str, *parts: str) -> str:
     """Derive a stable identifier from explicitly-normalized caller inputs.
 
-    Follows the existing repository convention
-    (``repository_evidence_projection._stable_id``): a unit-separator join, a
-    SHA-256 digest, and a bounded hex suffix behind a readable prefix. It is a
-    pure function of its arguments — no clock, no randomness, no environment —
-    so the same inputs always yield the same id. Callers that already own an
-    identifier should keep using it; this exists only so a caller that needs a
-    derived one does not invent an ad hoc (or random) scheme.
+    Follows the existing repository's readable-prefix plus bounded SHA-256
+    convention, while using canonical JSON array material so part boundaries
+    cannot be confused by delimiter content. It is a pure function of its
+    arguments — no clock, no randomness, no environment — so the same inputs
+    always yield the same id. Callers that already own an identifier should keep
+    using it; this exists only so a caller that needs a derived one does not
+    invent an ad hoc (or random) scheme.
     """
 
-    clean_prefix = _clean_required_text(prefix, "identifier prefix")
+    clean_prefix = unicodedata.normalize(
+        "NFC", _clean_required_text(prefix, "identifier prefix")
+    )
+    max_prefix_length = MAX_SYNTHESIS_ID_LENGTH - 25
+    if len(clean_prefix) > max_prefix_length:
+        raise ValueError(
+            f"identifier prefix exceeds the {max_prefix_length} character limit"
+        )
     if not parts:
         raise ValueError("identifier derivation requires at least one input part")
-    normalized = [_clean_required_text(part, "identifier part") for part in parts]
-    digest = hashlib.sha256("\x1f".join(normalized).encode("utf-8")).hexdigest()[:24]
+    if len(parts) > MAX_SYNTHESIS_COLLECTION_ITEMS:
+        raise ValueError(
+            "identifier derivation exceeds the "
+            f"{MAX_SYNTHESIS_COLLECTION_ITEMS} input-part limit"
+        )
+    normalized = [
+        unicodedata.normalize("NFC", _clean_required_text(part, "identifier part"))
+        for part in parts
+    ]
+    for part in normalized:
+        if len(part) > MAX_SYNTHESIS_ARTIFACT_CONTENT_LENGTH:
+            raise ValueError(
+                "identifier part exceeds the "
+                f"{MAX_SYNTHESIS_ARTIFACT_CONTENT_LENGTH} character limit"
+            )
+    hash_material = json.dumps(
+        normalized, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+    digest = hashlib.sha256(hash_material).hexdigest()[:24]
     return f"{clean_prefix}-{digest}"
 
 
@@ -887,6 +973,11 @@ class SynthesisContextPacket(_GroundedSynthesisModel):
                 raise ValueError(
                     "a packet with unresolved missing context cannot be 'ready'"
                 )
+            if any(
+                conflict.severity is ContradictionSeverity.CRITICAL
+                for conflict in self.conflicts
+            ):
+                raise ValueError("a packet with a critical conflict cannot be 'ready'")
         return self
 
     def normalized(self) -> "SynthesisContextPacket":
@@ -1022,6 +1113,13 @@ class GroundedSynthesisRequest(_GroundedSynthesisModel):
                 raise ValueError(
                     "context_packet_id disagrees with the embedded "
                     "context_packet.packet_id"
+                )
+            if (
+                self.status is SynthesisReadinessStatus.READY
+                and self.context_packet.readiness is not SynthesisReadinessStatus.READY
+            ):
+                raise ValueError(
+                    "a 'ready' request requires its embedded context_packet to be 'ready'"
                 )
 
         # A request that has neither grounding reference nor grounding evidence
