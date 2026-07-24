@@ -382,6 +382,22 @@ def test_declared_totals_are_not_reconciled_by_the_contract() -> None:
     assert len(bundle.artifacts) == 1
 
 
+@pytest.mark.parametrize("value", [True, "4096", 4096.0])
+@pytest.mark.parametrize("field", ["declared_byte_size", "declared_entry_count"])
+def test_artifact_integer_fields_reject_coercion(field: str, value: Any) -> None:
+    with pytest.raises(ValidationError, match="must be an integer"):
+        _artifact(**{field: value})
+
+
+@pytest.mark.parametrize("value", [True, "1", 1.0])
+@pytest.mark.parametrize(
+    "field", ["declared_artifact_count", "declared_total_byte_size"]
+)
+def test_bundle_integer_fields_reject_coercion(field: str, value: Any) -> None:
+    with pytest.raises(ValidationError, match="must be an integer"):
+        _bundle(**{field: value})
+
+
 def test_normalized_orders_artifacts_without_dropping_any() -> None:
     artifacts = [
         _artifact(artifact_id="artifact-c", declared_relative_path="c.json"),
@@ -461,6 +477,22 @@ def test_bundle_fingerprint_is_independent_of_artifact_declaration_order() -> No
     assert derive_bundle_fingerprint(
         _bundle(artifacts=[first, second])
     ) == derive_bundle_fingerprint(_bundle(artifacts=[second, first]))
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"declared_artifact_count": 99},
+        {"declared_total_byte_size": 1},
+        {"artifacts": [_artifact(artifact_id="artifact-renamed")]},
+    ],
+)
+def test_bundle_fingerprint_tracks_assessment_and_routing_fields(
+    override: dict[str, Any],
+) -> None:
+    assert derive_bundle_fingerprint(_bundle()) != derive_bundle_fingerprint(
+        _bundle(**override)
+    )
 
 
 def test_bundle_fingerprint_ignores_the_caller_assigned_bundle_id() -> None:

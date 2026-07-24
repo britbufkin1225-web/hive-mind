@@ -351,24 +351,26 @@ class MigrationDigestAlgorithm(StrEnum):
 # Small, pure, reusable checks so every model in the family enforces the same
 # rules with the same error text. None of them reads external state.
 # =========================================================================== #
-def _reject_bool(value: Any) -> Any:
-    """Reject a ``bool`` supplied where an integer is expected.
+def _require_int(value: Any) -> Any:
+    """Require an actual ``int`` where an integer is expected.
 
-    Pydantic's lax mode happily reads ``True`` as ``1``. For a declared byte size
-    that silently turns a nonsense value into "one byte", so the contract edge
-    rejects it outright — the Phase 18B/40B "reject at the edge, never coerce"
-    discipline applied to the one coercion Pydantic would otherwise allow.
+    Pydantic's lax mode accepts booleans, numeric strings, and integral floats.
+    Declared counts and byte sizes are safety inputs, so silently converting any
+    of those would make the assessment judge a value the caller did not actually
+    declare as an integer.
     """
 
-    if isinstance(value, bool):
-        raise ValueError("integer field must not be a boolean")
+    if value is not None and (
+        not isinstance(value, int) or isinstance(value, bool)
+    ):
+        raise ValueError("integer field must be an integer")
     return value
 
 
 def _require_bool(value: Any) -> Any:
     """Reject a non-``bool`` supplied where a flag is expected.
 
-    The mirror of :func:`_reject_bool`: ``0``/``1`` must not become a safety flag,
+    The mirror of :func:`_require_int`: ``0``/``1`` must not become a safety flag,
     because these flags carry the phase's load-bearing claims (``is_memory``,
     ``is_verified_evidence``, ``user_provided``) and must be explicit.
     """
@@ -785,7 +787,7 @@ class MigrationArtifactDescriptor(_MemoryMigrationModel):
     @field_validator("declared_byte_size", "declared_entry_count", mode="before")
     @classmethod
     def _counts_are_integers(cls, value: Any) -> Any:
-        return _reject_bool(value)
+        return _require_int(value)
 
     @field_validator("metadata")
     @classmethod
@@ -902,7 +904,7 @@ class MemoryMigrationBundle(_MemoryMigrationModel):
     )
     @classmethod
     def _counts_are_integers(cls, value: Any) -> Any:
-        return _reject_bool(value)
+        return _require_int(value)
 
     @field_validator("read_only", "is_memory", "is_verified_evidence", mode="before")
     @classmethod
@@ -968,15 +970,22 @@ class MemoryMigrationBundle(_MemoryMigrationModel):
 def derive_bundle_fingerprint(bundle: MemoryMigrationBundle) -> str:
     """Fold everything that materially defines a declared bundle into one id.
 
-    The artifact fingerprints are folded in **sorted**, not in declaration order:
-    reordering the same set of declared artifacts does not change what the user
-    handed over, so it must not change the bundle's identity. (This is the
-    deliberate opposite of ``derive_context_packet_identity``, where evidence
-    order encodes assembler *ranking* and is therefore material.)
+    Artifact identifiers are paired with artifact fingerprints and folded in
+    **sorted**, not declaration order: reordering the same declarations does not
+    change the bundle, while renaming an artifact does. The identifier is the
+    assessment's routing/provenance handle, so an old assessment must not
+    authorize parsing a declaration whose handles changed even though
+    :func:`derive_artifact_fingerprint` deliberately excludes them to detect
+    redundant material.
 
-    ``bundle_id`` is excluded for the same reason ``artifact_id`` is excluded from
-    the artifact fingerprint: the fingerprint answers "is this the same declared
-    material?", which must not depend on the label a caller chose for it.
+    ``bundle_id`` remains excluded because it labels the bundle as a whole and is
+    carried separately on the assessment. Artifact ids are different: downstream
+    provenance routes individual parsed results through them, so changing one
+    changes the declaration the parsing gate must authorize.
+
+    The caller's declared count and total are included because the assessor
+    reconciles them. Omitting assessment-driving fields would let a caller reuse a
+    ready assessment after changing a declaration into one that should be blocked.
     """
 
     provenance = bundle.provenance
@@ -992,7 +1001,12 @@ def derive_bundle_fingerprint(bundle: MemoryMigrationBundle) -> str:
         if bundle.target_scope is None
         else [bundle.target_scope.scope_type.value, bundle.target_scope.scope_id],
         _canonical_datetime(bundle.declared_at),
-        sorted(derive_artifact_fingerprint(item) for item in bundle.artifacts),
+        bundle.declared_artifact_count,
+        bundle.declared_total_byte_size,
+        sorted(
+            [item.artifact_id, derive_artifact_fingerprint(item)]
+            for item in bundle.artifacts
+        ),
     ]
     fingerprint = hashlib.sha256(_canonical_material(material)).hexdigest()
     return f"mm-bundle-{fingerprint[:_DIGEST_PREFIX_LENGTH]}"

@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from app.models.active_memory import MemorySource, MemorySourceType
 from app.models.memory_migration import (
@@ -47,6 +48,7 @@ from app.models.memory_migration import (
 from app.models.memory_migration_assessment import (
     MAX_MIGRATION_DIAGNOSTICS,
     MIGRATION_DIAGNOSTIC_SEVERITY,
+    MemoryMigrationIntakeAssessment,
     MigrationDiagnosticCode,
     MigrationDiagnosticSeverity,
 )
@@ -817,6 +819,33 @@ def test_the_same_declaration_always_yields_the_same_report() -> None:
     first = assess_memory_migration_intake(_bundle())
     second = assess_memory_migration_intake(_bundle())
     assert first.model_dump() == second.model_dump()
+
+
+@pytest.mark.parametrize("value", [True, "1", 1.0])
+@pytest.mark.parametrize("field", ["artifact_count", "declared_total_byte_size"])
+def test_assessment_integer_fields_reject_coercion(field: str, value: Any) -> None:
+    report = assess_memory_migration_intake(_bundle()).model_dump()
+    report[field] = value
+    with pytest.raises(ValidationError, match="must be an integer"):
+        MemoryMigrationIntakeAssessment(**report)
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"declared_artifact_count": 99},
+        {"declared_total_byte_size": 1},
+        {"artifacts": [_artifact(artifact_id="artifact-renamed")]},
+    ],
+)
+def test_ready_assessment_does_not_authorize_materially_changed_declaration(
+    override: dict[str, Any],
+) -> None:
+    report = assess_memory_migration_intake(_bundle())
+    changed = _bundle(**override)
+
+    assert report.ready_for_parsing is True
+    assert report.permits_parsing(bundle_fingerprint=changed.fingerprint()) is False
 
 
 def test_the_assessor_is_stateless_between_calls() -> None:

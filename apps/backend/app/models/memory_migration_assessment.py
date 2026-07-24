@@ -307,16 +307,17 @@ def resolve_intake_status(
 
 
 def _require_int(value: Any) -> Any:
-    """Reject a ``bool`` supplied where a count is expected.
+    """Require an actual ``int`` where a count is expected.
 
-    The Phase 40B/40D ``_reject_bool`` rule, restated locally rather than
-    imported from a sibling module's private surface: each contract module in
-    this family owns its own edge guards so no module depends on another's
-    internals.
+    Pydantic's default coercion would also accept numeric strings and integral
+    floats. Assessment counts are safety-relevant claims, so this module owns an
+    exact type guard rather than depending on a sibling's private helper.
     """
 
-    if isinstance(value, bool):
-        raise ValueError("integer field must not be a boolean")
+    if value is not None and (
+        not isinstance(value, int) or isinstance(value, bool)
+    ):
+        raise ValueError("integer field must be an integer")
     return value
 
 
