@@ -401,10 +401,17 @@ over its output: no grounded-synthesis producer, endpoint, UI, patch-application
 engine, code-generation service, output persistence, or AI/LLM integration exists
 yet. Assembling grounded input is not producing an output, and deciding that
 grounding is trustworthy is not producing anything from it — Phase 40C packages
-evidence and Phase 40D validates it, and both generate nothing. Memory migration,
-ChatGPT export parsing, candidate projection, reviewed persistence, verified
-import, the Grounded Synthesis producer, the read-only API and workspace, and the
-review/export/handoff workflow are all **planned**.
+evidence and Phase 40D validates it, and both generate nothing.
+
+Phase 40E adds the migration track's **intake boundary** (implemented on its
+feature branch, not merged): the `memory-migration.v1` contracts and a
+deterministic, read-only assessment that judges a bundle's **declared metadata**
+and decides whether a future parser may attempt it. Judging a declaration is not
+importing anything — Phase 40E opens no artifact, reads no byte, and touches no
+filesystem, archive, Git remote, or network. ChatGPT export parsing, candidate
+projection, reviewed persistence, verified import, the Grounded Synthesis
+producer, the read-only API and workspace, and the review/export/handoff workflow
+are all still **planned**, and no migration capability works today.
 
 | Phase | Status | Purpose |
 | --- | --- | --- |
@@ -413,7 +420,7 @@ review/export/handoff workflow are all **planned**.
 | Phase 40C — Grounding Context Assembly Service MVP | Merged | Backend-only, deterministic, read-only `GroundingContextAssemblyService` assembling five existing evidence families (Active Memory evidence records, Repository Observer observations, repository drift findings, contradiction records, Active Memory records) into valid Phase 40B `SynthesisContextPacket` records: explicit eligibility filtering, canonical-identity deduplication with documented winner precedence, a criticality-first stable ranking ending on a content-derived identifier, per-family and packet bounds with represented truncation and fail-closed raw-candidate overflow, surfaced-never-resolved conflicts, deterministic readiness, and bounded secret-free diagnostics. Contracts reused unchanged. No endpoint, persistence, cache, packet history, frontend, dependency, mutation, or AI/LLM/synthesis generation. |
 | Phase 40D — Synthesis Evidence, Provenance, and Validation Guardrails | Merged | Backend-only, deterministic, read-only `SynthesisContextPacketValidator` over assembled Phase 40C packets: canonical evidence identity guardrails reusing the assembler's own identity rule, provenance integrity and resolution checking, fail-closed repository/source safety, packet consistency recomputed from actual contents (evidence and coverage totals, conflict totals, readiness reasons, canonical ordering, and re-derived content-addressed packet identity), bounds and truncation validation that never clips, blocking and non-blocking diagnostics with severity fixed by the code, and an explicit synthesis-readiness determination projected onto the canonical Phase 40B `SynthesisValidationResult`. Phase 40B and 40C contracts reused unchanged. No endpoint, persistence, frontend, dependency, mutation, or AI/LLM/synthesis generation — Hive\|Mind still does not generate Grounded Synthesis output. Deterministic policy over a *producer*, confidence/freshness indicators, and prohibited-assumption enforcement remain future work, because no producer exists yet. |
 | Phase 40D.5 — Roadmap Reconciliation + Memory Migration Pivot | Documentation-only, implemented locally / pending independent audit | Documentation-only dependency gate. Records the decision to sequence memory migration ahead of Grounded Synthesis production and reconciles this roadmap, the README status, and the architecture note to the authoritative Phase 40D.5–40K sequence. No runtime, contract, schema, API, dependency, asset, or test change. See the [decision record](planning/phase-40d-5-roadmap-reconciliation-memory-migration-pivot.md). |
-| Phase 40E — Memory Migration Contract + Intake Safety Foundation | Planned | Versioned memory-migration intake contract family and a deterministic, read-only intake-safety assessment over **declared** metadata only (fail-closed path and entry-type handling, explicit bounds, declared-vs-verified digest handling, provenance-preserving descriptors). No export parsing, byte access, persistence, endpoint, or frontend. |
+| Phase 40E — Memory Migration Contract + Intake Safety Foundation | Implemented locally / pending independent audit | Backend-only `memory-migration.v1` contract family (declared artifact/bundle descriptors, a dedicated strict pre-ingestion provenance contract, declared-and-explicitly-unverified digests, a pinned candidate-memory ceiling) plus the deterministic, pure, read-only `MemoryMigrationIntakeAssessor` over **declared metadata only**: fail-closed custody, path, entry-type, format/container, digest and bounds allowlists; declared totals recomputed and reconciled; content-derived bundle/artifact fingerprints; a derived `declared → ready_for_parsing / blocked / quarantined` status a caller cannot assert; and bounded, value-free diagnostics. Nothing is parsed, extracted, repaired, clipped, or read — no byte, filesystem, archive, Git, or network access. No endpoint, router, frontend, store, graph, persistence, dependency, or AI/LLM integration. See the [Phase 40E record](planning/phase-40e-memory-migration-contract-intake-safety-foundation.md). |
 | Phase 40F — Export Parser + Candidate Projection | Planned | Parses a user-controlled export or curated bundle only after Phase 40E judges the intake safe, and projects its contents into inactive, unverified, provenance-linked **candidate** memory records. No persistence and no verified import. |
 | Phase 40G — Reviewed Persistence + Verified Import | Planned | First phase that may persist migrated candidates, and only for candidates a human has reviewed. Verified import is human-gated; imported material is never treated as verified truth automatically. |
 | Phase 40H — Grounded Synthesis Producer MVP | Planned | The first deterministic synthesis *producer* over grounded, validated context (now including reviewed migrated evidence). Outputs are proposals requiring human review; nothing is auto-applied. |
@@ -688,6 +695,7 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 - [Phase 40C Grounding Context Assembly Service MVP](planning/phase-40c-grounding-context-assembly-service-mvp.md)
 - [Phase 40D Synthesis Evidence, Provenance, and Validation Guardrails](planning/phase-40d-synthesis-evidence-provenance-validation-guardrails.md)
 - [Phase 40D.5 Roadmap Reconciliation + Memory Migration Pivot](planning/phase-40d-5-roadmap-reconciliation-memory-migration-pivot.md)
+- [Phase 40E Memory Migration Contract + Intake Safety Foundation](planning/phase-40e-memory-migration-contract-intake-safety-foundation.md)
 - [Design-Asset Cohesion Assessment](design-asset-cohesion-assessment.md)
 - [Active Agent Memory + Verification Layer reference](active-agent-memory-verification-layer.md)
 - [Phase 37A Active Agent Memory + Verification Layer Planning](planning/phase-37a-active-agent-memory-verification-layer-planning.md)
