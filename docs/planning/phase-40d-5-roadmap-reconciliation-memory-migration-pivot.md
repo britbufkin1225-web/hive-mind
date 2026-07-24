@@ -141,8 +141,8 @@ provider's private system memory:
   both false and a security/privacy overreach.
 - The project's honesty principle (implemented-versus-planned stated plainly)
   forbids describing a capability the product does not and should not have.
-- Migration is therefore defined entirely around **artifacts the user themselves
-  control and provides** — not around reaching into another system.
+- Migration is therefore defined entirely around **artifacts the user controls
+  and provides** — not around reaching into another system.
 
 ## 8. Why migration relies on user-controlled exports or curated bundles
 
