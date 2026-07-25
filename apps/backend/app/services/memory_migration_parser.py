@@ -795,6 +795,16 @@ def _parse_chatgpt_archive(
                     artifact_id=artifact.artifact_id,
                 )
             ]
+        if len(candidates) != 1:
+            return [], [
+                _diagnostic(
+                    MigrationProjectionDiagnosticCode.ARCHIVE_SAFETY_VIOLATION,
+                    "archive contains multiple conversations.json members, so the "
+                    "intended migration content is ambiguous",
+                    artifact_id=artifact.artifact_id,
+                    count=len(candidates),
+                )
+            ]
         target = sorted(candidates, key=lambda info: info.filename)[0]
 
         try:

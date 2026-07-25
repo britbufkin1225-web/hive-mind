@@ -159,6 +159,7 @@ def _build_candidate(
         artifact_fingerprint=item.artifact_fingerprint,
         source_local_id=item.source_local_id,
         role=item.role.value,
+        source_sequence_index=item.source_sequence_index,
         chunk_index=chunk_index,
         content_digest=content_digest,
     )

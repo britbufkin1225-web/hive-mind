@@ -474,9 +474,9 @@ def test_archive_malformed_conversations_member_is_reported() -> None:
     assert MigrationProjectionDiagnosticCode.MALFORMED_JSON.value in _codes(result)
 
 
-def test_archive_member_selection_is_deterministic() -> None:
-    # Two conversations.json members with different content; selection must pick the
-    # one whose full path sorts first ("a/..."), independent of insertion order.
+def test_archive_rejects_duplicate_conversations_members() -> None:
+    # Multiple plausible payloads are ambiguous and must fail closed rather than
+    # selecting one according to attacker-controlled names or insertion order.
     conv_a = _conversations_bytes(
         [{"conversation_id": "c", "mapping": {"u1": _message_node("u1", "user", "from-a", parent=None, children=[])}}]
     )
@@ -484,15 +484,18 @@ def test_archive_member_selection_is_deterministic() -> None:
         [{"conversation_id": "c", "mapping": {"u1": _message_node("u1", "user", "from-z", parent=None, children=[])}}]
     )
 
-    def selected_content(order: list[tuple[str, bytes]]) -> list[str]:
+    def parse(order: list[tuple[str, bytes]]):
         zip_bytes = _zip_bytes(order)
-        result = _run(_archive_bundle(zip_bytes), {"artifact-1": zip_bytes})
-        return [c.content for c in result.candidates]
+        return _run(_archive_bundle(zip_bytes), {"artifact-1": zip_bytes})
 
-    forward = selected_content([("z/conversations.json", conv_z), ("a/conversations.json", conv_a)])
-    reverse = selected_content([("a/conversations.json", conv_a), ("z/conversations.json", conv_z)])
-    assert forward == ["from-a"]
-    assert reverse == ["from-a"]
+    forward = parse([("z/conversations.json", conv_z), ("a/conversations.json", conv_a)])
+    reverse = parse([("a/conversations.json", conv_a), ("z/conversations.json", conv_z)])
+    for result in (forward, reverse):
+        assert result.candidates == []
+        assert (
+            MigrationProjectionDiagnosticCode.ARCHIVE_SAFETY_VIOLATION.value
+            in _codes(result)
+        )
 
 
 def test_parser_never_extracts_an_archive_to_disk() -> None:

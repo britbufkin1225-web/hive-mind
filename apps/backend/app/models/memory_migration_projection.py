@@ -362,6 +362,7 @@ def derive_candidate_id(
     artifact_fingerprint: str,
     source_local_id: str,
     role: str,
+    source_sequence_index: int,
     chunk_index: int,
     content_digest: str,
 ) -> str:
@@ -382,6 +383,7 @@ def derive_candidate_id(
         artifact_fingerprint,
         source_local_id,
         role,
+        str(source_sequence_index),
         str(chunk_index),
         content_digest,
     )
@@ -397,6 +399,17 @@ class _ProjectionModel(BaseModel):
     """
 
     model_config = ConfigDict(extra="forbid")
+
+    def model_copy(
+        self,
+        *,
+        update: dict[str, Any] | None = None,
+        deep: bool = False,
+    ) -> "_ProjectionModel":
+        """Copy through validation so updates cannot bypass pinned invariants."""
+
+        copied = super().model_copy(update=update, deep=deep)
+        return self.__class__.model_validate(copied.model_dump())
 
 
 # =========================================================================== #
@@ -847,6 +860,7 @@ class MemoryMigrationCandidate(_ProjectionModel):
             artifact_fingerprint=self.provenance.source_artifact_fingerprint,
             source_local_id=self.provenance.source_local_id,
             role=self.provenance.source_role.value,
+            source_sequence_index=self.source_sequence_index,
             chunk_index=self.chunk_index,
             content_digest=self.content_digest,
         )

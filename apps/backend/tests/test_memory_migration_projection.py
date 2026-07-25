@@ -143,6 +143,13 @@ def test_a_caller_cannot_override_candidate_standing(override: dict[str, Any]) -
         MemoryMigrationCandidate(**payload)
 
 
+def test_candidate_model_copy_cannot_bypass_authority_validation() -> None:
+    candidate = _one_candidate()
+
+    with pytest.raises(ValidationError):
+        candidate.model_copy(update={"lifecycle_state": LifecycleState.ACTIVE})
+
+
 def test_candidate_is_not_a_memory_record() -> None:
     from app.models.active_memory import MemoryRecord
 
@@ -195,6 +202,13 @@ def test_distinct_source_entries_with_identical_text_are_distinct_candidates() -
     # Same content -> same content digest, but provenance keeps them distinct.
     digests = {c.content_digest for c in outcome.candidates}
     assert len(digests) == 1
+
+
+def test_duplicate_source_ids_are_distinct_by_stable_sequence() -> None:
+    first = _one_candidate(source_sequence_index=0)
+    second = _one_candidate(source_sequence_index=1)
+
+    assert first.candidate_id != second.candidate_id
 
 
 # --------------------------------------------------------------------------- #
