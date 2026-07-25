@@ -143,11 +143,45 @@ def test_a_caller_cannot_override_candidate_standing(override: dict[str, Any]) -
         MemoryMigrationCandidate(**payload)
 
 
-def test_candidate_model_copy_cannot_bypass_authority_validation() -> None:
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"lifecycle_state": LifecycleState.ACTIVE},
+        {"verification_state": VerificationState.VERIFIED},
+        {"verification_state": VerificationState.HUMAN_CONFIRMED},
+        {"represents_active_memory": True},
+        {"human_review_required": False},
+        {"persistable": True},
+    ],
+)
+def test_candidate_model_copy_cannot_bypass_authority_validation(
+    override: dict[str, Any],
+) -> None:
     candidate = _one_candidate()
 
     with pytest.raises(ValidationError):
-        candidate.model_copy(update={"lifecycle_state": LifecycleState.ACTIVE})
+        candidate.model_copy(update=override)
+
+
+def test_candidate_model_copy_revalidates_nested_replacements_and_round_trips() -> None:
+    candidate = _one_candidate()
+
+    with pytest.warns(UserWarning):
+        with pytest.raises(ValidationError):
+            candidate.model_copy(
+                update={
+                    "provenance": {
+                        **candidate.provenance.model_dump(),
+                        "integrity_verified": False,
+                    }
+                }
+            )
+
+    round_tripped = MemoryMigrationCandidate.model_validate_json(
+        candidate.model_dump_json()
+    )
+    assert round_tripped == candidate
+    assert round_tripped.model_copy(deep=True) == candidate
 
 
 def test_candidate_is_not_a_memory_record() -> None:

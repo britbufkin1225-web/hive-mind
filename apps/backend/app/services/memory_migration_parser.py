@@ -220,7 +220,11 @@ class FilesystemArtifactByteSource(MigrationArtifactByteSource):
     def read_artifact(self, artifact: MigrationArtifactDescriptor) -> bytes:
         relative = artifact.declared_relative_path
         normalized = relative.replace("\\", "/")
-        if normalized.startswith("/") or ".." in normalized.split("/"):
+        if (
+            normalized.startswith("/")
+            or (len(normalized) >= 2 and normalized[1] == ":")
+            or ".." in normalized.split("/")
+        ):
             raise MigrationArtifactSourceError("declared path is not a safe relative path")
         target = (self._root / normalized).resolve()
         try:
@@ -405,8 +409,11 @@ def _ordered_message_nodes(
 ) -> list[tuple[str, dict[str, Any]]]:
     """Return ``(node_id, node)`` pairs in a stable, insertion-order-independent order.
 
-    Roots (nodes with no in-mapping parent) are visited first, then children, each
-    level ordered by ``(message create_time, node_id)``. A ``visited`` set makes the
+    Explicit roots (nodes whose parent is ``None``) are visited first, then only
+    parent-consistent child edges, each level ordered by
+    ``(message create_time, node_id)``. A missing parent is not promoted to a root,
+    and a child reference cannot override the child's own parent declaration, so
+    malformed input cannot manufacture ancestry. A ``visited`` set makes the
     traversal safe against a hostile cyclic mapping. The order does not depend on
     the order the mapping dict happened to enumerate, satisfying the determinism
     guarantee for semantically-equivalent inputs.
@@ -423,8 +430,7 @@ def _ordered_message_nodes(
     roots = [
         node_id
         for node_id, node in mapping.items()
-        if isinstance(node, dict)
-        and (node.get("parent") is None or node.get("parent") not in mapping)
+        if isinstance(node, dict) and node.get("parent") is None
     ]
     # Reverse-sorted onto a stack so popping yields ascending order.
     stack = sorted(roots, key=sort_key, reverse=True)
@@ -440,7 +446,9 @@ def _ordered_message_nodes(
         children = [
             child
             for child in (node.get("children") or [])
-            if isinstance(child, str) and child in mapping
+            if isinstance(child, str)
+            and isinstance(mapping.get(child), dict)
+            and mapping[child].get("parent") == node_id
         ]
         for child in sorted(children, key=sort_key, reverse=True):
             stack.append(child)
@@ -588,7 +596,17 @@ def _parse_conversations_bytes(
             counts.malformed_conversations += 1
             continue
 
-        for node_id, node in _ordered_message_nodes(mapping):
+        ordered_nodes = _ordered_message_nodes(mapping)
+        reached_node_ids = {node_id for node_id, _node in ordered_nodes}
+        counts.malformed_messages += sum(
+            1
+            for node_id, node in mapping.items()
+            if node_id not in reached_node_ids
+            and isinstance(node, dict)
+            and node.get("message") is not None
+        )
+
+        for node_id, node in ordered_nodes:
             message = node.get("message")
             if message is None:
                 # Root/placeholder nodes carry no message; skipping is normal and
@@ -652,7 +670,7 @@ def _is_unsafe_member_name(name: str) -> bool:
     normalized = name.replace("\\", "/")
     if normalized.startswith("/"):
         return True
-    if len(normalized) >= 3 and normalized[1] == ":" and normalized[2] == "/":
+    if len(normalized) >= 2 and normalized[1] == ":":
         return True
     segments = normalized.split("/")
     if ".." in segments:

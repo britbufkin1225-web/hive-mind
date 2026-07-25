@@ -515,6 +515,7 @@ def test_unsafe_member_and_special_member_predicates() -> None:
     assert _is_unsafe_member_name("../x")
     assert _is_unsafe_member_name("/abs")
     assert _is_unsafe_member_name("C:/win")
+    assert _is_unsafe_member_name("C:relative")
     assert _is_unsafe_member_name("a\x00b")
     assert not _is_unsafe_member_name("chat/conversations.json")
 
@@ -596,6 +597,66 @@ def test_malformed_message_is_skipped_not_repaired() -> None:
     result = _run(bundle, {"artifact-1": data})
     assert result.candidate_count == 1
     assert MigrationProjectionDiagnosticCode.MALFORMED_MESSAGE.value in _codes(result)
+
+
+def test_orphan_message_is_not_promoted_to_a_root() -> None:
+    conversation = {
+        "conversation_id": "conv-1",
+        "mapping": {
+            "orphan": _message_node(
+                "orphan",
+                "user",
+                "must not become a candidate",
+                parent="missing",
+                children=[],
+            )
+        },
+    }
+    data = _conversations_bytes([conversation])
+
+    result = _run(_bundle([_artifact(data)]), {"artifact-1": data})
+
+    assert result.candidates == []
+    malformed = [
+        diagnostic
+        for diagnostic in result.diagnostics
+        if diagnostic.code is MigrationProjectionDiagnosticCode.MALFORMED_MESSAGE
+    ]
+    assert len(malformed) == 1
+    assert malformed[0].count == 1
+
+
+def test_child_reference_cannot_override_declared_parent() -> None:
+    conversation = {
+        "conversation_id": "conv-1",
+        "mapping": {
+            "root": {
+                "id": "root",
+                "message": None,
+                "parent": None,
+                "children": ["cross-wired"],
+            },
+            "cross-wired": _message_node(
+                "cross-wired",
+                "user",
+                "must not become a candidate",
+                parent="different-parent",
+                children=[],
+            ),
+        },
+    }
+    data = _conversations_bytes([conversation])
+
+    result = _run(_bundle([_artifact(data)]), {"artifact-1": data})
+
+    assert result.candidates == []
+    malformed = [
+        diagnostic
+        for diagnostic in result.diagnostics
+        if diagnostic.code is MigrationProjectionDiagnosticCode.MALFORMED_MESSAGE
+    ]
+    assert len(malformed) == 1
+    assert malformed[0].count == 1
 
 
 def test_missing_timestamp_is_carried_as_none() -> None:
@@ -762,9 +823,16 @@ def test_no_diagnostic_message_echoes_exported_content() -> None:
 
 def test_filesystem_source_rejects_escaping_paths(tmp_path: Path) -> None:
     source = FilesystemArtifactByteSource(tmp_path)
-    artifact = _artifact(b"data", path="../escape.txt")
-    with pytest.raises(parser_module.MigrationArtifactSourceError):
-        source.read_artifact(artifact)
+    paths = (
+        "../escape.txt",
+        r"C:relative.txt",
+        r"C:\absolute.txt",
+        r"\\server\share\x",
+    )
+    for path in paths:
+        artifact = _artifact(b"data", path=path)
+        with pytest.raises(parser_module.MigrationArtifactSourceError):
+            source.read_artifact(artifact)
 
 
 def test_filesystem_source_reads_declared_file(tmp_path: Path) -> None:
