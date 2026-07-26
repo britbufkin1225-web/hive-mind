@@ -20,6 +20,19 @@ The contribution contract governs stable policy. A locked session header narrows
 that policy for one contribution and cannot silently expand it. The checklist
 governs execution gates, and the manifest records what actually happened.
 
+## External capability intake
+
+The vendor-neutral [Agent Capability Intake](../agent-capability-intake.md)
+defines how Hive|Mind identifies, bounds, evaluates, classifies, and periodically
+re-evaluates external agent and developer tools. The first completed intake is
+the [Repomix evaluation](repomix-evaluation.md), which classifies the pinned CLI
+as a subordinate `AGENT_TOOL` for constrained context packaging—not repository
+authority, governance, provenance, memory, validation, or mutation.
+
+These records are documentation and decision support. They do not install,
+authorize, or integrate a capability, and the parallel Phase 40E.6–40E.9 intake
+sequence does not gate Phase 40F–40K.
+
 ## Agent Session Pack
 
 The Agent Session Pack lets a fresh agent — one with no prior ChatGPT
