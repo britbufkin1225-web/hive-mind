@@ -81,6 +81,24 @@ integration. Reviewed persistence and verified import remain the exclusive Phase
 40G boundary. See the
 [Phase 40F plan](planning/phase-40f-export-parser-candidate-projection.md).
 
+### Parallel Agent Capability Intake sequence (referential)
+
+This documentation and architecture sequence evaluates external developer and
+agent mechanisms under Hive|Mind governance:
+
+| Phase | Status | Boundary |
+| --- | --- | --- |
+| Phase 40E.6 — Agent Capability Intake Foundation + Repomix Evaluation | Implemented locally / pending independent audit | Defines the vendor-neutral [capability-intake methodology](agent-capability-intake.md) and classifies pinned Repomix as a bounded `AGENT_TOOL` for context packaging. Documentation only; no installation or integration. |
+| Phase 40E.7 — Anthropic Official Agent Skills Evaluation | Planned | Applies the intake method to official Anthropic Agent Skills. |
+| Phase 40E.8 — Everything Claude Code Mechanism Comparison | Planned | Compares relevant mechanisms under the same evidence and authority boundaries. |
+| Phase 40E.9 — Agent Capability Registry Architecture Planning | Planned | Plans a future registry contract and governance boundary; it does not presume runtime, persistence, API, or UI implementation. |
+
+Phases 40E.6–40E.9 are parallel and referential. They do not replace, delay,
+gate, renumber, or change the Phase 40F–40K Memory Migration / Create Layer
+roadmap. External capabilities remain subordinate to Hive|Mind contracts,
+repository truth, provenance, validation, authorization, Agent Lab governance,
+human review, and merge policy. Phase 36K remains paused and untouched.
+
 ### Phase 40D.5 — Roadmap Reconciliation + Memory Migration Pivot (documentation-only dependency gate, merged)
 
 Phase 40D.5 is a **documentation-only** phase and was the dependency gate for the
