@@ -140,6 +140,24 @@ The record must state the primary classification once, its reasoning, allowed
 uses, prohibited uses, required controls, residual risks, and the authority
 responsible for any later change.
 
+### Lifecycle state
+
+Classification records *what* a capability is. Lifecycle state records *how far*
+it has moved through intake, and the two are independent. These states must
+never collapse into a single boolean such as "available":
+
+`discovered` (identity known) → `evaluated` (evidence recorded, risks
+understood) → `compatible` (judged interoperable in concept or format) →
+`approved` (a human authorized a specific bounded use) → `installed` (present in
+a Hive|Mind-controlled location) → `enabled` (wired so an agent may select it) →
+`executed` (its instructions or scripts have actually run).
+
+Each transition requires its own evidence; none is implied by the one before it.
+Discovery is not trust, evaluation is not approval, approval is not
+installation, and installation is not execution. Official or well-known
+provenance may raise confidence in provenance, but it does not advance a
+capability along these states.
+
 ## Decision gates
 
 Reject or pause the intake when identity or license is unclear; an immutable

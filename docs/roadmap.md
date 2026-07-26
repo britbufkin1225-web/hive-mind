@@ -89,7 +89,7 @@ agent mechanisms under Hive|Mind governance:
 | Phase | Status | Boundary |
 | --- | --- | --- |
 | Phase 40E.6 — Agent Capability Intake Foundation + Repomix Evaluation | Implemented locally / pending independent audit | Defines the vendor-neutral [capability-intake methodology](agent-capability-intake.md) and classifies pinned Repomix as a bounded `AGENT_TOOL` for context packaging. Documentation only; no installation or integration. |
-| Phase 40E.7 — Anthropic Official Agent Skills Evaluation | Planned | Applies the intake method to official Anthropic Agent Skills. |
+| Phase 40E.7 — Anthropic Official Agent Skills Evaluation | Implemented locally / pending independent audit | Applies the intake method to the official [Anthropic Agent Skills](anthropic-agent-skills-evaluation.md) ecosystem (`anthropics/skills`, pinned commit). Records the `SKILL.md` format, mandatory `name`/`description` fields, the per-skill licensing split (most example skills Apache-2.0, `doc-coauthoring` license undetermined at the pinned commit, and `docx`/`pdf`/`pptx`/`xlsx` source-available — do not vendor), and the executable/privileged surface. Recommends **ALIGN** with the standard as a provider-independent description format while rejecting Claude-specific install/execution as a dependency, and adds a reusable capability-lifecycle-state distinction (`discovered`…`executed`) to the intake method. Documentation only; no installation, execution, integration, or vendored code. |
 | Phase 40E.8 — Everything Claude Code Mechanism Comparison | Planned | Compares relevant mechanisms under the same evidence and authority boundaries. |
 | Phase 40E.9 — Agent Capability Registry Architecture Planning | Planned | Plans a future registry contract and governance boundary; it does not presume runtime, persistence, API, or UI implementation. |
 
@@ -758,6 +758,8 @@ not prove live hand-motion feel. No new webcam evidence is claimed here.
 - [Phase 40E.5 Obsidian Agent Skills Evaluation + Contract Alignment](planning/phase-40e-5-obsidian-agent-skills-evaluation.md)
 - [Obsidian Agent Skills Policy](obsidian-agent-skills-policy.md)
 - [Obsidian Format Compatibility Matrix](obsidian-format-compatibility-matrix.md)
+- [Agent Capability Intake method](agent-capability-intake.md)
+- [Anthropic Official Agent Skills Evaluation](anthropic-agent-skills-evaluation.md)
 - [Design-Asset Cohesion Assessment](design-asset-cohesion-assessment.md)
 - [Active Agent Memory + Verification Layer reference](active-agent-memory-verification-layer.md)
 - [Phase 37A Active Agent Memory + Verification Layer Planning](planning/phase-37a-active-agent-memory-verification-layer-planning.md)

@@ -341,6 +341,8 @@ Phases 38A–39D are merged: Agent Lab multi-agent [contribution contracts](docs
 - [Phase 40E.5 Obsidian agent skills evaluation (parallel tooling/reference)](docs/planning/phase-40e-5-obsidian-agent-skills-evaluation.md)
 - [Obsidian agent skills policy](docs/obsidian-agent-skills-policy.md)
 - [Obsidian format compatibility matrix](docs/obsidian-format-compatibility-matrix.md)
+- [Agent capability intake method (parallel tooling/reference)](docs/agent-capability-intake.md)
+- [Anthropic official agent skills evaluation (parallel tooling/reference)](docs/anthropic-agent-skills-evaluation.md)
 - [Design-asset cohesion assessment](docs/design-asset-cohesion-assessment.md)
 - [API contract](docs/api-contract.md)
 - [Active Memory and Verification reference](docs/active-agent-memory-verification-layer.md)
