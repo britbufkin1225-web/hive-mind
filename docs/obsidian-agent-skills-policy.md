@@ -9,6 +9,12 @@ external agent skill for Obsidian formats or tooling.
 [Phase 40E.5 evaluation](planning/phase-40e-5-obsidian-agent-skills-evaluation.md) ·
 [Format compatibility matrix](obsidian-format-compatibility-matrix.md).
 
+This policy classifies use of Obsidian skills only. It grants no repository,
+branch, write, execution, or merge authority. The canonical
+[Agent Lab contribution contract](agent-lab/agent-contribution-contract.md) and
+the active locked session remain authoritative for contribution governance;
+`devdevbuilds` remains the sole human merge gate.
+
 ---
 
 ## 1. Governing principle
@@ -81,7 +87,7 @@ An agent **must not**, in any Hive|Mind phase not explicitly authorizing it:
 
 | Skill | Status | Rules |
 | --- | --- | --- |
-| **obsidian-markdown** | Approved (reference + authoring) | Use to author/validate OFM. Do **not** assume Hive|Mind's parser ingests every documented construct — it reads a deliberate subset (frontmatter subset, tags, wikilinks, markdown links, headings). Embeds, callouts, block refs, comments, highlights, Mermaid, LaTeX are currently ignored body text. |
+| **obsidian-markdown** | Approved (reference + authoring) | Use to author/validate OFM. Do **not** assume Hive|Mind's parser semantically ingests every documented construct — it extracts a frontmatter subset, tags, wikilink targets, markdown-link targets, and the first ATX heading only as a title fallback. It has no dedicated embed, callout, block-ref, comment, highlight, Mermaid, or LaTeX semantics; however, an Obsidian embed target still matches the current wikilink extractor, and a Markdown image target still matches the markdown-link extractor. |
 | **obsidian-bases** | Reference only | Reference `.base` YAML for future design discussion. No `.base` producer/consumer may be added without an approved phase. |
 | **json-canvas** | Reference only | Use for **design/documentation** of a future graph↔Canvas bridge. Do **not** implement export or import in an unauthorized phase. Inbound Canvas ids are provenance only and must never become Hive|Mind ids. |
 | **obsidian-cli** | Approved — developer/operator only | See §4.1. **Never** wired into the backend, API, or any request path. |

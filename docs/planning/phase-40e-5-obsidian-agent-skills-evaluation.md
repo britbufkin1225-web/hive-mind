@@ -75,7 +75,10 @@ This section records what actually exists in source, not README prose.
   extracting a small normalized shape: title (frontmatter → first heading →
   fallback), a safe YAML-frontmatter subset (scalars, inline lists, block lists),
   tags (frontmatter + inline `#tag`), wikilinks (`[[Target|Alias]]`, `[[Target#Heading]]`
-  reduced to the target), and markdown links `[text](url)`. No third-party
+  reduced to the target), and markdown-link targets `[text](url)`. It has no
+  dedicated semantics for embeds, callouts, block refs, comments, highlights,
+  Mermaid, or LaTeX, but `![[embed]]` still matches the wikilink extractor and
+  `![alt](url)` still matches the markdown-link extractor. No third-party
   markdown/YAML dependency is used.
 - `apps/backend/app/services/obsidian_import.py` — `import_vault()`, a one-shot,
   **read-only-over-the-vault** import into the graph `HiveStore` and Source Registry.
@@ -120,8 +123,9 @@ never verification, activation, or persistence. See
   file. There is no watcher and no write-back.
 - **Deterministic, dependency-free parsing.** No third-party markdown/YAML/canvas
   parser is a runtime dependency.
-- **Stable, content-derived identity.** Node and derived-edge ids are hashes of
-  stable inputs; re-runs are idempotent.
+- **Stable, derived identity.** Obsidian node ids are hashes of stable
+  vault-relative paths, while derived-edge ids hash stable endpoint/relationship
+  inputs; re-runs address the same records.
 - **Projection, not mutation.** The graph builder derives; it does not persist
   derived edges.
 - **Explicit, one-shot, local, single-user.** No background sync, no network fetch,
@@ -162,15 +166,17 @@ block refs), embeds (`![[...]]`), callouts (`> [!type]`), YAML properties/frontm
 (`title`, `date`, `tags`, `aliases`), inline/nested tags (`#tag`, `#nested/tag`),
 comments (`%% %%`), highlights (`==text==`), LaTeX, Mermaid, footnotes.
 
-- **Compatibility:** Strong overlap with what Hive|Mind's parser already reads
-  (frontmatter, tags, wikilinks, markdown links, headings). Useful as a reference so
-  agents author/repair fixtures and docs in a form the existing parser handles
-  cleanly.
+- **Compatibility:** Strong overlap with what Hive|Mind's parser already extracts
+  (frontmatter subset, tags, wikilink targets, markdown-link targets, and the first
+  ATX heading as a title fallback). Useful as a reference so agents author/repair
+  fixtures and docs in a form the existing parser handles cleanly.
 - **Conflict/duplication:** The skill covers **more** syntax than the Hive|Mind
   parser extracts (embeds, callouts, block refs, comments, highlights, Mermaid,
   LaTeX). That is a **known parser scope gap**, not a defect — the parser is
   intentionally minimal. The risk is an agent assuming Hive|Mind *ingests* those
-  constructs. It does not: today they are body text the parser ignores.
+  constructs. It has no dedicated semantics for them; however, an embed target is
+  still captured by the wikilink extractor and a Markdown image target by the
+  markdown-link extractor.
 - **Decision:** Approve as reference + authoring aid. Do **not** treat it as a spec
   Hive|Mind must implement. Record the parser scope gaps as deferred (see §9).
 
@@ -194,7 +200,9 @@ JSON Canvas 1.0: `.canvas` files with `nodes` (`text`/`file`/`link`/`group`) and
 `edges`. See the dedicated assessment in §6.
 
 - **Compatibility:** The clearest structural match to the Knowledge Graph
-  (nodes/edges/groups). A credible **future** bidirectional bridge.
+  (nodes and edges). Canvas groups are visual containers; Hive|Mind has no
+  graph-group contract today. This remains a credible **future** bidirectional
+  bridge.
 - **Conflict/duplication:** JSON Canvas ids are "unique 16-char hex" with no defined
   stability/provenance semantics; Hive|Mind ids are deterministic content/path
   hashes. Naively adopting Canvas identity would **break** Hive|Mind's idempotence
@@ -240,7 +248,7 @@ npm package `defuddle` (`npm install -g defuddle`) that fetches a URL over the
 
 | Theme | Finding |
 | --- | --- |
-| Markdown syntax | Upstream documents a **superset** of what the Hive|Mind parser extracts. Alignment is good for authoring; the extra constructs are a documented deferred scope gap, not a contract conflict. |
+| Markdown syntax | Upstream documents a **superset** of what the Hive|Mind parser extracts. Alignment is good for authoring; unsupported semantics are a documented deferred scope gap, not a contract conflict. Embed targets and Markdown image targets are still captured by the parser's broad link regexes. |
 | Frontmatter/properties | Both use YAML frontmatter with `tags`/`title`/`aliases`. Hive|Mind reads a **safe subset**; the skill assumes full YAML. Agents must not assume Hive|Mind ingests arbitrary YAML structures. |
 | Wikilinks | Consistent (`[[Target|Alias]]`, `[[Target#Heading]]`). Hive|Mind resolves them case-insensitively by path/filename/label in the graph builder. Strong alignment. |
 | Identity | **Primary conflict.** Canvas/CLI assume opaque or app-managed ids; Hive|Mind requires deterministic, content/path-derived, idempotent ids with provenance. |
@@ -274,8 +282,10 @@ Obsidian Canvas
 - **Edge mapping:** each `HiveGraphEdge` (including derived `references` edges) → a
   Canvas `edge` with `fromNode`/`toNode`. Relationship type maps to `label` and/or
   `color`; direction maps to `toEnd: arrow`.
-- **Group mapping:** graph groupings (e.g., by source, tag, or type) → Canvas `group`
-  nodes. Grouping must be derived deterministically, not authored ad hoc.
+- **Group mapping:** Hive|Mind has no graph-group contract. A future exporter may
+  derive optional visual Canvas `group` nodes from existing node fields (for
+  example source, tag, or type), but that is presentation metadata, not graph
+  structure or a knowledge fact, and must be deterministic.
 - **Stable identity concern:** Canvas ids are "unique 16-char hex". A compliant export
   must derive each Canvas id **deterministically** from the stable Hive|Mind id
   (e.g., a hash truncated/encoded to 16 hex chars) with explicit collision handling,
@@ -313,8 +323,10 @@ Hive|Mind Knowledge Graph
   authoritative structure.
 - **Stable identity concern:** inbound Canvas ids are **untrusted** and must not
   become Hive|Mind ids. The parser derives its own deterministic candidate ids
-  (content-hash of the normalized relationship) and records the source Canvas id as
-  provenance only.
+  from normalized semantics plus stable source-artifact identity and a deterministic
+  occurrence discriminator. Source Canvas-local ids are recorded as provenance only,
+  never used as canonical Hive|Mind identity; two duplicate semantic mappings must
+  remain separately reviewable rather than collapsing accidentally.
 - **Provenance:** every candidate records that it originated from a specific Canvas
   file (path + source node/edge ids) so review is auditable.
 - **Import/export boundary:** the parser is byte-in / candidate-out. It **persists
@@ -323,6 +335,11 @@ Hive|Mind Knowledge Graph
 - **Mutation safety:** parsing a Canvas never mutates the Canvas, the store, or the
   graph. It fails closed on malformed input (bounded, typed errors), following the
   vault-scanner/parser precedent.
+- **Unknown/unsupported constructs:** a future parser must apply an explicit,
+  versioned policy. Unknown fields and unsupported node/edge constructs are either
+  retained as bounded provenance for review or rejected with typed diagnostics;
+  they are never silently promoted to knowledge, silently discarded in a claimed
+  lossless round-trip, or allowed to drive graph action.
 - **Round-trip risks:** export→edit→import can drift (layout coordinates carry no
   meaning, ids may be regenerated by Obsidian, users may hand-edit). The design must
   treat inbound Canvas as **candidates requiring review**, never as a source of truth

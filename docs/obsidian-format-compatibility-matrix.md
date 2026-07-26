@@ -31,7 +31,7 @@ Hive|Mind runtime, and no dependency is added or vendored.
 | --- | --- |
 | Upstream purpose | Create/edit Obsidian Flavored Markdown: wikilinks, embeds `![[...]]`, callouts `> [!type]`, YAML properties, tags `#tag`/`#nested/tag`, comments `%%…%%`, highlights, LaTeX, Mermaid, footnotes. |
 | Relevant Hive|Mind system | `apps/backend/app/adapters/markdown_parser.py` (dependency-free parser) and the Obsidian import pipeline (`vault_scanner.py`, `obsidian_import.py`). |
-| Compatibility | **High for the subset Hive|Mind reads** (frontmatter subset, tags, wikilinks, markdown links, headings). Upstream documents a **superset**; the extra constructs are ignored body text today. |
+| Compatibility | **High for the subset Hive|Mind extracts** (frontmatter subset, tags, wikilink targets, markdown-link targets, and the first ATX heading as a title fallback). Upstream documents a **superset**. Hive|Mind has no dedicated semantics for the other constructs, although embed targets match its wikilink extractor and Markdown image targets match its markdown-link extractor. |
 | Adoption decision | **ADOPT FOR AGENT TOOLING** — reference + authoring/validation aid. |
 | Runtime status | NONE. |
 | Future opportunity | Optional, explicitly-scoped parser extensions (embeds, callouts, block refs) if a product need appears. |
@@ -54,12 +54,12 @@ Hive|Mind runtime, and no dependency is added or vendored.
 | Field | Value |
 | --- | --- |
 | Upstream purpose | JSON Canvas 1.0 `.canvas` files: `nodes` (`text`/`file`/`link`/`group`) + `edges`; ids are "unique 16-char hex"; colors `1`–`6` or hex. |
-| Relevant Hive|Mind system | `apps/backend/app/services/knowledge_graph.py` (nodes/edges/groups projection) and `HiveGraphNode`/`HiveGraphEdge` contracts. |
+| Relevant Hive|Mind system | `apps/backend/app/services/knowledge_graph.py` (nodes/edges projection) and `HiveGraphNode`/`HiveGraphEdge` contracts. Hive|Mind has no graph-group contract today. |
 | Compatibility | **Structurally the closest match** to the Knowledge Graph. Credible **future bidirectional bridge**. |
 | Adoption decision | **REFERENCE ONLY** now (strong future bridge; full design in the evaluation §6). |
 | Runtime status | NONE. |
 | Future opportunity | Deterministic **graph → Canvas** export projection; safe **Canvas → candidate relationships** parser under the candidate/review boundary. |
-| Risks / constraints | Canvas ids carry no stability/provenance semantics — they must never become Hive|Mind ids; layout coordinates/colors are not knowledge; export must project (never write back), import must produce review-gated candidates; round-trips can drift. |
+| Risks / constraints | Canvas ids carry no stability/provenance semantics — they must never become Hive|Mind ids; layout coordinates/colors/groups are not knowledge; export must project (never write back), import must produce review-gated candidates; unknown fields and unsupported constructs must be preserved as bounded provenance or rejected explicitly, never silently promoted or discarded; duplicate semantic mappings must remain distinguishable for review; round-trips can drift. |
 
 ### obsidian-cli
 
