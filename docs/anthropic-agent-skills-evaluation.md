@@ -120,7 +120,8 @@ Licensing is **per skill**, and the repository deliberately mixes two regimes
 
 | Skill set | Skills | Declared license | Import disposition |
 | --- | --- | --- | --- |
-| Example / general skills | `algorithmic-art`, `brand-guidelines`, `canvas-design`, `claude-api`, `doc-coauthoring`, `frontend-design`, `internal-comms`, `mcp-builder`, `skill-creator`, `slack-gif-creator`, `theme-factory`, `web-artifacts-builder`, `webapp-testing` | **Apache-2.0** (per-skill `LICENSE.txt`; `SKILL.md` may note `license: Complete terms in LICENSE.txt`) | Open source; may be *referenced*. Any future reuse still requires an intake decision and Apache-2.0 attribution — not automatic. |
+| Apache-licensed example / general skills | `algorithmic-art`, `brand-guidelines`, `canvas-design`, `claude-api`, `frontend-design`, `internal-comms`, `mcp-builder`, `skill-creator`, `slack-gif-creator`, `theme-factory`, `web-artifacts-builder`, `webapp-testing` | **Apache-2.0** (per-skill `LICENSE.txt`; `SKILL.md` may note `license: Complete terms in LICENSE.txt`) | Open source; may be *referenced*. Any future reuse still requires an intake decision and Apache-2.0 attribution — not automatic. |
+| Example skill without a declared license | `doc-coauthoring` | **Undetermined at the pinned commit.** Its `SKILL.md` has no `license` field and its directory has no `LICENSE.txt`; neither the repository root nor `THIRD_PARTY_NOTICES.md` supplies a license for the skill. | Reference as external evidence only. Do not copy, vendor, derive from, or characterize as open source unless Anthropic supplies applicable license terms. |
 | Document skills | `docx`, `pdf`, `pptx`, `xlsx` | **Proprietary / source-available.** `SKILL.md` declares `license: Proprietary. LICENSE.txt has complete terms`; `LICENSE.txt` reads "© 2025 Anthropic, PBC. All rights reserved" and **forbids** extracting the materials from the Services, retaining copies outside the Services, and creating derivative works. | **Do not vendor, copy, or derive from.** Reference only, subject to Anthropic's terms. |
 
 Do **not** categorize the whole `anthropics/skills` repository under one
@@ -219,7 +220,8 @@ Nothing is `ADOPT` merely because Anthropic publishes it.
 | Agent Skills standard / `SKILL.md` format | Yes | Public spec (agentskills.io) | No (format) | — | — | — | Yes (as a description format) | Yes | **ALIGN** |
 | Progressive-disclosure loading model | Yes | Spec concept | No | — | — | — | Yes (concept) | Yes | **ALIGN** |
 | `name`/`description`/`license`/`metadata` provenance fields | Yes | Spec concept | No | — | — | — | Yes (concept) | Yes | **ALIGN** |
-| Example skills (Apache-2.0) | Yes | Apache-2.0 | Yes (bundled scripts) | Possible | Possible | Possible | No (reference only) | Maybe (bounded `AGENT_TOOL` after intake) | **REFERENCE** |
+| Apache-licensed example skills | Yes | Apache-2.0 per skill | Yes (some bundle scripts) | Possible | Possible | Possible | No (reference only) | Maybe (bounded `AGENT_TOOL` after intake) | **REFERENCE** |
+| `doc-coauthoring` example skill | Yes | Undetermined at pinned commit | No bundled script | Instruction-directed | Possible indirectly | Possible indirectly | No (reference only) | Only after license clarification and bounded intake | **REFERENCE** (no copy/derive) |
 | Document skills (`docx`/`pdf`/`pptx`/`xlsx`) | Yes | Proprietary / source-available | Yes | Possible | Possible | Possible | No | No (do-not-vendor) | **REFERENCE** (no copy/derive) |
 | `allowed-tools` (experimental) | Yes | Spec concept | Enables tools | Possible | Possible | Possible | No | Maybe | **DEFER** |
 | Claude Code plugin marketplace / install path | Yes | — | Yes (install/execute) | Yes | Yes | Yes | No | No (provider lock-in) | **REJECT** as a dependency |
