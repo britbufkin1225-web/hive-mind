@@ -64,7 +64,7 @@ The load-bearing structural decisions:
 
 Phase 40F stops at candidates. It persists nothing, inserts nothing into Active
 Memory, activates nothing, and confirms nothing. Reviewed persistence is the
-exclusive Phase 40G boundary, and :class:`MemoryMigrationProjectionResult` pins
+exclusive Phase 40H boundary, and :class:`MemoryMigrationProjectionResult` pins
 ``persisted`` and ``imported`` to ``False`` and rejects being turned on.
 """
 
@@ -732,7 +732,7 @@ class MemoryMigrationCandidate(_ProjectionModel):
     * ``represents_active_memory`` is ``False`` — a candidate never stands in for
       an approved record;
     * ``human_review_required`` is ``True``;
-    * ``persistable`` is ``False`` — Phase 40G is the exclusive persistence
+    * ``persistable`` is ``False`` — Phase 40H is the exclusive persistence
       boundary.
 
     No caller can override these. A candidate is emphatically **not** a
@@ -820,7 +820,7 @@ class MemoryMigrationCandidate(_ProjectionModel):
             raise ValueError("human_review_required must remain True")
         if self.persistable:
             raise ValueError(
-                "persistable must remain False; Phase 40G is the exclusive "
+                "persistable must remain False; Phase 40H is the exclusive "
                 "reviewed-persistence boundary"
             )
         if (
@@ -1036,7 +1036,7 @@ class MemoryMigrationProjectionResult(_ProjectionModel):
         if self.imported:
             raise ValueError(
                 "imported must remain False; importing into Active Memory is the "
-                "exclusive Phase 40G boundary"
+                "exclusive Phase 40H boundary"
             )
         if not self.gate_permitted and (
             self.candidates or self.integrity_results or self.artifacts_read
