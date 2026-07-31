@@ -6,7 +6,7 @@
 (merged, `b1dda05`, PR #189).
 **Boundary:** Phase 40F reads user-controlled artifact bytes and produces
 **candidates**. It persists nothing and imports nothing — reviewed persistence and
-verified import are the exclusive Phase 40G boundary.
+verified import are the exclusive Phase 40H boundary.
 
 Phase 40F is the first memory-migration phase permitted to open a user-controlled
 artifact and read its bytes. Everything before it judged *declarations*: Phase 40E
@@ -221,14 +221,14 @@ from free-form conversation text would be exactly the silent authority escalatio
 the whole migration track forbids. The parser interprets structure deterministically
 and stops; a human decides what any candidate means in Phase 40G.
 
-## Explicit Phase 40G boundary
+## Explicit Phase 40H boundary
 
 Phase 40F ends at candidates returned to the caller. It does not persist a
 candidate, insert one into any store, mark one reviewed/approved/verified/
 human-confirmed, activate one, run contradiction or active-state calculation over
 one, or mutate the Source Registry, Knowledge Graph, repository, or Git. The
 projection result pins `persisted` and `imported` to `False` and rejects being
-turned on. Reviewed persistence and verified import are the exclusive Phase 40G
+turned on. Reviewed persistence and verified import are the exclusive Phase 40H
 boundary.
 
 ## Validation performed

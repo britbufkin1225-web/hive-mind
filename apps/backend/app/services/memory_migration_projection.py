@@ -14,7 +14,7 @@ records. It does **nothing else** and reaches nothing else:
   all byte access before an item ever reached here;
 * it reads no clock, generates no random value, makes no network or Git call, and
   inspects no environment;
-* it persists nothing and imports nothing — Phase 40G owns reviewed persistence.
+* it persists nothing and imports nothing — Phase 40H owns reviewed persistence.
 
 That purity is enforced structurally by
 ``tests/test_memory_migration_projection.py`` (an AST check over this module),
