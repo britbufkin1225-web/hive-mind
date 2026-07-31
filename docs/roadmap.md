@@ -77,8 +77,9 @@ nothing into Active Memory, verifies no claim, confirms nothing, and activates
 nothing** — byte-integrity means only that the bytes are the declared bytes, never
 that their contents are true. It adds no endpoint, router, frontend, Source
 Registry/graph/repository/Git mutation, network access, new dependency, or AI/LLM
-integration. Reviewed persistence and verified import remain the exclusive Phase
-40G boundary. See the
+integration. A read-only Phase 40G dry-run assessment now gates the projected
+candidate set, and reviewed persistence and verified import remain the exclusive
+Phase 40H boundary (whose durable medium is still undecided). See the
 [Phase 40F plan](planning/phase-40f-export-parser-candidate-projection.md).
 
 ### Parallel Agent Capability Intake sequence (referential)
@@ -94,7 +95,7 @@ agent mechanisms under Hive|Mind governance:
 | Phase 40E.9 — Agent Capability Registry Architecture Planning | Planned | Plans a future registry contract and governance boundary; it does not presume runtime, persistence, API, or UI implementation. |
 
 Phases 40E.6–40E.9 are parallel and referential. They do not replace, delay,
-gate, renumber, or change the Phase 40F–40K Memory Migration / Create Layer
+gate, renumber, or change the Phase 40F–40L Memory Migration / Create Layer
 roadmap. External capabilities remain subordinate to Hive|Mind contracts,
 repository truth, provenance, validation, authorization, Agent Lab governance,
 human review, and merge policy. Phase 36K remains paused and untouched.
@@ -105,7 +106,7 @@ Phase 40D.5 is a **documentation-only** phase and was the dependency gate for th
 track. It changes no backend or frontend code, contract, schema, API,
 dependency, asset, or test. It records one decision: **memory migration now
 precedes Grounded Synthesis production**, and reconciles this active roadmap to a
-single authoritative Phase 40D.5–40K sequence (see the
+single authoritative Phase 40D.5–40L sequence (see the
 [Grounded Synthesis + Memory Migration Track](#grounded-synthesis--memory-migration-track-planned)
 below).
 
@@ -117,7 +118,7 @@ base safely is a prerequisite to production, not a follow-on. The previously
 documented active sequence (a provisional Phase 40E "Grounded Synthesis API and
 Read-Only Workspace", Phase 40F "Review, Approval, Export, and Agent Handoff
 Workflow", Phase 40G "End-to-End QA") is **superseded**: that work is not
-cancelled, only renumbered later (Phase 40I, 40J, 40K) so migration can land
+cancelled, only renumbered later (Phase 40J, 40K, 40L) so migration can land
 first.
 
 **Memory migration, ChatGPT export parsing, candidate projection, reviewed
@@ -435,7 +436,7 @@ prerequisite to production, not a follow-on. The previously documented active
 sequence (a provisional Phase 40E "Grounded Synthesis API and Read-Only
 Workspace", Phase 40F "Review, Approval, Export, and Agent Handoff Workflow",
 Phase 40G "End-to-End QA") is **superseded and renumbered** later in the sequence
-(Phase 40I, 40J, 40K); that work is not cancelled.
+(Phase 40J, 40K, 40L); that work is not cancelled.
 
 Hive|Mind claims **no direct access to private ChatGPT system memory**. Migration
 relies on **user-controlled exports or curated bundles** the user provides
@@ -469,8 +470,11 @@ verification, activation, human confirmation, or persistence: byte-integrity mea
 only that these bytes are the declared bytes, never that the statements inside them
 are true. Reviewed persistence, verified import, the Grounded Synthesis producer,
 the read-only API and workspace, and the review/export/handoff workflow are all
-still **planned**, and no candidate is persisted or imported into Active Memory
-before Phase 40G.
+still **planned**. Phase 40G adds a deterministic, read-only **dry-run assessment**
+over the complete projected candidate set — grouping duplicates, flagging source
+conflicts, and deriving a review-readiness verdict without persisting or mutating
+anything — and no candidate is persisted or imported into Active Memory before
+Phase 40H, whose durable persistence medium remains deliberately undecided.
 
 | Phase | Status | Purpose |
 | --- | --- | --- |
@@ -478,14 +482,15 @@ before Phase 40G.
 | Phase 40B — Grounded Synthesis Contract Types + Schema Foundation | Merged | Introduces the `grounded-synthesis.v1` backend Pydantic contract family: schema version, synthesis modes, request, grounding evidence references, constraints, context packet, provenance, proposed artifact, validation result, and readiness vocabulary. Contracts only — no service, endpoint, persistence, frontend, or runtime behavior. The frontend TypeScript mirror and parity test proposed in 40A were out of scope for this phase and remain available to a later one. |
 | Phase 40C — Grounding Context Assembly Service MVP | Merged | Backend-only, deterministic, read-only `GroundingContextAssemblyService` assembling five existing evidence families (Active Memory evidence records, Repository Observer observations, repository drift findings, contradiction records, Active Memory records) into valid Phase 40B `SynthesisContextPacket` records: explicit eligibility filtering, canonical-identity deduplication with documented winner precedence, a criticality-first stable ranking ending on a content-derived identifier, per-family and packet bounds with represented truncation and fail-closed raw-candidate overflow, surfaced-never-resolved conflicts, deterministic readiness, and bounded secret-free diagnostics. Contracts reused unchanged. No endpoint, persistence, cache, packet history, frontend, dependency, mutation, or AI/LLM/synthesis generation. |
 | Phase 40D — Synthesis Evidence, Provenance, and Validation Guardrails | Merged | Backend-only, deterministic, read-only `SynthesisContextPacketValidator` over assembled Phase 40C packets: canonical evidence identity guardrails reusing the assembler's own identity rule, provenance integrity and resolution checking, fail-closed repository/source safety, packet consistency recomputed from actual contents (evidence and coverage totals, conflict totals, readiness reasons, canonical ordering, and re-derived content-addressed packet identity), bounds and truncation validation that never clips, blocking and non-blocking diagnostics with severity fixed by the code, and an explicit synthesis-readiness determination projected onto the canonical Phase 40B `SynthesisValidationResult`. Phase 40B and 40C contracts reused unchanged. No endpoint, persistence, frontend, dependency, mutation, or AI/LLM/synthesis generation — Hive\|Mind still does not generate Grounded Synthesis output. Deterministic policy over a *producer*, confidence/freshness indicators, and prohibited-assumption enforcement remain future work, because no producer exists yet. |
-| Phase 40D.5 — Roadmap Reconciliation + Memory Migration Pivot | Documentation-only, implemented locally / pending independent audit | Documentation-only dependency gate. Records the decision to sequence memory migration ahead of Grounded Synthesis production and reconciles this roadmap, the README status, and the architecture note to the authoritative Phase 40D.5–40K sequence. No runtime, contract, schema, API, dependency, asset, or test change. See the [decision record](planning/phase-40d-5-roadmap-reconciliation-memory-migration-pivot.md). |
+| Phase 40D.5 — Roadmap Reconciliation + Memory Migration Pivot | Documentation-only, implemented locally / pending independent audit | Documentation-only dependency gate. Records the decision to sequence memory migration ahead of Grounded Synthesis production and reconciles this roadmap, the README status, and the architecture note to the authoritative Phase 40D.5–40L sequence. No runtime, contract, schema, API, dependency, asset, or test change. See the [decision record](planning/phase-40d-5-roadmap-reconciliation-memory-migration-pivot.md). |
 | Phase 40E — Memory Migration Contract + Intake Safety Foundation | Merged | Backend-only `memory-migration.v1` contract family (declared artifact/bundle descriptors, a dedicated strict pre-ingestion provenance contract, declared-and-explicitly-unverified digests, a pinned candidate-memory ceiling) plus the deterministic, pure, read-only `MemoryMigrationIntakeAssessor` over **declared metadata only**: fail-closed custody, path, entry-type, format/container, digest and bounds allowlists; declared totals recomputed and reconciled; content-derived bundle/artifact fingerprints; a derived `declared → ready_for_parsing / blocked / quarantined` status a caller cannot assert; and bounded, value-free diagnostics. Nothing is parsed, extracted, repaired, clipped, or read — no byte, filesystem, archive, Git, or network access. No endpoint, router, frontend, store, graph, persistence, dependency, or AI/LLM integration. See the [Phase 40E record](planning/phase-40e-memory-migration-contract-intake-safety-foundation.md). |
 | Phase 40F — Export Parser + Candidate Projection | Implemented locally / pending independent audit | Backend-only export **parser** (`memory_migration_parser.py`, the only Phase 40F component permitted byte access) and **pure projector** (`memory_migration_projection.py`), with the candidate/result contracts in `models/memory_migration_projection.py`. Reuses the exact Phase 40E `assessment.permits_parsing(bundle_fingerprint=…)` gate — no byte is read before it passes and a stale/mismatched assessment authorizes nothing. Verifies actual byte integrity (recomputed accepted digest and size) against the declaration before trusting bytes, without mutating the Phase 40E declared-digest flag; parses `chatgpt_export_archive` (defensive in-memory ZIP, never extracted to disk), `chatgpt_conversations_json`, `curated_json_bundle` (versioned, `extra="forbid"`), `curated_markdown_bundle`, and `plain_text_document` deterministically; and projects only user-visible `user`/`assistant` and document content into **inactive, unverified, human-review-required, non-persistable, provenance-linked candidates** structurally bound by `CANDIDATE_MEMORY_POLICY`. Deterministic content-derived identity and canonical ordering; bounded content with deterministic chunking; honest content/count overflow; a closed, code-derived-severity diagnostic taxonomy carrying no raw exported content. No persistence, Active Memory insertion, verified/human-confirmed candidate, activation, endpoint, router, frontend, Source Registry/graph/repository/Git mutation, network, new dependency, or AI/LLM integration. See the [Phase 40F plan](planning/phase-40f-export-parser-candidate-projection.md). |
-| Phase 40G — Reviewed Persistence + Verified Import | Planned | First phase that may persist migrated candidates, and only for candidates a human has reviewed. Verified import is human-gated; imported material is never treated as verified truth automatically. |
-| Phase 40H — Grounded Synthesis Producer MVP | Planned | The first deterministic synthesis *producer* over grounded, validated context (now including reviewed migrated evidence). Outputs are proposals requiring human review; nothing is auto-applied. |
-| Phase 40I — Grounded Synthesis API + Read-Only Workspace | Planned | Thin read-only API and contextual read-only frontend workspace for inspecting synthesis results. No apply/commit/merge/push controls. (Supersedes the provisional Phase 40E numbering.) |
-| Phase 40J — Review, Approval, Export, and Agent Handoff Workflow | Planned | Human review/approval, export, and handoff to an external agent or implementation workflow aligned with Agent Lab contribution contracts. Repository effects remain external and human-gated. (Supersedes the provisional Phase 40F numbering.) |
-| Phase 40K — End-to-End QA, Operator Documentation, and Release Readiness | Planned | End-to-end QA over the deterministic synthesis and migration paths, operator documentation, and release readiness. (Supersedes the provisional Phase 40G numbering.) |
+| Phase 40G — Migration Candidate Assessment (Dry-Run) | Implemented locally / pending independent audit | Backend-only deterministic, pure, read-only `MemoryMigrationCandidateAssessor` over a *complete* Phase 40F candidate set plus its projection diagnostics, producing a passive `MigrationCandidateAssessmentReport`: exact duplicates grouped and counted (never removed), conflicting source identities flagged as blocking, ambiguous source ordering and empty/degenerate candidates noted as advisory, unresolved Phase 40F errors carried as blocking and non-error overflow/truncation carried as advisory with original severity preserved, bounded aggregate coverage by the closed role/source-type vocabularies, a content-addressed tamper-evident report identity, and a derived `ready_for_review` / `review_with_warnings` / `blocked` verdict that fails closed. Phase 40F contracts reused unchanged. Nothing is persisted, imported, verified, approved, activated, ranked, deleted, or mutated; no endpoint, router, frontend, persistence, database, Active Memory, Grounded Synthesis runtime, graph, dependency, or AI/LLM integration; no clock, randomness, or I/O (AST-enforced). See the [Phase 40G plan](planning/phase-40g-migration-candidate-assessment-dry-run.md). |
+| Phase 40H — Reviewed Persistence + Verified Import | Planned — blocked on an explicit persistence-medium decision and later authorization | First phase that may persist migrated candidates, and only for candidates a human has reviewed. The durable persistence medium is deliberately **undecided and unimplemented**; no candidate is persisted or imported today. Verified import is human-gated; imported material is never treated as verified truth automatically. |
+| Phase 40I — Grounded Synthesis Producer MVP | Planned | The first deterministic synthesis *producer* over grounded, validated context (now including reviewed migrated evidence). Outputs are proposals requiring human review; nothing is auto-applied. |
+| Phase 40J — Grounded Synthesis API + Read-Only Workspace | Planned | Thin read-only API and contextual read-only frontend workspace for inspecting synthesis results. No apply/commit/merge/push controls. (Supersedes the provisional Phase 40E numbering.) |
+| Phase 40K — Review, Approval, Export, and Agent Handoff Workflow | Planned | Human review/approval, export, and handoff to an external agent or implementation workflow aligned with Agent Lab contribution contracts. Repository effects remain external and human-gated. (Supersedes the provisional Phase 40F numbering.) |
+| Phase 40L — End-to-End QA, Operator Documentation, and Release Readiness | Planned | End-to-end QA over the deterministic synthesis and migration paths, operator documentation, and release readiness. (Supersedes the provisional Phase 40G numbering.) |
 
 Phase names past 40A may be refined by later phases with justification. Every
 Grounded Synthesis phase preserves the mandatory principles: evidence before
