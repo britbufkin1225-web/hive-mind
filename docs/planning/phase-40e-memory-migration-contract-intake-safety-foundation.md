@@ -84,7 +84,7 @@ declared → ready_for_parsing | blocked | quarantined
 
 There is deliberately no `parsed`, `projected`, `reviewed`, `approved`,
 `persisted`, `verified`, `imported`, or `active` state. Those describe work Phase
-40F and Phase 40G do, and a vocabulary able to express them here would let a
+40F and Phase 40H do, and a vocabulary able to express them here would let a
 declaration claim an outcome no code in this phase produces. A test asserts each
 of those literals raises.
 

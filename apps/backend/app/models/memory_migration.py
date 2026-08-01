@@ -54,7 +54,7 @@ decisions:
   ``declared``, ``ready_for_parsing``, ``blocked``, ``quarantined``. There is
   deliberately no ``parsed``, ``projected``, ``reviewed``, ``approved``,
   ``persisted``, ``verified``, or ``active`` state anywhere in this phase: those
-  describe work Phase 40F and Phase 40G do, and a vocabulary that could express
+  describe work Phase 40F and Phase 40H do, and a vocabulary that could express
   them here would let an intake declaration claim an outcome no code produces.
 * **A bundle cannot declare its own readiness.**
   ``MemoryMigrationBundle.intake_status`` is pinned to ``declared`` and rejects
