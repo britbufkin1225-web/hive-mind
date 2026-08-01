@@ -54,7 +54,7 @@ decisions:
   ``declared``, ``ready_for_parsing``, ``blocked``, ``quarantined``. There is
   deliberately no ``parsed``, ``projected``, ``reviewed``, ``approved``,
   ``persisted``, ``verified``, or ``active`` state anywhere in this phase: those
-  describe work Phase 40F and Phase 40G do, and a vocabulary that could express
+  describe work Phase 40F and Phase 40H do, and a vocabulary that could express
   them here would let an intake declaration claim an outcome no code produces.
 * **A bundle cannot declare its own readiness.**
   ``MemoryMigrationBundle.intake_status`` is pinned to ``declared`` and rejects
@@ -85,8 +85,8 @@ at the model edge would raise an untyped ``ValidationError`` and destroy the ver
 diagnostics the intake boundary exists to produce.
 
 No migration runtime exists after this phase. Declaring a shape is not importing
-anything; nothing here parses, extracts, projects, reviews, persists, or
-verifies — those are Phase 40F and Phase 40G.
+anything; parsing and projection are Phase 40F, assessment is Phase 40G, and
+reviewed persistence and verified import are Phase 40H.
 """
 
 from __future__ import annotations
@@ -221,7 +221,7 @@ class MigrationIntakeStatus(StrEnum):
     Deliberately **absent**: ``parsed``, ``projected``, ``reviewed``,
     ``approved``, ``persisted``, ``verified``, ``imported``, and ``active``.
     Phase 40E cannot reach any of them — parsing is Phase 40F and reviewed
-    persistence is the exclusive Phase 40G boundary — so a vocabulary able to
+    persistence is the exclusive Phase 40H boundary — so a vocabulary able to
     express them would let a declaration claim an outcome no code in this phase
     produces.
     """
@@ -841,7 +841,7 @@ class MemoryMigrationBundle(_MemoryMigrationModel):
     ``is_verified_evidence`` are pinned ``False`` and reject being turned on,
     which is the contract-level statement that raw migration material carries no
     standing whatsoever until it has been parsed (Phase 40F), reviewed, and
-    persisted (Phase 40G). ``read_only`` is likewise pinned: constructing a bundle
+    persisted (Phase 40H). ``read_only`` is likewise pinned: constructing a bundle
     grants no write authority anywhere.
 
     ``intake_status`` is pinned to ``declared``. A caller cannot assert
@@ -1032,7 +1032,7 @@ class CandidateMemoryPolicy(_MemoryMigrationModel):
     * ``represents_active_memory`` is ``False`` — a candidate cannot stand in for
       an approved Active Memory record anywhere it is read;
     * ``human_review_required`` is ``True`` — review is not optional;
-    * ``persistable`` is ``False`` — Phase 40G is the exclusive reviewed-
+    * ``persistable`` is ``False`` — Phase 40H is the exclusive reviewed-
       persistence boundary, and nothing before it may write a candidate anywhere.
 
     The two lifecycle/verification values reuse the stable Active Memory
@@ -1087,7 +1087,7 @@ class CandidateMemoryPolicy(_MemoryMigrationModel):
             raise ValueError("human_review_required must remain True")
         if self.persistable:
             raise ValueError(
-                "persistable must remain False; Phase 40G is the exclusive "
+                "persistable must remain False; Phase 40H is the exclusive "
                 "reviewed-persistence boundary"
             )
         return self

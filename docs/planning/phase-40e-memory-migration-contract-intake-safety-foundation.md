@@ -84,7 +84,7 @@ declared → ready_for_parsing | blocked | quarantined
 
 There is deliberately no `parsed`, `projected`, `reviewed`, `approved`,
 `persisted`, `verified`, `imported`, or `active` state. Those describe work Phase
-40F and Phase 40G do, and a vocabulary able to express them here would let a
+40F and Phase 40H do, and a vocabulary able to express them here would let a
 declaration claim an outcome no code in this phase produces. A test asserts each
 of those literals raises.
 
@@ -230,7 +230,7 @@ cannot quietly widen it:
 | `verification_state` | `unverified` | imported material is never verified truth |
 | `represents_active_memory` | `False` | cannot stand in for an approved record |
 | `human_review_required` | `True` | review is not optional |
-| `persistable` | `False` | Phase 40G is the exclusive persistence boundary |
+| `persistable` | `False` | Phase 40H is the exclusive persistence boundary |
 
 ## 4. The initial assessment-policy bounds
 
@@ -301,7 +301,7 @@ focused tests; this record; narrow README/roadmap reconciliation.
   touch the filesystem, network, or Git.
 - Verify a declared digest, size, path, entry type, or format.
 - Project candidate memory records (Phase 40F).
-- Persist anything or perform verified import (Phase 40G).
+- Persist anything or perform verified import (Phase 40H).
 - Add a router, endpoint, API contract entry, frontend, store, graph, Source
   Registry, dependency, package, or asset change.
 - Claim direct access to private ChatGPT system memory or automatic
@@ -326,14 +326,14 @@ focused tests; this record; narrow README/roadmap reconciliation.
 - The assessor is proven not to mutate the declaration it reads.
 - No declared value appears in any diagnostic message.
 
-## 9. What Phase 40F and Phase 40G must do
+## 9. What Phase 40F and Phase 40H must do
 
 - **Phase 40F** must require a matching `ready_for_parsing` assessment before
   parsing anything — specifically, `assessment.permits_parsing(bundle_fingerprint=
   bundle.fingerprint())` must be `True`. An assessment of a since-edited
   declaration permits nothing, however favourable its verdict. Candidates it
   produces must be constructed under `CANDIDATE_MEMORY_POLICY`.
-- **Phase 40G** remains the exclusive reviewed-persistence boundary. Nothing
+- **Phase 40H** remains the exclusive reviewed-persistence boundary. Nothing
   before it may write a candidate anywhere, and verified import stays human-gated.
 
 ## 10. Data-flow position
@@ -348,7 +348,7 @@ User-controlled ChatGPT export or curated bundle   (user provides; no direct
    Phase 40F — Export Parser + Candidate Projection            (planned)
                 |   requires a matching ready_for_parsing assessment
                 v
-   Phase 40G — Reviewed Persistence + Verified Import          (planned)
+   Phase 40H — Reviewed Persistence + Verified Import          (planned)
 ```
 
 Everything downstream of this phase remains **planned**. No migration capability
