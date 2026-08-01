@@ -185,7 +185,7 @@ def test_intake_lifecycle_has_exactly_the_four_phase_40e_members() -> None:
     ],
 )
 def test_no_post_parsing_lifecycle_state_is_representable(forbidden: str) -> None:
-    # Phase 40F parses and Phase 40G is the exclusive reviewed-persistence
+    # Phase 40F parses and Phase 40H is the exclusive reviewed-persistence
     # boundary. A vocabulary able to name either outcome here would let a
     # declaration claim work no code in this phase performs.
     with pytest.raises(ValueError):
