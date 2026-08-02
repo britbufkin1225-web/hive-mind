@@ -158,23 +158,27 @@ against it** — the ambiguity that led ASH to attempt a full collection.
 
 ### Root-cause reproduction (decisive evidence)
 
-Running `pytest -q` against the extracted packet reproduced ASH's report **exactly**:
+Running `pytest -q` against the extracted packet reproduced the reported failure
+mode and error count:
 
 ```
 !!!!! Interrupted: 7 errors during collection !!!!!
 7 errors in 0.90s        (exit code 2)
 ```
 
-Every one of the seven included test files fails at import because they all reach
-`app.models.memory_migration`, which at line 110 executes:
+The seven failures have more than one import path. One test first reaches the omitted
+`app.adapters` package. Two reach the omitted validation dependency through
+`app.models.grounded_synthesis`, and four reach it through
+`app.models.memory_migration`, whose line 110 executes:
 
 ```python
 from app.services.validation import assert_within_nesting_depth
 ```
 
-`app/services/validation.py` was **not shipped in the packet**. The first shared
-import fails, cascading to all seven test files → 7 collection errors, 0 tests
-collected. This matches ASH's "seven test collection/import errors" precisely.
+`app/services/validation.py` was **not shipped in the packet**. It accounts for six
+of the seven collection failures; the omitted `app.adapters` package accounts for
+the other. The result is 7 collection errors and 0 tests collected, matching the
+reported count without claiming that every traceback is identical.
 
 ## 7. Exact test results (canonical repository, locked baseline)
 
@@ -255,7 +259,12 @@ python -m pytest -q
 ```
 
 Expected result: `1252 passed` in ~12s, exit code 0, 0 collection errors, 0 skips,
-0 warnings. The requirements filenames are literally `requirements.txt` (runtime) and
+0 warnings **in the recorded Python 3.13.13 / pytest 8.4.0 / FastAPI 0.115.12
+environment**. The pass count and exit code were independently reproduced under
+Python 3.12.13 / pytest 8.4.2 / FastAPI 0.139.2; that newer allowed dependency
+resolution emitted one third-party `StarletteDeprecationWarning`. Warning count is
+therefore environment-specific while these dependency ranges remain open. The
+requirements filenames are literally `requirements.txt` (runtime) and
 `requirements-dev.txt` (adds `httpx`, `pytest`, and re-includes runtime via
 `-r requirements.txt`). These instructions were not previously consolidated in one
 reviewer-facing place; the package contract
