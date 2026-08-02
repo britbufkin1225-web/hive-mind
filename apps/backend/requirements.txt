@@ -1,3 +1,8 @@
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.34,<1.0
+# Pydantic v2 is a direct dependency: the backend imports BaseModel, ConfigDict,
+# field_validator, and model_validator across app/models and app/services. It has
+# been resolving transitively through FastAPI; this pin makes the v2 requirement
+# explicit so a fresh clone cannot silently resolve an incompatible major.
+pydantic>=2,<3
 
