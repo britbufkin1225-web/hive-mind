@@ -1,5 +1,13 @@
 # Phase 37A — Active Agent Memory + Verification Layer Planning
 
+> **Phase 40I implementation reconciliation (2026-08-03):** reviewed migration
+> imports use the existing `MemoryRecord`/`InMemoryActiveMemoryStore` boundary
+> unchanged. A mandatory snapshot adapter owns the store's durable serialization;
+> a separate integrity-sealed migration ledger owns only review, authorization,
+> attempt, revocation, receipt, and recovery metadata. A private replacement store
+> is persisted and verified before an O(1) publish-last swap. Imported records are
+> `inactive` and `unverified`; review authorizes import, never truth or activation.
+
 **Phase:** Phase 37A — Active Agent Memory + Verification Layer Planning.
 **Track:** Track 2 — Agent Intelligence Infrastructure (parallel to Track 1 —
 Spatial Interaction, whose active implementation phase remains **Phase 36K —
