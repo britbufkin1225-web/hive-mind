@@ -43,7 +43,7 @@ root only when empty. The authoritative dataset access count was **zero**.
 | Receipt verification | Receipt identity/integrity recomputed successfully; record linked in snapshot | same |
 | Exact replay | Stored receipt returned unchanged; one attempt, receipt, record, and generation remain | same |
 | Rejection/incomplete review | Rejected candidate fails closed; unreviewed candidate is never submitted or imported; payload text is absent from durable snapshot | same |
-| Authorization failures | Trusted-clock expiry, wrong project, changed specification binding, durable revocation, and reuse for another candidate fail closed with no receipt/live record | `test_authorization_boundaries_fail_without_side_effects`; `test_revocation_and_authorization_reuse_fail_closed`; existing Phase 40I contract/service tests cover missing, wrong-scope, and altered immutable authorization construction |
+| Authorization failures | Missing authorization, trusted-clock expiry, wrong project, changed specification binding, durable revocation, and reuse for another candidate fail closed with no receipt/live record | `test_missing_authorization_fails_with_stable_diagnostic_and_no_side_effects`; `test_authorization_boundaries_fail_without_side_effects`; `test_revocation_and_authorization_reuse_fail_closed`; existing Phase 40I contract/service tests cover wrong-scope and altered immutable authorization construction |
 | Integrity failures | Candidate/assessment/specification/authorization/revocation/attempt/receipt/ledger/snapshot integrity coverage is split between the focused rehearsal and existing Phase 40I tamper matrix; prior live generation is preserved | `test_tampered_ledger_snapshot_and_stale_revision_are_detected` plus Phase 40I import contract/store/service tests |
 | CAS and stale revision | Stale expected ledger revision returns `revision_conflict`; no live overwrite | `test_tampered_ledger_snapshot_and_stale_revision_are_detected` plus Phase 40I concurrency tests |
 | Crash before durable intent/effect/publication | Existing Phase 40I injected persistence/publication failures return no false success and preserve live state | Phase 40I import service/store tests |
@@ -53,13 +53,16 @@ root only when empty. The authoritative dataset access count was **zero**.
 
 ## Validation results
 
-- Focused Phase 40J rehearsal: **8 passed**.
-- Phase 40I plus broader migration suite: **365 passed**.
-- Complete backend suite: **1,279 passed**, with one upstream Starlette/httpx
+- Focused Phase 40J rehearsal: **9 passed**.
+- Phase 40I plus broader migration suite: **366 passed**.
+- Complete backend suite: **1,280 passed**, with one upstream Starlette/httpx
   deprecation warning.
 - Frontend validation: not required; no shared contract or frontend-visible file
   changed.
-- Phase 40I defects found: **none**.
+- Phase 40I defect found and corrected: a missing runtime authorization value was
+  converted to generic `persistence_failure` before the authorization validator.
+  The narrow guard now returns stable `missing_authorization` before any storage,
+  lock, ledger, snapshot, receipt, or live-store side effect.
 
 ## Limitations and eligibility
 

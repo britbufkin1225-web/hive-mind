@@ -346,7 +346,9 @@ and no real migration occurred. The rehearsal passed parsing, projection,
 assessment, explicit review, exact authorization, verified import, receipt and
 record integrity, exact replay, rejection, authorization failures, CAS/stale
 revision handling, integrity failures, crash recovery, N/N+1 uncertain-commit
-recovery, and a clean deterministic rerun. No Phase 40I defect required repair.
+recovery, and a clean deterministic rerun. One narrow Phase 40I boundary defect
+was repaired: missing authorization now fails with the stable
+`missing_authorization` diagnostic before any durable or live-store side effect.
 An authoritative migration is now eligible only for a separate, explicit,
 human-authorized phase. [Review the Phase 40J evidence](docs/qa/phase-40j-migration-rehearsal-end-to-end-validation.md).
 Phase 36K remains paused and untouched.

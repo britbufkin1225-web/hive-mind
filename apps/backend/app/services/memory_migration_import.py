@@ -44,6 +44,11 @@ class MemoryMigrationImportService:
         finally: self.lock.release()
 
     def import_reviewed_candidate(self, *, candidate: MemoryMigrationCandidate, assessment: MigrationCandidateAssessmentReport, decision: MigrationReviewDecision, specification: ReviewedImportSpecification, authorization: ProjectScopeAuthorizationContext) -> ImportResult:
+        if authorization is None:
+            raise MemoryMigrationImportError(
+                ImportDiagnosticCode.MISSING_AUTHORIZATION,
+                "reviewed import requires an authorization context",
+            )
         key=derive_idempotency_key(candidate_id=candidate.candidate_id,content_digest=candidate.content_digest,assessment_report_id=assessment.report_id,assessment_version=assessment.assessment_version,review_decision_id=decision.review_decision_id,specification_digest=specification.specification_digest,authorization_context_id=authorization.authorization_context_id)
         self.lock.acquire(key)
         try:

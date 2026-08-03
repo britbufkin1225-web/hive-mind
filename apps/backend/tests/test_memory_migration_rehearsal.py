@@ -146,6 +146,23 @@ def test_revocation_and_authorization_reuse_fail_closed(tmp_path):
     assert_no_success(svc)
 
 
+def test_missing_authorization_fails_with_stable_diagnostic_and_no_side_effects(tmp_path):
+    candidate = projected_candidates()[0]
+    report = assess_memory_migration_candidates([candidate])
+    decision, _authorization, specification = workflow(candidate, report)
+    svc = service(MigrationRehearsalPaths.isolated(tmp_path / "missing-authorization"))
+    with pytest.raises(MemoryMigrationImportError) as exc:
+        svc.import_reviewed_candidate(
+            candidate=candidate,
+            assessment=report,
+            decision=decision,
+            specification=specification,
+            authorization=None,  # type: ignore[arg-type] - exercises the runtime boundary
+        )
+    assert exc.value.code == ImportDiagnosticCode.MISSING_AUTHORIZATION
+    assert_no_success(svc)
+
+
 def test_tampered_ledger_snapshot_and_stale_revision_are_detected(tmp_path):
     paths = MigrationRehearsalPaths.isolated(tmp_path / "integrity"); svc = service(paths)
     candidate = projected_candidates()[0]; report = assess_memory_migration_candidates([candidate]); decision, auth, spec = workflow(candidate, report)
