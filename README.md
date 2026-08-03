@@ -10,6 +10,16 @@ Hive|Mind is a local-first, graph-primary knowledge intelligence workspace that 
 
 ## Overview
 
+> **Phase 40I implementation status (2026-08-03):** the backend-only reviewed-
+> persistence and verified-import MVP is implemented on its audit branch. It adds
+> immutable human review and authorization provenance, integrity-sealed local
+> workflow/snapshot persistence, deterministic receipts, exact idempotent replay,
+> publish-last Active Memory replacement, and fail-closed quarantine. The older
+> Phase 40H planning-status prose below is retained as historical planning context;
+> this notice supersedes its former “no runtime/local and unmerged” status claims.
+> No frontend review workspace, public import API, synthesis producer, automatic
+> semantic promotion, LLM adjudication, or Phase 36K work is included.
+
 Developer knowledge often starts in notes, source files, project docs, and repeated decisions that become hard to inspect as a whole. Hive|Mind treats that material as owned local data: sources are registered, imported explicitly, normalized into shared records, and projected into a Knowledge Graph that becomes the main workspace rather than a side panel.
 
 The problem Hive|Mind is solving is not "generate more content." It is the quieter developer problem of remembering what exists, where it came from, how it connects, and which signals are trustworthy enough to review. Obsidian remains the writing and thinking layer; Hive|Mind is the structured layer above it, where imported knowledge becomes inspectable graph data.
