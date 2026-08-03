@@ -1,16 +1,28 @@
 # Phase 40H — Reviewed Persistence + Verified Import (Planning)
 
 **Status:** Planning-only. No runtime implementation exists. This document defines
-the foundation; nothing here is built. It **resolves the six high-severity blockers and
-three medium-severity gaps** raised by the independent four-commit Codex audit (kind↔claim
-policy §C.2; project/scope authorization context §C.3; ledger + snapshot envelope
-integrity §H.7/§H.8; complete `MemoryRecord` equality §F.3; stable authoritative
-provenance §F.3; removal of impossible historical-generation restoration §I; shared
-canonicalization + collision policy §H.0; `review_decision_id` derivation §H.9; explicit
-holder read/write-guard boundaries §A.6.1) and remains **proposed and pending a further
-independent five-commit audit** (another Codex re-audit); implementation stays locked
-until this planning branch passes that audit and is merged. No public Phase 40H API
-exists.
+the foundation; nothing here is built. Earlier commits resolved the six high-severity
+blockers and three medium-severity gaps of the four-commit Codex audit (kind↔claim policy
+§C.2; project/scope authorization context §C.3; ledger + snapshot envelope integrity
+§H.7/§H.8; complete `MemoryRecord` equality §F.3; stable authoritative provenance §F.3;
+removal of impossible historical-generation restoration §I; shared canonicalization +
+collision policy §H.0; `review_decision_id` derivation §H.9; explicit holder
+read/write-guard boundaries §A.6.1). **This commit additionally closes the material
+defects of the independent five-commit Codex audit** — the review/authorization identity
+cycle (now an acyclic dependency graph, §H.0a/§H.9/§H.10, Codex-1); pre-durability
+live-store visibility (a private candidate store built off-guard, persisted and verified
+durably, then published **last** via an O(1) holder swap, §A.6/§E/§I, Codex-2); the
+callback-based raw-store escape (replaced by holder-owned read/query/`publish` operations
+with **no caller callbacks**, §A.6, Codex-3); scope authorization by **exact set
+membership** with no invented hierarchy plus `project_level_authorized` (§C.3, Codex-4);
+**complete** authorization-digest coverage of `issued_at` (§H.10, Codex-5); an explicit
+reviewer-authored **`observed_at`** kept distinct from `created_at` (§C.1/§F.3, Codex-6);
+one deterministic **timestamp-only-vs-renewal** rule with a `renewal_revision`
+discriminator (§H.9/§D.7, Codex-7); and **non-overlapping malformed-claim diagnostic
+precedence** (§C.1/§C.2/§J, Codex-8). It remains **proposed and pending a further
+independent six-commit audit** (another Codex re-audit); the five-commit audit has **not**
+passed and no wording claims it did. Implementation stays locked until this planning
+branch passes that further audit and is merged. No public Phase 40H API exists.
 **Track:** Grounded Synthesis + Memory Migration (Phase 40D.5–40L sequence).
 **Baseline:** `origin/main` at merge commit
 `d1b2c3eea662ccb8876de9761650e31c0e44f4b9`.
@@ -117,11 +129,14 @@ re-home authoritative `MemoryRecord` data inside the migration ledger. The Activ
 Memory store keeps its own identity rule (caller-supplied `record_id`), its own
 immutability guarantee, its own lifecycle transition table, and its own
 serialize/restore boundary. Phase 40H reads and writes Active Memory **only** through
-that store's existing public seam (§F.2), and it reaches the *live* store instance
-**only** through the mandatory `AuthoritativeActiveMemoryStoreHolder` (§A.6) — no
-caller retains or independently injects a mutable store reference. The **durable
-Active Memory snapshot** (§A.4) is the authoritative durable representation of that
-store's records; the migration ledger never holds record content.
+that store's existing public seam (§F.2). The **published live** store instance is served
+**only** through the mandatory `AuthoritativeActiveMemoryStoreHolder`'s holder-owned
+operations (§A.6) — no caller ever obtains, retains, or injects the published mutable
+store reference (Codex-3). Preparation of an import runs on a **private candidate store**
+the coordinator reconstructs from the durable snapshot and publishes only after durable
+verification (§A.6, §E, Codex-2). The **durable Active Memory snapshot** (§A.4) is the
+authoritative durable representation of that store's records; the migration ledger never
+holds record content.
 
 ### A.2 The import coordinator is an orchestration boundary
 
@@ -134,9 +149,11 @@ Memory store — to perform one reviewed import:
 
 - it records review decisions, import attempts, and receipts in the durable
   migration ledger (§A.3);
-- it constructs the authorized `MemoryRecord` and inserts it into the **existing
-  Active Memory store** through that store's own boundary (§F.2), then persists the
-  durable Active Memory snapshot (§A.4);
+- it constructs the authorized `MemoryRecord` and inserts it into a **private candidate
+  Active Memory store** it builds from the last validated durable snapshot (§A.4, §A.6) —
+  never into the published live store — then persists that candidate as the durable
+  snapshot at the next generation, and only after durable verification **publishes** the
+  validated candidate through the holder's `publish` swap (§A.6, §E);
 - it answers idempotent replay lookups and drives uncertain-commit recovery (§I.7).
 
 It owns the *workflow and the orchestration*, never the Active Memory records
@@ -281,57 +298,91 @@ authoritative store reference: a mandatory **`AuthoritativeActiveMemoryStoreHold
 phase, not a conditional fallback.**
 
 - **Proposed module:** `apps/backend/app/services/active_memory_store_holder.py` (§L).
-- **What it owns:** the *single* current authoritative `InMemoryActiveMemoryStore`
-  reference used by the reviewed-import path. It **does not** modify the store class
-  and **does not** re-home records into the ledger; it wraps the existing store
-  instance and governs how that reference is read, mutated, and replaced.
-- **No raw store ever escapes.** Callers **never retain** a store instance across an
-  operation and **never independently inject** a mutable store into the coordinator.
-  The holder **does not hand out** its live `InMemoryActiveMemoryStore`; instead it
-  exposes two holder-owned operations that run a caller callback *under the guard* and
-  return **only results**, never the store reference:
-  - `read(fn)` — runs `fn` against a **read-only view** (the store's own reads already
-    return defensive deep copies, §37C) under the **read guard**, and returns `fn`'s
-    result;
-  - `mutate(fn)` — runs a controlled mutation (`fn`, e.g. the single reviewed-import
-    `insert`) under the **write guard**, and returns typed results, never the store.
-  No callback can capture and leak the raw mutable store, because it is never passed one.
+- **What it owns:** the *single* current **published** authoritative
+  `InMemoryActiveMemoryStore` reference served to runtime readers. It **does not** modify
+  the store class and **does not** re-home records into the ledger; it wraps the existing
+  store instance and governs how that reference is **read and replaced**. It never mutates
+  the published store in place.
+- **No raw store ever escapes — holder-owned operations, no caller callbacks (Codex-3).**
+  The former `read(fn)`/`mutate(fn)` callback surface is **removed**: a callback can retain
+  whatever reference it is handed, so no callback contract can *guarantee* non-escape. The
+  holder instead exposes a **fixed set of holder-owned operations** whose return values are
+  only records, copies, collections, or scalars — **never a store**:
+  - **read/query (read guard):** `find_record(record_id) -> MemoryRecord | None`,
+    `get_record(record_id) -> MemoryRecord`, `list_records(**filters) -> list[MemoryRecord]`,
+    and `snapshot_payload() -> dict` (the `serialize()` document for the snapshot store).
+    Each returns the store's **defensive deep copies** (§37C) or a fresh dict — no returned
+    object aliases internal state, and none is the store.
+  - **generation/quarantine (read guard):** `current_generation() -> int`,
+    `quarantine_state() -> QuarantineState` (a closed reason code, never a path/exception).
+  - **publication (write guard):** `publish(replacement: InMemoryActiveMemoryStore,
+    expected_generation: int, new_generation: int) -> None` — the **only** way the
+    authoritative reference ever changes. It accepts a **fully constructed and validated
+    replacement store** (built off-guard by the coordinator from the durable snapshot,
+    below) and performs an **O(1) reference swap** under the write guard; it returns nothing
+    and hands nothing back. There is **no** operation that returns, lends, or mutates the
+    live store.
+  - **any internal callback is private.** If the implementation uses a helper closure to
+    perform the swap, it is a private method of the holder; it is **never** a parameter a
+    caller can supply. Callers cannot inject behavior that touches the raw store.
+  - The coordinator **never obtains the live store** for preparation. It builds its private
+    candidate replacement store by loading the durable snapshot
+    (`ActiveMemorySnapshotStore.load`, §A.4) — a store the holder does not own and no reader
+    can reach — inserts into *that*, and then calls `publish`. The live published store is
+    thus **never handed out and never mutated in place**; it is only ever *replaced*.
 
 **A.6.1 Explicit read/write-guard synchronization protocol (Ruling 9).**
 
 - **Two guards.** The holder owns an in-process **read/write guard**: a **shared read
   guard** (many concurrent readers) and an **exclusive write guard** (one writer,
-  excluding all readers). `read(fn)` acquires the read guard; `mutate(fn)`, the atomic
-  swap, and every quarantine-state change acquire the write guard.
-- **Which operations acquire which:** reviewed-import `insert`, live-store replacement/
-  reload, and setting/clearing quarantine → **write guard**; replay lookups, inspection,
-  snapshot-serialization reads, and reading quarantine state → **read guard**.
+  excluding all readers). The read/query/generation/quarantine-read operations acquire the
+  **read guard**; `publish` (the O(1) swap) and every quarantine-state change acquire the
+  **write guard**. There is **no** `mutate` operation and **no** in-place write to the
+  published store.
+- **Preparation never touches the published store (Codex-2).** The whole reviewed import
+  is prepared against a **private candidate store** the coordinator builds off-guard from
+  the last validated durable snapshot (`ActiveMemorySnapshotStore.load`, §A.4) — a store
+  **no runtime reader can reach**. The new record is inserted into that *private* candidate
+  store, not the live one. The published live store is **not mutated during preparation**;
+  it keeps serving readers at generation `N` throughout.
+- **Publication is last, O(1), and only after durable verification.** Only after the
+  durable intent, the candidate snapshot at `N+1`, the receipt, and the ledger advance to
+  `N+1` are all persisted **and reloaded/integrity-verified** (§E, §I.2) does the
+  coordinator call `publish` to swap the holder's reference to the validated candidate
+  store under the **shortest** write-guard boundary. A reader therefore observes **either**
+  the complete old validated store (`N`) **or** the complete new validated store (`N+1`),
+  **never a partially committed mutation**.
 - **Acquisition order (fixed, global, deadlock-free):** the coordinator acquires the
-  **filesystem `O_EXCL` coordinator lock first (outermost, §I.4)**, then the holder's
-  **in-process write guard (innermost)**. This single global order is never inverted, so
-  the two lock layers can never deadlock. **Release is strict reverse order** — inner
-  write guard released before the outer filesystem lock — and both releases are in
-  `finally` (exception-safe), covering success, handled-failure, and exception paths.
+  **filesystem `O_EXCL` coordinator lock first (outermost, §I.4)**, then — only for the
+  `publish` swap (and quarantine changes) — the holder's **in-process write guard
+  (innermost)**. This single global order is never inverted, so the two lock layers can
+  never deadlock. **Release is strict reverse order** — inner write guard released before
+  the outer filesystem lock — and both releases are in `finally` (exception-safe), covering
+  success, handled-failure, and exception paths.
 - **No lock upgrades.** There is **no read→write upgrade** path (the classic upgrade
-  deadlock): a writer takes the write guard from the start. Crucially, the **expensive
-  reconstruct-and-validate of a fresh store happens WITHOUT holding the write guard** —
-  the fresh store is built and fully validated off to the side (via
-  `ActiveMemorySnapshotStore.load`, all-or-nothing, §A.4); only the **O(1) pointer
-  swap** is performed under the shortest necessary exclusive write-guard boundary.
-- **Atomic replacement + reader visibility:** the swap replaces the holder's single
-  reference under the write guard. A reader observes **either** the prior validated store
-  **or** the replacement validated store — **never a partially restored store**. **Reads
-  already in progress** complete against the reference they began on (they hold the read
-  guard / a deep-copied result); **new reads after the swap** see the replacement.
-- **Writes during import/reload/replacement/quarantine:** serialized by the write guard;
-  a new reviewed import cannot begin while a swap holds the write guard, and while
-  quarantined new reviewed imports are rejected outright (below).
-- **Failed reconstruction vs failed swap are distinct.** If **reconstruction/validation
-  fails** (before any swap), the prior validated reference stays in place untouched and
-  the holder raises `live_store_replacement_failure` — nothing was swapped. If the
-  **swap itself** cannot complete safely, the holder likewise raises
-  `live_store_replacement_failure`; either way the coordinator maps it to
-  `import_service_quarantined` (§I.6). A swap never leaves a half-installed store.
+  deadlock): the swap takes the write guard from the start. The **expensive
+  reconstruct-and-validate of the candidate store happens WITHOUT holding the write
+  guard**; only the **O(1) pointer swap** is performed under the write guard.
+- **Reader visibility:** the swap replaces the holder's single reference under the write
+  guard. **Reads already in progress** complete against the reference they began on (they
+  hold the read guard / a deep-copied result); **new reads after the swap** see the
+  replacement.
+- **Writes/publications during import/quarantine:** serialized by the write guard; a new
+  reviewed import cannot publish while a swap holds the write guard, and while quarantined
+  new reviewed imports are rejected outright (below).
+- **Failed candidate construction vs failed publish are distinct.** If **candidate
+  construction/validation fails** (before durable persistence and before any `publish`),
+  the published reference stays at `N` untouched, nothing durable was written past the
+  intent, and the coordinator fails closed (safe retry). If the **`publish` swap itself**
+  cannot complete safely, the holder raises `live_store_replacement_failure` and the
+  coordinator maps it to `import_service_quarantined` (§I.6). Because `publish` runs
+  **after** durable commit at `N+1`, a failed swap means the **durable truth is already
+  `N+1`** while the in-memory published store is stale at `N`: the operation **does not
+  report success** (Codex-2 — "an unsuccessful final swap cannot report import success"),
+  it quarantines; **startup/recovery** then reconstructs and publishes the live store from
+  the committed `N+1` snapshot (§I.6, §I.7), and a later idempotent replay of the same
+  reviewed input returns the already-committed receipt (`duplicate_replay`). No data is
+  lost and no false success is reported. A swap never leaves a half-installed store.
 - **Quarantine is read/changed under the guards.** Quarantine state + its **closed reason
   code** (never a path or raw exception) is read under the read guard and changed under
   the write guard. While quarantined the holder **rejects new reviewed imports**
@@ -341,23 +392,29 @@ phase, not a conditional fallback.**
 - **Typed failure:** a replacement that cannot complete safely produces a typed
   **`live_store_replacement_failure`** which the coordinator maps unambiguously to
   **`import_service_quarantined`** with safe diagnostic context (§J).
-- **All runtime readers and writers use holder-controlled operations.** Phase 40H does
-  **not** claim any existing dependency-injection or router keeps a raw store: today the
-  only Active Memory path is the stateless request-scoped router (§L) that builds a
-  throwaway store and retains nothing, so there is no raw retained store to migrate. Any
-  **future** app-lifespan/injected Active Memory store MUST be obtained through the
-  holder — a named, separate future change (§L), never a raw reference.
-- **Tests (§K):** same-process multithreading (concurrent readers + one writer serialized
-  by the guard and the `O_EXCL` lock); concurrent import; reader-visibility
+- **All runtime readers and writers use holder-controlled operations.** Every runtime read
+  goes through the holder's read/query operations (which return copies, never the store);
+  the **only** write path is `publish`. Phase 40H does **not** claim any existing
+  dependency-injection or router keeps a raw store: today the only Active Memory path is the
+  stateless request-scoped router (§L) that builds a throwaway store and retains nothing, so
+  there is no raw retained store to migrate. Any **future** app-lifespan/injected Active
+  Memory store MUST be served through the holder's operations — a named, separate future
+  change (§L), never a raw reference handed to callers.
+- **Tests (§K):** **no raw store escapes** — every public holder operation returns a
+  record/copy/collection/scalar or `None`, never an `InMemoryActiveMemoryStore`, and a test
+  asserts a caller cannot obtain or retain the live store or mutate authoritative state
+  outside `publish`; same-process multithreading (concurrent readers + one publisher
+  serialized by the guard and the `O_EXCL` lock); concurrent import; reader-visibility
   (prior-or-replacement, never partial); write rejection during quarantine; and lock
   **acquisition and release failure** at both layers.
 
 Ownership boundary restated: the **`ActiveMemorySnapshotStore` owns durable
-snapshots** (§A.4); the **holder owns the live authoritative reference and its atomic
-replacement** (this section); the **import coordinator owns the reviewed-import
-transaction** (§A.2). These stay separate — the holder never persists, the snapshot
-store never mutates the live reference, and the coordinator never bypasses the holder
-to touch a store instance directly.
+snapshots** (§A.4); the **holder owns the live published reference and its atomic
+`publish` replacement** (this section); the **import coordinator owns the reviewed-import
+transaction** (§A.2), preparing on a private candidate store and publishing only after
+durable verification. These stay separate — the holder never persists, the snapshot
+store never mutates the live reference, and the coordinator never obtains, retains, or
+mutates the live store directly (it only builds a private candidate and calls `publish`).
 
 ---
 
@@ -382,7 +439,7 @@ version-linkage metadata.
 | **Migration candidate reference** | `candidate_id` (Phase 40F, reused unchanged) | `candidate_id`, `content_digest`, `provenance` (bundle/artifact fingerprints, observed digest), assessed-set membership | Immutable; a *reference*, not a copy of candidate bytes; owned by Phase 40F output |
 | **Candidate byte digest** | value of `content_digest` | the Phase 40F SHA-256 over candidate content; the observed artifact digest from `MigrationCandidateProvenance` | Immutable reference value |
 | **Assessment reference** | `report_id` (Phase 40G) + `MEMORY_MIGRATION_CANDIDATE_ASSESSMENT_VERSION` | `report_id`, ruleset version, `review_readiness` verdict | Immutable; owned by Phase 40G output |
-| **Review decision** | `review_decision_id` = canonical id over its own fields (§H) | reviewer id, decision timestamp, status, reason, notes, candidate id + digest, assessment id + version, evidence references, optional `supersedes_decision_id` | Immutable once recorded (append-only; a superseding decision is a new record, §C/§D.6/§D.7); **owned by the migration ledger** |
+| **Review decision** | `review_decision_id` = canonical id over its own fields (§H.9; **excludes `decision_timestamp` and any authorization id**) | reviewer id, decision timestamp, status, reason, notes, candidate id + digest, assessment id + version, evidence references, optional `supersedes_decision_id`, `renewal_revision` | Immutable once recorded (append-only; a superseding decision is a new record, §C/§D.6/§D.7); **owned by the migration ledger** |
 | **Review evidence reference** | reference tuple `(kind, ref_id)` | typed pointer to the assessment report, the dry-run finding(s), and/or the candidate provenance the reviewer relied on | Immutable; owned by the migration ledger |
 | **Project/scope authorization context** | `authorization_context_id` = canonical id over its own fields (§C.3, §H.10) | `authorization_context_version`, `authorization_policy_version`, `authorized_project_id`, `authorized_scopes` (explicit allowed-scope set), `authorizing_principal_id`, `review_decision_id`, candidate id + digest, assessment id + version, `expires_at?`, `revoked?`, `authorization_context_digest` | Immutable once issued; **constructed and authorized by the human review/authorization boundary**, recorded in the migration ledger; the coordinator validates and executes it and never invents authorization (§C.3) |
 | **Reviewed-import specification** | `specification_digest` = canonical id over its own fields (§C.1, §H.5) | contract name/version, candidate id + digest, assessment id + version, `review_decision_id`, reviewer-approved `target_kind`, complete structured `MemoryClaim`, `kind_claim_policy_version` (§C.2), validated `project_id`, optional `scope`, `authorization_context_id` + `authorization_context_digest` (§C.3), evidence references, `source_type = IMPORTED_DOCUMENT`, canonical source/provenance, applicable `supersession_refs` | Immutable once authorized; **supplied and authorized by the human review boundary**, recorded in the migration ledger; carries the record kind/claim/project the candidate does **not** (§C.1) and the authorization-context binding (§C.3) |
@@ -415,15 +472,19 @@ version-linkage metadata.
   **no** decision-, attempt-, or authorization-specific audit — that all lives in the
   ledger (§F.3, Rulings 4/5). Consequences: a **retry of the same reviewed input**
   reproduces the identical record and `record_id` (idempotent reuse, one record, its
-  receipt returned unchanged, §G.3). **Two genuinely distinct decisions** differ at
-  least in `decision_timestamp` (⇒ different `created_at`), so they deterministically
+  receipt returned unchanged, §G.3). **Two genuinely distinct decisions** differ in at
+  least one **identity-bearing decision field** (⇒ different `review_decision_id`, §H.9,
+  Codex-7) — not merely in `decision_timestamp`, which alone makes them the *same*
+  decision. When such distinct decisions also author different record content, or carry
+  different recorded `decision_timestamp`s (⇒ different `created_at`), they deterministically
   produce **distinct `record_id`s** — two distinct records, each with its own receipt,
   never a silent merge and never a forced collision. In the boundary case where two
-  distinct decisions author a **byte-identical** record (identical content *and*
-  identical `created_at`), they share one `record_id`; the second import finds complete
-  canonical equality, reuses the existing record, and writes its own receipt (one
-  record, two audited receipts). A same-`record_id`/different-content state is only ever
-  tampering or a hash collision → `record_identity_collision`, fail closed (§F.3).
+  distinct decisions author a **byte-identical** record (identical content *and* the same
+  recorded `created_at = decision_timestamp`), they share one `record_id`; the second
+  import finds complete canonical equality, reuses the existing record, and writes its own
+  receipt (one record, two audited receipts). A same-`record_id`/different-content state is
+  only ever tampering or a hash collision → `record_identity_collision`, fail closed
+  (§F.3).
 
 ### B.2 Uniqueness, foreign keys, timestamps, version semantics
 
@@ -522,7 +583,7 @@ path.
 | --- | --- | --- |
 | `reviewer_id` | yes | Stable actor identifier (operator id / stable slug). Not a boolean; an anonymous or empty reviewer fails validation. |
 | `review_policy_version` | yes | The review-policy contract version under which the decision was made (`memory-migration-import.v1` review-policy tag). Bound into `review_decision_id` (§H.9) so a decision made under a different policy version is a distinct decision, never silently equated. |
-| `decision_timestamp` | yes | Caller-supplied instant the decision was made. Excluded from `review_decision_id` (§H.9). |
+| `decision_timestamp` | yes | Caller-supplied instant the decision was made. **Excluded from `review_decision_id`** (§H.9) — audit-only for decision identity — but it **is** the authorizing decision's authoritative content used as the resulting record's `created_at` (§F.3). A copy that differs *only* in `decision_timestamp` is therefore the **same** decision (idempotent), never a renewal (§H.9, §D.7). |
 | `status` | yes | Closed enum: `approved` / `rejected` / `deferred`. No other value is representable. |
 | `reason` | yes | Non-empty, bounded free text stating *why*. An approval with no reason fails validation. |
 | `notes` | optional | Additional bounded context. |
@@ -532,6 +593,7 @@ path.
 | `assessment_version` | yes | The Phase 40G ruleset version reviewed. |
 | `evidence_references` | yes, ≥1 | Typed references to the assessment report, dry-run findings, and/or candidate provenance the reviewer relied on. |
 | `supersedes_decision_id` | optional | The prior decision this one directly supersedes for the same logical candidate line, when the reviewer is explicitly renewing review (§D.7). When present it MUST reference an existing decision for the same `candidate_id` line. |
+| `renewal_revision` | optional (default `0`) | Non-negative integer **renewal discriminator** and an identity member of `review_decision_id` (§H.9, Codex-7). It lets a reviewer record a genuinely distinct **renewal** even when every other material field is unchanged (a re-affirmation): incrementing it yields a distinct `review_decision_id`. It is **not** a timestamp and is not read from a clock. A renewal with a changed `content_digest`/`assessment_*` need not touch it; a renewal with no other material change **must** increment it (and carry `supersedes_decision_id`). Absent/`0` for an original decision. |
 
 > A plain `approved = true` field **never independently authorizes mutation.** The
 > `status` enum only *names* the decision; authority to import requires the whole
@@ -582,9 +644,10 @@ project guessing, or lifecycle promotion.**
 | `review_decision_id` | yes | The authorizing review decision (§C) this specification serves. |
 | `target_kind` | yes | The reviewer-approved `MemoryRecordKind`. A closed-enum member the reviewer selected; never inferred from candidate text. |
 | `claim` | yes | The **complete structured** `MemoryClaim` (subject, predicate, value, `value_kind`, optional summary) the reviewer authored/approved. Never synthesized from prose by the coordinator. |
+| `observed_at` | optional | The reviewer-authored **claimed observation instant** for the imported claim — the source of the resulting `MemoryRecord.observed_at` (the real 37B model's "claimed observation time", **distinct from `created_at`**, §F.3, Codex-6). Canonical UTC ISO-8601 with an explicit offset; timezone-naive/malformed → `invalid_reviewed_specification`. **Reviewer-authored only** — the coordinator validates format but **never invents, derives, or equates it with `decision_timestamp`** or any wall clock. Absent ⇒ record `observed_at = None`. It is authoritative record content, so it participates in `specification_digest` (§H.5) and `record_id` (§H.3). |
 | `kind_claim_policy_version` | yes | The **kind↔claim compatibility policy version** (§C.2) under which `(target_kind, claim)` was authored and must be validated. Sealed by `specification_digest`; a mismatch with the coordinator's active policy version fails closed (`kind_claim_incompatible`, §C.2). |
-| `project_id` | yes | The **validated** target project id (non-empty). Checked for **exact equality** against the authorization context's `authorized_project_id` and consistency with the candidate's target scope (§C.3); never guessed. |
-| `scope` | optional | An optional narrower `MemoryScope`. When present it MUST equal the candidate's declared `target_scope` or a scope **within the authorization context's `authorized_scopes`** (narrowing only, never widening, §C.3); it is never fabricated. |
+| `project_id` | yes | The **validated** target project id (non-empty). Checked for **exact equality** against the authorization context's `authorized_project_id` (§C.3); never guessed. |
+| `scope` | optional | An optional `MemoryScope`. When present it MUST be an **exact member** of the authorization context's `authorized_scopes` set (§C.3) — equality by the §H.0 canonical comparison, **no** parent/child/broader/narrower relationship is inferred (the real `MemoryScope` model defines **no** hierarchy). When **absent**, the record is project-level and is authorized **only if** the context's `project_level_authorized` flag is set (§C.3). It is never fabricated. |
 | `authorization_context_id` | yes | The `authorization_context_id` (§C.3) of the project/scope authorization context that authorizes this `project_id`/`scope`. |
 | `authorization_context_digest` | yes | The sealed `authorization_context_digest` (§H.10) of that context, recomputed and matched at import and recovery. |
 | `evidence_references` | yes, ≥1 | Typed references mirroring/consistent with the review decision's evidence. |
@@ -595,46 +658,64 @@ project guessing, or lifecycle promotion.**
 
 **Construction and validation ownership.** The **human review boundary constructs and
 authorizes** the specification (it, and only it, chooses `target_kind`, authors the
-`claim`, and sets `project_id`/`scope`). The **coordinator validates** it and refuses
-to proceed on any failure — it never fills a missing field, never repairs one, and
-never adjudicates content. Validation, all fail-closed (§J):
+`claim`, authors any `observed_at`, and sets `project_id`/`scope`). The **coordinator
+validates** it and refuses to proceed on any failure — it never fills a missing field,
+never repairs one, and never adjudicates content.
 
-- **Structural/typed validity** (`extra="forbid"`, kind is a valid `MemoryRecordKind`,
-  claim subject/predicate/value present and bounded, `project_id` non-empty,
-  `source_type == IMPORTED_DOCUMENT`) → else `invalid_reviewed_specification`.
-- **Binding to the reviewed decision:** `candidate_id`, `content_digest`,
-  `assessment_report_id`, `assessment_version`, and `review_decision_id` must match
-  the re-validated candidate/assessment and the approving decision **exactly** → else
-  `specification_binding_mismatch`.
-- **Project/scope authorization:** the referenced **`ProjectScopeAuthorizationContext`
-  (§C.3)** is resolved, its `authorization_context_digest` recomputed and matched, and
-  its non-revoked/non-expired validity confirmed; `project_id` must equal the context's
-  `authorized_project_id` **exactly** and any narrower `scope` must lie **within**
-  `authorized_scopes` (narrowing only). A missing context →
-  `missing_authorization_context`; an altered/stale one →
-  `authorization_context_integrity_failure`; a revoked/expired one →
-  `authorization_context_revoked` / `authorization_context_expired`; a
-  cross-project/cross-decision/cross-candidate binding → `authorization_context_mismatch`;
-  a project or scope outside the authorized target (incl. any **widening**) →
-  `unauthorized_project_scope`.
-- **Kind/claim compatibility:** `target_kind` and `claim` are validated against the
-  **closed, versioned kind↔claim compatibility policy (§C.2)** owned by the named
-  `KindClaimCompatibilityValidator`, at the specification's `kind_claim_policy_version`.
-  The coordinator **checks** compatibility against the policy; it does **not** choose,
-  infer, or synthesize either. An unsupported kind, a claim shape the policy prohibits
-  for that kind, or a `kind_claim_policy_version` the validator does not recognize →
-  `kind_claim_incompatible`; a structurally malformed specification/claim →
-  `invalid_reviewed_specification`.
-- **Integrity/staleness:** `specification_digest` is recomputed and must match; a
-  stale or altered specification (any field changed after authorization) fails as
-  `specification_integrity_failure`, fail closed. A request presenting **no**
-  specification for an approved candidate fails as `missing_reviewed_specification`.
+**Validation is a fixed precedence (Codex-8); the first matching check fails closed and
+no later check runs**, so exactly one diagnostic owns each failure and none overlap
+(§J):
+
+1. **Presence** — a request for an approved candidate that carries **no** specification →
+   `missing_reviewed_specification`.
+2. **Structural/typed validity (model layer)** — the Pydantic contract itself:
+   `extra="forbid"`, every required field present, `target_kind` a valid
+   `MemoryRecordKind` **member**, `claim` subject/predicate/value present and bounded,
+   `value_kind` a valid `ClaimValueKind` **member**, `project_id` non-empty,
+   `source_type == IMPORTED_DOCUMENT`, and `observed_at` (when present) a timezone-aware
+   ISO-8601 instant. Any structural/enum-membership failure → `invalid_reviewed_specification`
+   (**owned by the model**, raised before any semantic check).
+3. **Integrity/staleness** — `specification_digest` is recomputed over the §H.5 members
+   and must match; **any** post-authorization alteration of **any** field (including the
+   `claim`, `target_kind`, or `observed_at`) → `specification_integrity_failure`. Checked
+   before semantics because an altered specification is untrustworthy to interpret.
+4. **Binding to the reviewed decision** — `candidate_id`, `content_digest`,
+   `assessment_report_id`, `assessment_version`, and `review_decision_id` must match the
+   re-validated candidate/assessment and the approving decision **exactly** →
+   `specification_binding_mismatch`.
+5. **Project/scope authorization (exact, no hierarchy — Codex-4)** — the referenced
+   **`ProjectScopeAuthorizationContext` (§C.3)** is resolved, its
+   `authorization_context_digest` recomputed and matched, and its non-revoked/non-expired
+   validity confirmed. Then **two separate, exact checks**: (a) `project_id` must equal
+   the context's `authorized_project_id` **exactly** (byte-for-byte after §H.0
+   canonicalization); (b) a present `scope` must be an **exact member** of the context's
+   `authorized_scopes` set (no parent/child/broader/narrower/ordering relationship is ever
+   inferred — the real `MemoryScope` model defines none), and an **absent** `scope` is
+   authorized **only if** `project_level_authorized` is set. A missing context →
+   `missing_authorization_context`; an altered/stale one →
+   `authorization_context_integrity_failure`; revoked/expired →
+   `authorization_context_revoked` / `authorization_context_expired`; a
+   cross-project/cross-decision/cross-candidate binding → `authorization_context_mismatch`;
+   a `project_id` ≠ `authorized_project_id`, a `scope` **not an exact member** of
+   `authorized_scopes`, or an absent scope without `project_level_authorized` →
+   `unauthorized_project_scope`.
+6. **Kind/claim compatibility (policy layer)** — only a structurally valid,
+   integrity-intact, correctly-bound, authorized specification reaches this check.
+   `target_kind` and `claim` are validated against the **closed, versioned kind↔claim
+   compatibility policy (§C.2)** owned by the named `KindClaimCompatibilityValidator`, at
+   the specification's `kind_claim_policy_version`. The coordinator **checks** compatibility
+   against the policy; it does **not** choose, infer, or synthesize either. A valid-member
+   `target_kind` with **no** policy rule (unmapped kind), a valid-member `value_kind`
+   **outside** the kind's permitted set, or a `kind_claim_policy_version` the validator
+   does not recognize → `kind_claim_incompatible`. (Pure structural/enum-membership
+   failures never reach here; they were `invalid_reviewed_specification` at step 2.)
 
 **Canonical digest field membership.** `specification_digest` covers **all** fields in
 the table above except itself, using the repository canonical-JSON + SHA-256
 convention with the `migration-import/specification` domain tag (§H). It therefore
-seals kind, claim, project, scope, source, supersession intent, and the four
-content-identity bindings together — no subset can be altered undetected.
+seals kind, claim, `observed_at`, project, scope, source, supersession intent, the
+kind/claim policy version, and the four content-identity bindings together — no subset
+can be altered undetected.
 
 **Idempotency and record-id consequences (how specifications relate to replay).**
 The stable idempotency key (§G.1) **includes `specification_digest`**, and the
@@ -722,11 +803,18 @@ the per-kind set). No kind permits an empty claim, and none requires a field the
   version cannot be re-interpreted under another without changing the specification
   identity — a materially different reviewed input requiring its own approval.
 
-**Diagnostic:** `kind_claim_incompatible` (§J) — an unsupported/unmapped kind, a
-`value_kind` outside the kind's permitted set, a claim missing a required triple field,
-or a `kind_claim_policy_version` the validator does not recognize. Distinct from
-`invalid_reviewed_specification` (pure structural/`extra="forbid"` failures the model
-raises before compatibility is even reached).
+**Diagnostic and precedence (Codex-8).** `kind_claim_incompatible` (§J) is the **policy
+layer** and is reached **only** at precedence step 6 (§C.1) — after presence, structural
+validity, integrity, binding, and authorization have all passed. It fires for a
+valid-member `MemoryRecordKind` with **no** policy rule (unmapped kind), a valid-member
+`value_kind` **outside** the kind's permitted set, or a `kind_claim_policy_version` the
+validator does not recognize. It is **strictly disjoint** from
+`invalid_reviewed_specification`, which owns every **structural/enum-membership** failure
+the model raises first (a non-member `value_kind`/`target_kind`, a missing triple field, an
+`extra` field, a blank subject/predicate). A single input can never trigger both: a
+non-member enum is structural (`invalid_reviewed_specification`); a member enum in a
+forbidden *combination* is policy (`kind_claim_incompatible`). An *altered-after-review*
+claim is neither — it is caught earlier as `specification_integrity_failure` (step 3).
 
 **Tests (§K):** every permitted `(kind, value_kind)` pairing accepted; every invalid
 `(kind, value_kind)` pairing rejected; an unmapped/unsupported kind rejected; a
@@ -736,8 +824,9 @@ all `kind_claim_incompatible` except the pure structural cases.
 ### C.3 Project/scope authorization context (typed, boundary-owned)
 
 `unauthorized_project_scope` cannot be a coordinator judgment call over free-floating
-inputs: the coordinator must never invent authorization, guess a project, widen a
-scope, or treat *repository location* (which repo the process runs in) as authorization.
+inputs: the coordinator must never invent authorization, guess a project, admit a scope
+outside the explicit authorized set, or treat *repository location* (which repo the
+process runs in) as authorization.
 Phase 40H therefore introduces a concrete typed **`ProjectScopeAuthorizationContext`**
 (in the `memory_migration_import.py` models module, §L), **constructed and authorized by
 the human review/authorization boundary** — the same boundary that records the review
@@ -749,23 +838,25 @@ decision — and merely **validated and executed** by the coordinator.
 | `authorization_policy_version` | yes | The authorization-policy version under which this grant was issued; bound into `authorization_context_id` (§H.10). |
 | `authorization_context_id` | yes | Canonical id over the context's own fields (§H.10). |
 | `authorized_project_id` | yes | The single project the grant authorizes. `project_id` equality is checked against **this**. |
-| `authorized_scopes` | yes, ≥1 | The explicit allowed-scope set (`MemoryScope` list). A specification `scope` is authorized only if it is **within** this set (equal to a member or a reviewer-authorized narrowing of one); widening is always rejected. |
+| `authorized_scopes` | yes (set) | The **explicit allowed-scope set** (a `MemoryScope` list treated as a set, §H.0 sorted + de-duplicated). A specification `scope` is authorized **only if it is an exact member** of this set — no parent/child/broader/narrower/ordering relationship is ever inferred (the real `MemoryScope` model defines **none**, Codex-4). May be **empty only when** `project_level_authorized` is `true` (a project-level-only grant); a grant that authorizes neither any scope nor project-level import authorizes nothing and is rejected. Duplicate/malformed members are handled deterministically (below). |
+| `project_level_authorized` | optional (default `false`) | Explicit boolean authorizing a **project-level** import (a specification with **no** `scope`). When `false`, an absent specification `scope` is `unauthorized_project_scope`. This replaces any notion of a scope "hierarchy": project-level is its own explicit grant, not an implicit broadening of a scope member. |
 | `authorizing_principal_id` | yes | The actor/principal that authorized the grant (stable id/slug); not a boolean. |
-| `review_decision_id` | yes | The review decision this grant serves (§C, §H.9). |
+| `review_decision_id` | yes | The review decision this grant serves (§C, §H.9). The grant **references the decision** (authorization → decision); the decision never references the grant (acyclic, §H.0a). |
 | `candidate_id` + `content_digest` | yes | The exact candidate identity + bytes the grant is bound to. |
 | `assessment_report_id` + `assessment_version` | yes | The exact Phase 40G assessment the grant is bound to. |
-| `issued_at` | yes | Caller-supplied issuance instant. **Audit-only**, excluded from `authorization_context_id` (§H.10) so a timestamp can never become a semantic authorization shortcut. |
-| `expires_at` | optional | Caller-supplied expiry instant; when present and `< decision_timestamp`/import time the grant is expired and fails closed. |
-| `revoked` | optional (default `false`) | Explicit revocation flag; a revoked grant authorizes nothing. |
-| `authorization_context_digest` | yes | Canonical SHA-256 over every field above **except itself** (§H.10), sealing the whole grant. |
+| `issued_at` | yes | Caller-supplied issuance instant. **Immutable authorization content**: it is **excluded from `authorization_context_id`** (the *semantic identity*, §H.10) so a timestamp can never become an authorization shortcut and retries stay stable, **but it IS included in `authorization_context_digest`** (the *complete integrity seal*, §H.10, Codex-5) so tampering with it is detected. It is audit metadata for identity purposes, never for integrity purposes. |
+| `expires_at` | optional | Caller-supplied expiry instant; when present and `< decision_timestamp`/import time the grant is expired and fails closed. Identity-bearing (§H.10). |
+| `revoked` | optional (default `false`) | Explicit revocation flag; a revoked grant authorizes nothing. Identity-bearing (§H.10). |
+| `authorization_context_digest` | yes | Canonical SHA-256 over **every field above except itself — INCLUDING `issued_at`** (§H.10, an **integrity** domain). This is the *complete* envelope seal; the claim of completeness is therefore honest (Codex-5). |
 
 **Ownership and lifecycle.**
 
 - **Who constructs it:** the human review/authorization boundary (it, and only it, sets
   `authorized_project_id`, `authorized_scopes`, and `authorizing_principal_id`).
 - **Who validates it:** the coordinator, via a named `ProjectScopeAuthorizationValidator`
-  (§L). It recomputes `authorization_context_digest`, checks non-revocation/non-expiry,
-  and enforces the binding below. It **never** fills, repairs, or widens any field.
+  (§L). It recomputes `authorization_context_digest` (**including `issued_at`**, §H.10),
+  checks non-revocation/non-expiry, and enforces the binding below. It **never** fills,
+  repairs, broadens, or adds to any field (it never adds a scope to `authorized_scopes`).
 - **Who authorizes it:** the `authorizing_principal_id` through the review/authorization
   boundary — never the coordinator, and never the repository the process happens to run
   in.
@@ -775,27 +866,44 @@ decision — and merely **validated and executed** by the coordinator.
 - **Bound to the specification:** the `ReviewedImportSpecification` carries
   `authorization_context_id` + `authorization_context_digest` (§C.1); a missing context
   is `missing_authorization_context`; a recompute mismatch or any post-issuance
-  alteration is `authorization_context_integrity_failure`.
+  alteration **of any field, including `issued_at`** (§H.10), is
+  `authorization_context_integrity_failure`.
 - **Bound to the review decision and candidate:** the context's `review_decision_id`,
   `candidate_id`, `content_digest`, `assessment_report_id`, and `assessment_version`
   must equal the re-validated decision/candidate/assessment exactly; any mismatch
   (including a **cross-project** context, i.e. `authorized_project_id` ≠ the
   specification `project_id`, or a context issued for a different decision/candidate) is
   `authorization_context_mismatch`.
-- **`project_id` equality:** the specification `project_id` must equal
+- **`project_id` equality (separate check):** the specification `project_id` must equal
   `authorized_project_id` **exactly** (byte-for-byte after the §H.0 canonicalization);
-  no prefix, parent, or "compatible" project is accepted.
-- **Scope narrowing allowed, widening always rejected:** a specification `scope` is
-  authorized only if it equals a member of `authorized_scopes` or is a reviewer-authored
-  **narrowing** of one; any scope not contained in the authorized set — including a
-  broader scope — is `unauthorized_project_scope`. **Missing specification `scope`** is
-  permitted (the record is project-level) **only when** the authorization context does
-  not require a narrower scope; a context that requires a scope but is presented with
-  none is `unauthorized_project_scope`.
+  no prefix, parent, or "compatible" project is accepted. Project identity and scope
+  authorization are **two independent checks** — passing one never implies the other.
+- **Scope = exact set membership, no hierarchy (Codex-4):** a specification `scope` is
+  authorized **only if it is an exact member** of `authorized_scopes` (equality by the
+  §H.0 canonical `MemoryScope` comparison — `scope_type` **and** `scope_id` both equal).
+  **No** parent/child, broader/narrower, or ordering relationship is inferred or accepted;
+  the coordinator can never convert one scope into another. Any `scope` that is not an
+  exact member — **including** one that a human might consider "broader" or "narrower" —
+  is `unauthorized_project_scope`. A **missing** specification `scope` (project-level
+  record) is authorized **only when** `project_level_authorized` is `true`; an absent
+  scope against a grant with `project_level_authorized = false` is
+  `unauthorized_project_scope`.
+- **Empty / unknown / malformed / duplicate scopes are deterministic:** an
+  `authorized_scopes` that is **empty** authorizes no scoped import (and the grant is
+  valid only if `project_level_authorized` is `true`); an **unknown** `scope_type` cannot
+  exist (the `MemoryScopeType` enum is closed — a non-member fails model validation as
+  `invalid_reviewed_specification`/contract error before authorization); **duplicate**
+  members are de-duplicated by the §H.0 set-like canonicalization (they never change the
+  digest and never expand the grant); a structurally **malformed** scope fails contract
+  validation. None of these ever silently widens the grant.
 - **Revoked / expired / stale / altered / cross-project all fail closed:** `revoked` →
   `authorization_context_revoked`; expired → `authorization_context_expired`; altered
-  (digest mismatch) → `authorization_context_integrity_failure`; cross-project or
-  cross-decision → `authorization_context_mismatch`.
+  (digest mismatch, including a tampered `issued_at`) → `authorization_context_integrity_failure`;
+  cross-project or cross-decision → `authorization_context_mismatch`.
+- **Adding a scope requires a new/renewed grant:** the authorized set is immutable and
+  sealed by the digest, so authorizing an additional scope requires issuing a **new**
+  `ProjectScopeAuthorizationContext` (a new `authorization_context_id`), never editing an
+  existing grant.
 
 **Identity propagation.** `authorization_context_id` and `authorization_context_digest`
 enter: the **specification digest** (§H.5, via the spec fields), the **idempotency key**
@@ -808,16 +916,53 @@ finalize). A retry of the exact reviewed input references the **same** authoriza
 context, so identity and idempotency are unchanged.
 
 **The coordinator may validate and execute this context, but may not invent
-authorization, guess a project, widen scope, or treat repository location as
-authorization.**
+authorization, guess a project, admit a scope outside the explicit authorized set, or
+treat repository location as authorization.**
+
+**Identity vs digest, and lifecycle handling (Codex-5).**
+
+- **`authorization_context_id` (semantic identity)** is derived over the identity-bearing
+  members **excluding `issued_at`** (§H.10): policy version, `authorizing_principal_id`,
+  `authorized_project_id`, `authorized_scopes` (set-like), `project_level_authorized`, the
+  decision/candidate/assessment bindings, `expires_at`, and `revoked`. Excluding
+  `issued_at` keeps a re-issued-but-identical grant idempotent and stops a timestamp from
+  becoming an authorization shortcut.
+- **`authorization_context_digest` (complete integrity seal)** covers **every** immutable
+  field **including `issued_at`** (§H.10). The completeness claim is therefore honest:
+  tampering with `issued_at`, `expires_at`, `revoked`, or any binding is detected as
+  `authorization_context_integrity_failure`.
+- **Audit timestamp handling:** `issued_at` is retained for audit; it affects integrity
+  (digest) but not identity (`authorization_context_id`).
+- **Retry:** a retry of the exact reviewed input references the **same** grant (same
+  `authorization_context_id` and same digest), so identity and idempotency are unchanged.
+- **Expiration** is evaluated against `expires_at` at import/recovery time (fail closed if
+  past); **revocation** is evaluated against `revoked` (fail closed if set).
+- **Duplicate equality:** two grants with byte-identical members (including `issued_at`)
+  share both id and digest and are the same grant. Two grants identical **except**
+  `issued_at` share the same `authorization_context_id` (identity) but differ in digest;
+  the specification pins a specific `authorization_context_digest`, so it resolves to the
+  exact issued grant.
+- **Same-id/different-content collision:** a stored grant whose recomputed digest ≠ the
+  specification's pinned `authorization_context_digest`, or two grants sharing an
+  `authorization_context_id` but differing in an identity member, fail closed as
+  `authorization_context_integrity_failure` (never silently merged).
+
+**Identity propagation and acyclicity.** `authorization_context_id` binds
+`review_decision_id` (authorization → decision), and the reverse binding is prohibited, so
+the graph stays acyclic (§H.0a). `authorization_context_id`/`authorization_context_digest`
+then flow forward into the specification digest, idempotency key, receipt, intent, and
+recovery validation.
 
 **Diagnostics:** `missing_authorization_context`, `authorization_context_integrity_failure`,
 `authorization_context_revoked`, `authorization_context_expired`,
 `authorization_context_mismatch`, and the existing `unauthorized_project_scope` (§J).
 
-**Tests (§K):** valid grant authorizes exact project + in-set scope; project mismatch,
-scope widening, missing context, altered/stale digest, revoked, expired, and
-cross-project/cross-decision bindings each fail closed with the mapped code.
+**Tests (§K):** valid grant authorizes exact project + exact-member scope (and a
+`project_level_authorized` grant authorizes a scope-less spec); project mismatch, a scope
+**not an exact member** (whether a human would call it broader or narrower), an absent
+scope without `project_level_authorized`, missing context, altered/stale digest
+(**including a tampered `issued_at`**), revoked, expired, and cross-project/cross-decision
+bindings each fail closed with the mapped code.
 
 ---
 
@@ -951,9 +1096,19 @@ supersession** (a lineage over decisions) and **Active Memory record supersessio
   the assessment identity/version changes (re-assessed set, or ruleset version bump).
   The prior approval no longer matches the exact reviewed input and authorizes
   nothing; a new `awaiting_review` applies until a new decision is recorded.
-- A renewed decision **directly references** the decision it supersedes via
-  `supersedes_decision_id`. Validation requires that the predecessor exists, belongs
-  to the same `candidate_id` line, and that the renewal's own candidate identity,
+- **A renewal is always a distinct decision (Codex-7).** A renewed decision **directly
+  references** the decision it supersedes via `supersedes_decision_id` **and** differs
+  from that predecessor in at least one identity-bearing member so it derives a
+  **distinct** `review_decision_id` (§H.9). Normally the discriminator is the changed
+  `content_digest` or `assessment_*` that triggered the renewal; when the reviewer
+  re-affirms with **no other material change**, they increment `renewal_revision`, which
+  is itself an identity member. A "renewal" that changes **only** `decision_timestamp`
+  (same `renewal_revision`, same material fields) is **not** a renewal — it is the same
+  decision (idempotent, §H.9) and fails no check because it simply resolves to the
+  recorded decision. Validation requires that the predecessor exists, belongs to the same
+  `candidate_id` line, that the renewal derives a `review_decision_id` **distinct** from
+  its predecessor's (else `incomplete_review_provenance` — a self-superseding or
+  non-advancing renewal is rejected), and that the renewal's own candidate identity,
   digest, and assessment identity/version are internally consistent with the review
   lineage it claims.
 - The **effective head** of a decision line is the unique newest non-superseded
@@ -1077,38 +1232,61 @@ creates an Active Memory record from a candidate. The complete ordered protocol,
     (INACTIVE, UNVERIFIED, §F.1) **from the validated `ReviewedImportSpecification`
     (§C.1)** — `kind`, `claim`, `project_id`, and optional `scope` come **only** from
     the approved specification (never the candidate, never inference); `created_at =
-    decision_timestamp` and `observed_at` are deterministic (§F.3); the record carries
-    **no** attempt/decision/authorization audit (Ruling 5) — with `record_id` derived
-    over the **complete** record content per §H.3 and provenance mapped per §F.3.
-16. **Insert it into the authoritative in-memory Active Memory store, obtained through
-    the `AuthoritativeActiveMemoryStoreHolder`'s guarded `mutate` operation (§A.6),**
-    using the store's own seam only (§F.2). A `DuplicateRecordError` whose existing
-    record is **completely canonically equal** (full `model_dump`, §F.3, Ruling 4) is
-    the already-inserted case; **any** field difference is `record_identity_collision`
-    (fail closed).
-17. **Persist the new Active Memory snapshot with the next commit generation**
-    (`commit_generation + 1`) via `ActiveMemorySnapshotStore.persist` over the holder's
-    current store (§A.4, §A.6), atomic temp-swap. On any snapshot failure, apply the
-    **post-insert failure rule** (§I.6), which reloads/replaces the live store
-    atomically through the holder.
+    decision_timestamp`, and `observed_at` = the specification's reviewer-authored
+    `observed_at` (or `None`), kept distinct (§F.3, Codex-6); the record carries **no**
+    attempt/decision/authorization audit (Ruling 5) — with `record_id` derived over the
+    **complete** record content per §H.3 and provenance mapped per §F.3.
+16. **Build a PRIVATE candidate store off-guard and insert into IT — never the published
+    live store (Codex-2).** Reconstruct a fresh `InMemoryActiveMemoryStore` from the last
+    validated durable snapshot via `ActiveMemorySnapshotStore.load` (all-or-nothing,
+    §A.4) — this candidate store is the coordinator's private working copy and is **not**
+    the holder's published reference and **not reachable by any runtime reader**. Insert
+    the record into that **private candidate** through the store's own seam only (§F.2);
+    the expensive build+insert happens **without** the holder write guard. A
+    `DuplicateRecordError` whose existing record is **completely canonically equal** (full
+    `model_dump`, §F.3, Ruling 4) is the already-inserted case; **any** field difference is
+    `record_identity_collision` (fail closed). Then **fully validate the candidate store**
+    (structural + per-record contract re-validation). The published live store is untouched
+    and still serves readers at generation `N`.
+17. **Persist the private candidate as the new Active Memory snapshot at the next commit
+    generation** (`commit_generation + 1`) via `ActiveMemorySnapshotStore.persist` over the
+    **candidate** store (§A.4), atomic temp-swap, sealing `snapshot_integrity_digest`
+    (§H.8). On any snapshot failure, apply the **failure rule** (§I.6); because nothing was
+    published, the live store is still the untouched validated `N` store.
 18. **Persist the receipt and completed attempt in the ledger with the same commit
     generation** — write the deterministic receipt (§B.3) linking candidate, digest,
     assessment, review decision, attempt, `commit_generation`, and the exact
     `record_id` (and `record_supersedes` when applicable), advance the attempt to
     `committed`, and advance the ledger `commit_generation` to match the snapshot, via
-    the ledger CAS write (§I.5). **This ledger commit is the reporting commit point.**
-19. **Reload and verify exact linkage before reporting success** — re-read both
-    durable stores under the still-held lock and confirm: the receipt exists, its
-    `record_id` resolves in the reloaded snapshot, the two `commit_generation` values
-    agree, and the record's content-identity matches (§I.7 finalize check). Only then
-    report `import_verified`.
-20. **Release the lock** in a `finally` (success, handled failure, and exception
+    the ledger CAS write (§I.5). **This durable ledger commit is the reporting commit
+    point** — but reported success still additionally requires the reload-verify (19) and
+    the publish (20).
+19. **Reload and integrity-verify both durable envelopes and exact linkage** — re-read
+    both durable stores under the still-held lock and confirm (integrity digests first,
+    §I.9): both envelopes verify, the receipt exists, its `record_id` resolves in the
+    reloaded snapshot, the two `commit_generation` values agree, and the record's complete
+    content matches (§I.7 finalize check). A failure here fails closed / quarantines
+    (§I.6) — the live store is still the untouched `N` store, never a partial one.
+20. **Publish the validated candidate as the live store, LAST (Codex-2).** Only now — after
+    the durable snapshot (`N+1`), receipt, ledger advance (`N+1`), and reload-verify all
+    succeed — call the holder's `publish(candidate, expected_generation=N,
+    new_generation=N+1)` to perform the **O(1) reference swap** under the shortest
+    write-guard boundary (§A.6). Readers see either the complete old validated store (`N`)
+    or the complete new validated store (`N+1`), never a partial mutation. **Only if
+    `publish` succeeds** is `import_verified` reported. If `publish` raises
+    `live_store_replacement_failure`, the durable truth is already `N+1` but the swap did
+    not complete: the coordinator maps it to `import_service_quarantined` and **does not
+    report success** — startup/recovery reconstructs+publishes the live store from the
+    committed `N+1` snapshot, and a later replay returns the committed receipt (§I.6, §I.7).
+21. **Release the lock** in a `finally` (success, handled failure, and exception
     paths all release — §I.4).
 
-> The ledger receipt is the **reporting** commit point, but reported success
-> **additionally requires** matching durable snapshot `commit_generation` and exact
-> record linkage (steps 17–19). A receipt is *verified* only when its linked snapshot
-> generation and ledger generation agree (§I.3).
+> The durable ledger receipt is the **reporting** commit point, but reported success
+> **additionally requires** matching durable snapshot `commit_generation`, exact record
+> linkage, **and a successful `publish` swap** (steps 17–20). No imported record becomes
+> visible through the published live store until the durable snapshot and verified
+> ledger/receipt state are persisted **and** validated (Codex-2). A receipt is *verified*
+> only when its linked snapshot generation and ledger generation agree (§I.3).
 
 ### E.1 What "verified import" proves — and does not
 
@@ -1168,11 +1346,15 @@ one:
 
 - **Seam:** `MemoryStore.insert(record: MemoryRecord) -> MemoryRecord` in
   [`app/store/active_memory_store.py`](../../apps/backend/app/store/active_memory_store.py),
-  reached on the **current live store obtained through the
-  `AuthoritativeActiveMemoryStoreHolder` (§A.6)** — the coordinator never holds or
-  injects a store instance directly. The coordinator constructs a `MemoryRecord` from
-  the validated `ReviewedImportSpecification` (§C.1) with a deterministic
-  caller-supplied `record_id` (§H.3) and inserts it through the holder's guarded seam.
+  called on the coordinator's **private candidate store** — the fresh
+  `InMemoryActiveMemoryStore` it reconstructs from the last validated durable snapshot
+  (§A.4, §E step 16), **never the holder's published live store** (Codex-2/3). The
+  coordinator never holds, injects, or mutates the published store; it constructs a
+  `MemoryRecord` from the validated `ReviewedImportSpecification` (§C.1) with a
+  deterministic caller-supplied `record_id` (§H.3), inserts it into the private candidate,
+  and later publishes the validated candidate through the holder's `publish` swap (§A.6,
+  §E step 20). The published store changes **only** by whole-store replacement, never by an
+  in-place insert.
 - **Duplicate semantics are reused, not reinvented.** The store already raises
   `DuplicateRecordError` on a colliding `record_id`. Because Phase 40H's `record_id`
   is a pure function of the reviewed content-identity, a duplicate insert means *this
@@ -1193,11 +1375,14 @@ one:
   37C lifecycle table** and the ruling forbids changing that table here. The store's
   `transition_lifecycle` remains available for other, independently-valid transitions
   outside this phase; Phase 40H's import path simply never uses it.
-- **Durability handshake.** Because the Active Memory store is in-memory with
-  caller-owned serialize/restore, the *effect* of the insert is made durable by the
-  mandatory `ActiveMemorySnapshotStore` (§A.4) **before** the ledger receipt is
-  committed (§E steps 17–18). Phase 40H does **not** re-home Active Memory records
-  into the ledger to fake durability.
+- **Durability-before-visibility handshake (Codex-2).** Because the Active Memory store is
+  in-memory with caller-owned serialize/restore, the *effect* of the insert is first made
+  durable by the mandatory `ActiveMemorySnapshotStore` (§A.4) over the **private candidate**
+  at generation `N+1` **before** the ledger receipt is committed (§E steps 17–18), and the
+  candidate is only **published** to runtime readers **after** the durable snapshot,
+  receipt, and reload-verify all succeed (§E steps 19–20). No reader ever sees the imported
+  record before it is durably persisted and verified. Phase 40H does **not** re-home Active
+  Memory records into the ledger to fake durability.
 
 ### F.3 Candidate-to-`MemoryRecord` provenance mapping
 
@@ -1237,7 +1422,7 @@ equality, §H.3):**
 | **Content-identity provenance** | `metadata.migration_provenance = {candidate_id, content_digest, assessment_report_id, assessment_version}` **only** — the four content-identity values, canonically dumped; **no** decision/attempt/authorization/idempotency member |
 | **Standing** | `lifecycle_state = INACTIVE`, `verification_state = UNVERIFIED` (§F.1); `confidence = None`; `evidence_ids = []`; `verification = None` |
 | **Supersession** | `supersession_refs = [SupersessionReference(kind=SUPERSEDES, target_record_id=<prior>, created_at=<decision_timestamp>)]` from the specification's authorized `supersession_refs` (0..1) |
-| **Deterministic timestamps** | `created_at = decision_timestamp` of the authorizing decision (stable across retries of that decision; the store neither stamps nor rewrites it); `observed_at =` a reviewer-authored stable instant from the specification when present, else `None` |
+| **Deterministic timestamps (distinct, never substituted — 37B §13)** | `created_at = decision_timestamp` of the authorizing decision (the moment the record was *recorded*; stable across retries of that decision; the store neither stamps nor rewrites it). `observed_at =` the specification's reviewer-authored **`observed_at`** (the *claimed observation time* of the imported content) when present, else `None`. The two are **semantically distinct** exactly as the real `MemoryRecord` keeps them (active_memory.py: `observed_at` = claimed observation time; `created_at` = when recorded) and are **never equated**: the coordinator validates the specification's `observed_at` format but never derives it from `decision_timestamp`, a wall clock, or the candidate (Codex-6). Both participate in `record_id` (§H.3). |
 
 **In the ledger only (never on the record):** `review_decision_id`,
 `specification_digest`, `authorization_context_id` + `authorization_context_digest`,
@@ -1254,9 +1439,12 @@ collapses "duplicate `record_id`" and "duplicate content" into one fact, so the 
 `DuplicateRecordError` gate has exactly one honest interpretation. `created_at` is
 included as the authorizing decision's `decision_timestamp` (not a wall-clock read), so
 a *retry of the same reviewed input* reproduces the identical record and `record_id`
-(Ruling 5), while *two genuinely distinct decisions* — which differ at least in
-`decision_timestamp` — deterministically produce **distinct `record_id`s** (two
-distinct records), never a silent merge and never a forced collision.
+(Ruling 5), while *two genuinely distinct decisions* — which differ in ≥1 identity-bearing
+decision field (distinct `review_decision_id`, §H.9) and typically in authored content or
+in their recorded `decision_timestamp` — deterministically produce **distinct
+`record_id`s** (two distinct records), never a silent merge and never a forced collision.
+A copy differing **only** in `decision_timestamp` is the *same* decision (§H.9) and the
+*same* record — not a distinct one (Codex-7).
 
 **The complete canonical `MemoryRecord` equality projection (Ruling 4).** The
 duplicate-insert gate compares the incoming record against the stored record using the
@@ -1337,17 +1525,23 @@ per-key sequence is `corrupt_ledger`, §J). Consequences:
 - **Retry after failure:** if no committed receipt exists for the key, a retry
   acquires a **new** `import_attempt_id` (§G.2), re-runs §E fully, and may create the
   (first and only) receipt.
-- **Distinct decisions over identical authored content:** a *different* approved
-  decision whose specification authors **byte-identical record content** — including the
-  same `created_at = decision_timestamp` — over the same `content_digest` + assessment
-  has a *different* idempotency key (it includes `review_decision_id` via a distinct
+- **Distinct decisions over identical authored content:** a **genuinely distinct**
+  approved decision (distinct `review_decision_id`: it differs in ≥1 identity-bearing
+  field — e.g. `reviewer_id`, `reason`, `evidence_references`, or `renewal_revision` —
+  **not** merely in `decision_timestamp`, §H.9) whose specification authors
+  **byte-identical record content** — including the same recorded
+  `created_at = decision_timestamp` — over the same `content_digest` + assessment has a
+  *different* idempotency key (it includes `review_decision_id` via a distinct
   `specification_digest`) but derives the *same* complete-content `record_id` (§H.3). Its
   import finds **complete canonical equality** at the insert gate (§F.3), reuses the
   already-existing record, and writes its own receipt referencing that `record_id` — one
-  record, a second audited receipt. A decision that differs in **any** authored field —
-  including a different `decision_timestamp` (⇒ different `created_at`), or different
-  kind/claim/project/scope — derives a **different** `record_id` (a distinct record,
-  §C.1, §F.3), never a merge and never a collision.
+  record, a second audited receipt. A distinct decision whose specification authors
+  **different** record content — a different recorded `created_at = decision_timestamp`,
+  a different `observed_at`, or different kind/claim/project/scope — derives a
+  **different** `record_id` (a distinct record, §C.1, §F.3), never a merge and never a
+  collision. A copy that changes **only** `decision_timestamp` is the *same* decision
+  (§H.9) and resolves to the recorded decision and its one record — it is not a second
+  record.
 - **Concurrency:** two concurrent requests for the same key cannot both create a
   record. The exclusive writer lock (§I.4) serializes them and the persisted-revision
   CAS (§I.5) rejects a stale writer (`revision_conflict`); one wins and the other
@@ -1377,7 +1571,8 @@ two of them can be derived by subtly different rules: the reviewed-input idempot
 (§H.1), `import_attempt_id` (§H.2), `MemoryRecord.record_id` (§H.3), `receipt_id`
 (§H.4), `specification_digest` (§H.5), `receipt_integrity_digest` (§H.6),
 `ledger_integrity_digest` (§H.7), `snapshot_integrity_digest` (§H.8),
-`review_decision_id` (§H.9), and `authorization_context_digest` (§H.10).
+`review_decision_id` (§H.9), and `authorization_context_id` + `authorization_context_digest`
+(§H.10). Their acyclic derivation order is fixed in §H.0a.
 
 - **Serialization:** canonical **UTF-8 JSON**; **object keys sorted** lexicographically
   by Unicode code point at **every** nesting level (nested objects canonicalized
@@ -1406,13 +1601,21 @@ two of them can be derived by subtly different rules: the reviewed-input idempot
 - **UUIDs:** none are minted — every identifier here is content-derived lowercase hex;
   no random/UUID field participates in any identity.
 - **Timestamps:** represented as their canonical `model_dump(mode="json")` ISO-8601
-  string with an explicit UTC offset. Timestamps are **excluded from every *identity***
-  (idempotency key, `import_attempt_id`, `receipt_id`, `specification_digest`,
-  `review_decision_id`, `authorization_context_digest`) **except**: the record's own
-  deterministic `created_at`/`observed_at`, which **are** part of `record_id` (§H.3,
-  because they are authoritative record content); and the two **integrity** digests
-  (`receipt_integrity_digest`, `ledger_integrity_digest`, `snapshot_integrity_digest`),
-  which deliberately cover every immutable field including timestamps.
+  string with an explicit UTC offset (timezone-naive values are rejected at the contract
+  edge). **Audit/ordering** timestamps are **excluded from every *identity*** —
+  `decision_timestamp` from `review_decision_id`; `issued_at` from
+  `authorization_context_id`; `attempt_timestamp`/`verification_timestamp` from
+  `import_attempt_id`/`receipt_id`. **Two categories of timestamp are authoritative
+  *content* and therefore participate:**
+  - the specification's **`observed_at`** and the record's derived `created_at`
+    (= `decision_timestamp`) and `observed_at` are authoritative **record content**, so
+    they participate in `specification_digest` (§H.5, the one exception to "no timestamp in
+    an identity domain" — because they *are* record content, not audit metadata) and in
+    `record_id` (§H.3);
+  - the **integrity digests** deliberately cover **every** immutable field including all
+    timestamps: `receipt_integrity_digest` (both receipt timestamps),
+    `authorization_context_digest` (`issued_at`, Codex-5), `ledger_integrity_digest`, and
+    `snapshot_integrity_digest`.
 - **Null vs absent:** an **absent optional field is omitted** from the canonical object;
   an explicit `null` is emitted **only** where null is a semantically meaningful value
   (e.g. `record_supersedes` uses an explicit null token to distinguish "no predecessor"
@@ -1437,6 +1640,45 @@ diagnostic — `record_identity_collision` (record ids), `receipt_integrity_fail
 (decision ids), `corrupt_ledger`/`corrupt_active_memory_snapshot` (envelope integrity),
 and the catch-all `canonical_identity_collision` for any other identifier — and is
 **never** silently merged or overwritten (§J).
+
+### H.0a Acyclic identity dependency order (Codex-1)
+
+Every derived identity is a pure function of already-existing content, and the
+derivation graph is a **strict DAG** — no identifier requires its own downstream
+derivative. The single authoritative creation/derivation order is:
+
+1. **candidate identity + `content_digest`** — Phase 40F output, upstream (exists first).
+2. **assessment identity + version** (`assessment_report_id`, `assessment_version`) —
+   Phase 40G output, upstream.
+3. **`review_decision_id`** (§H.9) — derived over the decision's own fields +
+   candidate/digest/assessment + evidence + `supersedes_decision_id` + `renewal_revision`.
+   **Depends on 1–2 only; it does *not* depend on any authorization, specification,
+   attempt, record, or receipt identity.**
+4. **`authorization_context_id`** and **`authorization_context_digest`** (§H.10) — derived
+   over the authorization grant's fields, **including `review_decision_id`** (subordinate
+   binding, authorization → decision). Depends on 1–3; the decision never depends on it.
+5. **`specification_digest`** (§H.5) — over the reviewer-authored specification fields,
+   including `review_decision_id`, `authorization_context_id`,
+   `authorization_context_digest`, `target_kind`, `claim`, `project_id`, `scope`,
+   `observed_at`. Depends on 1–4.
+6. **`idempotency_key`** (§H.1) — over candidate/digest/assessment + `review_decision_id`
+   + `specification_digest` + `authorization_context_id`. Depends on 1–5.
+7. **`import_attempt_id`** (§H.2) — over `(idempotency_key, attempt_sequence)`. Depends on
+   6.
+8. **`record_id`** (§H.3) — over the complete authoritative record content
+   (kind/claim/project/scope/source/standing/supersession/content-identity provenance/
+   `created_at`/`observed_at`). Depends on the specification content (5) and the decision's
+   `decision_timestamp` (as `created_at`); it is **independent of** the attempt, receipt,
+   authorization, and specification *digest* values (they are ledger-only audit, §F.3).
+9. **`receipt_id`** (§H.4) — over `idempotency_key`, `import_attempt_id`, `record_id`,
+   `record_supersedes`, `authorization_context_id`, `commit_generation`. Depends on 6–8.
+10. **integrity digests** — `receipt_integrity_digest` (§H.6), `ledger_integrity_digest`
+    (§H.7), `snapshot_integrity_digest` (§H.8): full-content seals computed **last** over
+    already-formed content (they are never inputs to any identity).
+
+No arrow ever points backward. In particular authorization (4) → decision (3) is the only
+edge between those two objects; the reverse edge is prohibited, which is the fix for the
+former review/authorization cycle.
 
 ### H.1 Reviewed-input idempotency key
 
@@ -1474,15 +1716,21 @@ and the catch-all `canonical_identity_collision` for any other identifier — an
   `evidence_ids = []`, `verification = null`); the authorized `supersession_refs`; the
   content-identity provenance block (`candidate_id`, `content_digest`,
   `assessment_report_id`, `assessment_version`); and the deterministic
-  `created_at` (= the authorizing decision's `decision_timestamp`) and `observed_at`.
-  In other words, **every field the store would serialize** (§F.3), so `record_id`
-  equality is **equivalent to complete canonical record equality** by construction.
+  `created_at` (= the authorizing decision's `decision_timestamp`) and `observed_at`
+  (= the specification's reviewer-authored `observed_at`, or null — §C.1, Codex-6). In other
+  words, **every field the store would serialize** (§F.3), so `record_id` equality is
+  **equivalent to complete canonical record equality** by construction.
 - **Deliberately excluded (ledger-only audit, never on the record):** `review_decision_id`,
-  `specification_digest`, `authorization_context_id`/`authorization_context_digest`,
-  `idempotency_key`, `import_attempt_id`, `attempt_sequence`, and every attempt/decision
-  timestamp. This is why a **retry of the same reviewed input** reproduces the same
-  `record_id` (§B.1, §G.3, Ruling 5); why a specification with different record content
-  — including a different `created_at = decision_timestamp` — produces a **new**
+  `renewal_revision`, `specification_digest`,
+  `authorization_context_id`/`authorization_context_digest`,
+  `idempotency_key`, `import_attempt_id`, `attempt_sequence`, `attempt_timestamp`, and
+  `verification_timestamp`. The **only** timestamps that participate are the two
+  authoritative-content ones: `created_at` (= the authorizing decision's
+  `decision_timestamp`) and `observed_at` (the specification's reviewer-authored claimed
+  observation instant, §C.1, Codex-6) — both included above. This is why a **retry of the
+  same reviewed input** reproduces the same `record_id` (§B.1, §G.3, Ruling 5); why a
+  specification with different record content — including a different
+  `created_at = decision_timestamp` or a different `observed_at` — produces a **new**
   `record_id` (§C.1, §F.3); and why a changed digest or changed assessment produces a
   **new** `record_id` that supersedes the prior one (§D.7).
 - **Canonical record equality** (the duplicate-insert gate, §F.3) compares the
@@ -1509,12 +1757,17 @@ and the catch-all `canonical_identity_collision` for any other identifier — an
 - **exact members:** every `ReviewedImportSpecification` field (§C.1) **except**
   `specification_digest` itself — contract name/version, `candidate_id`,
   `content_digest`, `assessment_report_id`, `assessment_version`, `review_decision_id`,
-  `target_kind`, the complete structured `claim`, `kind_claim_policy_version` (§C.2),
-  `project_id`, optional `scope`, `authorization_context_id`,
-  `authorization_context_digest` (§C.3), `evidence_references`, `source_type`,
-  `source_provenance`, and applicable `supersession_refs`.
-- **Excluded:** nothing except `specification_digest` itself. The specification carries
-  no temporal fields; the digest seals the reviewer-authored record content, its four
+  `target_kind`, the complete structured `claim`, the reviewer-authored **`observed_at`**
+  (or explicit null), `kind_claim_policy_version` (§C.2), `project_id`, optional `scope`,
+  `authorization_context_id`, `authorization_context_digest` (§C.3), `evidence_references`,
+  `source_type`, `source_provenance`, and applicable `supersession_refs`.
+- **Excluded:** nothing except `specification_digest` itself. The specification's one
+  timestamp, **`observed_at`, is authoritative record content (not audit metadata), so it
+  is included** (Codex-6) — this is why two specifications differing only in `observed_at`
+  are distinct reviewed inputs (distinct `specification_digest` ⇒ distinct idempotency key)
+  that also derive distinct `record_id`s (§H.3), which keeps idempotency and record
+  identity consistent (never a same-key/different-record `conflicting_replay`). The digest
+  seals the reviewer-authored record content (incl. `observed_at`), its four
   content-identity bindings, the kind/claim policy version, and the authorization-context
   binding so no subset can be altered undetected. A recompute mismatch is
   `specification_integrity_failure` (§C.1, §J).
@@ -1577,12 +1830,34 @@ and the catch-all `canonical_identity_collision` for any other identifier — an
 - **exact members (complete, versioned, domain-separated):** `review_policy_version`
   (§C), `reviewer_id`, `status`, `reason`, `notes` (or explicit null), `candidate_id`,
   `content_digest`, `assessment_report_id`, `assessment_version`, `evidence_references`
-  (authored order), `supersedes_decision_id` (or explicit null), and the relevant
-  `authorization_context_id` when a context is bound. These are exactly the fields that
-  make one decision **materially distinct** from another.
+  (authored order), `supersedes_decision_id` (or explicit null), and `renewal_revision`
+  (a non-negative integer, default `0`, §C). These are exactly the fields that make one
+  decision **materially distinct** from another.
+- **Acyclic by construction — no `authorization_context_id` member (Codex-1).** The
+  `authorization_context_id` is **deliberately not** a member of `review_decision_id`.
+  The review decision is the **authoritative object that exists first**; the
+  `ProjectScopeAuthorizationContext` is a **subordinate object created afterward that
+  references the decision** (its `review_decision_id` is one of *its* members and of
+  `authorization_context_id`/`authorization_context_digest`, §H.10). Deriving the
+  decision id from the authorization id — while the authorization id already derives from
+  the decision id — would be an **impossible circular derivation**; the plan forbids it.
+  The one-directional binding (authorization → decision, never the reverse) keeps the
+  identity graph a strict DAG (see the dependency-order statement in §H.0a) while still
+  binding authorization completely into the reviewed input downstream: the
+  `ReviewedImportSpecification` carries **both** `review_decision_id` and
+  `authorization_context_id` and seals them into `specification_digest` (§H.5), and the
+  idempotency key names both (§H.1). Authorization therefore cannot be reused across an
+  unrelated decision, and a review decision can never silently change its own downstream
+  authorization.
 - **Deliberately excluded:** `decision_timestamp` (audit-only, §B.2) and any other
-  temporal field — retained on the record as an audit field but never part of decision
-  identity.
+  temporal field — retained on the record as an audit field (and used as the record's
+  `created_at`, §F.3) but **never** part of decision identity. Because
+  `decision_timestamp` is excluded, **two submissions that differ *only* in
+  `decision_timestamp` derive the same `review_decision_id` and are the *same* decision**
+  (an idempotent duplicate, not a renewal, not a distinct decision — §D.7, Codex-7): the
+  first recorded decision is authoritative and its recorded `decision_timestamp` stands.
+  A differing `decision_timestamp` alone never creates a second decision and never a
+  second record.
 - **Compatibility with the actual Phase 40G model (honest).** Phase 40G owns the
   **assessment** contract only — `MigrationCandidateAssessmentReport` (`report_id`,
   `review_readiness`, `MEMORY_MIGRATION_CANDIDATE_ASSESSMENT_VERSION`) in
@@ -1593,32 +1868,58 @@ and the catch-all `canonical_identity_collision` for any other identifier — an
   file**. If a future implementation ever needs to change the 40G assessment contract,
   that file is named honestly in the implementation map (§L) — but this derivation does
   not.
-- **Renewal / supersession:** a renewed decision carries a `supersedes_decision_id` (and
-  typically a changed digest/assessment), so it derives a **distinct** `review_decision_id`;
-  the effective head is the newest non-superseded decision (§D.7).
-- **Duplicate / collision:** two decisions with byte-identical members derive the same
-  id and are the *same* decision (idempotent); a same-id/different-canonical-content
-  state is `review_decision_collision`, fail closed (§H.0, §J).
+- **Renewal / supersession (deterministic discriminator, Codex-7):** a **true renewal**
+  is a *new, distinct* decision that carries `supersedes_decision_id` (the predecessor it
+  renews) **and** differs from that predecessor in at least one identity-bearing member.
+  Normally that discriminator is a changed `content_digest` or `assessment_*` (the usual
+  reason review is re-opened, §D.7); when a reviewer must record a genuinely distinct
+  re-affirmation with **no other material change**, they increment the explicit
+  `renewal_revision` integer, which is itself an identity member and therefore yields a
+  **distinct** `review_decision_id`. A copy that changes **only** `decision_timestamp`
+  (same `renewal_revision`, same material fields) is **not** a renewal — it is the same
+  decision (above). The effective head of a decision line is the newest non-superseded
+  decision (§D.7).
+- **Duplicate / collision:** two submissions with byte-identical identity members
+  (regardless of `decision_timestamp`) derive the same id and are the *same* decision
+  (idempotent); a same-id/**different**-canonical-identity-content state is
+  `review_decision_collision`, fail closed (§H.0, §J). A differing `decision_timestamp`
+  under identical identity members is **not** a collision (the timestamp is not an
+  identity member) — it resolves to the recorded decision.
 - **Rejected / deferred identity:** `status` is a member, so an `approved`, a `rejected`,
   and a `deferred` decision over the same input have **distinct** ids and never collide.
 - **Multiple heads, cycles, missing predecessors:** fail closed as `supersession_tie` /
   `supersession_cycle` / `incomplete_review_provenance` (§D.7) before any insert.
 
-### H.10 `authorization_context_digest`
+### H.10 `authorization_context_id` and `authorization_context_digest`
 
-- **domain:** `migration-import/authorization-context` (an **identity** domain)
-- **exact members:** every `ProjectScopeAuthorizationContext` field (§C.3) **except**
-  `authorization_context_digest` itself — `authorization_context_version`,
-  `authorization_policy_version`, `authorization_context_id`, `authorized_project_id`,
-  `authorized_scopes` (sorted set-like, §H.0), `authorizing_principal_id`,
-  `review_decision_id`, `candidate_id`, `content_digest`, `assessment_report_id`,
-  `assessment_version`, `expires_at` (or explicit null), and `revoked`.
-- **Deliberately excluded:** `issued_at` (audit-only, §C.3) so an issuance timestamp can
-  never become a semantic authorization shortcut. `authorization_context_id` is the same
-  canonical derivation over the identity-bearing members (policy version, principal,
-  authorized project/scopes, and the decision/candidate/assessment bindings), excluding
-  `issued_at`. A recompute mismatch is `authorization_context_integrity_failure` (§C.3,
-  §J).
+Two **separate** derivations over the same grant — an *identity* and a *complete
+integrity seal* — kept distinct exactly as `receipt_id` (§H.4) and
+`receipt_integrity_digest` (§H.6) are (Codex-5):
+
+- **`authorization_context_id` — identity.** domain `migration-import/authorization-context`
+  (an **identity** domain). **members:** `authorization_policy_version`,
+  `authorized_project_id`, `authorized_scopes` (sorted set-like, §H.0),
+  `project_level_authorized`, `authorizing_principal_id`, `review_decision_id`,
+  `candidate_id`, `content_digest`, `assessment_report_id`, `assessment_version`,
+  `expires_at` (or explicit null), and `revoked`. **Excludes** `issued_at` (so a re-issued
+  identical grant is idempotent and a timestamp never becomes an authorization shortcut)
+  and excludes `authorization_context_id`/`authorization_context_digest` themselves. It
+  binds `review_decision_id` (authorization → decision) and is therefore **acyclic**
+  (§H.0a).
+- **`authorization_context_digest` — complete integrity seal.** domain
+  `migration-import/authorization-context-integrity` (a distinct **integrity** domain tag,
+  with its own schema-version tag, so an identity value and an integrity value can never
+  be confused). **members:** **every** `ProjectScopeAuthorizationContext` field
+  (§C.3) **except `authorization_context_digest` itself — INCLUDING `issued_at`** and
+  including `authorization_context_id`. Because it covers `issued_at`, the completeness
+  claim is honest: altering `issued_at`, `expires_at`, `revoked`, `project_level_authorized`,
+  any authorized scope, or any binding changes this digest and is detected as
+  `authorization_context_integrity_failure` (§C.3, §J), even though such a change does not
+  alter `authorization_context_id`.
+- **Consistency:** the plan never describes `authorization_context_digest` as "complete"
+  while excluding an immutable field; `issued_at` is the one field the earlier draft
+  excluded, and it is now inside the digest. `issued_at` is excluded **only** from the
+  semantic identity, where its exclusion is justified (audit-only timestamp).
 
 **Distinct-reviewed-input vs conflicting-replay (clarified):** different assessments
 or different review decisions over the same bytes form **distinct reviewed inputs**
@@ -1657,16 +1958,22 @@ artifacts, ordered so the durable ledger is the authoritative record of the outc
 
 1. durably record the **intent** (`import_attempt`, `intent_state = intended`, planned
    `target_record_id`, observed `commit_generation`) via the ledger CAS write (§I.5);
-2. insert the record into the Active Memory store (§F.2) and **durably persist the
-   Active Memory snapshot at `commit_generation + 1`** (§A.4);
+2. insert the record into a **private candidate store** (reconstructed off-guard from the
+   last validated durable snapshot, §F.2, §E step 16 — **not** the published live store)
+   and **durably persist that candidate as the Active Memory snapshot at
+   `commit_generation + 1`** (§A.4);
 3. durably record the **receipt** and advance the ledger's `commit_generation` to the
-   same `+1`, advancing the attempt to `committed`, via the ledger CAS write.
+   same `+1`, advancing the attempt to `committed`, via the ledger CAS write;
+4. after reload-verify, **publish** the validated candidate to the holder as the live store
+   (O(1) swap, §A.6) — the point at which the record becomes visible to readers.
 
-**The reporting commit point is step 3 — the durable receipt.** A receipt is written
-**after** the snapshot durably reflects the record at the new generation, so *a
-committed receipt whose generation matches the snapshot implies a durable record*. The
-converse gap (a durable snapshot at `+1` with no receipt) is exactly the recoverable
-window §I.7 resolves.
+**The reporting commit point is step 3 — the durable receipt** — but **visibility is
+deferred to step 4** (Codex-2). A receipt is written **after** the snapshot durably
+reflects the record at the new generation, so *a committed receipt whose generation
+matches the snapshot implies a durable record*. The record is not visible through the
+published live store until step 4 succeeds. The converse gap (a durable snapshot at `+1`
+with no receipt, and no publish) is exactly the recoverable window §I.7 resolves, and it
+reconstructs+publishes the live store from the durable `N+1` snapshot.
 
 ### I.3 Shared persisted commit generation
 
@@ -1796,8 +2103,9 @@ single primitive is atomic-create-or-fail on both Windows and POSIX and needs no
   already gone, or ownership can no longer be confirmed at release time), the
   coordinator maps it to a typed **`lock_release_failure`** with safe diagnostic
   context (no path echoed): the *operation's own* typed result is unchanged (a verified
-  import already committed at §E step 18 stays verified; a fail-closed result stays
-  that), but the **release anomaly is surfaced, never swallowed**, and a subsequent
+  import already durably committed and published, §E steps 18–20, stays verified; a
+  fail-closed/quarantine result stays that), but the **release anomaly is surfaced, never
+  swallowed**, and a subsequent
   acquirer treats the possibly-orphaned lock through the conservative stale/ambiguous
   rules above (a *foreign* or *malformed* leftover is never force-deleted). Release
   failure never silently leaves a caller believing the lock is cleanly freed.
@@ -1820,39 +2128,50 @@ defense-in-depth. **Atomic file replacement alone is explicitly not treated as
 sufficient** for either the concurrency guarantee (CAS) or the cross-store guarantee
 (shared generation, §I.3).
 
-### I.6 Post-insert failure and quarantine
+### I.6 Preparation/persist/publish failure and quarantine
 
-If the in-memory insertion (§E step 16) succeeds but **Active Memory snapshot
-persistence (step 17) fails**, the coordinator MUST:
+Because the whole import is prepared on a **private candidate store** and the live store
+is **published only at the very end** (§E steps 16–20, Codex-2), most failures never touch
+the published store at all — the live store simply keeps serving the untouched validated
+generation `N`, and the coordinator drops the private candidate. Specifically:
 
-1. **not retain the uncommitted live mutation** — the in-memory store now holds a
-   record that never became durable;
-2. **reload the last validated durable snapshot into a fresh authoritative in-memory
-   store** (via `ActiveMemorySnapshotStore.load`) and **atomically replace the live
-   store reference through the `AuthoritativeActiveMemoryStoreHolder` (§A.6)**,
-   discarding the live mutation. Readers observe either the prior validated store or
-   the replacement, never a partially restored one;
+1. **the published live store is never mutated in place** — the record was inserted into
+   the private candidate (§E step 16), so there is **no uncommitted live mutation to
+   discard**; on any preparation, snapshot-persist, receipt-persist, or reload-verify
+   failure the coordinator simply **drops the private candidate** and the published store
+   stays at the last validated `N`;
+2. **on a failure *after* the durable snapshot at `N+1` but before or during publish**, the
+   durable snapshot may already exist at `N+1`; recovery (§I.7) reconstructs a fresh store
+   from that durable snapshot and, on a full-checklist pass, **publishes it through the
+   holder** (§A.6). Readers observe either the prior validated store or the reconstructed
+   replacement, never a partially restored one;
 3. **preserve the durable intent** already written at step 14 and **mark the attempt
    `failed` or `uncertain`** as appropriate (below);
-4. **never create a verified receipt**;
-5. if the **safe reload/atomic replacement itself fails** (a typed
-   `live_store_replacement_failure`, §A.6), **quarantine/disable reviewed imports**
-   (mapped to `import_service_quarantined`, §J) until startup recovery succeeds — the
-   holder keeps serving the last validated store for read-only access but rejects new
-   reviewed imports rather than operating on unknown in-memory state;
+4. **never create a verified receipt on a failed path, and never report success on a failed
+   `publish`** (a failed publish → `import_service_quarantined`, §E step 20);
+5. if a required **reconstruct/validate/publish of the live store fails** (a typed
+   `live_store_replacement_failure`, §A.6), **quarantine/disable reviewed imports** (mapped
+   to `import_service_quarantined`, §J) until startup recovery succeeds — the holder keeps
+   serving the last validated store for read-only access but rejects new reviewed imports
+   rather than operating on unknown in-memory state;
 6. **return a typed fail-closed result.**
 
 Equivalent behavior for the specific failure modes:
 
 | Failure | What is (un)certain | Action | Attempt state |
 | --- | --- | --- | --- |
-| **Snapshot temp-write failure** (before `os.replace`) | Destination untouched; no `+1` snapshot exists | Discard live mutation, reload last validated snapshot; safe to retry | `failed` |
-| **Snapshot replacement failure** (`os.replace` raised) | Destination may or may not have been swapped | Discard live mutation, reload; if a valid `+1` snapshot with the planned record is present but no receipt → hand to recovery; else → failed | `uncertain` if a `+1` snapshot may exist, else `failed` |
-| **Snapshot reload / atomic replacement failure** (holder cannot restore last-validated durable state) | Authoritative in-memory state is unknown | Holder raises `live_store_replacement_failure`; **quarantine** reviewed imports until startup recovery; keep serving the last validated store for read-only, do not operate on unknown state | `uncertain`; `live_store_replacement_failure` → `import_service_quarantined` |
-| **Ledger receipt-persistence failure** (after snapshot success at `+1`) | Durable record exists at `+1`; no receipt; ledger generation still `N` | Leave the intent; on recovery, the `+1` snapshot + matching intent **prove the effect** → finalize by writing the receipt and advancing ledger generation (idempotent completion) | `uncertain` → recovery `committed` |
+| **Candidate build/insert/validate failure** (§E step 16) | Nothing durable past the intent; live store untouched at `N`; nothing published | Drop the private candidate; safe to retry | `failed` |
+| **Snapshot temp-write failure** (before `os.replace`) | Destination untouched; no `+1` snapshot exists; nothing published | Drop the private candidate; live store still `N`; safe to retry | `failed` |
+| **Snapshot replacement failure** (`os.replace` raised) | Destination may or may not have been swapped; nothing published | Drop the candidate; if a valid `+1` snapshot with the planned record is present but no receipt → hand to recovery; else → failed; live store still `N` | `uncertain` if a `+1` snapshot may exist, else `failed` |
+| **Ledger receipt-persistence failure** (after snapshot success at `+1`) | Durable record exists at `+1`; no receipt; ledger generation still `N`; nothing published | Leave the intent; on recovery, the `+1` snapshot + matching intent **prove the effect** → finalize by writing the receipt, advancing ledger generation, and **publishing** the reconstructed store (idempotent completion) | `uncertain` → recovery `committed` |
+| **Publish (final swap) failure** (§E step 20, after durable `N+1` commit) | Durable truth is `N+1`; live store still published at `N` | Holder raises `live_store_replacement_failure`; **do not report success**; **quarantine** reviewed imports until startup recovery reconstructs+publishes from the durable `N+1` snapshot; keep serving the last validated store for read-only | `committed` durably; operation → `import_service_quarantined` |
+| **Live-store reconstruct/publish failure during recovery** (holder cannot restore last-validated durable state) | Authoritative in-memory state is unknown | Holder raises `live_store_replacement_failure`; **quarantine** reviewed imports until startup recovery; keep serving the last validated store for read-only, do not operate on unknown state | `uncertain`; `live_store_replacement_failure` → `import_service_quarantined` |
 
 In every case: **never a verified receipt without a durable snapshot record at the
-agreed generation**, and **never a retained live mutation that never became durable.**
+agreed generation**, **never an imported record visible through the published live store
+before it is durably persisted and verified**, and **never a retained live mutation that
+never became durable** (the live store is only ever *replaced* by a fully validated
+store, never mutated in place).
 
 ### I.7 Uncertain-commit recovery (explicit routine, incl. the N/N+1 entry path)
 
@@ -1902,9 +2221,14 @@ may finalize anything:**
    (contiguous, non-duplicate, §G.2);
 9. **finalizes only after every check above passes:** recovery **persists the completed
    attempt and the verified receipt** (with a freshly computed `receipt_integrity_digest`
-   over the full receipt content, §H.6) at the snapshot's generation and **advances the
-   ledger `commit_generation` to `N+1`**, advancing the attempt to `committed`
-   (idempotent completion), and returns success;
+   over the full receipt content, §H.6) at the snapshot's generation, **advances the
+   ledger `commit_generation` to `N+1`**, advancing the attempt to `committed` (idempotent
+   completion), then **reconstructs the live in-memory store from the durable `N+1`
+   snapshot and publishes it through the holder** (§A.6, so the recovered record becomes
+   visible exactly as a normal import's step 20 would), and returns success. If that final
+   publish fails, it maps to `import_service_quarantined` (the durable state is already
+   `N+1`; a subsequent startup/recovery publishes it) — success is not reported until the
+   live store reflects `N+1`;
 10. **otherwise fails closed — no historical-generation restoration is ever attempted
     (Ruling 6).** Phase 40H retains **only** the current ledger and the current snapshot;
     it keeps **no** multi-generation snapshot history and **no** journal, so there is no
@@ -2020,17 +2344,17 @@ normalized to the canonical taxonomy below.
 | `deferred_candidate` | Effective decision is `deferred` | fail closed (no mutation) |
 | `stale_approval` | Approved decision whose candidate digest or assessment no longer matches the present input, or which has been superseded | fail closed (no mutation) |
 | `contradictory_evidence` | Approval contradicts assessment verdict or points at a different candidate | fail closed |
-| `missing_reviewed_specification` | An approved candidate presented with **no** `ReviewedImportSpecification` (§C.1) | fail closed |
-| `invalid_reviewed_specification` | Specification structurally invalid (`extra="forbid"`/missing required field) — pure contract failures the model raises | fail closed |
-| `kind_claim_incompatible` | `target_kind`/`claim` violates the closed versioned kind↔claim policy (§C.2): unsupported/unmapped kind, `value_kind` outside the kind's permitted set, missing triple field, or unrecognized `kind_claim_policy_version` | fail closed |
-| `specification_binding_mismatch` | Specification candidate/digest/assessment/`review_decision_id` ≠ the reviewed decision | fail closed |
-| `unauthorized_project_scope` | Specification `project_id`/`scope` outside the authorization context's `authorized_project_id`/`authorized_scopes` (incl. any widening, or a required-but-missing scope) | fail closed |
+| `missing_reviewed_specification` | **(precedence 1)** An approved candidate presented with **no** `ReviewedImportSpecification` (§C.1) | fail closed |
+| `invalid_reviewed_specification` | **(precedence 2 — model layer)** Specification/claim structurally invalid: `extra="forbid"`, missing required field, blank subject/predicate/value, over-bound value, a `value_kind`/`target_kind`/`source_type` **not a valid enum member**, or a timezone-naive/malformed `observed_at` — pure contract failures the model raises **before** any semantic check | fail closed |
+| `specification_integrity_failure` | **(precedence 3)** Recomputed `specification_digest` (§H.5) ≠ stored — a specification (incl. its claim/kind/`observed_at`) **altered after review**; checked before semantics | fail closed |
+| `specification_binding_mismatch` | **(precedence 4)** Specification candidate/digest/assessment/`review_decision_id` ≠ the reviewed decision | fail closed |
+| `unauthorized_project_scope` | **(precedence 5 — authorization)** Specification `project_id` ≠ the context's `authorized_project_id`, **or** a `scope` that is **not an exact member** of `authorized_scopes` (§C.3; any non-member, regardless of any human notion of broader/narrower — no hierarchy exists), **or** an absent scope without `project_level_authorized` | fail closed |
+| `kind_claim_incompatible` | **(precedence 6 — policy layer)** A structurally valid, integrity-intact, correctly-bound, authorized specification whose `(target_kind, claim)` violates the closed versioned kind↔claim policy (§C.2): a valid-member kind with **no policy rule** (unmapped kind), a valid-member `value_kind` **outside** the kind's permitted set, or an unrecognized `kind_claim_policy_version`. **Never** overlaps `invalid_reviewed_specification` (structural failures resolve at precedence 2) | fail closed |
 | `missing_authorization_context` | An approved candidate/specification presented with **no** `ProjectScopeAuthorizationContext` (§C.3) | fail closed |
 | `authorization_context_integrity_failure` | Recomputed `authorization_context_digest` (§H.10) ≠ stored — altered/stale authorization context | fail closed |
 | `authorization_context_revoked` | The authorization context's `revoked` flag is set | fail closed |
 | `authorization_context_expired` | The authorization context's `expires_at` precedes the decision/import time | fail closed |
 | `authorization_context_mismatch` | Authorization context bound to a different project/decision/candidate/assessment than the specification (incl. cross-project) | fail closed |
-| `specification_integrity_failure` | Recomputed `specification_digest` (§H.5) ≠ stored — stale or altered specification | fail closed |
 | `supersession_tie` | Two distinct records/decisions would become active heads of one logical line with identical ordering keys | fail closed |
 | `supersession_cycle` | Proposed supersession links would close a cycle in the supersession graph | fail closed |
 | `duplicate_replay` | Same idempotency key as an existing committed receipt | return the **exact stored receipt** (idempotent) |
@@ -2092,7 +2416,7 @@ profile is touched).
 | 10 | Stale lock: conclusively-dead owner past threshold reclaimed; ambiguous owner refused | A | dead+stale → single reclaim; inconclusive/other-host → `stale_lock_ambiguous`, no reclaim |
 | 11 | Distinct `import_attempt_id` per retry; stable idempotency key; attempt-sequence integrity | S/C | `attempt_sequence` 1,2,3… contiguous per key; gap/dup → `corrupt_ledger`; one stable key; one committed receipt |
 | 12 | Canonical identity serialization + domain separation + §H.0 rules | C | idempotency/attempt/record/receipt/specification/receipt-integrity/ledger-integrity/snapshot-integrity/review-decision/authorization values stable, sorted-key UTF-8 NFC canonical JSON, domain-tagged (identity vs integrity domains distinct); null-vs-absent, set-like sorting, authored-order lists, no-path, lowercase-hex all honored; claim value/summary whitespace+case preserved exactly; cross-domain collisions impossible; no timestamps in any *identity* except the record's own `created_at`/`observed_at`; both timestamps in the *integrity* digests |
-| 13 | Provenance mapping: record carries **content-identity tier only**; audit is ledger-only | C/S | record `metadata.migration_provenance` = candidate/digest/assessment **only**; `review_decision_id`/`specification_digest`/`authorization_context_id`/`idempotency_key`/`evidence_references`/`import_attempt_id`/`attempt_sequence` are **absent from the record** and present in the ledger; kind/claim/project/scope from the specification (§C.1); `source_type = IMPORTED_DOCUMENT`; `created_at = decision_timestamp`; no Phase 37B model change |
+| 13 | Provenance mapping: record carries **content-identity tier only**; audit is ledger-only; `observed_at` source | C/S | record `metadata.migration_provenance` = candidate/digest/assessment **only**; `review_decision_id`/`specification_digest`/`authorization_context_id`/`idempotency_key`/`evidence_references`/`import_attempt_id`/`attempt_sequence`/`renewal_revision` are **absent from the record** and present in the ledger; kind/claim/project/scope from the specification (§C.1); `source_type = IMPORTED_DOCUMENT`; `created_at = decision_timestamp` and `observed_at =` the specification's reviewer-authored `observed_at` (or `None`) — **never derived from `decision_timestamp` or a clock, kept distinct** (§F.3, Codex-6); exact replay reproduces the same `record_id`; a changed spec `observed_at` yields a **distinct** `specification_digest` **and** `record_id`; no Phase 37B model change |
 | 14 | Duplicate `record_id` with **complete** canonical equality reuses the record | S/I | already-inserted case: complete `model_dump` equality → one record, second receipt referencing it |
 | 15 | Any single differing field under the same `record_id` | S/I | mutate each of `kind`/`claim`/`project_id`/`scope`/`source`/standing/`supersession_refs`/`created_at`/`observed_at`/`metadata` individually → `record_identity_collision`, fail closed |
 | 16 | Receipt contract fields present; identity separated from full-content integrity | C | all §B.3 fields; `receipt_id` (§H.4) stable across differing timestamps; `receipt_integrity_digest` (§H.6) recomputes and verifies over the complete content including both timestamps |
@@ -2106,10 +2430,10 @@ profile is touched).
 | 24 | Initial startup load (cold start) | I | neither artifact present → both initialized at generation 0 under the lock |
 | 25 | Missing or corrupt snapshot | A/I | `snapshot_missing` / `corrupt_active_memory_snapshot`, fail closed |
 | 26 | Shared-generation mismatch | A/I | ledger and snapshot generations disagree → `generation_mismatch`, fail closed |
-| 27 | Failure after in-memory insertion but before snapshot durability | I | no verified receipt; live mutation discarded; reload of last validated snapshot; attempt `failed` |
-| 28 | Rollback/reload of live in-memory state | I | post-insert failure reloads durable snapshot into a fresh store; no retained uncommitted record |
+| 27 | Failure during private-candidate prep / before snapshot durability | I | no verified receipt; **published live store never mutated** (still `N`); private candidate dropped; attempt `failed`; nothing ever became visible (Codex-2) |
+| 28 | Publish is last; no pre-durability visibility | I | a reader concurrent with an import in flight sees generation `N` (old validated store) until the durable `N+1` snapshot+receipt+reload-verify all pass **and** `publish` swaps; it **never** observes the imported record before durability; a publish failure after durable `N+1` → quarantine (no false success), later reconstructed from the `N+1` snapshot |
 | 29 | Quarantine when reload fails | I | `import_service_quarantined`; reviewed imports disabled until startup recovery |
-| 30 | Interrupted snapshot temp write | A/I | destination untouched; discard live mutation; safe retry |
+| 30 | Interrupted snapshot temp write | A/I | destination untouched; drop the private candidate; published live store still `N`; safe retry |
 | 31 | Interrupted snapshot replacement | A/I | uncertain if `+1` may exist → recovery; else failed; never false success |
 | 32 | Receipt persistence failure after snapshot success | I | `+1` snapshot + intent prove effect → recovery finalizes receipt (idempotent) |
 | 33 | Uncertain commit — record present, no receipt → recovery finalizes | I | §I.7 writes receipt at snapshot generation, returns stored success, idempotent |
@@ -2139,33 +2463,33 @@ profile is touched).
 | 57 | Existing Phase 40E–40G contracts remain regression-clean | R | 40E/40F/40G suites unchanged and passing |
 | 58 | Full backend suite passes during implementation | R | green (baseline count + new Phase 40H tests) |
 | 59 | Candidate carries no kind/claim/project; specification supplies them | C | `MemoryMigrationCandidate` exposes no `kind`/`claim`/`project_id`; the constructed `MemoryRecord`'s kind/claim/project/scope derive **only** from the `ReviewedImportSpecification`; coordinator never infers |
-| 60 | Missing / invalid / mis-bound / unauthorized / stale specification | S/C | `missing_reviewed_specification` / `invalid_reviewed_specification` / `specification_binding_mismatch` / `unauthorized_project_scope` / `specification_integrity_failure`, each fail closed |
+| 60 | Missing / invalid / mis-bound / unauthorized / stale specification; **diagnostic precedence** | S/C | `missing_reviewed_specification` / `invalid_reviewed_specification` / `specification_binding_mismatch` / `unauthorized_project_scope` / `specification_integrity_failure`, each fail closed; **fixed precedence (Codex-8):** missing → structural(`invalid`) → integrity(`specification_integrity_failure`) → binding → authorization → kind/claim policy; a specification that is simultaneously structurally invalid *and* kind/claim-incompatible yields `invalid_reviewed_specification` (structural wins); an altered-after-review spec yields `specification_integrity_failure` (not `kind_claim_incompatible`) |
 | 61 | Distinct specifications for one candidate are distinct reviewed inputs | S/I | different `target_kind`/`claim`/`project` → different `specification_digest` → different idempotency key **and** different `record_id`; two records, two receipts; materially different collision → `conflicting_replay` |
 | 62 | Idempotency key + `record_id` bind the exact specification | C | key includes `specification_digest` (§H.1); `record_id` covers specification record content (§H.3); re-presenting the same specification is idempotent |
 | 63 | N/N+1 recovery exception is evaluated **before** ordinary generation equality | I | ledger `N` / snapshot `N+1` / intent present / no receipt is routed to §I.7 recovery; the general `generation_mismatch` rejection never fires first for this state |
 | 64 | Every other generation inequality fails closed (not the exception) | A/I | gap > 1, snapshot `< N` or `> N+1`, missing/invalid intent, non-exact record, provenance/supersession diff, unexpected receipt, or bad `attempt_sequence` → `generation_mismatch` / `corrupt_*` / `record_identity_collision` / `uncertain_commit_result`, never finalized |
 | 65 | N/N+1 recovery finalize validates the full checklist | I | §I.7 finalizes only after envelopes/integrity, `N+1 = N+1`, intent, `record_id`, complete record equality, provenance, candidate/assessment/decision/specification linkage, supersession, no contradictory attempt/receipt, and `attempt_sequence` all pass |
-| 66 | Holder atomic replacement: readers observe prior or replacement, never partial | I | during reload/replace, concurrent readers see either the last validated store or the fully reconstructed replacement; no partially restored store is ever observed |
+| 66 | Holder `publish` replacement: readers observe prior or replacement, never partial | I | during `publish`, concurrent readers see either the last validated store or the fully reconstructed/validated replacement; no partially restored store and no pre-durability record is ever observed |
 | 67 | Holder quarantine behavior | I | `live_store_replacement_failure` → `import_service_quarantined`; new reviewed imports rejected; unrelated read-only access still served from the last validated store; cleared only after locked startup/recovery validation |
 | 68 | Same-process multithreading: holder in-process guard + filesystem lock | A/I | concurrent same-process threads serialized by the holder's in-process synchronization seam **and** the `O_EXCL` lock; exactly one record; no partial read; no double write |
 | 69 | Malformed lock metadata never reclaimed | A | unreadable/truncated/missing-owner lock payload → `malformed_lock_metadata`, fail closed, no reclaim, no deletion |
 | 70 | Lock release/deletion failure surfaced, not swallowed | A | an owned lock that cannot be released → `lock_release_failure` surfaced; the operation's own committed/fail-closed result unchanged; a foreign/malformed leftover is never force-deleted |
 | 71 | Kind↔claim policy: every permitted `(kind, value_kind)` pairing accepted | C | all six kinds × their §C.2 permitted `value_kind` sets validate |
 | 72 | Kind↔claim policy: every invalid pairing rejected | C | each `value_kind` outside a kind's set → `kind_claim_incompatible`, fail closed |
-| 73 | Kind↔claim policy: unsupported/unmapped kind + malformed claim + policy-version mismatch | C | unmapped kind, missing triple field, and unrecognized `kind_claim_policy_version` → `kind_claim_incompatible`; pure structural failure → `invalid_reviewed_specification` |
-| 74 | Authorization context: valid grant authorizes exact project + in-set (narrowed) scope | S/C | project equality + scope-within-`authorized_scopes` accepted; import proceeds |
-| 75 | Authorization context: project mismatch / scope widening | S | cross-project → `authorization_context_mismatch`; broader/out-of-set scope → `unauthorized_project_scope` |
-| 76 | Authorization context: missing / altered / revoked / expired | S/C | `missing_authorization_context` / `authorization_context_integrity_failure` / `authorization_context_revoked` / `authorization_context_expired`, each fail closed |
+| 73 | Kind↔claim policy: unsupported/unmapped kind + malformed claim + policy-version mismatch; **non-overlap** | C | a valid-member `MemoryRecordKind` with no policy rule (unmapped kind), a valid-member `value_kind` outside the kind's set, and an unrecognized `kind_claim_policy_version` → `kind_claim_incompatible`; a **non-member** `value_kind`/`target_kind`, missing triple field, or `extra` field → `invalid_reviewed_specification` (structural, at the model, before policy) — the two codes never both fire for one input (Codex-8) |
+| 74 | Authorization context: valid grant authorizes exact project + **exact-member** scope; project-level | S/C | `project_id == authorized_project_id` **and** `scope` an exact member of `authorized_scopes` accepted; a scope-less spec accepted **iff** `project_level_authorized`; import proceeds; **no hierarchy is ever consulted** (§C.3, Codex-4) |
+| 75 | Authorization context: project mismatch / non-member scope / absent scope | S | cross-project → `authorization_context_mismatch`; a `scope` that is **not an exact member** (whether a human would call it broader or narrower) → `unauthorized_project_scope`; absent scope without `project_level_authorized` → `unauthorized_project_scope`; project and scope checks are independent |
+| 76 | Authorization context: missing / altered (incl. `issued_at`) / revoked / expired; duplicate/malformed scopes | S/C | `missing_authorization_context` / `authorization_context_integrity_failure` (**including a tampered `issued_at`**, Codex-5) / `authorization_context_revoked` / `authorization_context_expired`, each fail closed; duplicate `authorized_scopes` members de-duplicated (digest unchanged), empty scopes valid only with `project_level_authorized` |
 | 77 | Authorization context: repository location is never authorization | S | a request with no valid context is refused regardless of which repo the process runs in |
 | 78 | Ledger envelope integrity: alter every field individually | A | mutate `commit_generation`, `ledger_revision`, any decision/attempt/intent/receipt/provenance member → recomputed `ledger_integrity_digest` (§H.7) mismatch → `corrupt_ledger`, fail closed |
 | 79 | Snapshot envelope integrity: alter generation or any record | A | mutate `commit_generation` or any record → recomputed `snapshot_integrity_digest` (§H.8) mismatch → `corrupt_active_memory_snapshot`, fail closed |
 | 80 | Envelope integrity verified before any generation value trusted | I/A | a snapshot with a tampered generation but stale digest is rejected on integrity **before** N/N+1 classification runs; untrusted generation never authorizes recovery |
 | 81 | `import_attempt_id`/`attempt_sequence` absent from authoritative record; retry stability | S/I | constructed record and `record_id` identical across retries; the record never contains attempt/decision/authorization audit; the receipt links by `record_id` only |
-| 82 | `review_decision_id` derivation (§H.9): members, renewal, rejected/deferred, collision | C | id binds policy-version/reviewer/status/reason/candidate/digest/assessment/evidence/predecessor/authorization; `decision_timestamp` excluded; rejected vs approved distinct; same-id/different-content → `review_decision_collision` |
+| 82 | `review_decision_id` derivation (§H.9): members, renewal, timestamp-only, rejected/deferred, collision, **acyclicity** | C | id binds policy-version/reviewer/status/reason/candidate/digest/assessment/evidence/predecessor/`renewal_revision`; **`decision_timestamp` and any `authorization_context_id` excluded** (a copy differing only in `decision_timestamp` is the *same* decision — idempotent, not a renewal); an incremented `renewal_revision` yields a distinct id; rejected vs approved distinct; same-id/different-identity-content → `review_decision_collision`; the review→authorization graph is verified **acyclic** (authorization references the decision, never the reverse, §H.0a) |
 | 83 | Review lineage cycles/heads/missing predecessors under `review_decision_id` | S | `supersession_cycle` / `supersession_tie` / `incomplete_review_provenance`, fail closed |
 | 84 | Exhaustive generation-state table (§I.9) | I/A | each row (missing/corrupt/`N`-`N`/`N`-`N+1`/`N+1`-`N`/gap>1/invalid/inconsistent) yields its mapped outcome; only the one N/N+1-with-intent state finalizes forward |
 | 85 | No historical-generation restoration (Ruling 6) | I | unrecoverable states quarantine; no rollback to a non-retained generation; proven `N+1` effect never discarded; neither artifact silently rewritten |
-| 86 | Holder never leaks a raw store; lock acquisition/release failure at both layers | A/I | `read`/`mutate` callbacks receive results not the store; filesystem-lock-then-write-guard order; release reverse order; acquisition/release failure at either layer surfaced, no partial swap |
+| 86 | Holder never leaks a raw store (no caller callbacks); lock acquisition/release failure at both layers | A/I | every holder operation returns a record/copy/collection/scalar/`None`, **never** an `InMemoryActiveMemoryStore`; there is **no** `read(fn)`/`mutate(fn)` callback surface and a caller cannot obtain, retain, or mutate the live store outside `publish` (Codex-3); the only mutation is `publish(validated_store)`; filesystem-lock-then-write-guard order; release reverse order; acquisition/release failure at either layer surfaced, no partial swap |
 
 The full backend suite MUST pass during the implementation phase; these cases are
 authored then, not now.
@@ -2184,21 +2508,21 @@ components, not conditional fallbacks**. Nothing below is written during plannin
 
 | File | New/Mod | Responsibility | Preserves / integrates |
 | --- | --- | --- | --- |
-| `apps/backend/app/models/memory_migration_import.py` | New | `memory-migration-import.v1` **workflow** contracts only: review decision (with `review_policy_version`, `supersedes_decision_id`), evidence reference, the **`ReviewedImportSpecification`** (§C.1: `target_kind`, complete structured `claim`, `kind_claim_policy_version`, validated `project_id`, optional `scope`, `authorization_context_id`/`authorization_context_digest`, `source_type = IMPORTED_DOCUMENT`, source/provenance, supersession refs, `specification_digest`), the **`ProjectScopeAuthorizationContext`** (§C.3), the named **`KindClaimCompatibilityValidator`** + `KIND_CLAIM_COMPATIBILITY_POLICY_VERSION` policy (§C.2, pure), the named **`ProjectScopeAuthorizationValidator`** (§C.3, pure), the **`review_decision_id`** derivation helper (§H.9), import attempt (`attempt_sequence`, `intent_state`, observed `commit_generation`), receipt (§B.3, incl. `commit_generation`, `verification_status`, both timestamps, `specification_digest`, authorization ids, and the full-content **`receipt_integrity_digest`**), `MigrationProvenance` sub-model (**content-identity tier only**, §F.3), `commit_generation`/`ledger_revision` types, canonical identity/integrity helpers + domain tags for **all ten values** (§H.1–§H.10, incl. `ledger_integrity_digest`/`snapshot_integrity_digest`), the shared **§H.0 canonicalizer**, closed diagnostic taxonomy (§J), ledger + snapshot **envelope** documents (with type tags + integrity digests). `extra="forbid"`, pinned versions. **Does not redefine `MemoryRecord`; references its `kind`/`claim`/`project_id`/`scope`/enums, which the candidate does not carry. No Phase 40G contract change (the review *decision* is Phase-40H-owned; 40G owns only the assessment).** | Phase 40E/40F/40G contracts; the `MemoryRecord`/`MemoryClaim`/`MemoryRecordKind`/`MemoryScope` types (read-only); **references** (not copies of) `MemoryRecord.record_id` |
+| `apps/backend/app/models/memory_migration_import.py` | New | `memory-migration-import.v1` **workflow** contracts only: review decision (with `review_policy_version`, `supersedes_decision_id`, **`renewal_revision`**, §C/§D7), evidence reference, the **`ReviewedImportSpecification`** (§C.1: `target_kind`, complete structured `claim`, reviewer-authored **`observed_at`**, `kind_claim_policy_version`, validated `project_id`, optional exact-member `scope`, `authorization_context_id`/`authorization_context_digest`, `source_type = IMPORTED_DOCUMENT`, source/provenance, supersession refs, `specification_digest`), the **`ProjectScopeAuthorizationContext`** (§C.3, incl. `authorized_scopes` set + **`project_level_authorized`** + `issued_at`), the named **`KindClaimCompatibilityValidator`** + `KIND_CLAIM_COMPATIBILITY_POLICY_VERSION` policy (§C.2, pure, precedence-owned), the named **`ProjectScopeAuthorizationValidator`** (§C.3, pure, **exact set membership, no hierarchy**), the **acyclic** identity helpers — `review_decision_id` (§H.9, **excludes `authorization_context_id`**), `authorization_context_id` (§H.10, excludes `issued_at`) and `authorization_context_digest` (§H.10, **includes `issued_at`**) — per the §H.0a dependency order, import attempt (`attempt_sequence`, `intent_state`, observed `commit_generation`), receipt (§B.3, incl. `commit_generation`, `verification_status`, both timestamps, `specification_digest`, authorization ids, and the full-content **`receipt_integrity_digest`**), `MigrationProvenance` sub-model (**content-identity tier only**, §F.3), `commit_generation`/`ledger_revision` types, canonical identity/integrity helpers + domain tags for **all eleven values** (§H.1–§H.10, split `authorization_context_id`/`_digest`, incl. `ledger_integrity_digest`/`snapshot_integrity_digest`), the shared **§H.0 canonicalizer**, closed diagnostic taxonomy (§J), ledger + snapshot **envelope** documents (with type tags + integrity digests). `extra="forbid"`, pinned versions. **Does not redefine `MemoryRecord`; references its `kind`/`claim`/`project_id`/`scope`/`observed_at`/enums, which the candidate does not carry. No Phase 40G contract change (the review *decision* is Phase-40H-owned; 40G owns only the assessment).** | Phase 40E/40F/40G contracts; the `MemoryRecord`/`MemoryClaim`/`MemoryRecordKind`/`MemoryScope` types (read-only); **references** (not copies of) `MemoryRecord.record_id` |
 | `apps/backend/app/services/memory_migration_import_store.py` | New | Durable **ledger** adapter: versioned-JSON ledger, OS-path resolution + `HIVEMIND_MIGRATION_IMPORT_PATH` override, bounded load with typed failures, atomic append-with-CAS write (§I.5), `commit_generation` on the ledger doc (§I.3), **`ledger_integrity_digest` seal + verify (§H.7)**, load-time integrity **detection** scan (§I.8, §I.9). | Phase 39B `RepositoryWorkspaceConfigService` persistence pattern (path resolution, atomic temp-swap, typed errors) |
 | `apps/backend/app/services/active_memory_snapshot_store.py` | New (**mandatory**) | Durable **Active Memory snapshot** owner (§A.4): serialize/load/validate/atomic-replace over the existing `InMemoryActiveMemoryStore.serialize()`/`restore()`; `active-memory-snapshot.v1` envelope carrying `commit_generation` + **`snapshot_integrity_digest` seal + verify (§H.8)**; path resolution + `HIVEMIND_ACTIVE_MEMORY_SNAPSHOT_PATH` override; startup load; typed failures (`snapshot_missing`, `corrupt_active_memory_snapshot`, `generation_mismatch`, `persistence_failure`, `partial_write_detected`). **Wraps, never rewrites, the store; never re-homes records into the ledger.** | Phase 37C serialize/restore boundary; Phase 39B atomic-write pattern |
 | `apps/backend/app/services/migration_import_lock.py` | New | The **single** exclusive lock-file protocol (§I.4): `os.O_CREAT | os.O_EXCL | os.O_WRONLY` atomic create, owner metadata (`owner_pid`, `created_at`, `operation_identity` = idempotency key, host/boot), bounded acquire (timeout/poll/max-attempts), conservative stale detection with positive PID-absence validation (stdlib only), ownership-checked release in success/failure/exception. | Standard library only; no new dependency |
-| `apps/backend/app/services/active_memory_store_holder.py` | New (**mandatory**) | The **`AuthoritativeActiveMemoryStoreHolder`** (§A.6): owns the current authoritative live `InMemoryActiveMemoryStore` reference; exposes only guarded `read(fn)`/`mutate(fn)` operations that **never hand out the raw store**; provides the explicit **shared-read / exclusive-write in-process guard** with the fixed **filesystem-lock-then-write-guard acquisition order** and reverse-order exception-safe release (§A.6.1); performs **reconstruct-and-validate off-guard, then O(1) atomic swap under the shortest write-guard boundary** via `ActiveMemorySnapshotStore.load`; distinguishes failed reconstruction from failed swap; exposes quarantine state + reason safely; rejects new reviewed imports while quarantined while still serving read-only from the last validated store; produces `live_store_replacement_failure`. **Wraps the store; never modifies the store class; never persists; never re-homes records.** | Phase 37C `InMemoryActiveMemoryStore` (wrapped unchanged); Phase 39B typed-failure discipline |
-| `apps/backend/app/services/memory_migration_import.py` | New | The **import coordinator** (§A.2): owns the lock lifecycle; the ordered protocol (§E) — record review decision, **validate the `ReviewedImportSpecification` (§C.1)** including **kind/claim policy (§C.2)** and **authorization context (§C.3)**, allocate attempt sequence, persist intent, insert via the Active Memory seam **through the holder's `mutate` (§A.6, §F.2)** with the **complete `model_dump` equality gate (§F.3)**, persist snapshot at `+1` (§A.4), commit receipt (with `receipt_integrity_digest`) at matching generation, reload-and-verify linkage; idempotent replay lookup (§G); **post-insert failure + atomic-reload quarantine** (§I.6); **uncertain-commit recovery incl. the N/N+1 entry path evaluated only after envelope-integrity validation and before generation equality** (§H.7/§H.8, §I.3a, §I.7, §I.9); startup load+validate of both stores under the lock (§I.3). Constructs the `MemoryRecord` **only** from the validated specification (`created_at = decision_timestamp`; **no attempt/decision/authorization audit on the record**) — never infers kind/claim/project. | The §C–§J rules; **depends on** the existing `MemoryStore` protocol **via the holder**; Phase 40F candidate + Phase 40G report contracts reused unchanged |
+| `apps/backend/app/services/active_memory_store_holder.py` | New (**mandatory**) | The **`AuthoritativeActiveMemoryStoreHolder`** (§A.6): owns the current **published** authoritative `InMemoryActiveMemoryStore` reference; exposes **holder-owned read/query operations** (`find_record`/`get_record`/`list_records`/`snapshot_payload`/`current_generation`/`quarantine_state`) returning copy-safe results and a single **`publish(replacement, expected_generation, new_generation)`** swap — **no `read(fn)`/`mutate(fn)` callbacks and no operation that returns/lends/mutates the raw store** (Codex-3); provides the explicit **shared-read / exclusive-write in-process guard** with the fixed **filesystem-lock-then-write-guard acquisition order** and reverse-order exception-safe release (§A.6.1); the coordinator builds+validates the replacement **off-guard** from `ActiveMemorySnapshotStore.load`, and `publish` does the **O(1) swap under the shortest write-guard boundary**; distinguishes failed candidate construction from failed swap; exposes quarantine state + reason safely; rejects new reviewed imports while quarantined while still serving read-only from the last validated store; produces `live_store_replacement_failure`. **Wraps the store; never modifies the store class; never persists; never re-homes records; never mutates the published store in place.** | Phase 37C `InMemoryActiveMemoryStore` (wrapped unchanged); Phase 39B typed-failure discipline |
+| `apps/backend/app/services/memory_migration_import.py` | New | The **import coordinator** (§A.2): owns the lock lifecycle; the ordered protocol (§E) — record review decision, **validate the `ReviewedImportSpecification` (§C.1)** including **kind/claim policy (§C.2)** and **authorization context (§C.3)** in fixed precedence, allocate attempt sequence, persist intent, **build a private candidate store from the durable snapshot and insert into it via the Active Memory seam (§A.6, §F.2)** with the **complete `model_dump` equality gate (§F.3)**, persist the candidate as snapshot at `+1` (§A.4), commit receipt (with `receipt_integrity_digest`) at matching generation, reload-and-verify linkage, then **`publish` the validated candidate last** (§E step 20); idempotent replay lookup (§G); **prep/persist/publish failure + quarantine** (§I.6); **uncertain-commit recovery incl. the N/N+1 entry path evaluated only after envelope-integrity validation and before generation equality, finalizing by writing the receipt and publishing from the durable snapshot** (§H.7/§H.8, §I.3a, §I.7, §I.9); startup load+validate of both stores under the lock (§I.3). Constructs the `MemoryRecord` **only** from the validated specification (`created_at = decision_timestamp`, `observed_at` from the spec; **no attempt/decision/authorization audit on the record**) — never infers kind/claim/project; **never obtains or mutates the published live store** (Codex-2/3). | The §C–§J rules; **depends on** the existing `MemoryStore` protocol **via the holder**; Phase 40F candidate + Phase 40G report contracts reused unchanged |
 | `apps/backend/app/services/migration_import_paths.py` *(or fold into the store modules)* | New (thin) | Side-effect-free **configuration/path resolution** shared by the ledger and snapshot stores (OS-appropriate base + env overrides), reusing the Phase 39B resolver shape. | Phase 39B `resolve_workspace_config_path` pattern |
-| `apps/backend/app/store/active_memory_store.py` | **Existing — integration touchpoint (class unchanged; no longer handed out directly)** | The **authoritative Active Memory store**. Phase 40H uses its existing `insert`, `DuplicateRecordError`, and `serialize`/`restore` seam **unchanged**, and **does not call `transition_lifecycle` in the import path** (§F.2). The *class internals are not modified*, but Phase 40H **no longer hands the store instance directly to the coordinator** — it is owned and served exclusively through the new holder (§A.6). | Phase 37B/37C behavior; `MemoryRecord` identity/immutability/lifecycle table unchanged |
+| `apps/backend/app/store/active_memory_store.py` | **Existing — integration touchpoint (class unchanged; published instance never handed out)** | The **authoritative Active Memory store**. Phase 40H uses its existing `insert`, `DuplicateRecordError`, and `serialize`/`restore` seam **unchanged**, and **does not call `transition_lifecycle` in the import path** (§F.2). The *class internals are not modified*. The **published** instance is owned and served exclusively through the holder (§A.6) and is **never handed to callers**; the coordinator's `insert` runs on a **private candidate instance it reconstructs from the durable snapshot** (`InMemoryActiveMemoryStore.restore`/`from_records`), which becomes authoritative only via the holder's `publish` swap (Codex-2/3). | Phase 37B/37C behavior; `MemoryRecord` identity/immutability/lifecycle table unchanged |
 | `apps/backend/app/routers/active_memory.py` | **Existing — explicitly separate, unchanged** | The current **stateless request-scoped** read path builds its own throwaway `InMemoryActiveMemoryStore.from_records(...)` and never persists; it is **not** the authoritative live reference and is **outside** Phase 40H's mutation path, so it needs no change. **If a future durable Active Memory runtime introduces an app-lifespan/injected store, that store MUST be obtained through the holder (§A.6)** — a named, separate future change, not made here. | Unchanged; documents the ownership boundary honestly |
 | `apps/backend/app/models/active_memory.py` | **Existing — read-only dependency** | Source of `MemoryRecord`, `LifecycleState.INACTIVE`, `VerificationState.UNVERIFIED`, `MemorySourceType.IMPORTED_DOCUMENT`, `SupersessionReference`/`SupersessionKind.SUPERSEDES`, and `metadata`. Phase 40H **reuses** these; **no enum, field, or contract change is required or proposed** (§F.3). | Phase 37B contract, unchanged |
 | `apps/backend/app/services/__init__.py` / `app/models/__init__.py` | **Existing — possible touch** | **Any required package exports** for the new modules, if and only if the package uses explicit `__init__` re-exports; additive only. | Existing export convention |
 | `apps/backend/tests/test_memory_migration_import_contracts.py` | New | Contract tests: §K rows 11–13, 16, 40, 43, 46–49, 52, **59, 60 (contract validity), 62, 71–73 (kind/claim policy), 76 (context validity), 82 (review_decision_id)**; identity/integrity derivation + domain separation (§H.0–§H.10); `ReviewedImportSpecification`/`ProjectScopeAuthorizationContext` validity; immutability. | — |
 | `apps/backend/tests/test_memory_migration_import_store.py` | New | Ledger adapter tests: §K rows 8, 11, 18, 20, 21, 22, **78 (ledger envelope integrity), 80**; CAS, atomicity, integrity **detection** (incl. `receipt_integrity_digest` and `ledger_integrity_digest`), typed failures. | — |
 | `apps/backend/tests/test_active_memory_snapshot_store.py` | New | Snapshot store tests: §K rows 22–26, 30, 31, **79 (snapshot envelope integrity), 80**; path/env override, startup load, missing/corrupt snapshot, generation stamping, `snapshot_integrity_digest`, interrupted writes. | Exercises, does not modify, the Active Memory store |
-| `apps/backend/tests/test_active_memory_store_holder.py` | New (**mandatory**) | Holder tests: §K rows 66, 67, 68, **81, 86**; reconstruct-off-guard then atomic swap, reader observes prior-or-replacement never partial, no raw store escapes `read`/`mutate`, quarantine + read-only-during-quarantine, `live_store_replacement_failure`, **same-process multithreaded** access + lock acquisition/release-failure at both layers. | Exercises, does not modify, the Active Memory store |
+| `apps/backend/tests/test_active_memory_store_holder.py` | New (**mandatory**) | Holder tests: §K rows 66, 67, 68, **81, 86**; reconstruct-off-guard then O(1) `publish` swap, reader observes prior-or-replacement never partial (and never a pre-durability record), **no raw store escapes any holder operation and there is no `read(fn)`/`mutate(fn)` callback** (Codex-3), quarantine + read-only-during-quarantine, `live_store_replacement_failure`, **same-process multithreaded** access + lock acquisition/release-failure at both layers. | Exercises, does not modify, the Active Memory store |
 | `apps/backend/tests/test_migration_import_lock.py` | New | Locking tests: §K rows 9, 10, **68 (filesystem-lock side), 69, 70, 86 (release-failure)**; O_EXCL exclusivity, bounded timeout, stale/ambiguous ownership, malformed metadata, release/deletion failure, release paths. | Standard library only |
 | `apps/backend/tests/test_memory_migration_import_service.py` | New | Coordinator tests: §K rows 1–6, 14, 15, 17, 40–45, 50–52, 54, **60, 61, 64, 74–77 (authorization), 83**; over temp ledger + temp snapshot + the holder-served store. | — |
 | `apps/backend/tests/test_memory_migration_import_integration.py` | New | Cross-store integration/recovery: §K rows 1, 6, 7, 19, 24, 27–39, 53, 55, **61, 63, 65, 84 (generation-state table), 85 (no restoration)**; over the coordinator + real `InMemoryActiveMemoryStore` (via the holder) + real snapshot store + real lock. | Exercises, does not modify, the Active Memory store |
@@ -2208,12 +2532,13 @@ Regression (§K 56–58) runs the existing Phase 37B/37C and 40E/40F/40G suites 
 full backend suite; **no existing test file is edited**, and the Active Memory store's
 behavior is asserted unchanged. Net-new source surface is **six modules** — models
 (which additionally hosts the pure `KindClaimCompatibilityValidator`,
-`ProjectScopeAuthorizationValidator`, `review_decision_id` helper, the shared §H.0
-canonicalizer, and all ten §H identity/integrity helpers), ledger store, snapshot store,
-live-store holder, lock, coordinator; **plus an optional thin path helper** (so **six or
-seven** modules depending on whether the path helper is folded in) — and **seven test
-files** (contracts, ledger store, snapshot store, holder, lock, service, integration,
-now covering §K rows 1–86). The two new validators are pure additions to the models
+`ProjectScopeAuthorizationValidator`, the `review_decision_id` helper, the shared §H.0
+canonicalizer, and the **eleven** §H.1–§H.10 identity/integrity helpers — §H.10 splits
+into `authorization_context_id` and `authorization_context_digest`), ledger store,
+snapshot store, live-store holder, lock, coordinator; **plus an optional thin path helper**
+(so **six or seven** modules depending on whether the path helper is folded in) — and
+**seven test files** (contracts, ledger store, snapshot store, holder, lock, service,
+integration, now covering §K rows 1–86). The two new validators are pure additions to the models
 module rather than separate modules, keeping the auditable surface minimal without
 hiding them. Named existing integration touchpoints (unchanged): the Active Memory
 store, the Active Memory model, and the stateless Active Memory router. **No Phase 40G
@@ -2293,7 +2618,7 @@ Explicitly deferred and **not** part of Phase 40H:
 | Reviewer-approved `ReviewedImportSpecification` supplies kind/claim/project the candidate lacks; validated, never inferred | C.1, F.3, H.3, H.5 |
 | No nonexistent kind/claim/project attributed to `MemoryMigrationCandidate` | C.1, F.3, H.3 |
 | **Concrete closed versioned kind↔claim compatibility policy; named validator; policy-version binding; `kind_claim_incompatible`** (Blocker 1) | C.2, H.5, J, K (71–73) |
-| **Typed `ProjectScopeAuthorizationContext` with named owner + complete binding + digest into spec/idempotency/receipt/intent/recovery; widening rejected; repo location ≠ authorization** (Blocker 2) | C.3, H.10, E, I.7, J, K (74–77) |
+| **Typed `ProjectScopeAuthorizationContext` with named owner + complete binding + digest into spec/idempotency/receipt/intent/recovery; non-member scope rejected (exact set membership); repo location ≠ authorization** (Blocker 2) | C.3, H.10, E, I.7, J, K (74–77) |
 | **Complete integrity digests seal both durable envelopes; verified before any generation trusted** (Blocker 3) | A.3, A.4, H.7, H.8, I.8, I.9, K (78–80) |
 | **Duplicate acceptance compares the complete stored `MemoryRecord` via model serialization, not a subset** (Blocker 4) | F.3, H.3, I.7, K (14, 15, 36) |
 | **`import_attempt_id` absent from stable authoritative record; attempt/decision/authorization audit ledger-only; retry-stable** (Blocker 5) | F.3, B.1, G.3, H.3, K (13, 81) |
@@ -2301,7 +2626,15 @@ Explicitly deferred and **not** part of Phase 40H:
 | **Shared canonicalization + collision policy covering every identifier/digest** (Gap 7) | H.0, J, K (12) |
 | **Complete `review_decision_id` derivation (versioned, domain-separated); compatible with the actual 40G model** (Gap 8) | C, H.9, J, K (82, 83) |
 | **Explicit holder read/write-guard boundaries, lock ordering, no-escape callbacks** (Gap 9) | A.6, A.6.1, L, K (66–68, 86) |
-| Mandatory `AuthoritativeActiveMemoryStoreHolder`; atomic replacement; reader synchronization; quarantine | A.6, F.2, I.6 |
+| **Acyclic review/authorization identity graph; `review_decision_id` excludes `authorization_context_id`; dependency-order statement** (Codex-1) | H.0a, H.9, H.10, C.3, K (82) |
+| **No pre-durability live-store visibility: private candidate store, durable-then-verify, publish last** (Codex-2) | A.2, A.6, A.6.1, E (16–20), F.2, F.3, I.2, I.6, I.7, K (27, 28, 66) |
+| **No raw-store escape: holder-owned read/query/publish operations, no caller callbacks** (Codex-3) | A.6, A.6.1, F.2, L, K (86) |
+| **Scope authorization = exact set membership, no invented hierarchy; `project_level_authorized`** (Codex-4) | C.1, C.3, H.10, J, K (74, 75) |
+| **Authorization digest is complete: `issued_at` in `authorization_context_digest`, excluded only from `authorization_context_id`** (Codex-5) | C.3, H.0, H.10, J, K (76) |
+| **`observed_at` explicit reviewer-authored source; distinct from `created_at`; in `specification_digest`/`record_id`; retry-stable** (Codex-6) | C.1, F.3, H.0, H.3, H.5, K (13) |
+| **Timestamp-only review decision is the *same* decision (idempotent); renewal via `renewal_revision`/`supersedes_decision_id`** (Codex-7) | B.1, C, D.7, G.3, H.9, K (82) |
+| **Malformed-claim/spec diagnostics have fixed non-overlapping precedence and owners** (Codex-8) | C.1, C.2, J, K (60, 73) |
+| Mandatory `AuthoritativeActiveMemoryStoreHolder`; **publish-last** replacement; reader synchronization; quarantine | A.6, F.2, I.6 |
 | Explicit N/N+1 uncertain-commit exception evaluated before ordinary generation equality (and only after envelope integrity) | I.3, I.3a, I.7, I.9, E |
 | Receipt identity vs full-content integrity (`receipt_integrity_digest` covers both timestamps) | B.3, H.4, H.6, I.8 |
 | Same-process multithreading tests (in-process seam + filesystem lock); malformed-lock-metadata + release-failure mappings | I.4, J, K (68–70) |
@@ -2313,7 +2646,7 @@ Explicitly deferred and **not** part of Phase 40H:
 | Ordered intent/effect/receipt protocol incl. reload-and-verify | E, I.2 |
 | Post-insert failure rollback + quarantine (all failure modes) | I.6 |
 | Uncertain-commit recovery with exact record equality, not `record_id` alone | I.3a, I.7 |
-| Canonical identity/integrity derivation for all ten values (identity vs integrity domains, membership, timestamp rules) | H.0–H.10 |
+| Canonical identity/integrity derivation for all eleven values (identity vs integrity domains, membership, timestamp rules; **acyclic dependency order**) | H.0, H.0a, H.1–H.10 |
 | Stable idempotency key + distinct monotonic attempt ids (retries only) | G.1, G.2, H.1, H.2 |
 | Review-decision supersession independent of attempt ordering | C, D.7, G.2 |
 | Supersession ordering / tie / cycle / missing predecessor / changed-byte / changed-assessment | D.7 |
