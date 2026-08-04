@@ -60,6 +60,16 @@ Hive|Mind is a local-first, graph-primary knowledge intelligence workspace that 
 > — records a **NO-GO**: it closes no blocker and authorizes nothing. B-01–B-13 remain open,
 > all 12 criteria remain unmet, and Phase 40L stays **locked** pending a separate, explicit
 > devdevbuilds human GO.
+>
+> **Phase 40K.8 remediation plan (documentation-only, 2026-08-04):** the
+> [Phase 40K.8 operational blocker remediation plan](docs/operations/phase-40k-8-operational-blocker-remediation-plan.md)
+> maps every OPEN 40K.7 criterion and blocker B-01–B-13 to its authoritative requirement,
+> closure rule, admissible out-of-Git evidence, owner, reviewer, dependencies, safe
+> preparation steps, private evidence-packet destination, freshness rule, validation method,
+> signatures, remediation waves, and the conditions for repeating the 40K.7 review. It is
+> **remediation planning only**: it performs no remediation, collects no operational evidence,
+> accesses no production, closes no blocker, and satisfies no criterion. All 12 criteria and
+> B-01–B-13 remain **OPEN** and Phase 40L remains **locked**.
 
 Developer knowledge often starts in notes, source files, project docs, and repeated decisions that become hard to inspect as a whole. Hive|Mind treats that material as owned local data: sources are registered, imported explicitly, normalized into shared records, and projected into a Knowledge Graph that becomes the main workspace rather than a side panel.
 
