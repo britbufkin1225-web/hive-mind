@@ -1,0 +1,126 @@
+{
+  "schema_version": "phase-40k-readiness.v1",
+  "runbook_version": "phase-40k-runbook.v1",
+  "repository": {
+    "origin": "https://github.com/britbufkin1225-web/hive-mind.git",
+    "baseline_commit": "c6e016986d43236a8bf747604986a9ea4e19490d",
+    "execution_commit": "not_supplied",
+    "implementation_identity_state": "unverified"
+  },
+  "source_dataset": {
+    "state": "not_supplied",
+    "non_secret_locator": "not_supplied",
+    "format": "not_supplied",
+    "byte_size": "not_supplied",
+    "object_count": "not_supplied",
+    "digest_algorithm": "sha256",
+    "digest": "not_supplied",
+    "captured_at_trusted_utc": "not_supplied",
+    "source_revision_or_export_id": "not_supplied",
+    "custody_notes_reference": "not_supplied",
+    "operator_acknowledgement": "not_supplied",
+    "reviewer_acknowledgement": "not_supplied"
+  },
+  "pipeline": {
+    "parser_identity": "not_supplied",
+    "projection_identity": "not_supplied",
+    "assessment_identity": "not_supplied",
+    "reviewed_specification_identity": "not_supplied",
+    "state": "unverified"
+  },
+  "destination": {
+    "state": "not_supplied",
+    "non_secret_identity": "not_supplied",
+    "project_id": "not_supplied",
+    "scope": "not_supplied",
+    "ledger_revision": "not_supplied",
+    "commit_generation": "not_supplied",
+    "capacity_state": "unverified",
+    "concurrent_writer_exclusion_state": "unverified"
+  },
+  "expected_counts": {
+    "state": "not_supplied",
+    "projected": "not_supplied",
+    "approved_for_import": "not_supplied",
+    "imported": "not_supplied",
+    "skipped": "not_supplied",
+    "rejected": "not_supplied",
+    "excluded": "not_supplied",
+    "unresolved": "not_supplied"
+  },
+  "backup": {
+    "state": "not_supplied",
+    "non_secret_backup_id": "not_supplied",
+    "digest_algorithm": "sha256",
+    "ledger_digest": "not_supplied",
+    "snapshot_digest": "not_supplied",
+    "source_generation": "not_supplied",
+    "created_at_trusted_utc": "not_supplied",
+    "integrity_state": "unverified",
+    "readability_state": "unverified",
+    "isolated_restoration_rehearsal_state": "unverified",
+    "retention_and_access_reference": "not_supplied"
+  },
+  "authorization": {
+    "state": "not_supplied",
+    "non_secret_authorization_id": "not_supplied",
+    "integrity_state": "unverified",
+    "issuance_lineage_state": "unverified",
+    "expires_at": "not_supplied",
+    "expiration_state": "unverified",
+    "revocation_state": "unverified",
+    "project_binding_state": "unverified",
+    "scope_binding_state": "unverified",
+    "trusted_clock_state": "unverified",
+    "operator_context_state": "unverified"
+  },
+  "preflight": {
+    "state": "blocked",
+    "production_read_only_orchestration_state": "blocked",
+    "dataset_fingerprint_state": "unverified",
+    "pipeline_state": "unverified",
+    "destination_revision_state": "unverified",
+    "backup_state": "unverified",
+    "authorization_state": "unverified",
+    "expected_write_set_state": "unverified",
+    "expected_receipt_identity": "not_supplied",
+    "storage_capacity_state": "unverified",
+    "evidence_destination_state": "unverified",
+    "recovery_materials_state": "unverified"
+  },
+  "stop_conditions": {
+    "state": "blocked",
+    "all_acknowledged": false,
+    "active_conditions": [
+      "production_read_only_preflight_not_available",
+      "real_world_operational_values_not_supplied"
+    ]
+  },
+  "evidence": {
+    "state": "not_supplied",
+    "preflight_packet": "not_supplied",
+    "authorization_packet": "not_supplied",
+    "backup_packet": "not_supplied",
+    "execution_packet": "not_supplied",
+    "receipt_packet": "not_supplied",
+    "post_run_packet": "not_supplied",
+    "recovery_packet": "not_supplied"
+  },
+  "execution": {
+    "status": "blocked",
+    "approved_command_identity": "not_supplied",
+    "attempt_id": "not_supplied",
+    "receipt_id": "not_supplied",
+    "final_ledger_revision": "not_supplied",
+    "final_commit_generation": "not_supplied",
+    "final_disposition": "blocked"
+  },
+  "human_decisions": {
+    "operator": "not_supplied",
+    "independent_reviewer": "not_supplied",
+    "authorization_issuer": "not_supplied",
+    "recovery_decision_maker": "not_supplied",
+    "devdevbuilds_go_no_go": "not_supplied",
+    "acceptance": "not_supplied"
+  }
+}
