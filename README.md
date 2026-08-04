@@ -55,9 +55,11 @@ Hive|Mind is a local-first, graph-primary knowledge intelligence workspace that 
 > dataset identity, backups, RPO/RTO, and restoration proof remain outstanding operator
 > and environment inputs. The current
 > [Phase 40K.7 planning contract](docs/operations/phase-40k-7-final-operational-go-no-go-review.md)
-> defines a future human packet review, but no operational review or GO decision has
-> occurred. B-01–B-13 remain open, all 12 criteria remain unmet, and Phase 40L stays
-> **locked**.
+> defines a future human packet review. The read-only evidence-based review executed under it
+> — [Phase 40K.7 operational review result](docs/operations/phase-40k-7-operational-go-no-go-review-result.md)
+> — records a **NO-GO**: it closes no blocker and authorizes nothing. B-01–B-13 remain open,
+> all 12 criteria remain unmet, and Phase 40L stays **locked** pending a separate, explicit
+> devdevbuilds human GO.
 
 Developer knowledge often starts in notes, source files, project docs, and repeated decisions that become hard to inspect as a whole. Hive|Mind treats that material as owned local data: sources are registered, imported explicitly, normalized into shared records, and projected into a Knowledge Graph that becomes the main workspace rather than a side panel.
 
