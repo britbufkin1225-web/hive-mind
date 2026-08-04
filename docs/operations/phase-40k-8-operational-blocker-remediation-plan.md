@@ -402,6 +402,12 @@ begin before its entry conditions hold, and **no wave in this plan is authorized
 to run by this plan** — each operational wave needs its own separate
 authorization.
 
+Within this section, a wave can produce and independently verify only **candidate
+closure evidence**. A blocker remains OPEN, and a criterion remains OPEN, until
+the repeated 40K.7 operational review evaluates the complete fresh packet and
+records the applicable disposition. Wave completion, owner acceptance, or a
+passing preflight does not itself close a blocker or satisfy a criterion.
+
 ### Dependency summary
 
 - **B-12** (evidence destination) is foundational — every evidence-producing
@@ -438,7 +444,7 @@ authorization.
 - **Human owner:** Operator.
 - **Required reviewers:** Independent reviewer.
 - **Evidence produced:** Verified RDIR + recomputation + acknowledgements.
-- **Exit conditions:** B-01 closed; criterion 1 candidate-satisfied.
+- **Exit conditions:** B-01 candidate closure evidence complete and independently verified; criterion 1 has candidate satisfaction evidence.
 - **Dependencies on earlier waves:** Wave A (B-12).
 - **Stop conditions:** Locator resolves to zero/multiple datasets; digest/size/count mismatch; fingerprint conflict → stop.
 - **Controlled operational session required:** Yes (read-only access to the real dataset environment).
@@ -452,7 +458,7 @@ authorization.
 - **Human owner:** Backup owner (B-03/B-04); Platform owner (B-13).
 - **Required reviewers:** Independent reviewer.
 - **Evidence produced:** Inventory; integrity + readability proof; key-availability confirmation.
-- **Exit conditions:** B-03, B-04 closed; B-13 closed (or provably N/A); criteria 3, 4 candidate-satisfied.
+- **Exit conditions:** B-03 and B-04 candidate closure evidence complete and independently verified; B-13 candidate closure evidence complete (or N/A evidence independently verified); criteria 3 and 4 have candidate satisfaction evidence.
 - **Dependencies on earlier waves:** Waves A, B.
 - **Stop conditions:** Partial capture; hash-invalid; unreadable; unavailable key → stop.
 - **Controlled operational session required:** Yes (read-only isolated environment).
@@ -466,7 +472,7 @@ authorization.
 - **Human owner:** Platform owner.
 - **Required reviewers:** Independent reviewer.
 - **Evidence produced:** Tooling manifest; disposable-target disjointness + capacity proof.
-- **Exit conditions:** B-06, B-07 closed.
+- **Exit conditions:** B-06 and B-07 candidate closure evidence complete and independently verified.
 - **Dependencies on earlier waves:** Wave C.
 - **Stop conditions:** Ambiguous target path; insufficient capacity; incompatible tooling → stop.
 - **Controlled operational session required:** Partially (provisioning a disposable environment).
@@ -475,12 +481,12 @@ authorization.
 
 - **Purpose:** Prove restorability by a separately authorized isolated rehearsal; validate the rollback path.
 - **Included blockers/criteria:** B-05; criteria 5, 7.
-- **Entry conditions:** B-04, B-06, B-07, B-13 (if encrypted), B-02 closed; **a separate explicit authorization for the rehearsal exists.**
+- **Entry conditions:** Candidate closure evidence for B-04, B-06, B-07, B-13 (if encrypted), and B-02 is complete and independently verified; **a separate explicit authorization for the rehearsal exists.** All blockers remain OPEN pending the repeated 40K.7 review.
 - **Permitted actions:** Restore into the disposable, disjoint target under least privilege; reconcile records/counts; retain evidence; destroy only disposable copies. **Never publish the authoritative holder; never write an authoritative path.**
 - **Human owner:** Operator + recovery decision-maker.
 - **Required reviewers:** Independent reviewer.
 - **Evidence produced:** §6 rehearsal evidence package; rollback validation.
-- **Exit conditions:** B-05 closed; criteria 5, 7 candidate-satisfied.
+- **Exit conditions:** B-05 candidate closure evidence complete and independently verified; criteria 5 and 7 have candidate satisfaction evidence.
 - **Dependencies on earlier waves:** Waves C, D (+ A for B-02).
 - **Stop conditions:** Integrity failure; generation mismatch outside N/N+1; reconciliation gap → stop and quarantine.
 - **Controlled operational session required:** **Yes — a dedicated, separately authorized operational session.**
@@ -494,7 +500,7 @@ authorization.
 - **Human owner:** Deployment owner + platform owner.
 - **Required reviewers:** Independent reviewer.
 - **Evidence produced:** Approved config aliases; writer-stop + exclusion proof; access grants; compatibility record.
-- **Exit conditions:** B-08, B-09 closed; criteria 6, 9 candidate-satisfied.
+- **Exit conditions:** B-08 and B-09 candidate closure evidence complete and independently verified; criteria 6 and 9 have candidate satisfaction evidence.
 - **Dependencies on earlier waves:** Wave A.
 - **Stop conditions:** Revision/generation mismatch; unproven exclusion; over-privileged access → stop.
 - **Controlled operational session required:** Yes (deployment/platform actions).
@@ -503,12 +509,12 @@ authorization.
 
 - **Purpose:** Perform the fresh authorization ceremony, define the migration window/abort conditions, and record the signed operator/devdevbuilds decision.
 - **Included blockers/criteria:** B-11; criteria 8, 10, 11, 12.
-- **Entry conditions:** All prior waves complete; all B-01–B-10, B-12, B-13 closed; evidence still fresh.
+- **Entry conditions:** All prior waves complete; candidate closure evidence for B-01–B-10, B-12, and B-13 is complete and independently verified; evidence is still fresh. All blockers remain OPEN pending the repeated 40K.7 review.
 - **Permitted actions:** Authorization ceremony (runbook §6); window/abort definition; fresh fail-closed preflight + execution-gate evaluation; signed decision. **[FUTURE-AUTHORIZED]**
 - **Human owner:** Authorization issuer + operator + devdevbuilds.
 - **Required reviewers:** Independent reviewer.
 - **Evidence produced:** Authorization packet; window/abort record; signed disposition.
-- **Exit conditions:** B-11 closed; criteria 8, 10, 11, 12 candidate-satisfied; **only then** is the 40K.7 operational review eligible to be repeated.
+- **Exit conditions:** B-11 candidate closure evidence complete and independently verified; criteria 8, 10, 11, and 12 have candidate satisfaction evidence; **only then** is the 40K.7 operational review eligible to be repeated. No blocker or criterion is closed by this exit.
 - **Dependencies on earlier waves:** All (A–F).
 - **Stop conditions:** Any authorization failure, stale evidence, or unresolved contradiction → NO-GO.
 - **Controlled operational session required:** **Yes — the execution-readiness operational session.**
