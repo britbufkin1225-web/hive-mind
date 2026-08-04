@@ -8,6 +8,17 @@
 **Companion artifacts:** [operator checklist](phase-40k-operator-checklist.md) and
 [fail-closed readiness template](phase-40k-readiness.template.json)
 
+> **Phase 40K.5 reconciliation (2026-08-03).** The read-only preflight *tooling*
+> this runbook described as missing now exists: a genuinely read-only
+> [migration readiness preflight interface](phase-40k-5-migration-readiness-interface.md)
+> deterministically validates an instantiated `phase-40k-readiness.v1` manifest
+> (`pass` / `blocked` / `fail_closed`) and a separate fail-closed gate refuses
+> execution without exact verified authorization. It validates a *declared*
+> manifest only — it still does not read the real source or destination, so the
+> §7 operational-orchestration checks and the §12 blocker remain open until a
+> separately authorized phase (40K.6) supplies and verifies real values. A passing
+> preflight is repository/manifest readiness, never Phase 40L authorization.
+
 ## 1. Authority, purpose, and boundary
 
 This is the canonical human-operated procedure for preparing a separately authorized
@@ -211,6 +222,18 @@ rerun only against its deterministic disposable fixture; it is not a production
 preflight. Until an approved read-only orchestration surface covers these checks, the
 go/no-go result is `blocked`.
 
+> **Phase 40K.5 update.** A read-only preflight now evaluates the *manifest* form
+> of every check below — presence, verification-state, conflict, expiry,
+> revocation, count consistency, staleness, and stop conditions — deterministically
+> and without any store/holder/ledger/dataset access
+> (`app.services.migration_readiness_preflight`, invoked via
+> `app.console.migration_readiness_cli`). It reports each declared operational
+> value as `not_supplied` / `unverified` / `verified` / `conflicting` and fails
+> closed on placeholder, fixture, or secret-like inputs. It does **not** yet parse
+> the real source, inspect the real destination revision, or read a real backup —
+> those operational orchestration checks stay `blocked` for a separately authorized
+> phase, so the checked-in template still evaluates to `blocked`.
+
 The future dry preflight must verify repository/build identity; dataset fingerprint;
 parse/projection/assessment identities and counts; destination accessibility and exact
 generation; backup integrity/readability; authorization presence, integrity, expiry,
@@ -290,7 +313,7 @@ records human acceptance. Exit code zero is one datum, never sufficient acceptan
 | --- | --- | --- |
 | One canonical runbook plus checklist/template | Prevents divergent procedures while keeping operator flow concise and facts machine-readable. | Agents propose structure; devdevbuilds reviews and merges/authorizes. |
 | Fail-closed template checked in as `blocked` | Prevents placeholder facts from becoming apparent readiness and protects provenance/knowledge consistency. | Humans supply and independently verify real identity, backup, authorization, and evidence destinations. |
-| No readiness validator/runtime code | Existing code has no read-only production orchestration seam; a partial validator could imply safety while creating API/contract scope. | A later approved phase chooses and reviews the execution/preflight interface. |
+| No readiness validator/runtime code | Existing code has no read-only production orchestration seam; a partial validator could imply safety while creating API/contract scope. | A later approved phase chooses and reviews the execution/preflight interface. **Resolved in Phase 40K.5**: a read-only manifest preflight and a fail-closed execution gate now exist; they validate a *declared* manifest and refuse execution without exact verified authorization, and still do not read the real source/destination (that is 40K.6). |
 | No copy command with guessed paths | Prevents copying the wrong authoritative files, racing writers, or exposing private paths. | Deployment owner approves stop/copy/retention procedures. |
 | Preserve ledger/attempt/receipt history through recovery | Maintains provenance and makes uncertainty diagnosable instead of hiding it. | Recovery decision-maker selects supported recovery/restoration. |
 | Two-person checkpoint stated as governance | Improves coordination and catches command/identity drift without falsely claiming runtime enforcement. | devdevbuilds determines personnel and final go/no-go. |
@@ -303,4 +326,8 @@ Remaining operational blockers are: real dataset identity and custody; approved
 candidate decisions/counts; destination paths/revision/capacity; writer-stop proof;
 non-overwriting backup medium/retention and completed isolated restoration rehearsal;
 exact authorization and trusted-clock/revocation results; private evidence destination;
-and a reviewed production execution plus genuinely read-only preflight interface.
+and a reviewed production execution interface. The genuinely read-only preflight
+interface and the fail-closed reviewed-execution *gate* are supplied by Phase 40K.5
+(see the reconciliation note above); the remaining execution blocker is wiring that
+cleared gate to the Phase 40I coordinator under a separately authorized Phase 40L go,
+plus the real operational values above, all of which stay `not_supplied`.
