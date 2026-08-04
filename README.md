@@ -43,8 +43,8 @@ Hive|Mind is a local-first, graph-primary knowledge intelligence workspace that 
 > The sequence stays **40K.5 → 40K.6 → 40K.7 → 40L**, and Phase 40L still requires a
 > new, explicit devdevbuilds go.
 >
-> **Phase 40K.6 readiness verification (active planning, 2026-08-03):** Phase 40K.5 is
-> merged; the active planning phase is
+> **Phase 40K.6 readiness verification (completed and merged, 2026-08-04):** Phase 40K.5 is
+> merged; the completed planning/verification-readiness phase is
 > [Phase 40K.6 — Real Dataset Identity + Backup/Restoration Readiness Verification](docs/operations/phase-40k-6-real-dataset-backup-restoration-readiness.md).
 > It defines the evidence and read-only procedures to safely identify the authoritative
 > real dataset and to inventory and verify its backup/restoration chain — mapped to the
@@ -53,8 +53,11 @@ Hive|Mind is a local-first, graph-primary knowledge intelligence workspace that 
 > no real dataset access, no backup created or mutated, no restoration run, and no
 > production write. Its strongest conclusion is `CONDITIONALLY READY` while the real
 > dataset identity, backups, RPO/RTO, and restoration proof remain outstanding operator
-> and environment inputs. Phase 40L stays **locked** and requires a separate explicit
-> devdevbuilds go.
+> and environment inputs. The current
+> [Phase 40K.7 planning contract](docs/operations/phase-40k-7-final-operational-go-no-go-review.md)
+> defines a future human packet review, but no operational review or GO decision has
+> occurred. B-01–B-13 remain open, all 12 criteria remain unmet, and Phase 40L stays
+> **locked**.
 
 Developer knowledge often starts in notes, source files, project docs, and repeated decisions that become hard to inspect as a whole. Hive|Mind treats that material as owned local data: sources are registered, imported explicitly, normalized into shared records, and projected into a Knowledge Graph that becomes the main workspace rather than a side panel.
 

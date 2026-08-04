@@ -32,10 +32,12 @@ run a production migration.
 
 Repository readiness means the procedure and fail-closed template are reviewable.
 Operational readiness means every real-world field in an instantiated template has
-been independently verified immediately before execution. This repository supplies
-no production migration CLI and no genuinely read-only production preflight entry
-point. Consequently the checked-in template is `blocked`, and Phase 40L may not start
-until an approved execution interface and the missing operational facts exist.
+been independently verified immediately before execution. This repository supplies no
+production migration CLI. Phase 40K.5 supplies a genuinely read-only declared-manifest
+preflight and a separate fail-closed execution gate, but neither reads production nor
+supplies missing operational facts. Consequently the checked-in template is `blocked`,
+and Phase 40L may not start until every required operational fact and separate
+authorization exists.
 
 Roles are separate even when one person holds more than one role:
 
