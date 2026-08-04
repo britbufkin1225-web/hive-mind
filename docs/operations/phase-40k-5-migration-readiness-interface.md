@@ -49,6 +49,12 @@ placeholder/fixture/secret-like value, a malformed timestamp, a weak digest
 algorithm, or a manifest that violates the contract — is **rejected** and yields
 **`fail_closed`**. Unknown states are never treated as safe.
 
+JSON duplicate keys are rejected at the CLI boundary. Dataset and backup digests
+must be canonical lowercase hexadecimal of the exact length required by the
+declared `sha256` or `sha512` algorithm; aliases, case variants, whitespace, and
+malformed digest values fail closed. Whitespace-only operational identifiers are
+treated as placeholders and rejected.
+
 ## 2. How it is invoked
 
 Read-only CLI (a thin front end; all logic lives in the service):
@@ -61,7 +67,8 @@ Instantiate the manifest from the fail-closed
 [`phase-40k-readiness.template.json`](phase-40k-readiness.template.json) **outside
 Git**, keeping secrets and private paths out of it. Options: `--json` for the
 machine-readable report; `--now <ISO-8601>` for a deterministic trusted evaluation
-time; `--max-age-seconds` for the stale-evidence bound. Exit codes: `0` pass, `10`
+time (an explicit timezone offset is mandatory); `--max-age-seconds` for the
+stale-evidence bound. Exit codes: `0` pass, `10`
 blocked, `11` fail_closed, `2` manifest access/size error, `3` usage error.
 
 ## 3. Machine-readable output contract
@@ -103,6 +110,9 @@ decision is dispatched to the existing Phase 40I coordinator
 (`MemoryMigrationImportService.import_reviewed_candidate`) through an injected
 executor. **No executor is wired in Phase 40K.5**, so even a cleared decision
 performs no work here. The gate never silently downgrades execution to a dry run.
+If a separately wired executor raises, the gate returns a bounded
+`execution_failed` decision marked as dispatched, with generic reconciliation
+guidance and no raw exception text; it never reports the attempt as successful.
 
 ## 5. Operational values that remain blocked / `not_supplied`
 

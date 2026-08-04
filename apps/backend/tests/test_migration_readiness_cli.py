@@ -68,6 +68,19 @@ def test_cli_invalid_now_is_usage_error(tmp_path):
     assert code == EXIT_USAGE_ERROR
 
 
+def test_cli_timezone_naive_now_is_usage_error(tmp_path):
+    path = _write(tmp_path, verified_manifest_dict())
+    code = main(["preflight", "--manifest", str(path), "--now", "2026-08-03T00:00:00"])
+    assert code == EXIT_USAGE_ERROR
+
+
+def test_cli_duplicate_json_keys_are_rejected(tmp_path):
+    path = tmp_path / "duplicate.json"
+    path.write_text('{"repository": {}, "repository": {}}', encoding="utf-8")
+    code = main(["preflight", "--manifest", str(path), "--now", FIXED_NOW])
+    assert code == EXIT_OPERATION_ERROR
+
+
 def test_cli_output_carries_no_secret_like_text(tmp_path, capsys):
     raw = verified_manifest_dict()
     raw["authorization"]["non_secret_authorization_id"] = "bearer sk-supersecret000111222"

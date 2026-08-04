@@ -89,6 +89,7 @@ class OperationalExecutionAuthorization(BaseModel):
 class ExecutionDecisionState(StrEnum):
     REFUSED = "refused"
     CLEARED_FOR_EXECUTION = "cleared_for_execution"
+    EXECUTION_FAILED = "execution_failed"
 
 
 class ExecutionRefusalCode(StrEnum):
@@ -99,6 +100,7 @@ class ExecutionRefusalCode(StrEnum):
     DEVDEVBUILDS_GO_ABSENT = "devdevbuilds_go_absent"
     AUTHORIZATION_MANIFEST_MISMATCH = "authorization_manifest_mismatch"
     PREFLIGHT_NOT_PASSED = "preflight_not_passed"
+    EXECUTOR_FAILED = "executor_failed"
 
 
 class ExecutionGateDecision(BaseModel):
@@ -201,8 +203,18 @@ class ReviewedMigrationExecutionGate:
         # decision is returned without performing any work.
         dispatched = False
         if self._executor is not None:
-            self._executor(manifest, auth)
-            dispatched = True
+            try:
+                dispatched = True
+                self._executor(manifest, auth)
+            except Exception:
+                return ExecutionGateDecision(
+                    state=ExecutionDecisionState.EXECUTION_FAILED,
+                    manifest_identity=identity,
+                    refusal_code=ExecutionRefusalCode.EXECUTOR_FAILED,
+                    detail="executor failed; outcome requires operator reconciliation",
+                    dispatched=True,
+                    preflight_outcome=report.outcome,
+                )
         return ExecutionGateDecision(
             state=ExecutionDecisionState.CLEARED_FOR_EXECUTION,
             manifest_identity=identity,

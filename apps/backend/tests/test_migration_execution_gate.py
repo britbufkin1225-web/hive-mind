@@ -155,6 +155,19 @@ def test_cleared_without_wired_executor_performs_no_dispatch():
     assert decision.dispatched is False
 
 
+def test_executor_exception_is_redacted_and_never_reported_as_success():
+    class FailingExecutor:
+        def __call__(self, manifest, auth):
+            raise RuntimeError("bearer sk-sensitive-secret")
+
+    m = manifest_from(verified_manifest_dict())
+    decision = gate(FailingExecutor()).request_execution(m, op_auth(m.identity()))
+    assert decision.state is ExecutionDecisionState.EXECUTION_FAILED
+    assert decision.refusal_code is ExecutionRefusalCode.EXECUTOR_FAILED
+    assert decision.dispatched is True
+    assert "sensitive" not in decision.detail
+
+
 def test_default_gate_has_no_wired_executor():
     # A gate constructed without an explicit executor can never mutate: even a
     # cleared decision dispatches nothing. This is the Phase 40K.5 posture.

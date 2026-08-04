@@ -209,7 +209,10 @@ class MigrationReadinessPreflight:
         checks.extend(self._deception_checks(manifest))
         checks.append(self._stop_condition_check(manifest))
 
-        rejected = [c for c in checks if c.state is CheckState.REJECTED]
+        rejected = [
+            c for c in checks
+            if c.state in (CheckState.REJECTED, CheckState.CONFLICTING)
+        ]
         not_verified = [c for c in checks if c.state not in (CheckState.VERIFIED,)]
         active = manifest.stop_conditions.active_conditions
 
@@ -321,7 +324,7 @@ class MigrationReadinessPreflight:
             return PreflightCheckResult(check_id=check_id, state=CheckState.VERIFIED)
         if state is FieldState.CONFLICTING:
             return PreflightCheckResult(
-                check_id=check_id, state=CheckState.CONFLICTING, blocked_reason=reason,
+                check_id=check_id, state=CheckState.REJECTED, blocked_reason=reason,
             )
         if not supplied or state is FieldState.NOT_SUPPLIED:
             return PreflightCheckResult(
@@ -341,7 +344,7 @@ class MigrationReadinessPreflight:
         d, r = m.source_dataset.digest, m.source_dataset.reviewed_digest
         if is_supplied(d) and is_supplied(r) and d != r:
             return PreflightCheckResult(
-                check_id=cid, state=CheckState.CONFLICTING,
+                check_id=cid, state=CheckState.REJECTED,
                 blocked_reason=ReadinessBlockedCode.DATASET_FINGERPRINT_CONFLICT,
                 detail="declared digest differs from reviewed digest",
             )
@@ -355,15 +358,36 @@ class MigrationReadinessPreflight:
     def _dataset_algorithm_check(self, m: MigrationReadinessManifest) -> PreflightCheckResult:
         from app.models.migration_readiness import ACCEPTED_DIGEST_ALGORITHMS
         cid = ReadinessCheckId.DATASET_DIGEST_ALGORITHM
-        algo = m.source_dataset.digest_algorithm.strip().lower()
+        algo = m.source_dataset.digest_algorithm
         if algo not in ACCEPTED_DIGEST_ALGORITHMS:
             return PreflightCheckResult(
                 check_id=cid, state=CheckState.REJECTED,
                 blocked_reason=ReadinessBlockedCode.DATASET_DIGEST_ALGORITHM_WEAK,
                 detail="dataset digest algorithm is too weak",
             )
-        # Strong algorithm named, but only meaningful once a digest is present.
-        if is_supplied(m.source_dataset.digest):
+        digest = m.source_dataset.digest
+        reviewed = m.source_dataset.reviewed_digest
+        expected_length = 64 if algo == "sha256" else 128
+        if is_supplied(digest) and (
+            len(digest) != expected_length
+            or any(c not in "0123456789abcdef" for c in digest)
+        ):
+            return PreflightCheckResult(
+                check_id=cid, state=CheckState.REJECTED,
+                blocked_reason=ReadinessBlockedCode.DATASET_DIGEST_ALGORITHM_WEAK,
+                detail="dataset digest is not canonical for its declared algorithm",
+            )
+        if is_supplied(reviewed) and (
+            len(reviewed) != expected_length
+            or any(c not in "0123456789abcdef" for c in reviewed)
+        ):
+            return PreflightCheckResult(
+                check_id=cid, state=CheckState.REJECTED,
+                blocked_reason=ReadinessBlockedCode.DATASET_DIGEST_ALGORITHM_WEAK,
+                detail="reviewed digest is not canonical for its declared algorithm",
+            )
+        # Strong algorithm named, but only meaningful once both digests are present.
+        if is_supplied(digest) and is_supplied(reviewed):
             return PreflightCheckResult(check_id=cid, state=CheckState.VERIFIED)
         return PreflightCheckResult(
             check_id=cid, state=CheckState.NOT_SUPPLIED,
@@ -386,7 +410,7 @@ class MigrationReadinessPreflight:
         exp, obs = m.destination.ledger_revision, m.destination.observed_ledger_revision
         if is_supplied(exp) and is_supplied(obs) and exp != obs:
             return PreflightCheckResult(
-                check_id=cid, state=CheckState.CONFLICTING,
+                check_id=cid, state=CheckState.REJECTED,
                 blocked_reason=ReadinessBlockedCode.DESTINATION_REVISION_CONFLICT,
                 detail="observed destination revision differs from expected",
             )
@@ -399,6 +423,40 @@ class MigrationReadinessPreflight:
 
     def _backup_verification_check(self, m: MigrationReadinessManifest) -> PreflightCheckResult:
         cid = ReadinessCheckId.BACKUP_VERIFICATION
+        from app.models.migration_readiness import ACCEPTED_DIGEST_ALGORITHMS
+        algo = m.backup.digest_algorithm
+        if algo not in ACCEPTED_DIGEST_ALGORITHMS:
+            return PreflightCheckResult(
+                check_id=cid, state=CheckState.REJECTED,
+                blocked_reason=ReadinessBlockedCode.DATASET_DIGEST_ALGORITHM_WEAK,
+                detail="backup digest algorithm is not accepted",
+            )
+        expected_length = 64 if algo == "sha256" else 128
+        digests = (m.backup.ledger_digest, m.backup.snapshot_digest)
+        if any(
+            is_supplied(d) and (
+                len(d) != expected_length
+                or any(c not in "0123456789abcdef" for c in d)
+            )
+            for d in digests
+        ):
+            return PreflightCheckResult(
+                check_id=cid, state=CheckState.REJECTED,
+                blocked_reason=ReadinessBlockedCode.DATASET_DIGEST_ALGORITHM_WEAK,
+                detail="backup digest is not canonical for its declared algorithm",
+            )
+        if not all(is_supplied(d) for d in digests):
+            return PreflightCheckResult(
+                check_id=cid, state=CheckState.NOT_SUPPLIED,
+                blocked_reason=ReadinessBlockedCode.OPERATIONAL_VALUE_NOT_SUPPLIED,
+            )
+        if (m.backup.integrity_state is FieldState.CONFLICTING
+                or m.backup.readability_state is FieldState.CONFLICTING):
+            return PreflightCheckResult(
+                check_id=cid, state=CheckState.REJECTED,
+                blocked_reason=ReadinessBlockedCode.BACKUP_UNVERIFIED,
+                detail="backup verification declarations conflict",
+            )
         if (m.backup.integrity_state is FieldState.VERIFIED
                 and m.backup.readability_state is FieldState.VERIFIED):
             return PreflightCheckResult(check_id=cid, state=CheckState.VERIFIED)
@@ -409,6 +467,13 @@ class MigrationReadinessPreflight:
 
     def _authorization_integrity_check(self, m: MigrationReadinessManifest) -> PreflightCheckResult:
         cid = ReadinessCheckId.AUTHORIZATION_INTEGRITY
+        if (m.authorization.integrity_state is FieldState.CONFLICTING
+                or m.authorization.issuance_lineage_state is FieldState.CONFLICTING):
+            return PreflightCheckResult(
+                check_id=cid, state=CheckState.REJECTED,
+                blocked_reason=ReadinessBlockedCode.AUTHORIZATION_MISSING,
+                detail="authorization integrity declarations conflict",
+            )
         if (m.authorization.integrity_state is FieldState.VERIFIED
                 and m.authorization.issuance_lineage_state is FieldState.VERIFIED):
             return PreflightCheckResult(check_id=cid, state=CheckState.VERIFIED)
@@ -419,6 +484,13 @@ class MigrationReadinessPreflight:
 
     def _authorization_scope_check(self, m: MigrationReadinessManifest) -> PreflightCheckResult:
         cid = ReadinessCheckId.AUTHORIZATION_SCOPE
+        if (m.authorization.project_binding_state is FieldState.CONFLICTING
+                or m.authorization.scope_binding_state is FieldState.CONFLICTING):
+            return PreflightCheckResult(
+                check_id=cid, state=CheckState.REJECTED,
+                blocked_reason=ReadinessBlockedCode.AUTHORIZATION_SCOPE_UNVERIFIED,
+                detail="authorization binding declarations conflict",
+            )
         if (m.authorization.project_binding_state is FieldState.VERIFIED
                 and m.authorization.scope_binding_state is FieldState.VERIFIED):
             return PreflightCheckResult(check_id=cid, state=CheckState.VERIFIED)
@@ -451,7 +523,7 @@ class MigrationReadinessPreflight:
             )
         if now >= parsed:
             return PreflightCheckResult(
-                check_id=cid, state=CheckState.BLOCKED,
+                check_id=cid, state=CheckState.REJECTED,
                 blocked_reason=ReadinessBlockedCode.AUTHORIZATION_EXPIRED,
                 detail="authorization is expired at the trusted evaluation time",
             )
@@ -473,7 +545,7 @@ class MigrationReadinessPreflight:
         if state is FieldState.BLOCKED:
             # Present in the revocation registry — the authorization is revoked.
             return PreflightCheckResult(
-                check_id=cid, state=CheckState.BLOCKED,
+                check_id=cid, state=CheckState.REJECTED,
                 blocked_reason=ReadinessBlockedCode.AUTHORIZATION_REVOKED,
                 detail="authorization is recorded as revoked",
             )
@@ -549,7 +621,7 @@ class MigrationReadinessPreflight:
             age = (now - parsed).total_seconds()
             if age > self._max_age or age < 0:
                 return PreflightCheckResult(
-                    check_id=cid, state=CheckState.BLOCKED,
+                    check_id=cid, state=CheckState.REJECTED,
                     blocked_reason=ReadinessBlockedCode.STALE_EVIDENCE,
                     detail="readiness evidence is stale or future-dated",
                 )

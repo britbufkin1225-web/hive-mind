@@ -400,6 +400,8 @@ def looks_like_placeholder(value: str) -> bool:
     if not is_supplied(value):
         return False
     lowered = value.strip().lower()
+    if not lowered:
+        return True
     return any(marker in lowered for marker in PLACEHOLDER_MARKERS)
 
 

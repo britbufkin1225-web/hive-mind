@@ -274,9 +274,9 @@ def _blocked_when(mutate) -> "tuple":
     return report
 
 
-def test_conflicting_dataset_fingerprints_block():
+def test_conflicting_dataset_fingerprints_fail_closed():
     r = _blocked_when(lambda raw: raw["source_dataset"].__setitem__("reviewed_digest", "d" * 64))
-    assert r.outcome is PreflightOutcome.BLOCKED
+    assert r.outcome is PreflightOutcome.FAIL_CLOSED
     assert ReadinessBlockedCode.DATASET_FINGERPRINT_CONFLICT in r.blocked_reasons
 
 
@@ -286,9 +286,9 @@ def test_weak_dataset_digest_algorithm_is_fail_closed():
     assert ReadinessBlockedCode.DATASET_DIGEST_ALGORITHM_WEAK in r.blocked_reasons
 
 
-def test_destination_revision_mismatch_blocks():
+def test_destination_revision_mismatch_fails_closed():
     r = _blocked_when(lambda raw: raw["destination"].__setitem__("observed_ledger_revision", "9"))
-    assert r.outcome is PreflightOutcome.BLOCKED
+    assert r.outcome is PreflightOutcome.FAIL_CLOSED
     assert ReadinessBlockedCode.DESTINATION_REVISION_CONFLICT in r.blocked_reasons
 
 
@@ -334,9 +334,9 @@ def test_authorization_scope_mismatch_blocks():
     assert ReadinessBlockedCode.AUTHORIZATION_SCOPE_UNVERIFIED in r.blocked_reasons
 
 
-def test_authorization_expired_blocks():
+def test_authorization_expired_fails_closed():
     r = _blocked_when(lambda raw: raw["authorization"].__setitem__("expires_at", "2026-08-02T00:00:00Z"))
-    assert r.outcome is PreflightOutcome.BLOCKED
+    assert r.outcome is PreflightOutcome.FAIL_CLOSED
     assert ReadinessBlockedCode.AUTHORIZATION_EXPIRED in r.blocked_reasons
 
 
@@ -346,9 +346,9 @@ def test_malformed_authorization_expiry_is_fail_closed():
     assert ReadinessBlockedCode.MALFORMED_TIMESTAMP in r.blocked_reasons
 
 
-def test_authorization_revoked_blocks():
+def test_authorization_revoked_fails_closed():
     r = _blocked_when(lambda raw: raw["authorization"].__setitem__("revocation_state", "blocked"))
-    assert r.outcome is PreflightOutcome.BLOCKED
+    assert r.outcome is PreflightOutcome.FAIL_CLOSED
     assert ReadinessBlockedCode.AUTHORIZATION_REVOKED in r.blocked_reasons
 
 
@@ -358,16 +358,40 @@ def test_untrusted_time_blocks():
     assert ReadinessBlockedCode.TRUSTED_TIME_UNTRUSTED in report.blocked_reasons
 
 
-def test_expected_count_mismatch_blocks():
+def test_expected_count_mismatch_fails_closed():
     r = _blocked_when(lambda raw: raw["expected_counts"].__setitem__("imported", 9))
-    assert r.outcome is PreflightOutcome.BLOCKED
+    assert r.outcome is PreflightOutcome.FAIL_CLOSED
     assert ReadinessBlockedCode.COUNT_MISMATCH in r.blocked_reasons
 
 
-def test_stale_evidence_blocks():
+def test_stale_evidence_fails_closed():
     r = _blocked_when(lambda raw: raw["source_dataset"].__setitem__("captured_at_trusted_utc", "2020-01-01T00:00:00Z"))
-    assert r.outcome is PreflightOutcome.BLOCKED
+    assert r.outcome is PreflightOutcome.FAIL_CLOSED
     assert ReadinessBlockedCode.STALE_EVIDENCE in r.blocked_reasons
+
+
+@pytest.mark.parametrize("digest", ["abc", "A" * 64, "g" * 64, "a" * 63])
+def test_noncanonical_dataset_digest_fails_closed(digest):
+    def mutate(raw):
+        raw["source_dataset"]["digest"] = digest
+        raw["source_dataset"]["reviewed_digest"] = digest
+    assert _blocked_when(mutate).outcome is PreflightOutcome.FAIL_CLOSED
+
+
+def test_noncanonical_backup_digest_or_algorithm_fails_closed():
+    assert _blocked_when(
+        lambda raw: raw["backup"].__setitem__("ledger_digest", "abc")
+    ).outcome is PreflightOutcome.FAIL_CLOSED
+    assert _blocked_when(
+        lambda raw: raw["backup"].__setitem__("digest_algorithm", "SHA256")
+    ).outcome is PreflightOutcome.FAIL_CLOSED
+
+
+def test_whitespace_only_operational_value_fails_closed():
+    r = _blocked_when(
+        lambda raw: raw["destination"].__setitem__("non_secret_identity", "   ")
+    )
+    assert r.outcome is PreflightOutcome.FAIL_CLOSED
 
 
 def test_triggered_stop_condition_blocks():
