@@ -29,6 +29,19 @@ Hive|Mind is a local-first, graph-primary knowledge intelligence workspace that 
 > no real dataset identity, backup/restoration proof, runtime authorization, destination
 > revision, or production evidence location was supplied, and no production migration
 > ran. Phase 40L requires a separate explicit human go decision.
+>
+> **Phase 40K.5 readiness interface (2026-08-03):** the missing *repository tooling*
+> is now supplied — a genuinely read-only
+> [migration readiness preflight](docs/operations/phase-40k-5-migration-readiness-interface.md)
+> that deterministically validates a readiness manifest (`pass` / `blocked` /
+> `fail_closed`) without touching any store, holder, ledger, or dataset, plus a
+> separate fail-closed reviewed-execution gate that defaults to refusal and cannot
+> execute without exact, verified authorization. Passing the preflight proves only
+> that repository tooling and a declared manifest are well-formed; it does **not**
+> authorize execution. Every real operational field remains `not_supplied` /
+> `unverified` / `blocked`, so the checked-in template still evaluates to `blocked`.
+> The sequence stays **40K.5 → 40K.6 → 40K.7 → 40L**, and Phase 40L still requires a
+> new, explicit devdevbuilds go.
 
 Developer knowledge often starts in notes, source files, project docs, and repeated decisions that become hard to inspect as a whole. Hive|Mind treats that material as owned local data: sources are registered, imported explicitly, normalized into shared records, and projected into a Knowledge Graph that becomes the main workspace rather than a side panel.
 
