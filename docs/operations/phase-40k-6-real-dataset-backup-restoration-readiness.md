@@ -252,9 +252,15 @@ adapter is implemented and no production infrastructure is connected here.
 
 - Approved runtime configuration resolving ledger/snapshot locations.
 - Approved service-control (writer-stop) procedure.
-- Reviewed wiring from the existing execution gate to the Phase 40I coordinator, plus
-  an approved production execution command (the standing blocker in runbook §12);
-  implementing that wiring is **[FUTURE-AUTHORIZED]**, out of scope here.
+- An approved, complete, and auditable implementation plan and contract for wiring the
+  existing execution gate to the Phase 40I coordinator and introducing the operational
+  migration command (the standing blocker in runbook §12). The plan/contract must
+  specify fail-closed behavior, exact authorization consumption, durable revocation
+  handling, bounded audit evidence, validation, and rollback expectations.
+- Implementing or validating that plan is **[FUTURE-AUTHORIZED]** Phase 40L work, out
+  of scope here. Phase 40L may implement the wiring and command only after separate
+  operator authorization; authorization to implement them is not authorization to
+  execute a production migration.
 
 ### 3.4 Source/destination identity, compatibility, prohibited assumptions
 
@@ -443,7 +449,7 @@ explicitly unknown.
 | B-07 | Isolated disposable target unavailable | §5 #3/#5 evidence | Platform owner | Open | High | Yes | Yes | Provision disposable, disjoint target |
 | B-08 | Production persistence paths resolve only via runtime config | Safe aliases (§3.2) | Deployment owner | Open | High | No | Yes | Approve runtime config + writer-stop procedure |
 | B-09 | Multi-host writer exclusion unproven (lock is single-process) | Approved service-control proof | Deployment owner | Open | High | No | Yes | Approve + evidence writer stop |
-| B-10 | Production executor wiring and approved operational command absent | Reviewed gate-to-coordinator wiring and command (runbook §12) | devdevbuilds | Open | Critical | No | Yes | Separately authorize and implement wiring in Phase 40L |
+| B-10 | Approved Phase 40L wiring/command implementation plan and contract absent | Approved, complete, auditable plan/contract covering gate-to-coordinator wiring, operational command, fail-closed behavior, authorization consumption, revocation handling, audit evidence, validation, and rollback (runbook §12) | devdevbuilds | Open | Critical | No | Yes | Approve the plan/contract before considering Phase 40L implementation authorization |
 | B-11 | Runtime authorization/trusted-clock/revocation results absent | Live auth ceremony evidence (runbook §6) | Auth issuer | Open | Critical | No | Yes | Perform authorization ceremony at execution time |
 | B-12 | Private evidence destination unconfirmed | Access-controlled writable location | Evidence custodian | Open | Medium | Partial | Yes | Approve evidence destination |
 | B-13 | Encryption key availability unknown | Key-availability evidence (§7) | Platform owner | Open | Medium | Yes (if encrypted) | Yes | Confirm key custody |
@@ -461,7 +467,7 @@ each maps to evidence, not assertion.
 | # | Criterion | Cleared when | Current |
 | --- | --- | --- | --- |
 | 1 | Authoritative dataset identity established | RDIR verified, two-person acknowledged (§1–2) | **Not met** (B-01) |
-| 2 | Production persistence interface confirmed | §3 inputs supplied; gate-to-coordinator wiring and approved operational command exist | **Not met** (B-08, B-10) |
+| 2 | Production persistence implementation contract approved | §3 inputs supplied; the complete, auditable wiring/command implementation plan and contract described by B-10 are approved | **Not met** (B-08, B-10) |
 | 3 | Backup inventory complete for scope | §4 inventory complete | **Not met** (B-03) |
 | 4 | Selected backup integrity verified | `integrity_state` + `readability_state` verified | **Not met** (B-04) |
 | 5 | Restoration rehearsal separately executed and passed | §6 evidence package; `isolated_restoration_rehearsal_state` verified | **Not met** (B-05) |
@@ -475,6 +481,19 @@ each maps to evidence, not assertion.
 
 With criteria 1–12 unmet, **Phase 40L is not eligible for consideration.** This gate is
 a checklist for a *future* human decision, not a decision this phase makes.
+
+If every criterion is later met, the resulting decision may authorize **Phase 40L
+implementation only**. After that separate operator authorization, Phase 40L may
+implement and validate the cleared-gate-to-coordinator wiring and operational migration
+command under the approved contract. Implementing, testing, or validating those
+components grants no authority to execute against production.
+
+Before any real migration command may run, the Phase 40L implementation and its tests
+and validation must be complete, every critical blocker must remain resolved, and the
+execution gate must make a fresh fail-closed decision against the exact current
+manifest and operational authorization. Production execution still requires its own
+explicit operator go; an implementation authorization or successful validation is
+never an execution authorization.
 
 ---
 
