@@ -252,8 +252,9 @@ adapter is implemented and no production infrastructure is connected here.
 
 - Approved runtime configuration resolving ledger/snapshot locations.
 - Approved service-control (writer-stop) procedure.
-- A reviewed production execution interface (still a standing blocker — runbook §12);
-  building it is **[FUTURE-AUTHORIZED]**, out of scope here.
+- Reviewed wiring from the existing execution gate to the Phase 40I coordinator, plus
+  an approved production execution command (the standing blocker in runbook §12);
+  implementing that wiring is **[FUTURE-AUTHORIZED]**, out of scope here.
 
 ### 3.4 Source/destination identity, compatibility, prohibited assumptions
 
@@ -442,7 +443,7 @@ explicitly unknown.
 | B-07 | Isolated disposable target unavailable | §5 #3/#5 evidence | Platform owner | Open | High | Yes | Yes | Provision disposable, disjoint target |
 | B-08 | Production persistence paths resolve only via runtime config | Safe aliases (§3.2) | Deployment owner | Open | High | No | Yes | Approve runtime config + writer-stop procedure |
 | B-09 | Multi-host writer exclusion unproven (lock is single-process) | Approved service-control proof | Deployment owner | Open | High | No | Yes | Approve + evidence writer stop |
-| B-10 | Reviewed production execution interface missing | Reviewed interface (runbook §12) | devdevbuilds | Open | Critical | No | Yes | Separately authorize interface (post-40K.6) |
+| B-10 | Production executor wiring and approved operational command absent | Reviewed gate-to-coordinator wiring and command (runbook §12) | devdevbuilds | Open | Critical | No | Yes | Separately authorize and implement wiring in Phase 40L |
 | B-11 | Runtime authorization/trusted-clock/revocation results absent | Live auth ceremony evidence (runbook §6) | Auth issuer | Open | Critical | No | Yes | Perform authorization ceremony at execution time |
 | B-12 | Private evidence destination unconfirmed | Access-controlled writable location | Evidence custodian | Open | Medium | Partial | Yes | Approve evidence destination |
 | B-13 | Encryption key availability unknown | Key-availability evidence (§7) | Platform owner | Open | Medium | Yes (if encrypted) | Yes | Confirm key custody |
@@ -460,7 +461,7 @@ each maps to evidence, not assertion.
 | # | Criterion | Cleared when | Current |
 | --- | --- | --- | --- |
 | 1 | Authoritative dataset identity established | RDIR verified, two-person acknowledged (§1–2) | **Not met** (B-01) |
-| 2 | Production persistence interface confirmed | §3 inputs supplied; reviewed execution interface exists | **Not met** (B-08, B-10) |
+| 2 | Production persistence interface confirmed | §3 inputs supplied; gate-to-coordinator wiring and approved operational command exist | **Not met** (B-08, B-10) |
 | 3 | Backup inventory complete for scope | §4 inventory complete | **Not met** (B-03) |
 | 4 | Selected backup integrity verified | `integrity_state` + `readability_state` verified | **Not met** (B-04) |
 | 5 | Restoration rehearsal separately executed and passed | §6 evidence package; `isolated_restoration_rehearsal_state` verified | **Not met** (B-05) |
