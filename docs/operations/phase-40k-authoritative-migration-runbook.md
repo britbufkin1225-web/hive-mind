@@ -85,7 +85,7 @@ All applicable fields below are mandatory; a filename is never identity.
 | --- | --- |
 | Non-secret canonical locator and format | Reviewer resolves it to exactly one source object/set; format is one supported by Phase 40F. |
 | Byte size and file/object count | Recomputed read-only at final preflight; no silent omissions. |
-| Digest and algorithm | SHA-256 (the implemented accepted algorithm) recomputed over the approved artifact bytes; for a set, use the implementation-approved bundle identity, not concatenation invented by an operator. |
+| Digest and algorithm | SHA-256 or SHA-512 (the implemented accepted algorithms; MD5/SHA-1 are rejected as weak) recomputed over the approved artifact bytes under the algorithm the export declared; for a set, use the implementation-approved bundle identity, not concatenation invented by an operator. |
 | Capture time and source version | Trusted UTC timestamp plus export id/revision/version supplied by the source where applicable. |
 | Implementation identity | Exact repository commit and identities/versions of intake, parser, projector, assessor, reviewed-import contracts, and runbook. |
 | Project and scope | Exact project id and authorized scope member; no hierarchy or repository-location inference. |
